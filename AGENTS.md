@@ -8,7 +8,7 @@
 - 当前仓库仍处于早期阶段，但 core/CLI 骨架已建立；Web 尚未落地。
 - 已定技术栈：Python 3.10+、uv、click、pydantic v2、SQLite、FastAPI + uvicorn、React 19 + Vite + TypeScript + Tailwind。
 - 第一阶段先做原数据看板和硬降噪：拉取、标准化、去重、入库、窗口缓存、查询、筛选。
-- LLM 分类、信号雷达、行情回测、推送都属于后续阶段，未明确要求时不要提前实现。
+- `core/llm/` 只提供 OpenAI-compatible / Anthropic Messages 协议客户端；LLM 分类、信号雷达、行情回测、推送都属于后续阶段，未明确要求时不要提前实现。
 
 ## 2. 开始前先读
 
@@ -33,6 +33,7 @@ src/radar/
 │   ├── store.py      SQLite 建表、写入、去重、窗口缓存
 │   ├── query.py      消息筛选、分页、搜索
 │   ├── filtering.py  硬过滤规则
+│   ├── llm/          LLM provider 解析和协议客户端
 │   ├── config.py     本地配置和数据目录
 │   └── usecases/     跨 fetch/store/filtering 的业务编排
 ├── cli/           click 命令，只调用 core/usecases
@@ -48,6 +49,7 @@ web/ui/            React/Vite 前端，只调用 Web API
 - `core/` 是唯一业务真相来源；CLI 和 Web 后端都只能编排 core，不允许复制业务逻辑。
 - `core/` 不依赖 click、FastAPI、React、浏览器概念。
 - `core/usecases/` 放跨模块编排，例如分片拉取、过滤、写库、窗口记录；底层 SQL 仍留在 `store.py`。
+- `core/llm/` 只放 provider 解析、协议请求、JSON 解析等通用能力；prompt、任务语义和分类规则应放在后续 usecase。
 - CLI 只负责参数解析、输出格式、退出码，不直接写 SQL、不直接请求微信 API。
 - CLI 子命令按职责拆到 `src/radar/cli/` 独立模块，`main.py` 只保留入口和注册。
 - Web 后端只负责 HTTP 入参/出参、错误码、调用 core，不直接拼业务查询。

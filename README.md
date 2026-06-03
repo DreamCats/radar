@@ -10,6 +10,7 @@
 - 用 `fetch_windows` 记录已处理窗口，并支持被更大窗口覆盖时跳过拉取。
 - 入库前按群名黑名单过滤明显非投研群。
 - 支持来源、群名、时间、关键词筛选和游标分页查询。
+- 预置 OpenAI-compatible / Anthropic Messages 两类 LLM 协议客户端，供后续分类和信号分析复用。
 
 ## 技术栈
 
@@ -28,6 +29,7 @@ src/radar/
 │   ├── config.py              # config.yaml + secrets.yaml 加载
 │   ├── fetch.py               # 微信 API 拉取和标准化
 │   ├── filtering.py           # 硬过滤规则
+│   ├── llm/                   # LLM provider 解析和协议客户端
 │   ├── models.py              # pydantic 数据模型
 │   ├── query.py               # SQLite 查询和分页
 │   ├── store.py               # SQLite schema、去重、窗口缓存
