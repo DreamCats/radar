@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>radar · 变体B 三栏带详情</title>
+<link rel="stylesheet" href="radar.css">
+<style>
+  .app3 { display: grid; grid-template-columns: 232px 1fr 360px; height: 100vh; overflow: hidden; }
+  .feed-list { overflow-y: auto; flex: 1; }
+  .feed-item {
+    display: flex; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--hairline); cursor: pointer;
+  }
+  .feed-item:hover { background: var(--surface-1); }
+  .feed-item.sel { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--primary); }
+  .feed-item .time { color: var(--ink-tertiary); font-family: var(--font-mono); font-size: 12px; padding-top: 2px; white-space: nowrap; }
+  .feed-item .body { flex: 1; }
+  .feed-item .meta { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+  .feed-item .txt { font-size: 13px; color: var(--ink-muted); line-height: 1.55; }
+  .detail { background: var(--surface-1); border-left: 1px solid var(--hairline); padding: 22px; overflow-y: auto; }
+  .detail h3 { font-size: 14px; margin-bottom: 14px; }
+  .kv { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--hairline); font-size: 13px; }
+  .kv .k { color: var(--ink-subtle); }
+  .detail .quote { background: var(--surface-3); border-radius: var(--radius); padding: 14px; font-size: 14px; line-height: 1.6; margin: 14px 0; }
+</style>
+</head>
+<body>
+<div class="app3">
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span> radar</div>
+    <div class="nav-group">
+      <div class="eyebrow">看板</div>
+      <a class="nav-item active"><span class="ico">▦</span> 原数据流</a>
+      <a class="nav-item disabled"><span class="ico">◎</span> 信号雷达 <span class="tag">阶段二</span></a>
+    </div>
+    <div class="nav-group">
+      <div class="eyebrow">我的群</div>
+      <a class="nav-item active"><span class="ico">●</span> 全部 <span class="badge">199</span></a>
+      <a class="nav-item"><span class="ico">#</span> 最强科技 <span class="badge">33</span></a>
+      <a class="nav-item"><span class="ico">#</span> 东财策略 <span class="badge">12</span></a>
+      <a class="nav-item"><span class="ico">#</span> 算力产业链 <span class="badge">6</span></a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="title">原数据流 <span class="caption">· 列表+详情</span></span>
+      <div class="search"><span class="muted">⌕</span><input placeholder="搜索…"></div>
+      <button class="btn btn-primary btn-sm">⟳ 拉取</button>
+    </div>
+    <div class="feed-list">
+      <div class="feed-item sel">
+        <span class="time">10:55</span>
+        <div class="body"><div class="meta"><span class="sender" style="font-size:13px;color:var(--ink);font-weight:500">陈果</span><span class="org">东方财富策略</span><span class="chip group" style="margin-left:auto"># 东财策略</span></div>
+        <div class="txt">当前美国 AI 模式：不考虑分配问题，只从总量看，硅基越强，碳基越弱，但硅基最终又得找碳基买单闭环。</div></div>
+      </div>
+      <div class="feed-item">
+        <span class="time">10:40</span>
+        <div class="body"><div class="meta"><span class="sender" style="font-size:13px;color:var(--ink);font-weight:500">风中追风</span><span class="chip group" style="margin-left:auto"># 算力产业链</span></div>
+        <div class="txt">【独家｜车用<b style="color:var(--signal-hot)">固态电池</b>第1部分国标拟于 2026 年 7 月发布】</div></div>
+      </div>
+      <div class="feed-item">
+        <span class="time">09:11</span>
+        <div class="body"><div class="meta"><span class="sender" style="font-size:13px;color:var(--ink);font-weight:500">幸福大道</span><span class="chip group" style="margin-left:auto"># 最强科技</span></div>
+        <div class="txt">8000孔/秒！8倍效率！<b style="color:var(--primary)">华工科技</b>核心子公司华工激光 TGV 玻璃通孔装备为玻璃基板量产提速</div></div>
+      </div>
+      <div class="feed-item">
+        <span class="time">09:06</span>
+        <div class="body"><div class="meta"><span class="sender" style="font-size:13px;color:var(--ink);font-weight:500">陈淑媛 Alice</span><span class="chip group" style="margin-left:auto"># 可可互联网</span></div>
+        <div class="txt"><b style="color:var(--signal-hot)">MiniMax</b>，启动 A股 IPO</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧详情 -->
+  <aside class="detail">
+    <h3>消息详情</h3>
+    <div class="quote">当前美国 AI 模式：不考虑分配问题，只从总量看，硅基越强，碳基越弱，但硅基最终又得找碳基买单闭环。</div>
+    <div class="kv"><span class="k">发送人</span><span>陈果</span></div>
+    <div class="kv"><span class="k">机构</span><span style="color:var(--primary)">东方财富策略</span></div>
+    <div class="kv"><span class="k">群</span><span># 东财策略</span></div>
+    <div class="kv"><span class="k">时间</span><span class="mono">2026-05-30 10:55:13</span></div>
+    <div class="kv"><span class="k">message_id</span><span class="mono" style="font-size:11px">79b03cf4…</span></div>
+    <div style="margin-top:18px;">
+      <div class="eyebrow" style="margin-bottom:8px;">识别个股 / 概念</div>
+      <span class="chip">AI 算力</span> <span class="chip">硅基</span>
+    </div>
+    <div style="margin-top:18px;">
+      <div class="eyebrow" style="margin-bottom:8px;">同发送人近期</div>
+      <p class="caption" style="line-height:1.7">陈果 · 近 7 天 23 条 · 多为宏观策略观点</p>
+    </div>
+  </aside>
+</div>
+</body>
+</html>

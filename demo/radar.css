@@ -1,0 +1,225 @@
+/* radar 设计系统 · 落自 DESIGN.md（Linear 基底 + Binance 涨跌色扩展） */
+
+:root {
+  /* ── 中性 / 表面阶梯 ── */
+  --canvas: #010102;
+  --surface-1: #0f1011;
+  --surface-2: #141516;
+  --surface-3: #18191a;
+  --surface-4: #191a1b;
+  --hairline: #23252a;
+  --hairline-strong: #34343a;
+  --hairline-tertiary: #3e3e44;
+
+  /* ── 文本 ── */
+  --ink: #f7f8f8;
+  --ink-muted: #d0d6e0;
+  --ink-subtle: #8a8f98;
+  --ink-tertiary: #62666d;
+
+  /* ── 品牌强调（唯一彩色：薰衣草蓝，克制使用）── */
+  --primary: #5e6ad2;
+  --primary-hover: #828fff;
+  --primary-focus: #5e69d1;
+  --on-primary: #ffffff;
+
+  /* ── radar 金融扩展（仅文字/箭头/数值，绝不做按钮背景）── */
+  --market-up: #0ecb81;
+  --market-down: #f6465d;
+  --market-up-soft: rgba(14, 203, 129, 0.13);
+  --market-down-soft: rgba(246, 70, 93, 0.15);
+  --signal-hot: #fcd535;
+  --signal-warn: #df8e1d;
+  --signal-mute: #62666d;
+  --semantic-success: #27a644;
+
+  /* ── 度量 ── */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --pad-card: 24px;
+  --gap: 12px;
+
+  --font-ui: "Inter", -apple-system, "SF Pro Text", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.05px;
+}
+
+/* ── 通用排版 ── */
+.eyebrow {
+  font-size: 13px; font-weight: 500; letter-spacing: 0.4px;
+  text-transform: uppercase; color: var(--ink-subtle);
+}
+.title { font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }
+.caption { font-size: 12px; color: var(--ink-subtle); }
+.mono { font-family: var(--font-mono); font-size: 13px; }
+.muted { color: var(--ink-subtle); }
+.up { color: var(--market-up); }
+.down { color: var(--market-down); }
+
+/* ── App Shell：左导航 + 主区 ── */
+.app {
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+.sidebar {
+  background: var(--surface-1);
+  border-right: 1px solid var(--hairline);
+  display: flex; flex-direction: column;
+  padding: 16px 12px;
+  overflow-y: auto;
+}
+.brand {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px 18px; font-weight: 600; font-size: 15px;
+}
+.brand .dot {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--primary); box-shadow: 0 0 8px var(--primary);
+}
+.nav-group { margin-top: 14px; }
+.nav-group > .eyebrow { padding: 0 8px 6px; font-size: 11px; }
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 8px; border-radius: var(--radius-sm);
+  color: var(--ink-muted); font-size: 13px; cursor: pointer;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--ink); }
+.nav-item.active {
+  background: rgba(94, 106, 210, 0.14); color: var(--ink);
+}
+.nav-item.active .ico { color: var(--primary); }
+.nav-item .ico { width: 16px; text-align: center; color: var(--ink-subtle); font-size: 13px; }
+.nav-item .badge {
+  margin-left: auto; font-size: 11px; color: var(--ink-subtle);
+  background: var(--surface-3); padding: 1px 6px; border-radius: 999px;
+}
+.nav-item.disabled { opacity: 0.4; pointer-events: none; }
+.nav-item.disabled .tag {
+  margin-left: auto; font-size: 10px; color: var(--ink-tertiary);
+  border: 1px solid var(--hairline-strong); padding: 0 5px; border-radius: 4px;
+}
+
+.main { display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── 顶栏 ── */
+.topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 24px; border-bottom: 1px solid var(--hairline);
+  background: var(--canvas);
+}
+.topbar .title { margin-right: auto; }
+
+/* ── 按钮 ── */
+.btn {
+  font-family: var(--font-ui); font-size: 14px; font-weight: 500;
+  padding: 8px 14px; border-radius: var(--radius);
+  border: 1px solid var(--hairline-strong); background: var(--surface-2);
+  color: var(--ink); cursor: pointer; letter-spacing: 0;
+}
+.btn:hover { background: var(--surface-3); }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-sm { padding: 5px 10px; font-size: 13px; }
+
+/* ── 搜索框 ── */
+.search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface-2); border: 1px solid var(--hairline);
+  border-radius: var(--radius); padding: 7px 12px; min-width: 280px;
+}
+.search input {
+  background: none; border: none; outline: none; color: var(--ink);
+  font-size: 13px; width: 100%; font-family: var(--font-ui);
+}
+.search input::placeholder { color: var(--ink-tertiary); }
+
+/* ── 内容区滚动 ── */
+.content { padding: 20px 24px; overflow-y: auto; flex: 1; }
+
+/* ── 统计条 ── */
+.statbar { display: flex; gap: var(--gap); margin-bottom: 18px; flex-wrap: wrap; }
+.stat {
+  background: var(--surface-1); border: 1px solid var(--hairline);
+  border-radius: var(--radius); padding: 14px 16px; min-width: 150px; flex: 1;
+}
+.stat .k { font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-subtle); }
+.stat .v { font-size: 24px; font-weight: 600; margin-top: 4px; letter-spacing: -0.6px; }
+.stat .sub { font-size: 12px; color: var(--ink-subtle); margin-top: 2px; }
+
+/* ── 卡片 ── */
+.card {
+  background: var(--surface-1); border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg); padding: var(--pad-card);
+}
+.card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.card-head .title { font-size: 15px; }
+
+/* ── 表格（数据密集）── */
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th {
+  text-align: left; font-weight: 500; color: var(--ink-subtle);
+  font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase;
+  padding: 8px 12px; border-bottom: 1px solid var(--hairline);
+}
+.table td { padding: 10px 12px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+.table tbody tr:hover { background: var(--surface-2); }
+.table .sender { color: var(--ink); font-weight: 500; }
+.table .org { color: var(--primary); font-size: 11px; }
+.table .time { color: var(--ink-tertiary); font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+
+/* ── chip / pill ── */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; padding: 2px 9px; border-radius: 999px;
+  background: var(--surface-3); color: var(--ink-muted);
+  border: 1px solid var(--hairline);
+}
+.chip.group { color: var(--ink-muted); }
+.chip.hot { color: var(--signal-hot); border-color: rgba(252,213,53,0.3); }
+.chip.up { color: var(--market-up); background: var(--market-up-soft); border-color: transparent; }
+.chip.down { color: var(--market-down); background: var(--market-down-soft); border-color: transparent; }
+.dot-active { width:6px; height:6px; border-radius:999px; background: var(--primary); display:inline-block; }
+
+/* ── 信号雷达专用：卡片网格 ── */
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--gap); }
+.signal-card {
+  background: var(--surface-1); border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg); padding: 16px;
+}
+.signal-card:hover { border-color: var(--hairline-strong); }
+.signal-card .anchor { font-size: 15px; font-weight: 600; }
+.signal-card .combo { color: var(--primary); }
+.score-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.score {
+  font-size: 11px; padding: 2px 7px; border-radius: 4px;
+  background: var(--surface-3); color: var(--ink-subtle);
+}
+.score b { color: var(--ink); font-family: var(--font-mono); }
+.evidence { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hairline); font-size: 12px; color: var(--ink-subtle); line-height: 1.6; }
+
+/* 热度条 */
+.heatbar { height: 4px; border-radius: 999px; background: var(--surface-3); overflow: hidden; margin-top: 10px; }
+.heatbar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--primary), var(--signal-hot)); }
+
+/* phase 标签 */
+.phase-note {
+  font-size: 12px; color: var(--ink-subtle);
+  background: var(--surface-1); border: 1px dashed var(--hairline-strong);
+  border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px;
+}
+.phase-note b { color: var(--primary); }

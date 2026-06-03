@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>radar · 变体D 浅色版</title>
+<link rel="stylesheet" href="radar.css">
+<style>
+  /* 浅色覆盖（基于 DESIGN.md inverse-* token） */
+  body {
+    --canvas: #ffffff; --surface-1: #fafbfb; --surface-2: #f5f6f6;
+    --surface-3: #eef0f0; --surface-4: #e8eaea;
+    --hairline: #e6e8e8; --hairline-strong: #d4d7d7; --hairline-tertiary: #c8cbcb;
+    --ink: #08090a; --ink-muted: #3c4043; --ink-subtle: #6b7178; --ink-tertiary: #999ea3;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span> radar</div>
+    <div class="nav-group">
+      <div class="eyebrow">看板</div>
+      <a class="nav-item active"><span class="ico">▦</span> 原数据流</a>
+      <a class="nav-item disabled"><span class="ico">◎</span> 信号雷达 <span class="tag">阶段二</span></a>
+    </div>
+    <div class="nav-group">
+      <div class="eyebrow">我的群（白名单）</div>
+      <a class="nav-item active"><span class="ico">●</span> 全部 <span class="badge">199</span></a>
+      <a class="nav-item"><span class="ico">#</span> 最强科技 <span class="badge">33</span></a>
+      <a class="nav-item"><span class="ico">#</span> 东财策略 <span class="badge">12</span></a>
+      <a class="nav-item"><span class="ico">#</span> 算力产业链 <span class="badge">6</span></a>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <span class="title">原数据流 <span class="caption">· 浅色版</span></span>
+      <div class="search"><span class="muted">⌕</span><input placeholder="搜索消息内容 / 发送人 / 个股…"></div>
+      <button class="btn btn-sm">2026-05-30 ▾</button>
+      <button class="btn btn-primary btn-sm">⟳ 拉取最新</button>
+    </div>
+    <div class="content">
+      <div class="statbar">
+        <div class="stat"><div class="k">今日消息</div><div class="v">199</div><div class="sub">12 个白名单群</div></div>
+        <div class="stat"><div class="k">已过滤噪音</div><div class="v">87</div><div class="sub">非投研群 / 重复</div></div>
+        <div class="stat"><div class="k">活跃发送人</div><div class="v">34</div><div class="sub">含 18 个机构号</div></div>
+        <div class="stat"><div class="k">最后拉取</div><div class="v mono" style="font-size:18px">13:05</div><div class="sub">距今 8 分钟</div></div>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table class="table">
+          <thead><tr><th style="width:64px">时间</th><th style="width:160px">发送人</th><th style="width:150px">群</th><th>内容</th></tr></thead>
+          <tbody>
+            <tr><td class="time">10:55</td><td><div class="sender">陈果</div><div class="org">东方财富策略</div></td><td><span class="chip group"># 东财策略</span></td><td>当前美国 AI 模式：硅基越强，碳基越弱，但硅基最终又得找碳基买单闭环。</td></tr>
+            <tr><td class="time">10:40</td><td><div class="sender">风中追风</div></td><td><span class="chip group"># 算力产业链</span></td><td>【独家｜车用<b style="color:var(--signal-warn)">固态电池</b>第1部分国标拟于 2026 年 7 月发布】</td></tr>
+            <tr><td class="time">09:11</td><td><div class="sender">幸福大道</div></td><td><span class="chip group"># 最强科技</span></td><td>8000孔/秒！<b style="color:var(--primary)">华工科技</b>核心子公司华工激光 TGV 玻璃通孔装备为玻璃基板量产提速</td></tr>
+            <tr><td class="time">09:06</td><td><div class="sender">陈淑媛 Alice</div></td><td><span class="chip group"># 可可互联网</span></td><td><b style="color:var(--signal-warn)">MiniMax</b>，启动 A股 IPO</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
