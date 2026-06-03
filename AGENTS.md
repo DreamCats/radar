@@ -5,9 +5,9 @@
 ## 1. 项目快照
 
 - radar 是个人投研工作台，复用微信个人消息/个人群数据源，但服务个人关注面。
-- 当前仓库仍处于早期阶段，已有 `docs/`、`demo/`、`DESIGN.md`，业务代码骨架待建立。
+- 当前仓库仍处于早期阶段，但 core/CLI 骨架已建立；Web 尚未落地。
 - 已定技术栈：Python 3.10+、uv、click、pydantic v2、SQLite、FastAPI + uvicorn、React 19 + Vite + TypeScript + Tailwind。
-- 第一阶段先做原数据看板和硬降噪：拉取、标准化、去重、入库、查询、筛选。
+- 第一阶段先做原数据看板和硬降噪：拉取、标准化、去重、入库、窗口缓存、查询、筛选。
 - LLM 分类、信号雷达、行情回测、推送都属于后续阶段，未明确要求时不要提前实现。
 
 ## 2. 开始前先读
@@ -28,12 +28,14 @@
 ```text
 src/radar/
 ├── core/          业务核心，CLI 和 Web 共用
-│   ├── models.py  pydantic 数据模型
-│   ├── fetch.py   微信 API 拉取和原始字段标准化
-│   ├── store.py   SQLite 建表、写入、去重
-│   ├── query.py   消息筛选、分页、搜索
-│   └── config.py  本地配置和数据目录
-├── cli/           click 命令，只调用 core
+│   ├── models.py     pydantic 数据模型
+│   ├── fetch.py      微信 API 拉取和原始字段标准化
+│   ├── store.py      SQLite 建表、写入、去重、窗口缓存
+│   ├── query.py      消息筛选、分页、搜索
+│   ├── filtering.py  硬过滤规则
+│   ├── config.py     本地配置和数据目录
+│   └── usecases/     跨 fetch/store/filtering 的业务编排
+├── cli/           click 命令，只调用 core/usecases
 └── web/server/    FastAPI 接口，只调用 core
 
 web/ui/            React/Vite 前端，只调用 Web API
@@ -45,7 +47,9 @@ web/ui/            React/Vite 前端，只调用 Web API
 
 - `core/` 是唯一业务真相来源；CLI 和 Web 后端都只能编排 core，不允许复制业务逻辑。
 - `core/` 不依赖 click、FastAPI、React、浏览器概念。
+- `core/usecases/` 放跨模块编排，例如分片拉取、过滤、写库、窗口记录；底层 SQL 仍留在 `store.py`。
 - CLI 只负责参数解析、输出格式、退出码，不直接写 SQL、不直接请求微信 API。
+- CLI 子命令按职责拆到 `src/radar/cli/` 独立模块，`main.py` 只保留入口和注册。
 - Web 后端只负责 HTTP 入参/出参、错误码、调用 core，不直接拼业务查询。
 - Web 前端不保存业务规则，只做展示、筛选控件、分页加载、交互状态。
 - SQLite 表结构、索引、FTS5、去重逻辑集中在 storage/query 层，不散落到接口层。
@@ -62,6 +66,8 @@ web/ui/            React/Vite 前端，只调用 Web API
 
 - 单日个人消息 + 个人群可能有 3000+ 条；历史可能几十万到百万级。
 - API 查询必须分页或游标化，不能默认返回全量。
+- 微信拉取允许按时间切片并发 fetch，但 SQLite 写入保持串行，避免写锁竞争。
+- `fetch_windows` 是拉取窗口缓存；判断重复时要支持“已有大窗口覆盖小窗口”，不能只看完全相同 start/end。
 - Web 列表必须按分页/虚拟滚动设计，不能一次渲染全量。
 - SQLite 至少考虑这些索引：`message_id` 唯一、`message_time`、`group_name`、`source`。
 - 全文搜索优先用 SQLite FTS5；不要用 Python 遍历全库做搜索。
@@ -119,6 +125,7 @@ web/ui/            React/Vite 前端，只调用 Web API
 - 本机 shell 命令默认使用 `rtk` 前缀，例如 `rtk git status --short`。
 - 轻量发现优先：`rtk rg`、`rtk find`、`rtk sed -n`、`rtk git status --short`。
 - 不要在未说明原因时运行安装、构建、全量测试、长时间回填或网络拉取。
+- 不要清理 `.venv/`；它是 uv 项目虚拟环境，已由 `.gitignore` 忽略。测试后只清 `.pytest_cache` 和 `__pycache__`。
 - 不要执行破坏性 git 命令，例如 `git reset --hard`、`git checkout --`、强制清理文件。
 - 任何会真实拉取个人消息、写入大量本地数据、发送通知的命令，都需要用户明确确认。
 

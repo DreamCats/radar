@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 
 import pytest
 
@@ -13,3 +14,10 @@ def sqlite_conn():
         yield conn
     finally:
         conn.close()
+
+
+@pytest.fixture
+def config_dir(tmp_path: Path) -> Path:
+    path = tmp_path / "radar-config"
+    path.mkdir()
+    return path
