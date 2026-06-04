@@ -66,7 +66,7 @@ def list_conversations(conn: sqlite3.Connection, filters: ConversationFilters) -
         where.append("m.source = ?")
         params.append(filters.source)
     if filters.group_name:
-        where.append("m.group_name = ?")
+        where.append(_conversation_title_condition(filters.source))
         params.append(filters.group_name)
     if filters.start_time:
         where.append("m.message_time >= ?")
@@ -167,8 +167,11 @@ def _list_conversations_by_identity(conn: sqlite3.Connection, filters: Conversat
             """
         )
 
-    if filters.source in (None, "个人消息") and not filters.group_name:
+    if filters.source in (None, "个人消息"):
         where = ["source = '个人消息'", "sender <> ''"]
+        if filters.group_name:
+            where.append("sender = ?")
+            params.append(filters.group_name)
         if filters.start_time:
             where.append("message_time >= ?")
             params.append(filters.start_time.isoformat())
@@ -228,6 +231,19 @@ def _list_conversations_by_identity(conn: sqlite3.Connection, filters: Conversat
 
     rows = conn.execute(" ".join(sql), params).fetchall()
     return _conversation_page_from_rows(rows, filters.limit)
+
+
+def _conversation_title_condition(source: MessageSource | None) -> str:
+    if source == "个人群":
+        return "m.group_name = ?"
+    if source == "个人消息":
+        return "m.sender = ?"
+    return """
+    CASE
+        WHEN m.source = '个人群' THEN COALESCE(m.group_name, '')
+        ELSE m.sender
+    END = ?
+    """
 
 
 def _conversation_page_from_rows(rows: list[sqlite3.Row], limit: int) -> ConversationPage:

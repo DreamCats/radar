@@ -29,7 +29,7 @@ class MessagePage(BaseModel):
 
 
 class MessageGroupSummary(BaseModel):
-    """消息里的群名聚合结果，先不引入复杂群维表。"""
+    """消息里的会话名聚合结果，先复用 group_name 字段给前端候选。"""
 
     group_name: str
     message_count: int
@@ -179,17 +179,19 @@ def list_message_groups(
     keyword: str | None = None,
     limit: int = 200,
 ) -> list[MessageGroupSummary]:
-    """从消息表聚合群名，供筛选下拉和后续群管理能力复用。"""
+    """按来源聚合群名或联系人名，供会话筛选下拉复用。"""
+
+    name_expr = _message_group_name_expr(source)
 
     sql = [
-        """
+        f"""
         SELECT
-            group_name,
+            {name_expr} AS group_name,
             COUNT(*) AS message_count,
             MIN(message_time) AS first_seen_at,
             MAX(message_time) AS last_seen_at
         FROM messages
-        WHERE group_name IS NOT NULL AND group_name <> ''
+        WHERE {name_expr} <> ''
         """
     ]
     params: list[object] = []
@@ -197,9 +199,9 @@ def list_message_groups(
         sql.append("AND source = ?")
         params.append(source)
     if keyword:
-        sql.append("AND group_name LIKE ?")
+        sql.append(f"AND {name_expr} LIKE ?")
         params.append(f"%{keyword}%")
-    sql.append("GROUP BY group_name ORDER BY message_count DESC, last_seen_at DESC LIMIT ?")
+    sql.append(f"GROUP BY {name_expr} ORDER BY message_count DESC, last_seen_at DESC LIMIT ?")
     params.append(limit)
 
     rows = conn.execute(" ".join(sql), params).fetchall()
@@ -212,6 +214,19 @@ def list_message_groups(
         )
         for row in rows
     ]
+
+
+def _message_group_name_expr(source: MessageSource | None) -> str:
+    if source == "个人群":
+        return "COALESCE(group_name, '')"
+    if source == "个人消息":
+        return "sender"
+    return """
+    CASE
+        WHEN source = '个人群' THEN COALESCE(group_name, '')
+        ELSE sender
+    END
+    """
 
 
 def _row_to_message(row: sqlite3.Row) -> RawMessage:

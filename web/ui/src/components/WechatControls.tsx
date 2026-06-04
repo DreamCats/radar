@@ -12,6 +12,9 @@ export function WechatFilters(props: {
   onChange: (query: MessageConversationQuery) => void;
   onSubmit: () => void;
 }) {
+  const nameLabel =
+    props.query.source === "personal_message" ? "人名" : props.query.source === "group_message" ? "群名" : "群名/人名";
+
   return (
     <form
       className="filter-panel wechat-filter-bar"
@@ -27,7 +30,7 @@ export function WechatFilters(props: {
           props.onChange({
             ...props.query,
             source: value,
-            group_name: value === "personal_message" ? "" : props.query.group_name,
+            group_name: "",
           })
         }
         options={[
@@ -38,6 +41,7 @@ export function WechatFilters(props: {
       />
       <GroupNameField
         groups={props.groupNames}
+        label={nameLabel}
         value={props.query.group_name ?? ""}
         onChange={(value) => props.onChange({ ...props.query, group_name: value })}
       />
@@ -60,6 +64,7 @@ export function Avatar({ name, small = false }: { name: string; small?: boolean 
 
 function GroupNameField(props: {
   groups: string[];
+  label: string;
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -76,7 +81,7 @@ function GroupNameField(props: {
 
   return (
     <div className="field message-group-field">
-      <label htmlFor={inputId}>群名</label>
+      <label htmlFor={inputId}>{props.label}</label>
       <div className="message-group-control">
         <input
           id={inputId}
@@ -113,7 +118,7 @@ function GroupNameField(props: {
                 </button>
               ))
             ) : (
-              <span className="message-group-empty">没有匹配的群名</span>
+              <span className="message-group-empty">没有匹配的{props.label}</span>
             )}
           </div>
         )}

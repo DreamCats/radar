@@ -95,7 +95,7 @@ def conversations(
 
 @router.get("/message-groups", response_model=MessageGroupListResponse)
 def message_groups(
-    source: str | None = Query(default="group_message"),
+    source: str | None = Query(default=None),
     keyword: str | None = Query(default=None),
     limit: int = Query(default=200, ge=1, le=1000),
     config: RadarConfig = Depends(get_config),

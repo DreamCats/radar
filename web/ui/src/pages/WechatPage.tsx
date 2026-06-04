@@ -8,6 +8,7 @@ import {
   buildSenderStats,
   displayName,
   isSelfConversation,
+  isSelfName,
   isSelfMessage,
   matchesMessage,
   mergeMessages,
@@ -73,10 +74,10 @@ export function WechatPage() {
   }, []);
 
   useEffect(() => {
-    void fetchMessageGroups({ source: "group_message", limit: 200 })
-      .then((groups) => setGroupNames(groups.map((item) => item.group_name)))
+    void fetchMessageGroups({ source: query.source, limit: 200 })
+      .then((groups) => setGroupNames(groups.map((item) => item.group_name).filter((name) => !isSelfName(name))))
       .catch(() => setGroupNames([]));
-  }, []);
+  }, [query.source]);
 
   useEffect(() => {
     setSelectedSender(null);

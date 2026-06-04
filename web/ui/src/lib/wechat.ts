@@ -59,7 +59,7 @@ export function normalizeKeyword(value: string): string {
   return value.trim().toLocaleLowerCase();
 }
 
-function isSelfName(value: string): boolean {
+export function isSelfName(value: string): boolean {
   const name = normalizeKeyword(value).replace(/\s+/g, "");
   if (!name) {
     return false;
