@@ -9,6 +9,7 @@
 - 已定技术栈：Python 3.10+、uv、click、pydantic v2、SQLite、FastAPI + uvicorn、React 19 + Vite + TypeScript + Tailwind。
 - 第一阶段先做原数据看板和硬降噪：拉取、标准化、去重、入库、窗口缓存、查询、筛选。
 - `core/llm/` 只提供 OpenAI-compatible / Anthropic Messages 协议客户端；LLM 分类、信号雷达、行情回测、推送都属于后续阶段，未明确要求时不要提前实现。
+- `core/tushare/` 只提供 Tushare Pro 协议客户端、缓存、低风险历史行缓存和股票代码解析；行情分析、策略、回测仍属于后续 usecase。
 
 ## 2. 开始前先读
 
@@ -34,6 +35,7 @@ src/radar/
 │   ├── query.py      消息筛选、分页、搜索
 │   ├── filtering.py  硬过滤规则
 │   ├── llm/          LLM provider 解析和协议客户端
+│   ├── tushare/      Tushare provider、HTTP、缓存、历史行存、股票解析
 │   ├── config.py     本地配置和数据目录
 │   └── usecases/     跨 fetch/store/filtering 的业务编排
 ├── cli/           click 命令，只调用 core/usecases
@@ -50,6 +52,9 @@ web/ui/            React/Vite 前端，只调用 Web API
 - `core/` 不依赖 click、FastAPI、React、浏览器概念。
 - `core/usecases/` 放跨模块编排，例如分片拉取、过滤、写库、窗口记录；底层 SQL 仍留在 `store.py`。
 - `core/llm/` 只放 provider 解析、协议请求、JSON 解析等通用能力；prompt、任务语义和分类规则应放在后续 usecase。
+- `core/tushare/` 不依赖 tushare-cli 的独立配置、click、formatter 或安装脚本；配置统一走 radar 的 `market` 和 `secrets.market`。
+- Tushare API 地址使用 `market.api_url`；为兼容 stock-news 旧配置，可接受 `market.tushare_api_url` 作为别名。
+- Tushare 历史行缓存只纳入一维时间序列接口；有额外维度且主键无法表达的接口先走短期 KV，避免本地缓存覆盖。
 - CLI 只负责参数解析、输出格式、退出码，不直接写 SQL、不直接请求微信 API。
 - CLI 子命令按职责拆到 `src/radar/cli/` 独立模块，`main.py` 只保留入口和注册。
 - Web 后端只负责 HTTP 入参/出参、错误码、调用 core，不直接拼业务查询。
@@ -60,6 +65,7 @@ web/ui/            React/Vite 前端，只调用 Web API
 
 - 不要污染或依赖 `~/.config/stock-news/data` 作为 radar 的运行数据目录；只能作为只读调研参考。
 - radar 必须使用独立数据目录，默认倾向 `~/.config/radar/`，除非用户另行指定。
+- 消息库和行情库必须分开：默认 `radar.sqlite3` 放消息，`market.sqlite3` 放 Tushare/market 缓存。
 - 微信 API 的 `base_url` 等入口信息视为敏感配置，不写入代码、文档、测试快照或 git。
 - 原始消息属于个人数据；不要把真实全量内容写进 fixtures、日志、截图或提交说明。
 - 日志只记录必要摘要，例如数量、时间窗、来源类型、错误类型。

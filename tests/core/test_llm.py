@@ -15,6 +15,7 @@ def test_resolve_provider_uses_task_routing_and_secret():
     assert provider.protocol == "anthropic"
     assert provider.base_url == "https://api.anthropic.com"
     assert provider.api_key == "anthropic-key"
+    assert provider.disable_thinking is True
 
 
 def test_chat_dispatches_openai_provider(monkeypatch):
@@ -128,6 +129,41 @@ def test_anthropic_client_builds_messages_request(monkeypatch):
     assert captured["json"]["messages"] == [{"role": "user", "content": "hello"}]
 
 
+def test_anthropic_client_can_disable_thinking(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"content": [{"type": "text", "text": "ok"}]}
+
+    class FakeClient:
+        def __init__(self, timeout):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def post(self, url, headers, json):
+            captured.update({"url": url, "headers": headers, "json": json})
+            return FakeResponse()
+
+    monkeypatch.setattr("radar.core.llm.anthropic_client.httpx.Client", FakeClient)
+
+    reply = chat_anthropic(
+        _provider("anthropic", "https://api.example/anthropic", disable_thinking=True),
+        [{"role": "user", "content": "hello"}],
+    )
+
+    assert reply == "ok"
+    assert captured["json"]["thinking"] == {"type": "disabled"}
+
+
 def _config() -> RadarConfig:
     return RadarConfig(
         llm={
@@ -142,6 +178,7 @@ def _config() -> RadarConfig:
                     "protocol": "anthropic",
                     "secret_ref": "anthropic_secret",
                     "model": "claude-test",
+                    "disable_thinking": True,
                 },
             },
             "task_routing": {"classify": "anthropic_main"},
@@ -161,7 +198,12 @@ def _config() -> RadarConfig:
     )
 
 
-def _provider(protocol: str, base_url: str) -> RuntimeLlmProvider:
+def _provider(
+    protocol: str,
+    base_url: str,
+    *,
+    disable_thinking: bool = False,
+) -> RuntimeLlmProvider:
     return RuntimeLlmProvider(
         name="test",
         protocol=protocol,
@@ -171,5 +213,6 @@ def _provider(protocol: str, base_url: str) -> RuntimeLlmProvider:
         timeout=10,
         max_tokens=None,
         temperature=None,
+        disable_thinking=disable_thinking,
         headers={},
     )

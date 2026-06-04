@@ -69,6 +69,8 @@ def _payload(
         payload["temperature"] = effective_temperature
     if system_parts:
         payload["system"] = "\n\n".join(system_parts)
+    if provider.disable_thinking:
+        payload["thinking"] = {"type": "disabled"}
     return payload
 
 

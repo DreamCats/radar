@@ -6,10 +6,14 @@ from radar.core.usecases.ingest_wechat import (
     ingest_wechat_range,
     ingest_wechat_window,
 )
+from radar.core.usecases.smoke import SmokeResult, test_llm, test_market
 
 __all__ = [
     "IngestRangeResult",
     "IngestWindowResult",
+    "SmokeResult",
     "ingest_wechat_range",
     "ingest_wechat_window",
+    "test_llm",
+    "test_market",
 ]

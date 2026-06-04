@@ -7,6 +7,7 @@ import click
 from radar import __version__
 from radar.cli.ingest import ingest
 from radar.cli.query import query_messages
+from radar.cli.test import test_commands
 
 
 @click.group()
@@ -35,3 +36,4 @@ def doctor() -> None:
 
 main.add_command(ingest)
 main.add_command(query_messages)
+main.add_command(test_commands)

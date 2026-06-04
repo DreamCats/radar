@@ -55,6 +55,7 @@ class LlmProviderConfig(BaseModel):
     timeout: float = 120.0
     max_tokens: int | None = None
     temperature: float | None = None
+    disable_thinking: bool = False
     headers: dict[str, str] = Field(default_factory=dict)
 
 
@@ -72,6 +73,27 @@ class LlmProviderSecret(BaseModel):
 class MarketConfig(BaseModel):
     provider: Literal["tushare"] | None = None
     secret_ref: str | None = None
+    api_url: str = "http://api.tushare.pro"
+    timeout: float = 30.0
+    database: Path | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def accept_legacy_tushare_api_url(cls, data: object) -> object:
+        """兼容 stock-news 的 market.tushare_api_url 配置名。"""
+
+        if not isinstance(data, dict):
+            return data
+        if data.get("tushare_api_url") and not data.get("api_url"):
+            data = dict(data)
+            data["api_url"] = data["tushare_api_url"]
+        return data
+
+    @model_validator(mode="after")
+    def normalize_paths(self) -> "MarketConfig":
+        if self.database is not None:
+            self.database = self.database.expanduser()
+        return self
 
 
 class MarketSecret(BaseModel):
@@ -120,6 +142,10 @@ class RadarConfig(BaseModel):
         return self.storage.database or self.storage.data_dir / "radar.sqlite3"
 
     @property
+    def market_database_path(self) -> Path:
+        return self.market.database or self.storage.data_dir / "market.sqlite3"
+
+    @property
     def wechat_base_url(self) -> str | None:
         source = self.wechat.sources.get("group_message") or next(iter(self.wechat.sources.values()), None)
         if source is None:
@@ -166,8 +192,25 @@ def _apply_env_overrides(config: RadarConfig) -> RadarConfig:
     if data_dir:
         config.storage.data_dir = Path(data_dir).expanduser()
         config.storage.database = config.storage.data_dir / "radar.sqlite3"
+        if config.market.database is None:
+            config.market.database = config.storage.data_dir / "market.sqlite3"
 
     base_url = os.getenv("RADAR_WECHAT_BASE_URL")
     if base_url:
         config.secrets.wechat.endpoints["wechat_main"] = WechatEndpointSecret(base_url=base_url)
+
+    tushare_token = os.getenv("RADAR_TUSHARE_TOKEN")
+    if tushare_token:
+        secret_ref = config.market.secret_ref or "tushare_main"
+        config.market.provider = "tushare"
+        config.market.secret_ref = secret_ref
+        config.secrets.market[secret_ref] = MarketSecret(token=tushare_token)
+
+    tushare_api_url = os.getenv("RADAR_TUSHARE_API_URL")
+    if tushare_api_url:
+        config.market.api_url = tushare_api_url
+
+    market_database = os.getenv("RADAR_MARKET_DATABASE")
+    if market_database:
+        config.market.database = Path(market_database).expanduser()
     return config

@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from radar.cli.main import main
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db, upsert_messages
-from radar.core.usecases import IngestRangeResult
+from radar.core.usecases import IngestRangeResult, SmokeResult
 
 
 def test_query_reads_messages_from_config_database(tmp_path):
@@ -103,12 +103,105 @@ def test_ingest_wechat_invokes_core_usecase(monkeypatch, tmp_path):
     ]
 
 
+def test_llm_smoke_command_invokes_usecase(monkeypatch, tmp_path):
+    config_dir = _config_dir(tmp_path)
+    calls: list[dict] = []
+
+    def fake_test_llm(config, *, provider_name, task, model):
+        calls.append(
+            {
+                "database": config.database_path,
+                "provider_name": provider_name,
+                "task": task,
+                "model": model,
+            }
+        )
+        return SmokeResult("llm", "openai/gpt-test", "request ok", sample="ok")
+
+    monkeypatch.setattr("radar.cli.test.test_llm", fake_test_llm)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "--config-dir",
+            str(config_dir),
+            "test",
+            "llm",
+            "--provider",
+            "main",
+            "--task",
+            "classify",
+            "--model",
+            "gpt-test",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "llm | openai/gpt-test | request ok | sample=ok" in result.output
+    assert calls == [
+        {
+            "database": tmp_path / "radar.sqlite3",
+            "provider_name": "main",
+            "task": "classify",
+            "model": "gpt-test",
+        }
+    ]
+
+
+def test_market_smoke_command_invokes_usecase(monkeypatch, tmp_path):
+    config_dir = _config_dir(tmp_path)
+    calls: list[dict] = []
+
+    def fake_test_market(config, *, date_text, use_cache):
+        calls.append(
+            {
+                "market_database": config.market_database_path,
+                "date_text": date_text,
+                "use_cache": use_cache,
+            }
+        )
+        return SmokeResult(
+            "market",
+            "tushare/trade_cal/20260603",
+            "request ok",
+            sample="cal_date=20260603",
+            row_count=1,
+        )
+
+    monkeypatch.setattr("radar.cli.test.test_market", fake_test_market)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "--config-dir",
+            str(config_dir),
+            "test",
+            "market",
+            "--date",
+            "20260603",
+            "--no-cache",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "market | tushare/trade_cal/20260603 | request ok | rows=1" in result.output
+    assert "sample=cal_date=20260603" in result.output
+    assert calls == [
+        {
+            "market_database": tmp_path / "data" / "market.sqlite3",
+            "date_text": "20260603",
+            "use_cache": False,
+        }
+    ]
+
+
 def _config_dir(tmp_path):
     config_dir = tmp_path / "config"
     config_dir.mkdir()
     (config_dir / "config.yaml").write_text(
         f"""
 storage:
+  data_dir: {tmp_path / "data"}
   database: {tmp_path / "radar.sqlite3"}
 filters:
   group_blacklist_patterns:

@@ -26,6 +26,7 @@ class RuntimeLlmProvider:
     timeout: float
     max_tokens: int | None
     temperature: float | None
+    disable_thinking: bool
     headers: dict[str, str]
 
 
@@ -76,6 +77,7 @@ def resolve_provider(
         timeout=provider.timeout,
         max_tokens=provider.max_tokens,
         temperature=provider.temperature,
+        disable_thinking=provider.disable_thinking,
         headers=provider.headers,
     )
     return selected_name, runtime
