@@ -5,7 +5,7 @@
 ## 1. 项目快照
 
 - radar 是个人投研工作台，复用微信个人消息/个人群数据源，但服务个人关注面。
-- 当前仓库仍处于早期阶段，但 core/CLI 骨架已建立；Web 尚未落地。
+- 当前仓库仍处于早期阶段；core/CLI 骨架已建立，Web dashboard 已有最薄 API/UI 骨架。
 - 已定技术栈：Python 3.10+、uv、click、pydantic v2、SQLite、FastAPI + uvicorn、React 19 + Vite + TypeScript + Tailwind。
 - 第一阶段先做原数据看板和硬降噪：拉取、标准化、去重、入库、窗口缓存、查询、筛选。
 - `core/llm/` 只提供 OpenAI-compatible / Anthropic Messages 协议客户端；LLM 分类、信号雷达、行情回测、推送都属于后续阶段，未明确要求时不要提前实现。
@@ -61,6 +61,8 @@ web/ui/            React/Vite 前端，只调用 Web API
 - CLI 子命令按职责拆到 `src/radar/cli/` 独立模块，`main.py` 只保留入口和注册。
 - Web 后端只负责 HTTP 入参/出参、错误码、调用 core，不直接拼业务查询。
 - Web 前端不保存业务规则，只做展示、筛选控件、分页加载、交互状态。
+- Web 前端按 `api/`、`pages/`、`components/`、`lib/`、`types.ts` 分层；页面负责状态和交互，组件负责展示，API 层负责 HTTP。
+- 新增 Web 功能时先判断放在哪一层，不要继续往 `main.tsx` 或单个大页面里堆逻辑。
 - SQLite 表结构、索引、FTS5、去重逻辑集中在 storage/query 层，不散落到接口层。
 - SQLite schema 变更必须通过 `core/db.py` migration 追加版本，不直接改已落地表结构。
 - `runs` 只记录执行审计摘要和脱敏 metadata，不存真实消息内容或敏感 token。

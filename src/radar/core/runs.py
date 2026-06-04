@@ -108,6 +108,37 @@ def get_run(database: Path, run_id: str) -> RunRecord | None:
     return _row_to_run(row)
 
 
+def list_runs(
+    database: Path,
+    *,
+    kind: str | None = None,
+    status: RunStatus | None = None,
+    limit: int = 50,
+) -> list[RunRecord]:
+    """按开始时间倒序查看执行记录；Web/CLI 只展示脱敏摘要。"""
+
+    if limit < 1 or limit > 200:
+        raise ValueError("limit 必须在 1 到 200 之间")
+
+    sql = ["SELECT * FROM runs"]
+    where: list[str] = []
+    params: list[object] = []
+    if kind:
+        where.append("kind = ?")
+        params.append(kind)
+    if status:
+        where.append("status = ?")
+        params.append(status)
+    if where:
+        sql.append("WHERE " + " AND ".join(where))
+    sql.append("ORDER BY started_at DESC LIMIT ?")
+    params.append(limit)
+
+    with _connect(database) as conn:
+        rows = conn.execute(" ".join(sql), params).fetchall()
+    return [_row_to_run(row) for row in rows]
+
+
 def _connect(database: Path) -> sqlite3.Connection:
     database.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(database)

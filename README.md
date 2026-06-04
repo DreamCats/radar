@@ -1,6 +1,6 @@
 # radar
 
-个人投研工作台。当前阶段先把微信个人消息 / 个人群数据源接入到独立 SQLite，提供 CLI 写入、查询、硬过滤和去重能力；Web 看板和信号雷达后续再迭代。
+个人投研工作台。当前阶段先把微信个人消息 / 个人群数据源接入到独立 SQLite，提供 CLI 写入、查询、硬过滤、去重和最薄 Web dashboard 骨架；信号雷达后续再迭代。
 
 ## 当前能力
 
@@ -15,6 +15,7 @@
 - 预置 OpenAI-compatible / Anthropic Messages 两类 LLM 协议客户端，供后续分类和信号分析复用。
 - 预置 Tushare Pro 核心客户端，支持 HTTP 调用、短期 KV 缓存、低风险历史行缓存和股票代码解析。
 - 提供 `radar test` 烟测命令，方便在终端验证 core 能力是否跑通。
+- 提供 `radar dashboard` 启动本地 Web API，前端骨架在 `web/ui`。
 
 ## 技术栈
 
@@ -23,12 +24,20 @@
 - click
 - pydantic v2
 - SQLite + FTS5
-- FastAPI / React 预留，当前还未落 Web 实现
+- FastAPI
+- React 19 + Vite + TypeScript + Tailwind
 
 ## 目录
 
 ```text
 src/radar/
+├── cli/
+│   ├── main.py                # CLI 入口和命令注册
+│   ├── context.py             # CLI 公共配置/时间解析
+│   ├── dashboard.py           # dashboard 后端启动命令
+│   ├── ingest.py              # 写入命令
+│   ├── query.py               # 查询命令
+│   └── test.py                # core 能力烟测命令
 ├── core/
 │   ├── config.py              # config.yaml + secrets.yaml 加载
 │   ├── db.py                  # SQLite migration 和 schema 版本
@@ -40,15 +49,21 @@ src/radar/
 │   ├── runs.py                # core 执行审计记录
 │   ├── store.py               # SQLite schema、去重、窗口缓存
 │   ├── tushare/               # Tushare provider、缓存、历史数据和股票解析
-│   └── usecases/
-│       ├── ingest_wechat.py   # 拉取窗口编排
-│       └── smoke.py           # core 能力烟测编排
-└── cli/
-    ├── main.py                # CLI 入口和命令注册
-    ├── context.py             # CLI 公共配置/时间解析
-    ├── ingest.py              # 写入命令
-    ├── query.py               # 查询命令
-    └── test.py                # core 能力烟测命令
+│   └── usecases/              # 跨模块编排
+└── web/server/
+    ├── app.py                 # FastAPI app 创建
+    ├── deps.py                # Web 依赖注入
+    └── routers/               # health/messages/runs/ingest API
+
+web/ui/
+└── src/
+    ├── api/                   # HTTP 调用封装
+    ├── components/            # 纯展示和表单组件
+    ├── lib/                   # 无业务依赖的小函数
+    ├── pages/                 # 页面状态和交互
+    ├── App.tsx                # 顶层页面切换
+    ├── main.tsx               # React 挂载入口
+    └── types.ts               # Web DTO 类型
 ```
 
 ## 配置
@@ -162,6 +177,20 @@ uv run radar query --keyword "固态" --format json --limit 5
 uv run radar test market
 uv run radar test market --date 20260603 --no-cache
 uv run radar test llm
+```
+
+启动 Web dashboard：
+
+```bash
+uv run radar dashboard
+```
+
+该命令会在同一个终端里启动 FastAPI 和 Vite。页面默认打开 `http://127.0.0.1:5173`，API 默认监听 `http://127.0.0.1:8000`。停止时直接按 `Ctrl+C`，命令会同时停止两个子进程。
+
+如需改端口：
+
+```bash
+uv run radar dashboard --port 8001 --ui-port 5174
 ```
 
 如果输出里带下一页游标，直接复制继续翻页：

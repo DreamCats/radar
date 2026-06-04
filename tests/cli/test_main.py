@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import sys
 from datetime import datetime
+from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -193,6 +195,92 @@ def test_market_smoke_command_invokes_usecase(monkeypatch, tmp_path):
             "date_text": "20260603",
             "use_cache": False,
         }
+    ]
+
+
+def test_dashboard_command_starts_uvicorn(monkeypatch, tmp_path):
+    config_dir = _config_dir(tmp_path)
+    calls: list[dict] = []
+
+    class FakeProcess:
+        def __init__(self, args, cwd, env, start_new_session):
+            self.args = args
+            self.cwd = cwd
+            self.env = env
+            self.start_new_session = start_new_session
+            self.pid = 123
+            self.poll_count = 0
+            calls.append(
+                {
+                    "args": args,
+                    "cwd": cwd,
+                    "env_config_dir": env.get("RADAR_CONFIG_DIR"),
+                    "start_new_session": start_new_session,
+                }
+            )
+
+        def poll(self):
+            self.poll_count += 1
+            return 0 if self.poll_count > 1 and "uvicorn" in self.args else None
+
+        def wait(self, timeout):
+            return 0
+
+    monkeypatch.setattr("radar.cli.dashboard.subprocess.Popen", FakeProcess)
+    monkeypatch.setattr("radar.cli.dashboard.time.sleep", lambda _: None)
+
+    monkeypatch.setattr("radar.cli.dashboard._stop_children", lambda children: None)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "--config-dir",
+            str(config_dir),
+            "dashboard",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "9000",
+            "--ui-port",
+            "5174",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "dashboard: http://127.0.0.1:5174" in result.output
+    assert "api: http://127.0.0.1:9000" in result.output
+    assert calls == [
+        {
+            "args": [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "radar.web.server.app:create_app",
+                "--factory",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "9000",
+            ],
+            "cwd": Path(__file__).resolve().parents[2],
+            "env_config_dir": str(config_dir),
+            "start_new_session": True,
+        },
+        {
+            "args": [
+                "npm",
+                "run",
+                "dev",
+                "--",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "5174",
+            ],
+            "cwd": Path(__file__).resolve().parents[2] / "web" / "ui",
+            "env_config_dir": str(config_dir),
+            "start_new_session": True,
+        },
     ]
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from radar.core.runs import fail_run, finish_run, get_run, start_run
+from radar.core.runs import fail_run, finish_run, get_run, list_runs, start_run
 
 
 def test_run_lifecycle_records_summary(tmp_path):
@@ -41,3 +41,16 @@ def test_fail_run_records_error_summary(tmp_path):
     assert record is not None
     assert record.status == "failed"
     assert record.error_message == "接口超时"
+
+
+def test_list_runs_filters_recent_records(tmp_path):
+    db = tmp_path / "radar.sqlite3"
+    first = start_run(db, kind="wechat_ingest_range", target="group_message:first")
+    second = start_run(db, kind="wechat_ingest_window", target="group_message:second")
+    finish_run(db, first, status="skipped")
+    fail_run(db, second, RuntimeError("接口超时"))
+
+    records = list_runs(db, status="failed", limit=10)
+
+    assert [record.run_id for record in records] == [second]
+    assert records[0].kind == "wechat_ingest_window"
