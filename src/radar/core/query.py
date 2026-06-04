@@ -154,8 +154,17 @@ def _base_message_conditions(filters: MessageFilters, *, include_cursor: bool) -
         where.append("m.source = ?")
         params.append(filters.source)
     if filters.group_name:
-        where.append("m.group_name = ?")
-        params.append(filters.group_name)
+        if filters.source == "个人消息":
+            where.append("m.sender = ?")
+            params.append(filters.group_name)
+        elif filters.source == "个人群":
+            where.append("m.group_name = ?")
+            params.append(filters.group_name)
+        else:
+            where.append(
+                "((m.source = '个人群' AND m.group_name = ?) OR (m.source = '个人消息' AND m.sender = ?))"
+            )
+            params.extend([filters.group_name, filters.group_name])
     if filters.sender:
         where.append("m.sender = ?")
         params.append(filters.sender)
