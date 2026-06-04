@@ -11,8 +11,8 @@ type TabKey = "dashboard" | "messages" | "runs" | "ingest";
 const NAV_ITEMS = [
   { key: "dashboard", label: "总览", icon: Activity },
   { key: "messages", label: "消息", icon: Inbox },
-  { key: "runs", label: "运行", icon: RefreshCw },
   { key: "ingest", label: "拉取", icon: Database },
+  { key: "runs", label: "运行", icon: RefreshCw },
 ] satisfies Array<{ key: TabKey; label: string; icon: typeof Activity }>;
 
 export function App() {

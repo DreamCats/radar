@@ -2,8 +2,9 @@ import { useState } from "react";
 import { CalendarDays, CheckCircle2, Play, RotateCcw } from "lucide-react";
 
 import { ingestWechat } from "../api/radarApi";
-import { SelectField } from "../components/FormFields";
+import { DateField, SelectField } from "../components/FormFields";
 import { PanelTitle } from "../components/PanelTitle";
+import { toIso } from "../lib/datetime";
 import type { IngestResultItem, IngestSource } from "../types";
 
 type RangePreset = "today" | "yesterday" | "last24h" | "last7d" | "custom";
@@ -66,6 +67,15 @@ export function IngestPage() {
     setRange((current) => ({ ...current, [key]: value }));
   }
 
+  function updateDateTime(target: "start" | "end", value: string) {
+    const nextValue = toIso(value);
+    const [date, time = ""] = nextValue.split("T");
+    const dateKey = target === "start" ? "startDate" : "endDate";
+    const timeKey = target === "start" ? "startTime" : "endTime";
+    setPreset("custom");
+    setRange((current) => ({ ...current, [dateKey]: date ?? "", [timeKey]: time.slice(0, 5) }));
+  }
+
   return (
     <section className="ingest-page">
       <div className="ingest-header">
@@ -103,19 +113,15 @@ export function IngestPage() {
               ]}
             />
 
-            <DateTimeGroup
+            <DateField
               label="开始"
-              date={range.startDate}
-              time={range.startTime}
-              onDateChange={(value) => updateRange("startDate", value)}
-              onTimeChange={(value) => updateRange("startTime", value)}
+              value={startValue}
+              onChange={(value) => updateDateTime("start", value)}
             />
-            <DateTimeGroup
+            <DateField
               label="结束"
-              date={range.endDate}
-              time={range.endTime}
-              onDateChange={(value) => updateRange("endDate", value)}
-              onTimeChange={(value) => updateRange("endTime", value)}
+              value={endValue}
+              onChange={(value) => updateDateTime("end", value)}
             />
 
             <label className="toggle-field">
@@ -171,24 +177,6 @@ export function IngestPage() {
         </div>
       </section>
     </section>
-  );
-}
-
-function DateTimeGroup(props: {
-  label: string;
-  date: string;
-  time: string;
-  onDateChange: (value: string) => void;
-  onTimeChange: (value: string) => void;
-}) {
-  return (
-    <div className="date-time-group">
-      <span>{props.label}</span>
-      <div>
-        <input type="date" value={props.date} onChange={(event) => props.onDateChange(event.target.value)} />
-        <input type="time" value={props.time} onChange={(event) => props.onTimeChange(event.target.value)} />
-      </div>
-    </div>
   );
 }
 

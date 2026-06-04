@@ -73,40 +73,13 @@
 
 .ingest-form-v2 {
   display: grid;
-  grid-template-columns: minmax(132px, 0.75fr) repeat(2, minmax(220px, 1fr)) 132px;
+  grid-template-columns: minmax(132px, 0.75fr) repeat(2, minmax(190px, 1fr)) 120px 136px;
   align-items: end;
   gap: var(--space-xs);
 }
 
-.date-time-group {
-  display: grid;
-  gap: 6px;
-  color: var(--color-ink-muted);
-  font-size: 13px;
-}
-
-.date-time-group > div {
-  display: grid;
-  grid-template-columns: minmax(128px, 1fr) 78px;
-  gap: 8px;
-}
-
-.date-time-group input {
-  width: 100%;
-  min-height: 32px;
-  border: 1px solid var(--color-hairline-strong);
-  border-radius: var(--radius-md);
-  color: var(--color-ink);
-  background: var(--color-surface-1);
-  padding: 0 10px;
-  color-scheme: dark;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.date-time-group input::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.8;
+.ingest-form-v2 .field {
+  min-width: 0;
 }
 
 .toggle-field {
@@ -128,7 +101,7 @@
 }
 
 .ingest-submit {
-  grid-column: 4;
+  grid-column: auto;
   min-height: 32px;
   padding: 0 12px;
   white-space: nowrap;
@@ -205,11 +178,5 @@
   .ingest-result-head {
     display: grid;
     align-items: start;
-  }
-}
-
-@media (max-width: 560px) {
-  .date-time-group > div {
-    grid-template-columns: 1fr;
   }
 }
