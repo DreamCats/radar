@@ -17,6 +17,7 @@ MessageCategory = Literal[
 ]
 ClassificationStatus = Literal["auto", "needs_review", "confirmed", "ignored"]
 ClassifierType = Literal["rule", "llm", "manual"]
+ClassificationRetryMode = Literal["needs_review", "unknown", "low_confidence"]
 
 
 class RawMessage(BaseModel):

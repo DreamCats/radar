@@ -19,6 +19,7 @@ from radar.core.store import (
     record_fetch_window,
     upsert_messages,
 )
+from radar.core.usecases.time_windows import time_chunks
 
 FetchMessages = Callable[[str, MessageSource, datetime, datetime, float], list[RawMessage]]
 _WRITE_LOCK = Lock()
@@ -184,7 +185,7 @@ def ingest_wechat_range(
             target=ingest_range_target(source_key, start_time, end_time),
             metadata=run_metadata,
         )
-    chunks = _time_chunks(start_time, end_time, timedelta(hours=chunk_hours))
+    chunks = time_chunks(start_time, end_time, timedelta(hours=chunk_hours))
     try:
         pending_chunks, skipped_count = _pending_chunks(config, source, chunks, force)
         fetched_chunks = _fetch_chunks(config, source_key, source, pending_chunks, concurrency, fetcher)
@@ -235,20 +236,6 @@ def _default_fetcher(
         end_time=end_time,
         timeout=timeout,
     )
-
-
-def _time_chunks(
-    start_time: datetime,
-    end_time: datetime,
-    step: timedelta,
-) -> list[tuple[datetime, datetime]]:
-    chunks: list[tuple[datetime, datetime]] = []
-    current = start_time
-    while current < end_time:
-        next_time = min(current + step, end_time)
-        chunks.append((current, next_time))
-        current = next_time
-    return chunks
 
 
 def _pending_chunks(

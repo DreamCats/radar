@@ -4,7 +4,7 @@ import sqlite3
 from pathlib import Path
 
 from radar.core.db import migrate_message_db
-from radar.core.models import MessageClassification, MessageSource, RawMessage
+from radar.core.models import ClassificationRetryMode, MessageClassification, MessageSource, RawMessage
 
 
 def connect(database_path: Path) -> sqlite3.Connection:
@@ -115,15 +115,30 @@ def list_messages_for_classification(
     source: MessageSource | None = None,
     start_time: str | None = None,
     end_time: str | None = None,
+    end_inclusive: bool = True,
+    cursor_time: str | None = None,
+    cursor_id: str | None = None,
     limit: int = 500,
     force: bool = False,
+    retry: ClassificationRetryMode | None = None,
+    low_confidence_threshold: float = 0.65,
 ) -> list[RawMessage]:
     """读取待分类消息；默认跳过已存在分类结果的 message_id。"""
 
     where: list[str] = []
     params: list[object] = []
     joins = ""
-    if not force:
+    if force:
+        pass
+    elif retry:
+        joins = "JOIN message_classifications c ON c.message_id = m.message_id"
+        _append_classification_retry_condition(
+            where,
+            params,
+            retry=retry,
+            low_confidence_threshold=low_confidence_threshold,
+        )
+    else:
         joins = "LEFT JOIN message_classifications c ON c.message_id = m.message_id"
         where.append("c.message_id IS NULL")
     if source:
@@ -133,8 +148,12 @@ def list_messages_for_classification(
         where.append("m.message_time >= ?")
         params.append(start_time)
     if end_time:
-        where.append("m.message_time <= ?")
+        operator = "<=" if end_inclusive else "<"
+        where.append(f"m.message_time {operator} ?")
         params.append(end_time)
+    if cursor_time and cursor_id:
+        where.append("(m.message_time, m.message_id) < (?, ?)")
+        params.extend([cursor_time, cursor_id])
 
     sql = [
         "SELECT m.* FROM messages m",
@@ -146,6 +165,24 @@ def list_messages_for_classification(
     params.append(limit)
     rows = conn.execute(" ".join(part for part in sql if part), params).fetchall()
     return [_row_to_message(row) for row in rows]
+
+
+def _append_classification_retry_condition(
+    where: list[str],
+    params: list[object],
+    *,
+    retry: ClassificationRetryMode,
+    low_confidence_threshold: float,
+) -> None:
+    if retry == "needs_review":
+        where.append("c.status = ?")
+        params.append("needs_review")
+    elif retry == "unknown":
+        where.append("c.category = ? AND c.status != ?")
+        params.extend(["unknown", "confirmed"])
+    elif retry == "low_confidence":
+        where.append("c.confidence < ? AND c.status != ?")
+        params.extend([low_confidence_threshold, "confirmed"])
 
 
 def classified_message_ids(

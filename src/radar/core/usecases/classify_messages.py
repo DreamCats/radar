@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from radar.core.config import RadarConfig
 from radar.core.llm import chat_json_list, resolve_provider
 from radar.core.models import (
+    ClassificationRetryMode,
     ClassificationStatus,
     MessageCategory,
     MessageClassification,
@@ -75,6 +76,8 @@ def classify_messages(
     provider_names: list[str] | None = None,
     batch_size: int = CLASSIFY_BATCH_SIZE,
     max_concurrency: int | None = None,
+    retry: ClassificationRetryMode | None = None,
+    low_confidence_threshold: float = NEEDS_REVIEW_THRESHOLD,
     llm_batch_classifier: ClassifyBatchFn | None = None,
 ) -> ClassifyMessagesResult:
     """编排消息分类：读取候选、LLM 分类、失败降级为待复核。"""
@@ -85,6 +88,8 @@ def classify_messages(
         raise ValueError("batch_size 必须大于 0")
     if max_concurrency is not None and max_concurrency < 1:
         raise ValueError("max_concurrency 必须大于 0")
+    if low_confidence_threshold < 0 or low_confidence_threshold > 1:
+        raise ValueError("low_confidence_threshold 必须在 0 到 1 之间")
 
     run_metadata = {
         "source": source,
@@ -97,6 +102,8 @@ def classify_messages(
         "provider_names": provider_names,
         "batch_size": batch_size,
         "max_concurrency": max_concurrency or CLASSIFY_MAX_CONCURRENCY,
+        "retry": retry,
+        "low_confidence_threshold": low_confidence_threshold,
     }
     run_id = start_run(
         config.database_path,
@@ -115,24 +122,20 @@ def classify_messages(
             end_time=end_time.isoformat() if end_time else None,
             limit=limit,
             force=force,
+            retry=retry,
+            low_confidence_threshold=low_confidence_threshold,
         )
-        if use_llm and messages:
-            final_results, inserted_count, llm_count, failed_llm_batches, actual_concurrency = _classify_with_llm(
-                conn,
-                config,
-                messages,
-                provider_name=provider_name,
-                provider_names=provider_names,
-                batch_size=batch_size,
-                max_concurrency=max_concurrency,
-                llm_batch_classifier=llm_batch_classifier or classify_batch_with_llm,
-            )
-        else:
-            final_results = [_unknown_classification(message, reason="未启用 LLM 分类") for message in messages]
-            inserted_count = upsert_message_classifications(conn, final_results)
-            llm_count = 0
-            failed_llm_batches = 0
-            actual_concurrency = 0
+        final_results, inserted_count, llm_count, failed_llm_batches, actual_concurrency = _classify_candidates(
+            conn,
+            config,
+            messages,
+            use_llm=use_llm,
+            provider_name=provider_name,
+            provider_names=provider_names,
+            batch_size=batch_size,
+            max_concurrency=max_concurrency,
+            llm_batch_classifier=llm_batch_classifier or classify_batch_with_llm,
+        )
 
         distribution = Counter(item.category for item in final_results)
         status_distribution = Counter(item.status for item in final_results)
@@ -161,6 +164,35 @@ def classify_messages(
         raise
     finally:
         conn.close()
+
+
+def _classify_candidates(
+    conn: Connection,
+    config: RadarConfig,
+    messages: list[RawMessage],
+    *,
+    use_llm: bool,
+    provider_name: str | None,
+    provider_names: list[str] | None,
+    batch_size: int,
+    max_concurrency: int | None,
+    llm_batch_classifier: ClassifyBatchFn,
+) -> tuple[list[MessageClassification], int, int, int, int]:
+    if use_llm and messages:
+        return _classify_with_llm(
+            conn,
+            config,
+            messages,
+            provider_name=provider_name,
+            provider_names=provider_names,
+            batch_size=batch_size,
+            max_concurrency=max_concurrency,
+            llm_batch_classifier=llm_batch_classifier,
+        )
+
+    final_results = [_unknown_classification(message, reason="未启用 LLM 分类") for message in messages]
+    inserted_count = upsert_message_classifications(conn, final_results)
+    return final_results, inserted_count, 0, 0, 0
 
 
 def classify_batch_with_llm(

@@ -9,7 +9,7 @@ from click.testing import CliRunner
 from radar.cli.main import main
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db, upsert_messages
-from radar.core.usecases import IngestRangeResult, SmokeResult
+from radar.core.usecases import ClassifyRangeResult, IngestRangeResult, SmokeResult
 
 
 def test_query_reads_messages_from_config_database(tmp_path):
@@ -102,6 +102,119 @@ def test_ingest_wechat_invokes_core_usecase(monkeypatch, tmp_path):
             "force": True,
             "chunk_hours": 2,
             "concurrency": 3,
+        }
+    ]
+
+
+def test_classify_messages_command_invokes_core_usecase(monkeypatch, tmp_path):
+    config_dir = _config_dir(tmp_path)
+    calls: list[dict] = []
+
+    def fake_classify(
+        config,
+        *,
+        source,
+        start_time,
+        end_time,
+        chunk_hours,
+        limit,
+        force,
+        use_llm,
+        provider_name,
+        provider_names,
+        batch_size,
+        max_concurrency,
+        retry,
+        low_confidence_threshold,
+    ):
+        calls.append(
+            {
+                "database": config.database_path,
+                "source": source,
+                "start_time": start_time,
+                "end_time": end_time,
+                "chunk_hours": chunk_hours,
+                "limit": limit,
+                "force": force,
+                "use_llm": use_llm,
+                "provider_name": provider_name,
+                "provider_names": provider_names,
+                "batch_size": batch_size,
+                "max_concurrency": max_concurrency,
+                "retry": retry,
+                "low_confidence_threshold": low_confidence_threshold,
+            }
+        )
+        return ClassifyRangeResult(
+            run_id="run-456",
+            source=source,
+            start_time=start_time,
+            end_time=end_time,
+            chunk_count=2,
+            empty_chunk_count=1,
+            scanned_count=3,
+            classified_count=3,
+            inserted_count=3,
+            llm_count=3,
+            failed_llm_batches=0,
+            distribution={"research": 2, "event": 1},
+            status_distribution={"auto": 3},
+        )
+
+    monkeypatch.setattr("radar.cli.classify.classify_messages_range", fake_classify)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "--config-dir",
+            str(config_dir),
+            "classify",
+            "messages",
+            "--source",
+            "group_message",
+            "--start",
+            "2026-06-04 10:00:00",
+            "--end",
+            "2026-06-04 12:00:00",
+            "--chunk-hours",
+            "1",
+            "--limit",
+            "200",
+            "--batch-size",
+            "8",
+            "--max-concurrency",
+            "4",
+            "--provider-pool",
+            "provider-a",
+            "--provider-pool",
+            "provider-b",
+            "--retry",
+            "needs_review",
+            "--low-confidence-threshold",
+            "0.7",
+            "--force",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "chunks=2 empty=1 scanned=3 classified=3 inserted=3" in result.output
+    assert "distribution: event=1 research=2" in result.output
+    assert calls == [
+        {
+            "database": tmp_path / "radar.sqlite3",
+            "source": "个人群",
+            "start_time": datetime.fromisoformat("2026-06-04T10:00:00"),
+            "end_time": datetime.fromisoformat("2026-06-04T12:00:00"),
+            "chunk_hours": 1,
+            "limit": 200,
+            "force": True,
+            "use_llm": True,
+            "provider_name": None,
+            "provider_names": ["provider-a", "provider-b"],
+            "batch_size": 8,
+            "max_concurrency": 4,
+            "retry": "needs_review",
+            "low_confidence_threshold": 0.7,
         }
     ]
 
