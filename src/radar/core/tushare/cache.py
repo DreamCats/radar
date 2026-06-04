@@ -7,6 +7,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from radar.core.db import migrate_market_db
+
 
 DEFAULT_TTL = 86_400
 
@@ -103,15 +105,5 @@ def _key(api_name: str, params: dict[str, Any], fields: str | list[str] | None) 
 def _connect(database: Path) -> sqlite3.Connection:
     database.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(database)
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS tushare_cache (
-            key        TEXT PRIMARY KEY,
-            api_name   TEXT NOT NULL,
-            fetched_at INTEGER NOT NULL,
-            data       TEXT NOT NULL
-        )
-        """
-    )
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_tushare_cache_api ON tushare_cache(api_name)")
+    migrate_market_db(conn)
     return conn

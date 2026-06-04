@@ -8,6 +8,8 @@
 - 按时间切片并发拉取，串行写入 SQLite。
 - 用 `message_id` 去重，避免重复窗口写入重复消息。
 - 用 `fetch_windows` 记录已处理窗口，并支持被更大窗口覆盖时跳过拉取。
+- 用 `schema_migrations` 记录 SQLite 版本，支持老库随代码升级补表/索引。
+- 用 `runs` 记录 ingest 执行状态、数量摘要和错误摘要。
 - 入库前按群名黑名单过滤明显非投研群。
 - 支持来源、群名、时间、关键词筛选和游标分页查询。
 - 预置 OpenAI-compatible / Anthropic Messages 两类 LLM 协议客户端，供后续分类和信号分析复用。
@@ -29,11 +31,13 @@
 src/radar/
 ├── core/
 │   ├── config.py              # config.yaml + secrets.yaml 加载
+│   ├── db.py                  # SQLite migration 和 schema 版本
 │   ├── fetch.py               # 微信 API 拉取和标准化
 │   ├── filtering.py           # 硬过滤规则
 │   ├── llm/                   # LLM provider 解析和协议客户端
 │   ├── models.py              # pydantic 数据模型
 │   ├── query.py               # SQLite 查询和分页
+│   ├── runs.py                # core 执行审计记录
 │   ├── store.py               # SQLite schema、去重、窗口缓存
 │   ├── tushare/               # Tushare provider、缓存、历史数据和股票解析
 │   └── usecases/
@@ -131,6 +135,7 @@ uv run radar ingest wechat --source all --start "2026-06-03" --end "2026-06-04"
 - `--concurrency 4`：每个 source 最多 4 个窗口并发拉取。
 - SQLite 写入仍是串行，避免并发写锁。
 - 已处理窗口会跳过；如果已有整天窗口，也会覆盖命中小时切片。
+- 输出中的 `run_id` 可用于定位本次执行在 `runs` 表里的审计记录。
 
 更温和地拉取：
 
@@ -176,12 +181,15 @@ uv run radar query --cursor-time "2026-06-03T10:00:00" --cursor-id "message-id" 
 
 消息库 `radar.sqlite3`：
 
+- `schema_migrations`：消息库 schema 版本记录。
 - `messages`：标准化消息主表。
 - `messages_fts`：FTS5 全文搜索表。
 - `fetch_windows`：已处理拉取窗口缓存表。
+- `runs`：ingest 执行审计表。
 
 行情库 `market.sqlite3`：
 
+- `schema_migrations`：行情库 schema 版本记录。
 - `tushare_cache`：Tushare 短期 KV 缓存表。
 - `tushare_history`：Tushare 低风险历史行缓存表。
 

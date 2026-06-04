@@ -63,6 +63,7 @@ def test_ingest_wechat_invokes_core_usecase(monkeypatch, tmp_path):
             raw_count=3,
             filtered_count=1,
             stored_count=2,
+            run_id="run-123",
         )
 
     monkeypatch.setattr("radar.cli.ingest.ingest_wechat_range", fake_ingest)
@@ -89,7 +90,7 @@ def test_ingest_wechat_invokes_core_usecase(monkeypatch, tmp_path):
     )
 
     assert result.exit_code == 0
-    assert "chunks=24 skipped=0 raw=3 filtered=1 stored=2" in result.output
+    assert "chunks=24 skipped=0 raw=3 filtered=1 stored=2 run_id=run-123" in result.output
     assert calls == [
         {
             "database": tmp_path / "radar.sqlite3",

@@ -31,8 +31,10 @@ src/radar/
 ├── core/          业务核心，CLI 和 Web 共用
 │   ├── models.py     pydantic 数据模型
 │   ├── fetch.py      微信 API 拉取和原始字段标准化
-│   ├── store.py      SQLite 建表、写入、去重、窗口缓存
+│   ├── db.py         SQLite migration 和 schema 版本
+│   ├── store.py      SQLite 写入、去重、窗口缓存
 │   ├── query.py      消息筛选、分页、搜索
+│   ├── runs.py       core 执行审计记录
 │   ├── filtering.py  硬过滤规则
 │   ├── llm/          LLM provider 解析和协议客户端
 │   ├── tushare/      Tushare provider、HTTP、缓存、历史行存、股票解析
@@ -60,12 +62,15 @@ web/ui/            React/Vite 前端，只调用 Web API
 - Web 后端只负责 HTTP 入参/出参、错误码、调用 core，不直接拼业务查询。
 - Web 前端不保存业务规则，只做展示、筛选控件、分页加载、交互状态。
 - SQLite 表结构、索引、FTS5、去重逻辑集中在 storage/query 层，不散落到接口层。
+- SQLite schema 变更必须通过 `core/db.py` migration 追加版本，不直接改已落地表结构。
+- `runs` 只记录执行审计摘要和脱敏 metadata，不存真实消息内容或敏感 token。
 
 ## 5. 数据和隐私边界
 
 - 不要污染或依赖 `~/.config/stock-news/data` 作为 radar 的运行数据目录；只能作为只读调研参考。
 - radar 必须使用独立数据目录，默认倾向 `~/.config/radar/`，除非用户另行指定。
 - 消息库和行情库必须分开：默认 `radar.sqlite3` 放消息，`market.sqlite3` 放 Tushare/market 缓存。
+- 消息库可保存消息 ingest 相关执行审计；market 执行审计后续按需要再落到 market 或独立 ops 库。
 - 微信 API 的 `base_url` 等入口信息视为敏感配置，不写入代码、文档、测试快照或 git。
 - 原始消息属于个人数据；不要把真实全量内容写进 fixtures、日志、截图或提交说明。
 - 日志只记录必要摘要，例如数量、时间窗、来源类型、错误类型。

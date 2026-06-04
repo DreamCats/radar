@@ -6,6 +6,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from radar.core.db import migrate_market_db
 from radar.core.tushare.models import HistorySpec
 
 
@@ -260,19 +261,5 @@ def _today_date() -> dt.date:
 def _connect(database: Path) -> sqlite3.Connection:
     database.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(database)
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS tushare_history (
-            api_name TEXT NOT NULL,
-            ts_code  TEXT NOT NULL DEFAULT '',
-            date_key TEXT NOT NULL,
-            data     TEXT NOT NULL,
-            PRIMARY KEY (api_name, ts_code, date_key)
-        )
-        """
-    )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_tushare_history_lookup"
-        " ON tushare_history(api_name, ts_code, date_key)"
-    )
+    migrate_market_db(conn)
     return conn

@@ -10,6 +10,7 @@ from radar.core.config import RadarConfig
 from radar.core.fetch import fetch_messages
 from radar.core.filtering import is_group_blacklisted
 from radar.core.models import MessageSource, RawMessage
+from radar.core.runs import fail_run, finish_run, start_run
 from radar.core.store import (
     connect,
     fetch_window_covered,
@@ -30,6 +31,7 @@ class IngestWindowResult(BaseModel):
     raw_count: int = 0
     filtered_count: int = 0
     stored_count: int = 0
+    run_id: str | None = None
 
 
 class IngestRangeResult(BaseModel):
@@ -42,6 +44,7 @@ class IngestRangeResult(BaseModel):
     raw_count: int = 0
     filtered_count: int = 0
     stored_count: int = 0
+    run_id: str | None = None
 
 
 def ingest_wechat_window(
@@ -59,6 +62,19 @@ def ingest_wechat_window(
     source = source_config.name
     start_text = start_time.isoformat()
     end_text = end_time.isoformat()
+    run_metadata = _run_metadata(
+        source_key=source_key,
+        source=source,
+        start_time=start_time,
+        end_time=end_time,
+        force=force,
+    )
+    run_id = start_run(
+        config.database_path,
+        kind="wechat_ingest_window",
+        target=_run_target(source_key, start_time, end_time),
+        metadata=run_metadata,
+    )
 
     conn = connect(config.database_path)
     try:
@@ -69,12 +85,14 @@ def ingest_wechat_window(
             start_time=start_text,
             end_time=end_text,
         ):
+            finish_run(config.database_path, run_id, status="skipped", metadata=run_metadata)
             return IngestWindowResult(
                 source_key=source_key,
                 source=source,
                 start_time=start_time,
                 end_time=end_time,
                 skipped_existing=True,
+                run_id=run_id,
             )
 
         fetch_messages_fn = fetcher or _default_fetcher
@@ -102,6 +120,14 @@ def ingest_wechat_window(
             stored_count=stored_count,
             filtered_count=filtered_count,
         )
+        finish_run(
+            config.database_path,
+            run_id,
+            raw_count=len(raw_messages),
+            stored_count=stored_count,
+            filtered_count=filtered_count,
+            metadata=run_metadata,
+        )
         return IngestWindowResult(
             source_key=source_key,
             source=source,
@@ -110,7 +136,11 @@ def ingest_wechat_window(
             raw_count=len(raw_messages),
             filtered_count=filtered_count,
             stored_count=stored_count,
+            run_id=run_id,
         )
+    except Exception as exc:
+        _safe_fail_run(config, run_id, exc)
+        raise
     finally:
         conn.close()
 
@@ -135,22 +165,56 @@ def ingest_wechat_range(
 
     source_config = config.wechat.sources[source_key]
     source = source_config.name
-    chunks = _time_chunks(start_time, end_time, timedelta(hours=chunk_hours))
-    pending_chunks, skipped_count = _pending_chunks(config, source, chunks, force)
-    fetched_chunks = _fetch_chunks(config, source_key, source, pending_chunks, concurrency, fetcher)
-    raw_count, filtered_count, stored_count = _write_chunks(config, source, fetched_chunks)
-
-    return IngestRangeResult(
+    run_metadata = _run_metadata(
         source_key=source_key,
         source=source,
         start_time=start_time,
         end_time=end_time,
-        chunk_count=len(chunks),
-        skipped_count=skipped_count,
-        raw_count=raw_count,
-        filtered_count=filtered_count,
-        stored_count=stored_count,
+        force=force,
+        chunk_hours=chunk_hours,
+        concurrency=concurrency,
     )
+    run_id = start_run(
+        config.database_path,
+        kind="wechat_ingest_range",
+        target=_run_target(source_key, start_time, end_time),
+        metadata=run_metadata,
+    )
+    chunks = _time_chunks(start_time, end_time, timedelta(hours=chunk_hours))
+    try:
+        pending_chunks, skipped_count = _pending_chunks(config, source, chunks, force)
+        fetched_chunks = _fetch_chunks(config, source_key, source, pending_chunks, concurrency, fetcher)
+        raw_count, filtered_count, stored_count = _write_chunks(config, source, fetched_chunks)
+        status = "skipped" if skipped_count == len(chunks) else "succeeded"
+        final_metadata = run_metadata | {
+            "chunk_count": len(chunks),
+            "skipped_count": skipped_count,
+        }
+        finish_run(
+            config.database_path,
+            run_id,
+            status=status,
+            raw_count=raw_count,
+            stored_count=stored_count,
+            filtered_count=filtered_count,
+            metadata=final_metadata,
+        )
+
+        return IngestRangeResult(
+            source_key=source_key,
+            source=source,
+            start_time=start_time,
+            end_time=end_time,
+            chunk_count=len(chunks),
+            skipped_count=skipped_count,
+            raw_count=raw_count,
+            filtered_count=filtered_count,
+            stored_count=stored_count,
+            run_id=run_id,
+        )
+    except Exception as exc:
+        _safe_fail_run(config, run_id, exc)
+        raise
 
 
 def _default_fetcher(
@@ -279,3 +343,39 @@ def _write_chunks(
         return raw_count, filtered_count, stored_count
     finally:
         conn.close()
+
+
+def _run_target(source_key: str, start_time: datetime, end_time: datetime) -> str:
+    return f"{source_key}:{start_time.isoformat()}..{end_time.isoformat()}"
+
+
+def _run_metadata(
+    *,
+    source_key: str,
+    source: MessageSource,
+    start_time: datetime,
+    end_time: datetime,
+    force: bool,
+    chunk_hours: int | None = None,
+    concurrency: int | None = None,
+) -> dict[str, object]:
+    metadata: dict[str, object] = {
+        "source_key": source_key,
+        "source": source,
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
+        "force": force,
+    }
+    if chunk_hours is not None:
+        metadata["chunk_hours"] = chunk_hours
+    if concurrency is not None:
+        metadata["concurrency"] = concurrency
+    return metadata
+
+
+def _safe_fail_run(config: RadarConfig, run_id: str, error: BaseException) -> None:
+    try:
+        fail_run(config.database_path, run_id, error)
+    except Exception:
+        # 不能让审计写入失败覆盖真正的 ingest 异常。
+        return

@@ -4,6 +4,7 @@ from radar.core.config import RadarConfig
 from radar.core.llm import LlmConfigError, chat, chat_json, chat_json_list
 from radar.core.models import MessageSource, RawMessage
 from radar.core.query import MessageFilters, MessagePage, list_messages
+from radar.core.runs import RunRecord, fail_run, finish_run, get_run, start_run
 from radar.core.store import connect, init_db, upsert_messages
 from radar.core.tushare import (
     TushareApiError,
@@ -29,6 +30,7 @@ __all__ = [
     "MessageSource",
     "RadarConfig",
     "RawMessage",
+    "RunRecord",
     "TushareApiError",
     "TushareConfigError",
     "TushareError",
@@ -41,12 +43,16 @@ __all__ = [
     "chat_json",
     "chat_json_list",
     "connect",
+    "fail_run",
+    "finish_run",
+    "get_run",
     "call_tushare",
     "ingest_wechat_range",
     "ingest_wechat_window",
     "init_db",
     "list_messages",
     "resolve_stock",
+    "start_run",
     "test_llm",
     "test_market",
     "upsert_messages",
