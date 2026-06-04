@@ -15,15 +15,14 @@ def test_resolve_provider_uses_task_routing_and_secret():
     assert provider.protocol == "anthropic"
     assert provider.base_url == "https://api.anthropic.com"
     assert provider.api_key == "anthropic-key"
-    assert provider.disable_thinking is True
 
 
 def test_chat_dispatches_openai_provider(monkeypatch):
     config = _config()
     calls = []
 
-    def fake_chat_openai(provider, messages, model, temperature, max_tokens):
-        calls.append((provider, messages, model, temperature, max_tokens))
+    def fake_chat_openai(provider, messages, model, temperature, max_tokens, disable_thinking):
+        calls.append((provider, messages, model, temperature, max_tokens, disable_thinking))
         return f"{provider.name}:{messages[0]['content']}"
 
     monkeypatch.setattr("radar.core.llm.client.chat_openai", fake_chat_openai)
@@ -128,8 +127,7 @@ def test_anthropic_client_builds_messages_request(monkeypatch):
     assert captured["json"]["system"] == "sys"
     assert captured["json"]["messages"] == [{"role": "user", "content": "hello"}]
 
-
-def test_anthropic_client_can_disable_thinking(monkeypatch):
+def test_chat_can_disable_anthropic_thinking(monkeypatch):
     captured = {}
 
     class FakeResponse:
@@ -156,8 +154,9 @@ def test_anthropic_client_can_disable_thinking(monkeypatch):
     monkeypatch.setattr("radar.core.llm.anthropic_client.httpx.Client", FakeClient)
 
     reply = chat_anthropic(
-        _provider("anthropic", "https://api.example/anthropic", disable_thinking=True),
+        _provider("anthropic", "https://api.example/anthropic"),
         [{"role": "user", "content": "hello"}],
+        disable_thinking=True,
     )
 
     assert reply == "ok"
@@ -178,7 +177,6 @@ def _config() -> RadarConfig:
                     "protocol": "anthropic",
                     "secret_ref": "anthropic_secret",
                     "model": "claude-test",
-                    "disable_thinking": True,
                 },
             },
             "task_routing": {"classify": "anthropic_main"},
@@ -201,8 +199,6 @@ def _config() -> RadarConfig:
 def _provider(
     protocol: str,
     base_url: str,
-    *,
-    disable_thinking: bool = False,
 ) -> RuntimeLlmProvider:
     return RuntimeLlmProvider(
         name="test",
@@ -213,6 +209,5 @@ def _provider(
         timeout=10,
         max_tokens=None,
         temperature=None,
-        disable_thinking=disable_thinking,
         headers={},
     )

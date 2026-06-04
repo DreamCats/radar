@@ -26,7 +26,6 @@ class RuntimeLlmProvider:
     timeout: float
     max_tokens: int | None
     temperature: float | None
-    disable_thinking: bool
     headers: dict[str, str]
 
 
@@ -37,6 +36,7 @@ ChatImpl = Callable[
         str | None,
         float | None,
         int | None,
+        bool,
     ],
     str,
 ]
@@ -77,7 +77,6 @@ def resolve_provider(
         timeout=provider.timeout,
         max_tokens=provider.max_tokens,
         temperature=provider.temperature,
-        disable_thinking=provider.disable_thinking,
         headers=provider.headers,
     )
     return selected_name, runtime
@@ -92,11 +91,12 @@ def chat(
     model: str | None = None,
     temperature: float | None = None,
     max_tokens: int | None = None,
+    disable_thinking: bool = False,
 ) -> str:
     """发送 LLM 聊天请求；业务层负责控制 prompt 和成本。"""
 
     _, provider = resolve_provider(config, provider_name=provider_name, task=task)
-    return _chat_impl(provider)(provider, messages, model, temperature, max_tokens)
+    return _chat_impl(provider)(provider, messages, model, temperature, max_tokens, disable_thinking)
 
 
 def chat_json(
@@ -106,11 +106,19 @@ def chat_json(
     provider_name: str | None = None,
     task: str | None = None,
     model: str | None = None,
+    disable_thinking: bool = False,
 ) -> dict[str, object]:
     """发送请求并解析 JSON object；失败时补一轮纠错提示。"""
 
     for attempt in range(2):
-        raw = chat(config, messages, provider_name=provider_name, task=task, model=model).strip()
+        raw = chat(
+            config,
+            messages,
+            provider_name=provider_name,
+            task=task,
+            model=model,
+            disable_thinking=disable_thinking,
+        ).strip()
         try:
             parsed = json.loads(_strip_json_fence(raw))
             return parsed if isinstance(parsed, dict) else {}
@@ -129,11 +137,19 @@ def chat_json_list(
     provider_name: str | None = None,
     task: str | None = None,
     model: str | None = None,
+    disable_thinking: bool = False,
 ) -> list[dict[str, object]]:
     """发送请求并解析 JSON array；dict 会兼容包装成单元素数组。"""
 
     for attempt in range(2):
-        raw = chat(config, messages, provider_name=provider_name, task=task, model=model).strip()
+        raw = chat(
+            config,
+            messages,
+            provider_name=provider_name,
+            task=task,
+            model=model,
+            disable_thinking=disable_thinking,
+        ).strip()
         try:
             parsed = json.loads(_strip_json_fence(raw))
             if isinstance(parsed, list):

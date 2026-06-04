@@ -14,9 +14,11 @@ def chat_openai(
     model: str | None = None,
     temperature: float | None = None,
     max_tokens: int | None = None,
+    disable_thinking: bool = False,
 ) -> str:
     """OpenAI Chat Completions 协议，兼容大多数 OpenAI-like 网关。"""
 
+    _ = disable_thinking
     payload: dict[str, object] = {
         "model": model or provider.model,
         "messages": messages,

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>radar · 整理工作台</title>
+<link rel="stylesheet" href="radar.css">
+<style>
+  .organize-shell {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+  .filters {
+    display: grid;
+    grid-template-columns: 116px 160px 1fr 180px 112px;
+    gap: 10px;
+    padding: 16px 24px 10px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .field {
+    min-width: 0;
+  }
+  .field label {
+    display: block;
+    color: var(--ink-subtle);
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+  .control {
+    width: 100%;
+    height: 36px;
+    background: var(--surface-1);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    color: var(--ink-muted);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    padding: 0 11px;
+  }
+  .organize-grid {
+    display: grid;
+    grid-template-columns: 244px minmax(360px, 0.95fr) minmax(430px, 1.4fr);
+    gap: 12px;
+    min-height: 0;
+    padding: 14px 24px 20px;
+    overflow: hidden;
+  }
+  .work-panel {
+    background: var(--surface-1);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .work-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .work-head .t {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .work-head .meta {
+    margin-left: auto;
+    color: var(--ink-tertiary);
+    font-size: 12px;
+  }
+  .scroll {
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .queue-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .queue-item.active {
+    background: rgba(94, 106, 210, 0.12);
+    box-shadow: inset 3px 0 0 var(--primary);
+  }
+  .queue-item .name {
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .queue-item .desc {
+    color: var(--ink-subtle);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .queue-item .count {
+    font-family: var(--font-mono);
+    color: var(--ink);
+    font-size: 13px;
+  }
+  .topic-card {
+    padding: 14px;
+    border-bottom: 1px solid var(--hairline);
+    cursor: default;
+  }
+  .topic-card:hover {
+    background: var(--surface-2);
+  }
+  .topic-card.active {
+    background: var(--surface-2);
+    box-shadow: inset 3px 0 0 var(--semantic-success);
+  }
+  .topic-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topic-title {
+    min-width: 0;
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .confidence {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--signal-hot);
+  }
+  .topic-summary {
+    color: var(--ink-subtle);
+    font-size: 12px;
+    line-height: 1.55;
+    margin-top: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .topic-meta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink-tertiary);
+    font-size: 12px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .detail {
+    padding: 18px;
+  }
+  .detail-title {
+    display: flex;
+    align-items: start;
+    gap: 12px;
+  }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(39, 166, 68, 0.18);
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    flex: none;
+  }
+  .detail h1 {
+    font-size: 18px;
+    line-height: 1.25;
+    letter-spacing: 0;
+    margin-bottom: 4px;
+  }
+  .section {
+    padding-top: 16px;
+    margin-top: 16px;
+    border-top: 1px solid var(--hairline);
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-muted);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .result-box {
+    background: var(--surface-2);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    padding: 13px 14px;
+    color: var(--ink-muted);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  .kv {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+  .kv .k {
+    color: var(--ink-subtle);
+  }
+  .evidence-item {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .evidence-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: rgba(94, 106, 210, 0.16);
+    display: grid;
+    place-items: center;
+    color: var(--ink-muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .evidence-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-tertiary);
+    font-size: 12px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .evidence-text {
+    color: var(--ink-muted);
+    font-size: 13px;
+    line-height: 1.58;
+  }
+  .action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  @media (max-width: 1180px) {
+    .app { grid-template-columns: 184px 1fr; }
+    .filters { grid-template-columns: 1fr 1fr; }
+    .organize-grid { grid-template-columns: 220px 1fr; }
+    .detail-panel { grid-column: 1 / -1; min-height: 420px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span> radar</div>
+    <div class="nav-group">
+      <div class="eyebrow">看板</div>
+      <a class="nav-item"><span class="ico">⌁</span> 总览</a>
+      <a class="nav-item"><span class="ico">◌</span> 微信</a>
+      <a class="nav-item"><span class="ico">≣</span> 消息</a>
+      <a class="nav-item active"><span class="ico">◈</span> 整理 <span class="badge">12</span></a>
+      <a class="nav-item"><span class="ico">↓</span> 拉取</a>
+      <a class="nav-item"><span class="ico">↻</span> 运行</a>
+    </div>
+    <div class="nav-group">
+      <div class="eyebrow">下一阶段</div>
+      <a class="nav-item disabled"><span class="ico">◎</span> 信号雷达 <span class="tag">后续</span></a>
+      <a class="nav-item disabled"><span class="ico">▥</span> 行情 <span class="tag">预留</span></a>
+      <a class="nav-item disabled"><span class="ico">⌕</span> 策略 <span class="tag">预留</span></a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="title">消息整理 <span class="caption">· local dashboard 原始消息加工</span></span>
+      <button class="btn btn-sm">规则版本 v0.1</button>
+      <button class="btn btn-primary btn-sm">整理今日</button>
+    </div>
+
+    <div class="organize-shell">
+      <div class="filters">
+        <div class="field">
+          <label>范围</label>
+          <select class="control">
+            <option>今日新增</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>来源</label>
+          <select class="control">
+            <option>全部</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>群名/人名</label>
+          <input class="control" placeholder="输入群名或联系人">
+        </div>
+        <div class="field">
+          <label>关键词</label>
+          <input class="control" placeholder="玻璃基板 / 算力 / 会议">
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" style="width:100%; height:36px;">查询</button>
+        </div>
+      </div>
+
+      <div class="organize-grid">
+        <section class="work-panel">
+          <div class="work-head">
+            <span class="t">整理范围</span>
+            <span class="meta">4 类</span>
+          </div>
+          <div class="scroll">
+            <div class="queue-item active">
+              <div>
+                <div class="name">今日新增</div>
+                <div class="desc">未处理原始消息</div>
+              </div>
+              <div class="count">326</div>
+            </div>
+            <div class="queue-item">
+              <div>
+                <div class="name">待确认</div>
+                <div class="desc">已聚类，需人工确认</div>
+              </div>
+              <div class="count">12</div>
+            </div>
+            <div class="queue-item">
+              <div>
+                <div class="name">低置信度</div>
+                <div class="desc">主题相似但证据不足</div>
+              </div>
+              <div class="count">5</div>
+            </div>
+            <div class="queue-item">
+              <div>
+                <div class="name">已忽略</div>
+                <div class="desc">闲聊、重复会议提醒</div>
+              </div>
+              <div class="count">41</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="work-panel">
+          <div class="work-head">
+            <span class="t">主题簇</span>
+            <span class="meta">12 个主题</span>
+          </div>
+          <div class="scroll">
+            <article class="topic-card active">
+              <div class="topic-row">
+                <span class="chip hot">待确认</span>
+                <div class="topic-title">玻璃基板产业链更新</div>
+                <span class="confidence">0.86</span>
+              </div>
+              <p class="topic-summary">多群讨论玻璃基板、TGV、先进封装试产线，出现会议邀请和产业进展两类消息。</p>
+              <div class="topic-meta">
+                <span>18 条</span><span>·</span><span>7 群</span><span>·</span><span>9 人</span><span>14:58-19:02</span>
+              </div>
+            </article>
+            <article class="topic-card">
+              <div class="topic-row">
+                <span class="chip">待确认</span>
+                <div class="topic-title">电力供给与算力协同讨论</div>
+                <span class="confidence">0.79</span>
+              </div>
+              <p class="topic-summary">围绕新能源消纳、煤电基荷、算电协同和电价市场化约束展开讨论。</p>
+              <div class="topic-meta">
+                <span>30 条</span><span>·</span><span>1 群</span><span>·</span><span>14 人</span><span>16:41-19:04</span>
+              </div>
+            </article>
+            <article class="topic-card">
+              <div class="topic-row">
+                <span class="chip up">已确认</span>
+                <div class="topic-title">半导体材料涨价与国产替代</div>
+                <span class="confidence">0.74</span>
+              </div>
+              <p class="topic-summary">六氟化钨、GP材料、PTFE方案等消息被多个群转发，主题集中在供应紧缺。</p>
+              <div class="topic-meta">
+                <span>22 条</span><span>·</span><span>11 群</span><span>·</span><span>8 人</span><span>15:01-18:46</span>
+              </div>
+            </article>
+            <article class="topic-card">
+              <div class="topic-row">
+                <span class="chip">待确认</span>
+                <div class="topic-title">AI应用和生产力工具分歧</div>
+                <span class="confidence">0.68</span>
+              </div>
+              <p class="topic-summary">豆包、2C应用、生产力方向相关观点出现，但来源较少，暂不进入信号层。</p>
+              <div class="topic-meta">
+                <span>9 条</span><span>·</span><span>3 群</span><span>·</span><span>5 人</span><span>18:51-19:02</span>
+              </div>
+            </article>
+            <article class="topic-card">
+              <div class="topic-row">
+                <span class="chip down">忽略建议</span>
+                <div class="topic-title">重复会议邀请合并</div>
+                <span class="confidence">0.91</span>
+              </div>
+              <p class="topic-summary">同一场电话会被不同销售重复转发，内容一致，建议只保留一条提醒。</p>
+              <div class="topic-meta">
+                <span>16 条</span><span>·</span><span>9 群</span><span>·</span><span>7 人</span><span>18:34-18:45</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="work-panel detail-panel">
+          <div class="work-head">
+            <span class="t">主题详情</span>
+            <span class="meta">证据保留</span>
+          </div>
+          <div class="scroll detail">
+            <div class="detail-title">
+              <div class="avatar">玻璃</div>
+              <div>
+                <h1>玻璃基板产业链更新</h1>
+                <div class="caption">半导体材料 · 先进封装 · 18 条消息 / 7 个群 / 9 个发送人</div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">整理结果</div>
+              <div class="result-box">
+                玻璃基板相关消息集中出现在下午，内容包括台积电试产线、国金/中泰会议邀请、产业链空间和原片加工环节讨论。当前更像“产业主题扩散”，还不是单一公司事件。
+                <div class="kv"><div class="k">分类</div><div>产业进展 / 会议催化</div></div>
+                <div class="kv"><div class="k">标签</div><div><span class="chip">玻璃基板</span> <span class="chip">TGV</span> <span class="chip">先进封装</span> <span class="chip">AI算力</span></div></div>
+                <div class="kv"><div class="k">动作建议</div><div>确认主题，后续进入“信号雷达”观察是否继续多源扩散。</div></div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">人工操作</div>
+              <div class="action-row">
+                <button class="btn btn-primary btn-sm">确认主题</button>
+                <button class="btn btn-sm">改标题</button>
+                <button class="btn btn-sm">拆分</button>
+                <button class="btn btn-sm">合并</button>
+                <button class="btn btn-sm">忽略</button>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">原始消息证据</div>
+              <div class="evidence-item">
+                <div class="evidence-avatar">国金</div>
+                <div>
+                  <div class="evidence-meta"><b>谭宸@国金建材</b><span>🏅️国金-富国🐮</span><span>18:45</span></div>
+                  <div class="evidence-text">玻璃基板大趋势，今晚 20:30 电话会，主讲李阳、谭宸。</div>
+                </div>
+              </div>
+              <div class="evidence-item">
+                <div class="evidence-avatar">牧之</div>
+                <div>
+                  <div class="evidence-meta"><b>Flora</b><span>牧之野爱国读者11群</span><span>18:45</span></div>
+                  <div class="evidence-text">南网能源市值高，估值贵，但是业绩已经处于释放阶段，辨识度比较高。</div>
+                </div>
+              </div>
+              <div class="evidence-item">
+                <div class="evidence-avatar">中泰</div>
+                <div>
+                  <div class="evidence-meta"><b>孙颖|中泰建材&化工首席</b><span>🐂交银施罗德🎯中泰研究</span><span>18:34</span></div>
+                  <div class="evidence-text">明早 8 点玻璃基板深度报告汇报：后摩尔时代封装革命，玻璃基板迎产业化元年。</div>
+                </div>
+              </div>
+              <div class="evidence-item">
+                <div class="evidence-avatar">玻璃</div>
+                <div>
+                  <div class="evidence-meta"><b>唐佳@财通电子&新科技</b><span>玻璃基板资讯跟踪</span><span>15:21</span></div>
+                  <div class="evidence-text">好像自动设置的。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

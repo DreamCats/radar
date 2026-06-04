@@ -92,6 +92,31 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON messages(source, message_time DESC, message_id DESC);
         """,
     ),
+    (
+        "006_message_classifications",
+        """
+        CREATE TABLE IF NOT EXISTS message_classifications (
+            message_id TEXT PRIMARY KEY,
+            category TEXT NOT NULL,
+            confidence REAL NOT NULL,
+            reason TEXT NOT NULL,
+            status TEXT NOT NULL,
+            classifier_type TEXT NOT NULL,
+            llm_provider TEXT,
+            model TEXT,
+            prompt_version TEXT,
+            classifier_version TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_message_classifications_category
+            ON message_classifications(category, status);
+        CREATE INDEX IF NOT EXISTS idx_message_classifications_status
+            ON message_classifications(status, updated_at DESC);
+        """,
+    ),
 ]
 
 MARKET_MIGRATIONS: list[Migration] = [

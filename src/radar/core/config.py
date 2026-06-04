@@ -55,7 +55,6 @@ class LlmProviderConfig(BaseModel):
     timeout: float = 120.0
     max_tokens: int | None = None
     temperature: float | None = None
-    disable_thinking: bool = False
     headers: dict[str, str] = Field(default_factory=dict)
 
 
