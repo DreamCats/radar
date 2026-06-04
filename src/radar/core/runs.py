@@ -86,6 +86,50 @@ def finish_run(
         )
 
 
+def update_run_progress(
+    database: Path,
+    run_id: str,
+    *,
+    raw_count: int | None = None,
+    stored_count: int | None = None,
+    filtered_count: int | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> bool:
+    """更新运行中任务的进度摘要；真实业务结果仍以 finish_run 为准。"""
+
+    with _connect(database) as conn:
+        row = conn.execute("SELECT metadata_json FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+        if row is None:
+            return False
+
+        merged_metadata = json.loads(row["metadata_json"] or "{}")
+        merged_metadata.update(metadata or {})
+        merged_metadata["progress_updated_at"] = datetime.now().isoformat()
+
+        updates = ["metadata_json = ?"]
+        params: list[object] = [_metadata_json(merged_metadata)]
+        if raw_count is not None:
+            updates.append("raw_count = ?")
+            params.append(raw_count)
+        if stored_count is not None:
+            updates.append("stored_count = ?")
+            params.append(stored_count)
+        if filtered_count is not None:
+            updates.append("filtered_count = ?")
+            params.append(filtered_count)
+        params.append(run_id)
+
+        cursor = conn.execute(
+            f"""
+            UPDATE runs
+            SET {", ".join(updates)}
+            WHERE run_id = ? AND status = 'running'
+            """,
+            params,
+        )
+        return cursor.rowcount > 0
+
+
 def fail_run(database: Path, run_id: str, error: BaseException) -> None:
     with _connect(database) as conn:
         conn.execute(

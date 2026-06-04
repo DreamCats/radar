@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Bot, CalendarDays, CheckCircle2, Play, RotateCcw } from "lucide-react";
+import { Bot, CalendarDays, Play, RotateCcw } from "lucide-react";
 
 import { fetchRuns, startClassifyMessagesJob, startIngestWechatJob } from "../api/radarApi";
 import { DateField, SelectField } from "../components/FormFields";
+import { JobRunCard } from "../components/JobRunCard";
 import { PanelTitle } from "../components/PanelTitle";
 import { toIso } from "../lib/datetime";
 import type { ClassifyJobItem, IngestJobItem, IngestSource, RunItem } from "../types";
@@ -45,7 +46,9 @@ export function IngestPage() {
   const active = submitting || rows.some(({ run }) => !run || run.status === "running");
   const classifyActive = classifySubmitting || classifyRows.some(({ run }) => !run || run.status === "running");
   const anyActive = active || classifyActive;
-  const totals = summarizeRuns(rows.map(({ run }) => run).filter((run): run is RunItem => Boolean(run)));
+  const trackedRuns = [...rows, ...classifyRows].map(({ run }) => run).filter((run): run is RunItem => Boolean(run));
+  const finishedCount = trackedRuns.filter((run) => run.status !== "running").length;
+  const runningCount = jobs.length + classifyJobs.length - finishedCount;
 
   useEffect(() => {
     const trackedJobs = [...jobs, ...classifyJobs];
@@ -297,29 +300,35 @@ export function IngestPage() {
             <h2>作业结果</h2>
             <p>{jobs.length || classifyJobs.length ? `${anyActive ? "运行中" : "已完成"} · 作业 ${jobs.length + classifyJobs.length} 个` : "等待执行"}</p>
           </div>
-          {jobs.length > 0 && (
+          {jobs.length + classifyJobs.length > 0 && (
             <div className="result-total">
-              <CheckCircle2 size={16} />
-              raw {totals.raw} / filtered {totals.filtered} / stored {totals.stored}
+              {runningCount} 个运行中 / {finishedCount} 个已结束
             </div>
           )}
         </div>
-        <div className="run-list">
+        <div className="job-list">
+          {jobs.length + classifyJobs.length === 0 && (
+            <p className="empty-line">暂无作业。选择时间窗口后，可以先拉取微信数据源，再执行消息分类。</p>
+          )}
           {rows.map(({ job, run }) => (
-            <p className="result-line" key={`${job.source_key}-${job.run_id}`}>
-              拉取 · {job.source}: {runStatusLabel(run)} raw={run?.raw_count ?? 0} filtered={run?.filtered_count ?? 0}
-              stored={run?.stored_count ?? 0} run_id={job.run_id}
-              {job.reused_existing ? " · 已复用运行中任务" : ""}
-            </p>
+            <JobRunCard
+              key={`${job.source_key}-${job.run_id}`}
+              kind="ingest"
+              run={run}
+              runId={job.run_id}
+              source={job.source}
+              reusedExisting={job.reused_existing}
+            />
           ))}
           {classifyRows.map(({ job, run }) => (
-            <p className="result-line" key={`classify-${job.source_key}-${job.run_id}`}>
-              分类 · {job.source}: {runStatusLabel(run)} scanned={run?.raw_count ?? 0}
-              classified={metadataNumber(run, "classified_count")} inserted={run?.stored_count ?? 0}
-              failed_batches={metadataNumber(run, "failed_llm_batches")} {formatDistribution(run)}
-              run_id={job.run_id}
-              {job.reused_existing ? " · 已复用运行中任务" : ""}
-            </p>
+            <JobRunCard
+              key={`classify-${job.source_key}-${job.run_id}`}
+              kind="classify"
+              run={run}
+              runId={job.run_id}
+              source={job.source}
+              reusedExisting={job.reused_existing}
+            />
           ))}
         </div>
       </section>
@@ -358,47 +367,6 @@ function toLocalIso(date: string, time: string): string {
 
 function rangeLabel(range: LocalRange): string {
   return `${range.startDate} ${range.startTime} - ${range.endDate} ${range.endTime}`;
-}
-
-function summarizeRuns(runs: RunItem[]) {
-  return runs.reduce(
-    (total, item) => ({
-      raw: total.raw + item.raw_count,
-      filtered: total.filtered + item.filtered_count,
-      stored: total.stored + item.stored_count,
-    }),
-    { raw: 0, filtered: 0, stored: 0 },
-  );
-}
-
-function runStatusLabel(run: RunItem | undefined): string {
-  if (!run || run.status === "running") {
-    return "运行中";
-  }
-  if (run.status === "succeeded") {
-    return "成功";
-  }
-  if (run.status === "skipped") {
-    return "已覆盖";
-  }
-  return `失败${run.error_message ? `：${run.error_message}` : ""}`;
-}
-
-function metadataNumber(run: RunItem | undefined, key: string): number {
-  const value = run?.metadata[key];
-  return typeof value === "number" ? value : 0;
-}
-
-function formatDistribution(run: RunItem | undefined): string {
-  const value = run?.metadata.distribution;
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return "";
-  }
-  const parts = Object.entries(value)
-    .filter(([, count]) => typeof count === "number")
-    .map(([category, count]) => `${category}=${count}`)
-    .join(" ");
-  return parts ? `distribution=${parts} ` : "";
 }
 
 function startOfDay(date: Date): Date {

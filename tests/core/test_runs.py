@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from radar.core.runs import fail_run, fail_stale_runs, finish_run, get_run, get_running_run, list_runs, start_run
+from radar.core.runs import (
+    fail_run,
+    fail_stale_runs,
+    finish_run,
+    get_run,
+    get_running_run,
+    list_runs,
+    start_run,
+    update_run_progress,
+)
 
 
 def test_run_lifecycle_records_summary(tmp_path):
@@ -43,6 +52,35 @@ def test_fail_run_records_error_summary(tmp_path):
     assert record is not None
     assert record.status == "failed"
     assert record.error_message == "接口超时"
+
+
+def test_update_run_progress_merges_running_metadata(tmp_path):
+    db = tmp_path / "radar.sqlite3"
+    run_id = start_run(
+        db,
+        kind="message_classify_range",
+        target="all:window",
+        metadata={"source": "all"},
+    )
+
+    updated = update_run_progress(
+        db,
+        run_id,
+        raw_count=12,
+        stored_count=10,
+        metadata={"stage": "LLM 分类中", "scanned_count": 12},
+    )
+
+    record = get_run(db, run_id)
+    assert updated is True
+    assert record is not None
+    assert record.status == "running"
+    assert record.raw_count == 12
+    assert record.stored_count == 10
+    assert record.metadata["source"] == "all"
+    assert record.metadata["stage"] == "LLM 分类中"
+    assert record.metadata["scanned_count"] == 12
+    assert "progress_updated_at" in record.metadata
 
 
 def test_list_runs_filters_recent_records(tmp_path):

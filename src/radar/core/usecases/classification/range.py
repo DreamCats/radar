@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from radar.core.config import RadarConfig
 from radar.core.models import ClassificationRetryMode, MessageSource
-from radar.core.runs import fail_run, finish_run, start_run
+from radar.core.runs import fail_run, finish_run, start_run, update_run_progress
 from radar.core.store import connect, init_db, list_messages_for_classification
 from radar.core.usecases.classification.messages import (
     CLASSIFY_BATCH_SIZE,
@@ -106,7 +106,23 @@ def classify_messages_range(
         actual_max_concurrency = 0
         classifier = llm_batch_classifier or classify_batch_with_llm
 
-        for chunk_start, chunk_end in chunks:
+        update_run_progress(
+            config.database_path,
+            run_id,
+            metadata={
+                "stage": "准备分类",
+                "chunk_count": len(chunks),
+                "completed_chunk_count": 0,
+                "empty_chunk_count": 0,
+                "scanned_count": 0,
+                "classified_count": 0,
+                "inserted_count": 0,
+                "llm_count": 0,
+                "failed_llm_batches": 0,
+            },
+        )
+
+        for chunk_index, (chunk_start, chunk_end) in enumerate(chunks, start=1):
             chunk_scanned = 0
             cursor_time: str | None = None
             cursor_id: str | None = None
@@ -147,6 +163,28 @@ def classify_messages_range(
                 actual_max_concurrency = max(actual_max_concurrency, actual_concurrency)
                 distribution.update(item.category for item in results)
                 status_distribution.update(item.status for item in results)
+                update_run_progress(
+                    config.database_path,
+                    run_id,
+                    raw_count=scanned_count,
+                    stored_count=inserted_count,
+                    metadata={
+                        "stage": "LLM 分类中",
+                        "chunk_count": len(chunks),
+                        "completed_chunk_count": chunk_index - 1,
+                        "current_chunk_index": chunk_index,
+                        "current_chunk_start": chunk_start.isoformat(),
+                        "current_chunk_end": chunk_end.isoformat(),
+                        "scanned_count": scanned_count,
+                        "classified_count": classified_count,
+                        "inserted_count": inserted_count,
+                        "llm_count": llm_count,
+                        "failed_llm_batches": failed_llm_batches,
+                        "max_concurrency": actual_max_concurrency,
+                        "distribution": dict(distribution),
+                        "status_distribution": dict(status_distribution),
+                    },
+                )
 
                 last_message = messages[-1]
                 cursor_time = last_message.message_time.isoformat()
@@ -156,6 +194,29 @@ def classify_messages_range(
 
             if chunk_scanned == 0:
                 empty_chunk_count += 1
+            update_run_progress(
+                config.database_path,
+                run_id,
+                raw_count=scanned_count,
+                stored_count=inserted_count,
+                metadata={
+                    "stage": "LLM 分类中",
+                    "chunk_count": len(chunks),
+                    "completed_chunk_count": chunk_index,
+                    "current_chunk_index": chunk_index,
+                    "current_chunk_start": chunk_start.isoformat(),
+                    "current_chunk_end": chunk_end.isoformat(),
+                    "empty_chunk_count": empty_chunk_count,
+                    "scanned_count": scanned_count,
+                    "classified_count": classified_count,
+                    "inserted_count": inserted_count,
+                    "llm_count": llm_count,
+                    "failed_llm_batches": failed_llm_batches,
+                    "max_concurrency": actual_max_concurrency,
+                    "distribution": dict(distribution),
+                    "status_distribution": dict(status_distribution),
+                },
+            )
 
         result = ClassifyRangeResult(
             run_id=run_id,

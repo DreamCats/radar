@@ -163,6 +163,152 @@
   gap: 0;
 }
 
+.job-list {
+  display: grid;
+  gap: 0;
+}
+
+.job-card {
+  display: grid;
+  gap: 10px;
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 12px 14px;
+  background: transparent;
+}
+
+.job-card-main {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.job-card-title {
+  display: flex;
+  min-width: 0;
+  gap: 9px;
+}
+
+.job-card-title h3 {
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.job-card-title p {
+  margin-top: 3px;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.job-icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--color-ink-subtle);
+}
+
+.job-icon.running {
+  color: var(--color-primary);
+  animation: job-spin 1.1s linear infinite;
+}
+
+.job-icon.succeeded {
+  color: var(--color-market-up);
+}
+
+.job-icon.failed {
+  color: var(--color-market-down);
+}
+
+.job-status {
+  flex: 0 0 auto;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  padding: 4px 9px;
+  color: var(--color-ink-subtle);
+  background: var(--color-canvas);
+  font-size: 12px;
+}
+
+.job-status.running {
+  border-color: color-mix(in srgb, var(--color-primary) 42%, transparent);
+  color: var(--color-primary);
+}
+
+.job-status.succeeded,
+.job-status.skipped {
+  border-color: color-mix(in srgb, var(--color-market-up) 34%, transparent);
+  color: var(--color-market-up);
+}
+
+.job-status.failed {
+  border-color: color-mix(in srgb, var(--color-market-down) 40%, transparent);
+  color: var(--color-market-down);
+}
+
+.job-progress {
+  position: relative;
+  height: 5px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+}
+
+.job-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+  transition: width var(--motion-base) var(--motion-ease);
+}
+
+.job-card.succeeded .job-progress span,
+.job-card.skipped .job-progress span {
+  background: var(--color-market-up);
+}
+
+.job-card.failed .job-progress span {
+  background: var(--color-market-down);
+}
+
+.job-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.job-metrics span {
+  min-height: 24px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  padding: 3px 9px;
+  color: var(--color-ink-muted);
+  background: var(--color-surface-1);
+  font-size: 12px;
+}
+
+.job-details {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.job-details summary {
+  width: max-content;
+  cursor: pointer;
+}
+
+.job-details p {
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+
+@keyframes job-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .ingest-result-head h2 {
   font-size: 15px;
   font-weight: 600;
