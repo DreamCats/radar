@@ -1,4 +1,12 @@
-import type { IngestRequest, IngestResultItem, MessageGroupItem, MessagePage, MessageQuery, RunItem } from "../types";
+import type {
+  IngestJobItem,
+  IngestRequest,
+  IngestResultItem,
+  MessageGroupItem,
+  MessagePage,
+  MessageQuery,
+  RunItem,
+} from "../types";
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
 
@@ -26,6 +34,19 @@ export async function ingestWechat(request: IngestRequest): Promise<IngestResult
     throw new Error(await errorText(response));
   }
   const data = (await response.json()) as { items: IngestResultItem[] };
+  return data.items;
+}
+
+export async function startIngestWechatJob(request: IngestRequest): Promise<IngestJobItem[]> {
+  const response = await fetch(`${apiBase}/api/ingest/wechat/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: IngestJobItem[] };
   return data.items;
 }
 

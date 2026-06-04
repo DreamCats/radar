@@ -5,7 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from radar.core.config import RadarConfig
 from radar.core.usecases import ingest_wechat_range
 from radar.web.server.deps import get_config
-from radar.web.server.schemas import IngestWechatItem, IngestWechatRequest, IngestWechatResponse
+from radar.web.server.ingest_jobs import submit_wechat_ingest_jobs
+from radar.web.server.schemas import (
+    IngestWechatItem,
+    IngestWechatJobResponse,
+    IngestWechatRequest,
+    IngestWechatResponse,
+)
 
 router = APIRouter(prefix="/api/ingest", tags=["ingest"])
 
@@ -44,3 +50,13 @@ def ingest_wechat(
         )
     return IngestWechatResponse(items=items)
 
+
+@router.post("/wechat/jobs", response_model=IngestWechatJobResponse)
+def start_ingest_wechat_job(
+    request: IngestWechatRequest,
+    config: RadarConfig = Depends(get_config),
+) -> IngestWechatJobResponse:
+    if request.end_time <= request.start_time:
+        raise HTTPException(status_code=400, detail="end_time 必须晚于 start_time")
+
+    return IngestWechatJobResponse(items=submit_wechat_ingest_jobs(config, request))

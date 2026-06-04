@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
 from radar.core.models import RawMessage
-from radar.core.runs import finish_run, start_run
+from radar.core.runs import finish_run, get_run, start_run
 from radar.core.store import connect, init_db, upsert_messages
 from radar.core.usecases import IngestRangeResult
 from radar.web.server.app import create_app
@@ -66,6 +66,27 @@ def test_runs_endpoint_returns_recent_runs(tmp_path):
     assert response.json()["items"][0]["run_id"] == run_id
 
 
+def test_runs_endpoint_marks_stale_ingest_runs(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    run_id = start_run(config.database_path, kind="wechat_ingest_range", target="group_message:stale")
+
+    class FixedDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime.now(tz) + timedelta(hours=2)
+
+    monkeypatch.setattr("radar.web.server.ingest_jobs.datetime", FixedDateTime)
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/runs", params={"limit": 5})
+
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["run_id"] == run_id
+    assert item["status"] == "failed"
+    assert "过期" in item["error_message"]
+
+
 def test_ingest_endpoint_invokes_usecase(monkeypatch, tmp_path):
     config = _config(tmp_path)
     calls: list[dict] = []
@@ -121,6 +142,49 @@ def test_ingest_endpoint_invokes_usecase(monkeypatch, tmp_path):
             "concurrency": 4,
         }
     ]
+
+
+def test_ingest_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    calls: list[dict] = []
+
+    def fake_ingest(config, *, source_key, start_time, end_time, force, chunk_hours, concurrency, run_id):
+        calls.append(
+            {
+                "source_key": source_key,
+                "start_time": start_time,
+                "end_time": end_time,
+                "force": force,
+                "chunk_hours": chunk_hours,
+                "concurrency": concurrency,
+                "run_id": run_id,
+            }
+        )
+
+    monkeypatch.setattr("radar.web.server.ingest_jobs.ingest_wechat_range", fake_ingest)
+
+    client = TestClient(create_app(config))
+    payload = {
+        "source": "group_message",
+        "start_time": "2026-06-03T00:00:00",
+        "end_time": "2026-06-04T00:00:00",
+        "force": False,
+        "chunk_hours": 1,
+        "concurrency": 4,
+    }
+    response = client.post("/api/ingest/wechat/jobs", json=payload)
+
+    assert response.status_code == 200
+    first = response.json()["items"][0]
+    assert first["status"] == "running"
+    assert first["reused_existing"] is False
+    assert get_run(config.database_path, first["run_id"]) is not None
+
+    response = client.post("/api/ingest/wechat/jobs", json=payload)
+    second = response.json()["items"][0]
+
+    assert second["run_id"] == first["run_id"]
+    assert second["reused_existing"] is True
 
 
 def _config(tmp_path) -> RadarConfig:

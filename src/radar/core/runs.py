@@ -108,6 +108,48 @@ def get_run(database: Path, run_id: str) -> RunRecord | None:
     return _row_to_run(row)
 
 
+def get_running_run(database: Path, *, kind: str, target: str) -> RunRecord | None:
+    with _connect(database) as conn:
+        row = conn.execute(
+            """
+            SELECT * FROM runs
+            WHERE kind = ? AND target = ? AND status = 'running'
+            ORDER BY started_at DESC
+            LIMIT 1
+            """,
+            (kind, target),
+        ).fetchone()
+    if row is None:
+        return None
+    return _row_to_run(row)
+
+
+def fail_stale_runs(database: Path, *, older_than: datetime, kind: str | None = None) -> int:
+    """把服务重启后遗留的 running 标记为失败，避免前端一直等。"""
+
+    sql = [
+        """
+        UPDATE runs
+        SET finished_at = ?,
+            status = 'failed',
+            error_message = ?
+        WHERE status = 'running' AND started_at < ?
+        """
+    ]
+    params: list[object] = [
+        datetime.now().isoformat(),
+        "任务超过预期时间未完成，已标记为过期",
+        older_than.isoformat(),
+    ]
+    if kind:
+        sql.append("AND kind = ?")
+        params.append(kind)
+
+    with _connect(database) as conn:
+        cursor = conn.execute(" ".join(sql), params)
+        return cursor.rowcount
+
+
 def list_runs(
     database: Path,
     *,

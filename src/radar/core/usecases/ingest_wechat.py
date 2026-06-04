@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
+from threading import Lock
 
 from pydantic import BaseModel
 
@@ -20,6 +21,7 @@ from radar.core.store import (
 )
 
 FetchMessages = Callable[[str, MessageSource, datetime, datetime, float], list[RawMessage]]
+_WRITE_LOCK = Lock()
 
 
 class IngestWindowResult(BaseModel):
@@ -155,6 +157,7 @@ def ingest_wechat_range(
     concurrency: int = 4,
     force: bool = False,
     fetcher: FetchMessages | None = None,
+    run_id: str | None = None,
 ) -> IngestRangeResult:
     """按时间切片并发拉取，随后串行写库，避免 SQLite 并发写锁竞争。"""
 
@@ -174,12 +177,13 @@ def ingest_wechat_range(
         chunk_hours=chunk_hours,
         concurrency=concurrency,
     )
-    run_id = start_run(
-        config.database_path,
-        kind="wechat_ingest_range",
-        target=_run_target(source_key, start_time, end_time),
-        metadata=run_metadata,
-    )
+    if run_id is None:
+        run_id = start_run(
+            config.database_path,
+            kind="wechat_ingest_range",
+            target=ingest_range_target(source_key, start_time, end_time),
+            metadata=run_metadata,
+        )
     chunks = _time_chunks(start_time, end_time, timedelta(hours=chunk_hours))
     try:
         pending_chunks, skipped_count = _pending_chunks(config, source, chunks, force)
@@ -312,6 +316,15 @@ def _write_chunks(
     source: MessageSource,
     chunks: list[tuple[datetime, datetime, list[RawMessage]]],
 ) -> tuple[int, int, int]:
+    with _WRITE_LOCK:
+        return _write_chunks_locked(config, source, chunks)
+
+
+def _write_chunks_locked(
+    config: RadarConfig,
+    source: MessageSource,
+    chunks: list[tuple[datetime, datetime, list[RawMessage]]],
+) -> tuple[int, int, int]:
     conn = connect(config.database_path)
     try:
         init_db(conn)
@@ -347,6 +360,32 @@ def _write_chunks(
 
 def _run_target(source_key: str, start_time: datetime, end_time: datetime) -> str:
     return f"{source_key}:{start_time.isoformat()}..{end_time.isoformat()}"
+
+
+def ingest_range_target(source_key: str, start_time: datetime, end_time: datetime) -> str:
+    return _run_target(source_key, start_time, end_time)
+
+
+def ingest_range_metadata(
+    config: RadarConfig,
+    *,
+    source_key: str,
+    start_time: datetime,
+    end_time: datetime,
+    force: bool,
+    chunk_hours: int,
+    concurrency: int,
+) -> dict[str, object]:
+    source = config.wechat.sources[source_key].name
+    return _run_metadata(
+        source_key=source_key,
+        source=source,
+        start_time=start_time,
+        end_time=end_time,
+        force=force,
+        chunk_hours=chunk_hours,
+        concurrency=concurrency,
+    )
 
 
 def _run_metadata(

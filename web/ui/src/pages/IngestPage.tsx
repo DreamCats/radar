@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarDays, CheckCircle2, Play, RotateCcw } from "lucide-react";
 
-import { ingestWechat } from "../api/radarApi";
+import { fetchRuns, startIngestWechatJob } from "../api/radarApi";
 import { DateField, SelectField } from "../components/FormFields";
 import { PanelTitle } from "../components/PanelTitle";
 import { toIso } from "../lib/datetime";
-import type { IngestResultItem, IngestSource } from "../types";
+import type { IngestJobItem, IngestSource, RunItem } from "../types";
 
 type RangePreset = "today" | "yesterday" | "last24h" | "last7d" | "custom";
 
@@ -28,20 +28,61 @@ export function IngestPage() {
   const [range, setRange] = useState<LocalRange>(() => buildPresetRange("today"));
   const [preset, setPreset] = useState<RangePreset>("today");
   const [force, setForce] = useState(false);
-  const [result, setResult] = useState<IngestResultItem[]>([]);
+  const [jobs, setJobs] = useState<IngestJobItem[]>([]);
+  const [runs, setRuns] = useState<RunItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const startValue = toLocalIso(range.startDate, range.startTime);
   const endValue = toLocalIso(range.endDate, range.endTime);
   const canSubmit = Boolean(startValue && endValue) && startValue <= endValue;
-  const totals = summarizeResult(result);
+  const rows = jobs.map((job) => ({ job, run: runs.find((run) => run.run_id === job.run_id) }));
+  const active = submitting || rows.some(({ run }) => !run || run.status === "running");
+  const totals = summarizeRuns(rows.map(({ run }) => run).filter((run): run is RunItem => Boolean(run)));
+
+  useEffect(() => {
+    if (jobs.length === 0) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let timer: number | undefined;
+    const runIds = new Set(jobs.map((job) => job.run_id));
+
+    async function refresh() {
+      try {
+        const items = await fetchRuns();
+        if (cancelled) {
+          return;
+        }
+        setRuns(items);
+        const tracked = items.filter((item) => runIds.has(item.run_id));
+        const hasRunning = tracked.length < runIds.size || tracked.some((item) => item.status === "running");
+        if (hasRunning) {
+          timer = window.setTimeout(refresh, 4000);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "刷新运行状态失败");
+          timer = window.setTimeout(refresh, 4000);
+        }
+      }
+    }
+
+    void refresh();
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) {
+        window.clearTimeout(timer);
+      }
+    };
+  }, [jobs]);
 
   async function submit() {
-    setLoading(true);
+    setSubmitting(true);
     setError(null);
     try {
-      const items = await ingestWechat({
+      const items = await startIngestWechatJob({
         source,
         start_time: startValue,
         end_time: endValue,
@@ -49,11 +90,12 @@ export function IngestPage() {
         chunk_hours: 1,
         concurrency: 4,
       });
-      setResult(items);
+      setJobs(items);
+      setRuns([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "拉取失败");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
 
@@ -129,9 +171,9 @@ export function IngestPage() {
               <span>强制重拉</span>
             </label>
 
-            <button className="primary-button ingest-submit" type="button" disabled={loading || !canSubmit} onClick={submit}>
-              {loading ? <RotateCcw size={16} /> : <Play size={16} />}
-              {loading ? "拉取中" : "开始拉取"}
+            <button className="primary-button ingest-submit" type="button" disabled={active || !canSubmit} onClick={submit}>
+              {active ? <RotateCcw size={16} /> : <Play size={16} />}
+              {submitting ? "提交中" : active ? "拉取中" : "开始拉取"}
             </button>
           </div>
           {!canSubmit && <p className="error-line">请选择有效的开始和结束时间。</p>}
@@ -158,9 +200,9 @@ export function IngestPage() {
         <div className="ingest-result-head">
           <div>
             <h2>拉取结果</h2>
-            <p>{result.length ? `来源 ${result.length} 个` : "等待执行"}</p>
+            <p>{jobs.length ? `${active ? "运行中" : "已完成"} · 来源 ${jobs.length} 个` : "等待执行"}</p>
           </div>
-          {result.length > 0 && (
+          {jobs.length > 0 && (
             <div className="result-total">
               <CheckCircle2 size={16} />
               raw {totals.raw} / filtered {totals.filtered} / stored {totals.stored}
@@ -168,10 +210,11 @@ export function IngestPage() {
           )}
         </div>
         <div className="run-list">
-          {result.map((item) => (
-            <p className="result-line" key={`${item.source_key}-${item.run_id}`}>
-              {item.source}: chunks={item.chunk_count} skipped={item.skipped_count} raw={item.raw_count}
-              filtered={item.filtered_count} stored={item.stored_count} run_id={item.run_id}
+          {rows.map(({ job, run }) => (
+            <p className="result-line" key={`${job.source_key}-${job.run_id}`}>
+              {job.source}: {runStatusLabel(run)} raw={run?.raw_count ?? 0} filtered={run?.filtered_count ?? 0}
+              stored={run?.stored_count ?? 0} run_id={job.run_id}
+              {job.reused_existing ? " · 已复用运行中任务" : ""}
             </p>
           ))}
         </div>
@@ -213,8 +256,8 @@ function rangeLabel(range: LocalRange): string {
   return `${range.startDate} ${range.startTime} - ${range.endDate} ${range.endTime}`;
 }
 
-function summarizeResult(items: IngestResultItem[]) {
-  return items.reduce(
+function summarizeRuns(runs: RunItem[]) {
+  return runs.reduce(
     (total, item) => ({
       raw: total.raw + item.raw_count,
       filtered: total.filtered + item.filtered_count,
@@ -222,6 +265,19 @@ function summarizeResult(items: IngestResultItem[]) {
     }),
     { raw: 0, filtered: 0, stored: 0 },
   );
+}
+
+function runStatusLabel(run: RunItem | undefined): string {
+  if (!run || run.status === "running") {
+    return "运行中";
+  }
+  if (run.status === "succeeded") {
+    return "成功";
+  }
+  if (run.status === "skipped") {
+    return "已覆盖";
+  }
+  return `失败${run.error_message ? `：${run.error_message}` : ""}`;
 }
 
 function startOfDay(date: Date): Date {

@@ -70,3 +70,11 @@ export type IngestResultItem = {
   stored_count: number;
   run_id?: string | null;
 };
+
+export type IngestJobItem = {
+  source_key: SourceKey;
+  source: MessageSource;
+  run_id: string;
+  reused_existing: boolean;
+  status: "running";
+};

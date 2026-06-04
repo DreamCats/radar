@@ -60,3 +60,15 @@ class IngestWechatItem(BaseModel):
 
 class IngestWechatResponse(BaseModel):
     items: list[IngestWechatItem]
+
+
+class IngestWechatJobItem(BaseModel):
+    source_key: SourceKey
+    source: MessageSource
+    run_id: str
+    reused_existing: bool = False
+    status: Literal["running"]
+
+
+class IngestWechatJobResponse(BaseModel):
+    items: list[IngestWechatJobItem]
