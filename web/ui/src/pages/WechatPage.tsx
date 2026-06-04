@@ -22,6 +22,7 @@ const defaultQuery: MessageConversationQuery = {
 };
 
 const threadLimit = 30;
+const conversationSkeletonItems = Array.from({ length: 7 }, (_, index) => index);
 
 type ThreadScrollIntent =
   | { mode: "bottom" }
@@ -68,6 +69,7 @@ export function WechatPage() {
   }, [selectedSender, threadItems, threadKeyword]);
   const canNext = Boolean(conversationPage.next_cursor_time && conversationPage.next_cursor_key);
   const canLoadOlder = Boolean(threadCursor.time && threadCursor.id);
+  const showConversationSkeleton = loading && conversations.length === 0;
 
   useEffect(() => {
     void loadConversations(defaultQuery);
@@ -187,31 +189,37 @@ export function WechatPage() {
             <span className="wechat-state">隐藏自发</span>
           </div>
           {error && <p className="error-line">{error}</p>}
-          <div className="wechat-conversation-list">
-            {conversations.map((conversation) => (
-              <button
-                className={
-                  conversation.key === selectedConversation?.key
-                    ? "wechat-conversation active"
-                    : "wechat-conversation"
-                }
-                key={conversation.key}
-                type="button"
-                onClick={() => setSelectedKey(conversation.key)}
-              >
-                <Avatar name={conversation.title} />
-                <span className="wechat-conversation-main">
-                  <span className="wechat-conversation-title">
-                    <strong>{conversation.title}</strong>
-                    <em>{formatTime(conversation.latest_time)}</em>
+          <div
+            className={showConversationSkeleton ? "wechat-conversation-list is-loading" : "wechat-conversation-list"}
+            aria-busy={showConversationSkeleton}
+          >
+            {showConversationSkeleton &&
+              conversationSkeletonItems.map((item) => <ConversationSkeleton key={item} />)}
+            {!showConversationSkeleton &&
+              conversations.map((conversation) => (
+                <button
+                  className={
+                    conversation.key === selectedConversation?.key
+                      ? "wechat-conversation active"
+                      : "wechat-conversation"
+                  }
+                  key={conversation.key}
+                  type="button"
+                  onClick={() => setSelectedKey(conversation.key)}
+                >
+                  <Avatar name={conversation.title} />
+                  <span className="wechat-conversation-main">
+                    <span className="wechat-conversation-title">
+                      <strong>{conversation.title}</strong>
+                      <em>{formatTime(conversation.latest_time)}</em>
+                    </span>
+                    <span className="wechat-conversation-preview">{conversation.latest_content}</span>
+                    <span className="wechat-conversation-meta">
+                      {conversation.source} · {conversation.latest_sender}
+                    </span>
                   </span>
-                  <span className="wechat-conversation-preview">{conversation.latest_content}</span>
-                  <span className="wechat-conversation-meta">
-                    {conversation.source} · {conversation.latest_sender}
-                  </span>
-                </span>
-              </button>
-            ))}
+                </button>
+              ))}
             {!loading && conversations.length === 0 && <p className="empty-line">暂无数据</p>}
           </div>
           <div className="wechat-pager">
@@ -307,6 +315,19 @@ export function WechatPage() {
         </section>
       </div>
     </section>
+  );
+}
+
+function ConversationSkeleton() {
+  return (
+    <div className="wechat-conversation-skeleton" aria-hidden="true">
+      <span className="wechat-skeleton-avatar" />
+      <span className="wechat-skeleton-main">
+        <span className="wechat-skeleton-line title" />
+        <span className="wechat-skeleton-line preview" />
+        <span className="wechat-skeleton-line meta" />
+      </span>
+    </div>
   );
 }
 
