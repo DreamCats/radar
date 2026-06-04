@@ -1,15 +1,3 @@
-@media (max-width: 1280px) {
-  .organize-workspace {
-    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
-  }
-
-  .organize-insight-panel {
-    grid-column: 1 / -1;
-    height: auto;
-    min-height: 0;
-  }
-}
-
 @media (max-width: 900px) {
   .organize-header {
     display: grid;
@@ -25,8 +13,7 @@
   }
 
   .organize-cluster-panel,
-  .organize-evidence-panel,
-  .organize-insight-panel {
+  .organize-evidence-panel {
     height: auto;
     min-height: 0;
   }

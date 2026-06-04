@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CalendarDays, CheckCircle2, RefreshCw, Search, Sparkles, Tags, TrendingUp } from "lucide-react";
+import { CalendarDays, RefreshCw, Search, Sparkles, Tags } from "lucide-react";
 
 import { fetchOrganizeClassifications } from "../api/radarApi";
 import { DateField, SelectField } from "../components/FormFields";
@@ -90,7 +90,15 @@ export function OrganizePage() {
   return (
     <section className="organize-page">
       <div className="organize-header">
-        <PanelTitle title="整理" meta="分类结果 / 证据流 / 复核" />
+        <PanelTitle title="整理" />
+        <div className="organize-mode-tabs" aria-label="整理模式">
+          <button className="active" type="button">
+            分类
+          </button>
+          <button type="button" disabled>
+            聚类
+          </button>
+        </div>
         <div className="organize-window">
           <CalendarDays size={15} />
           {rangeLabel(range)}
@@ -204,10 +212,6 @@ export function OrganizePage() {
           )}
         </section>
 
-        <aside className="content-panel organize-insight-panel">
-          <PanelTitle title="复核视角" meta="分类统计 / 理由 / 动作" />
-          {selected ? <ReviewPanel cluster={selected} /> : <p className="empty-line">暂无可复核内容。</p>}
-        </aside>
       </div>
     </section>
   );
@@ -251,48 +255,6 @@ function EvidenceItem(props: { item: OrganizeEvidenceMessage }) {
   );
 }
 
-function ReviewPanel(props: { cluster: OrganizeClassificationCluster }) {
-  const sourceStats = sourceDistribution(props.cluster.evidence);
-  const lowConfidenceRatio = props.cluster.count > 0 ? props.cluster.low_confidence_count / props.cluster.count : 0;
-  return (
-    <>
-      <div className="insight-summary">
-        <Sparkles size={16} />
-        <p>
-          {props.cluster.label} 共 {props.cluster.count} 条，平均置信 {Math.round(props.cluster.average_confidence * 100)}%，
-          待复核 {props.cluster.low_confidence_count} 条。
-        </p>
-      </div>
-      <div className="insight-list">
-        <div className="insight-item opportunity">
-          <TrendingUp size={15} />
-          <span>先用该分类快速缩小阅读范围，再回到原文证据判断是否有投资价值。</span>
-        </div>
-        <div className={lowConfidenceRatio > 0.2 ? "insight-item risk" : "insight-item todo"}>
-          {lowConfidenceRatio > 0.2 ? <AlertTriangle size={15} /> : <CheckCircle2 size={15} />}
-          <span>{lowConfidenceRatio > 0.2 ? "低置信占比较高，建议在作业页重跑低置信分类。" : "低置信占比可控，可先按当前分类浏览。"}</span>
-        </div>
-        {props.cluster.evidence.slice(0, 3).map((item) => (
-          <div className="insight-item todo" key={`reason-${item.message_id}`}>
-            <CheckCircle2 size={15} />
-            <span>{item.reason}</span>
-          </div>
-        ))}
-      </div>
-      <div className="watchlist-box">
-        <h3>来源分布</h3>
-        <div>
-          {sourceStats.map(([source, count]) => (
-            <span key={source}>
-              {source} {count}
-            </span>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
 function Metric(props: { label: string; value: number | string; detail: string }) {
   return (
     <div className="organize-metric">
@@ -301,15 +263,6 @@ function Metric(props: { label: string; value: number | string; detail: string }
       <em>{props.detail}</em>
     </div>
   );
-}
-
-function sourceDistribution(items: OrganizeEvidenceMessage[]): Array<[string, number]> {
-  const counts = new Map<string, number>();
-  for (const item of items) {
-    const key = item.group_name || item.source;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
 }
 
 function scoreTone(value: number): "high" | "medium" | "low" {

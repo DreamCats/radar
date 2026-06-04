@@ -1,8 +1,11 @@
 .organize-page {
   display: grid;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
   gap: var(--space-md);
   height: 100%;
+  min-height: 0;
   min-width: 0;
+  overflow: hidden;
 }
 
 .organize-header {
@@ -14,6 +17,38 @@
 
 .organize-header .panel-title {
   margin-bottom: 0;
+  margin-right: auto;
+}
+
+.organize-mode-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-1);
+  padding: 2px;
+}
+
+.organize-mode-tabs button {
+  min-height: 26px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-ink-subtle);
+  padding: 0 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.organize-mode-tabs button.active {
+  background: var(--color-surface-3);
+  color: var(--color-ink);
+}
+
+.organize-mode-tabs button:disabled {
+  color: var(--color-ink-tertiary);
+  cursor: not-allowed;
 }
 
 .organize-window {
@@ -137,27 +172,28 @@
 
 .organize-workspace {
   display: grid;
-  grid-template-columns: minmax(260px, 330px) minmax(360px, 1fr) minmax(260px, 320px);
+  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
   gap: var(--space-md);
+  height: 100%;
   min-height: 0;
 }
 
 .organize-cluster-panel,
-.organize-evidence-panel,
-.organize-insight-panel {
-  height: calc(100vh - 318px);
-  min-height: 420px;
+.organize-evidence-panel {
+  height: 100%;
+  min-height: 0;
 }
 
-.cluster-list,
-.evidence-list,
-.insight-list {
-  overflow: auto;
-  overflow-x: hidden;
+.organize-cluster-panel,
+.organize-evidence-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .cluster-list {
-  height: calc(100% - 44px);
+  min-height: 0;
+  overflow: auto;
+  overflow-x: hidden;
 }
 
 .cluster-row {
@@ -287,8 +323,7 @@
   padding: 10px 14px;
 }
 
-.organize-tags span,
-.watchlist-box span {
+.organize-tags span {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -302,7 +337,9 @@
 }
 
 .evidence-list {
-  height: calc(100% - 92px);
+  min-height: 0;
+  overflow: auto;
+  overflow-x: hidden;
 }
 
 .evidence-item {
@@ -356,77 +393,4 @@
   font-size: 13px;
   line-height: 1.65;
   overflow-wrap: anywhere;
-}
-
-.organize-insight-panel {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-}
-
-.insight-summary {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 9px;
-  border-bottom: 1px solid var(--color-hairline);
-  padding: 14px;
-  color: var(--color-ink-muted);
-}
-
-.insight-summary svg {
-  color: var(--color-primary);
-}
-
-.insight-summary p {
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.insight-list {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  padding: 12px 14px;
-}
-
-.insight-item {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 8px;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
-  background: var(--color-canvas);
-  padding: 10px;
-  color: var(--color-ink-muted);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.insight-item.opportunity svg {
-  color: var(--color-market-up);
-}
-
-.insight-item.risk svg {
-  color: var(--color-signal-hot);
-}
-
-.insight-item.todo svg {
-  color: var(--color-primary);
-}
-
-.watchlist-box {
-  border-top: 1px solid var(--color-hairline);
-  padding: 12px 14px 14px;
-}
-
-.watchlist-box h3 {
-  margin: 0 0 8px;
-  color: var(--color-ink);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.watchlist-box div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
 }
