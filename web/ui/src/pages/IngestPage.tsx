@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, CheckCircle2, Play, RotateCcw } from "lucide-react";
+import { Bot, CalendarDays, CheckCircle2, Play, RotateCcw } from "lucide-react";
 
-import { fetchRuns, startIngestWechatJob } from "../api/radarApi";
+import { fetchRuns, startClassifyMessagesJob, startIngestWechatJob } from "../api/radarApi";
 import { DateField, SelectField } from "../components/FormFields";
 import { PanelTitle } from "../components/PanelTitle";
 import { toIso } from "../lib/datetime";
-import type { IngestJobItem, IngestSource, RunItem } from "../types";
+import type { ClassifyJobItem, IngestJobItem, IngestSource, RunItem } from "../types";
 
 type RangePreset = "today" | "yesterday" | "last24h" | "last7d" | "custom";
 
@@ -25,29 +25,37 @@ const PRESETS: Array<[RangePreset, string]> = [
 
 export function IngestPage() {
   const [source, setSource] = useState<IngestSource>("all");
+  const [classifySource, setClassifySource] = useState<IngestSource>("all");
   const [range, setRange] = useState<LocalRange>(() => buildPresetRange("today"));
   const [preset, setPreset] = useState<RangePreset>("today");
   const [force, setForce] = useState(false);
+  const [classifyForce, setClassifyForce] = useState(false);
   const [jobs, setJobs] = useState<IngestJobItem[]>([]);
+  const [classifyJobs, setClassifyJobs] = useState<ClassifyJobItem[]>([]);
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [classifySubmitting, setClassifySubmitting] = useState(false);
 
   const startValue = toLocalIso(range.startDate, range.startTime);
   const endValue = toLocalIso(range.endDate, range.endTime);
   const canSubmit = Boolean(startValue && endValue) && startValue <= endValue;
   const rows = jobs.map((job) => ({ job, run: runs.find((run) => run.run_id === job.run_id) }));
+  const classifyRows = classifyJobs.map((job) => ({ job, run: runs.find((run) => run.run_id === job.run_id) }));
   const active = submitting || rows.some(({ run }) => !run || run.status === "running");
+  const classifyActive = classifySubmitting || classifyRows.some(({ run }) => !run || run.status === "running");
+  const anyActive = active || classifyActive;
   const totals = summarizeRuns(rows.map(({ run }) => run).filter((run): run is RunItem => Boolean(run)));
 
   useEffect(() => {
-    if (jobs.length === 0) {
+    const trackedJobs = [...jobs, ...classifyJobs];
+    if (trackedJobs.length === 0) {
       return undefined;
     }
 
     let cancelled = false;
     let timer: number | undefined;
-    const runIds = new Set(jobs.map((job) => job.run_id));
+    const runIds = new Set(trackedJobs.map((job) => job.run_id));
 
     async function refresh() {
       try {
@@ -76,7 +84,7 @@ export function IngestPage() {
         window.clearTimeout(timer);
       }
     };
-  }, [jobs]);
+  }, [jobs, classifyJobs]);
 
   async function submit() {
     setSubmitting(true);
@@ -96,6 +104,30 @@ export function IngestPage() {
       setError(err instanceof Error ? err.message : "拉取失败");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function submitClassify() {
+    setClassifySubmitting(true);
+    setError(null);
+    try {
+      const items = await startClassifyMessagesJob({
+        source: classifySource,
+        start_time: startValue,
+        end_time: endValue,
+        force: classifyForce,
+        chunk_hours: 1,
+        limit: 500,
+        batch_size: 16,
+        max_concurrency: 10,
+        low_confidence_threshold: 0.65,
+      });
+      setClassifyJobs(items);
+      setRuns([]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "分类失败");
+    } finally {
+      setClassifySubmitting(false);
     }
   }
 
@@ -121,7 +153,7 @@ export function IngestPage() {
   return (
     <section className="ingest-page">
       <div className="ingest-header">
-        <PanelTitle title="微信数据源" meta="窗口同步" />
+        <PanelTitle title="数据作业" meta="拉取 / 分类" />
         <div className="ingest-window-pill">
           <CalendarDays size={15} />
           {rangeLabel(range)}
@@ -143,6 +175,9 @@ export function IngestPage() {
 
       <div className="ingest-grid">
         <section className="content-panel ingest-control-panel">
+          <div className="ingest-card-head">
+            <PanelTitle title="微信数据源" meta="原始入库" />
+          </div>
           <div className="ingest-form-v2">
             <SelectField
               label="来源"
@@ -182,11 +217,11 @@ export function IngestPage() {
 
         <aside className="ingest-side">
           <div className="ingest-stat">
-            <span>分片</span>
+            <span>拉取分片</span>
             <strong>1h</strong>
           </div>
           <div className="ingest-stat">
-            <span>并发</span>
+            <span>拉取并发</span>
             <strong>4</strong>
           </div>
           <div className="ingest-stat">
@@ -196,11 +231,71 @@ export function IngestPage() {
         </aside>
       </div>
 
+      <div className="ingest-grid">
+        <section className="content-panel ingest-control-panel">
+          <div className="ingest-card-head">
+            <PanelTitle title="消息分类" meta="LLM 派生" />
+          </div>
+          <div className="ingest-form-v2">
+            <SelectField
+              label="来源"
+              value={classifySource}
+              onChange={(value) => setClassifySource(value as IngestSource)}
+              options={[
+                ["all", "全部"],
+                ["personal_message", "个人消息"],
+                ["group_message", "个人群"],
+              ]}
+            />
+
+            <DateField
+              label="开始"
+              value={startValue}
+              onChange={(value) => updateDateTime("start", value)}
+            />
+            <DateField
+              label="结束"
+              value={endValue}
+              onChange={(value) => updateDateTime("end", value)}
+            />
+
+            <label className="toggle-field">
+              <input checked={classifyForce} type="checkbox" onChange={(event) => setClassifyForce(event.target.checked)} />
+              <span>强制重跑</span>
+            </label>
+            <button
+              className="primary-button ingest-submit"
+              type="button"
+              disabled={classifyActive || !canSubmit}
+              onClick={submitClassify}
+            >
+              {classifyActive ? <RotateCcw size={16} /> : <Bot size={16} />}
+              {classifySubmitting ? "提交中" : classifyActive ? "分类中" : "开始分类"}
+            </button>
+          </div>
+        </section>
+
+        <aside className="ingest-side">
+          <div className="ingest-stat">
+            <span>时间分片</span>
+            <strong>1h</strong>
+          </div>
+          <div className="ingest-stat">
+            <span>单批消息</span>
+            <strong>16</strong>
+          </div>
+          <div className="ingest-stat">
+            <span>LLM 并发</span>
+            <strong>10</strong>
+          </div>
+        </aside>
+      </div>
+
       <section className="content-panel ingest-results">
         <div className="ingest-result-head">
           <div>
-            <h2>拉取结果</h2>
-            <p>{jobs.length ? `${active ? "运行中" : "已完成"} · 来源 ${jobs.length} 个` : "等待执行"}</p>
+            <h2>作业结果</h2>
+            <p>{jobs.length || classifyJobs.length ? `${anyActive ? "运行中" : "已完成"} · 作业 ${jobs.length + classifyJobs.length} 个` : "等待执行"}</p>
           </div>
           {jobs.length > 0 && (
             <div className="result-total">
@@ -212,8 +307,17 @@ export function IngestPage() {
         <div className="run-list">
           {rows.map(({ job, run }) => (
             <p className="result-line" key={`${job.source_key}-${job.run_id}`}>
-              {job.source}: {runStatusLabel(run)} raw={run?.raw_count ?? 0} filtered={run?.filtered_count ?? 0}
+              拉取 · {job.source}: {runStatusLabel(run)} raw={run?.raw_count ?? 0} filtered={run?.filtered_count ?? 0}
               stored={run?.stored_count ?? 0} run_id={job.run_id}
+              {job.reused_existing ? " · 已复用运行中任务" : ""}
+            </p>
+          ))}
+          {classifyRows.map(({ job, run }) => (
+            <p className="result-line" key={`classify-${job.source_key}-${job.run_id}`}>
+              分类 · {job.source}: {runStatusLabel(run)} scanned={run?.raw_count ?? 0}
+              classified={metadataNumber(run, "classified_count")} inserted={run?.stored_count ?? 0}
+              failed_batches={metadataNumber(run, "failed_llm_batches")} {formatDistribution(run)}
+              run_id={job.run_id}
               {job.reused_existing ? " · 已复用运行中任务" : ""}
             </p>
           ))}
@@ -278,6 +382,23 @@ function runStatusLabel(run: RunItem | undefined): string {
     return "已覆盖";
   }
   return `失败${run.error_message ? `：${run.error_message}` : ""}`;
+}
+
+function metadataNumber(run: RunItem | undefined, key: string): number {
+  const value = run?.metadata[key];
+  return typeof value === "number" ? value : 0;
+}
+
+function formatDistribution(run: RunItem | undefined): string {
+  const value = run?.metadata.distribution;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return "";
+  }
+  const parts = Object.entries(value)
+    .filter(([, count]) => typeof count === "number")
+    .map(([category, count]) => `${category}=${count}`)
+    .join(" ");
+  return parts ? `distribution=${parts} ` : "";
 }
 
 function startOfDay(date: Date): Date {

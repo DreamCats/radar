@@ -82,6 +82,14 @@
   padding: 14px;
 }
 
+.ingest-card-head {
+  margin-bottom: var(--space-sm);
+}
+
+.ingest-card-head .panel-title {
+  margin-bottom: 0;
+}
+
 .ingest-form-v2 {
   display: grid;
   grid-template-columns: minmax(132px, 0.75fr) repeat(2, minmax(190px, 1fr)) 120px 136px;

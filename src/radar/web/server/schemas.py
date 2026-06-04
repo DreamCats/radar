@@ -5,10 +5,11 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from radar.core.models import MessageSource, RawMessage
+from radar.core.models import ClassificationRetryMode, MessageSource, RawMessage
 from radar.core.runs import RunRecord
 
 SourceKey = Literal["personal_message", "group_message"]
+JobSourceKey = Literal["all", "personal_message", "group_message"]
 
 
 class HealthResponse(BaseModel):
@@ -88,3 +89,30 @@ class IngestWechatJobItem(BaseModel):
 
 class IngestWechatJobResponse(BaseModel):
     items: list[IngestWechatJobItem]
+
+
+class ClassifyMessagesRequest(BaseModel):
+    source: JobSourceKey = "all"
+    start_time: datetime
+    end_time: datetime
+    force: bool = False
+    chunk_hours: int = Field(default=1, ge=1, le=24)
+    limit: int = Field(default=500, ge=1, le=5000)
+    batch_size: int = Field(default=16, ge=1, le=64)
+    max_concurrency: int = Field(default=10, ge=1, le=32)
+    provider_name: str | None = None
+    provider_names: list[str] | None = None
+    retry: ClassificationRetryMode | None = None
+    low_confidence_threshold: float = Field(default=0.65, ge=0, le=1)
+
+
+class ClassifyMessagesJobItem(BaseModel):
+    source_key: JobSourceKey
+    source: str
+    run_id: str
+    reused_existing: bool = False
+    status: Literal["running"]
+
+
+class ClassifyMessagesJobResponse(BaseModel):
+    items: list[ClassifyMessagesJobItem]

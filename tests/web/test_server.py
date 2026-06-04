@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from threading import Event
 
 from fastapi.testclient import TestClient
 
@@ -206,12 +207,121 @@ def test_ingest_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_pat
     assert second["reused_existing"] is True
 
 
-def _config(tmp_path) -> RadarConfig:
+def test_classify_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path):
+    config = _config(
+        tmp_path,
+        llm={
+            "providers": {
+                "provider-a": {"protocol": "openai", "secret_ref": "a", "model": "model-a"},
+                "provider-b": {"protocol": "anthropic", "secret_ref": "b", "model": "model-b"},
+            }
+        },
+    )
+    calls: list[dict] = []
+    started = Event()
+    release = Event()
+
+    def fake_classify(
+        config,
+        *,
+        source,
+        start_time,
+        end_time,
+        chunk_hours,
+        limit,
+        force,
+        use_llm,
+        provider_name,
+        provider_names,
+        batch_size,
+        max_concurrency,
+        retry,
+        low_confidence_threshold,
+        run_id,
+    ):
+        calls.append(
+            {
+                "source": source,
+                "start_time": start_time,
+                "end_time": end_time,
+                "chunk_hours": chunk_hours,
+                "limit": limit,
+                "force": force,
+                "use_llm": use_llm,
+                "provider_name": provider_name,
+                "provider_names": provider_names,
+                "batch_size": batch_size,
+                "max_concurrency": max_concurrency,
+                "retry": retry,
+                "low_confidence_threshold": low_confidence_threshold,
+                "run_id": run_id,
+            }
+        )
+        started.set()
+        release.wait(timeout=2)
+
+    monkeypatch.setattr("radar.web.server.classify_jobs.classify_messages_range", fake_classify)
+
+    client = TestClient(create_app(config))
+    payload = {
+        "source": "group_message",
+        "start_time": "2026-06-04T10:00:00",
+        "end_time": "2026-06-04T11:00:00",
+        "force": False,
+        "chunk_hours": 1,
+        "limit": 200,
+        "batch_size": 8,
+        "retry": "needs_review",
+        "low_confidence_threshold": 0.7,
+    }
+    response = client.post("/api/classify/messages/jobs", json=payload)
+
+    assert response.status_code == 200
+    first = response.json()["items"][0]
+    assert started.wait(timeout=1)
+    assert first["status"] == "running"
+    assert first["source"] == "个人群"
+    assert first["reused_existing"] is False
+    assert get_run(config.database_path, first["run_id"]) is not None
+
+    response = client.post("/api/classify/messages/jobs", json=payload)
+    second = response.json()["items"][0]
+
+    assert second["run_id"] == first["run_id"]
+    assert second["reused_existing"] is True
+
+    different_payload = payload | {"end_time": "2026-06-04T12:00:00"}
+    response = client.post("/api/classify/messages/jobs", json=different_payload)
+    third = response.json()["items"][0]
+
+    assert third["run_id"] == first["run_id"]
+    assert third["reused_existing"] is True
+    release.set()
+    assert calls[0] == {
+        "source": "个人群",
+        "start_time": datetime.fromisoformat("2026-06-04T10:00:00"),
+        "end_time": datetime.fromisoformat("2026-06-04T11:00:00"),
+        "chunk_hours": 1,
+        "limit": 200,
+        "force": False,
+        "use_llm": True,
+        "provider_name": None,
+        "provider_names": ["provider-a", "provider-b"],
+        "batch_size": 8,
+        "max_concurrency": 10,
+        "retry": "needs_review",
+        "low_confidence_threshold": 0.7,
+        "run_id": first["run_id"],
+    }
+
+
+def _config(tmp_path, **overrides) -> RadarConfig:
     return RadarConfig(
         storage={
             "data_dir": tmp_path / "data",
             "database": tmp_path / "radar.sqlite3",
-        }
+        },
+        **overrides,
     )
 
 

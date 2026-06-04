@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { key: "dashboard", label: "总览", icon: Activity },
   { key: "wechat", label: "微信", icon: MessageCircle },
   { key: "messages", label: "消息", icon: Inbox },
-  { key: "ingest", label: "拉取", icon: Database },
+  { key: "ingest", label: "作业", icon: Database },
   { key: "runs", label: "运行", icon: RefreshCw },
 ] satisfies Array<{ key: TabKey; label: string; icon: typeof Activity }>;
 
@@ -75,7 +75,7 @@ export function App() {
           </div>
           <button className="btn btn-primary btn-sm" type="button" onClick={() => setTab("ingest")}>
             <RefreshCw size={14} />
-            拉取
+            作业
           </button>
         </header>
         <div className="content">
@@ -96,7 +96,7 @@ function pageTitle(tab: TabKey): string {
     wechat: "微信消息",
     messages: "消息查询",
     runs: "运行记录",
-    ingest: "手动拉取",
+    ingest: "数据作业",
   };
   return titles[tab];
 }

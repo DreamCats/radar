@@ -55,6 +55,7 @@ def classify_messages_range(
     retry: ClassificationRetryMode | None = None,
     low_confidence_threshold: float = NEEDS_REVIEW_THRESHOLD,
     llm_batch_classifier: ClassifyBatchFn | None = None,
+    run_id: str | None = None,
 ) -> ClassifyRangeResult:
     """按时间窗口分类消息；写入以 message_id 幂等，窗口内用游标翻完。"""
 
@@ -82,12 +83,13 @@ def classify_messages_range(
         "retry": retry,
         "low_confidence_threshold": low_confidence_threshold,
     }
-    run_id = start_run(
-        config.database_path,
-        kind="message_classify_range",
-        target=_run_target(source, start_time, end_time),
-        metadata=run_metadata,
-    )
+    if run_id is None:
+        run_id = start_run(
+            config.database_path,
+            kind="message_classify_range",
+            target=_run_target(source, start_time, end_time),
+            metadata=run_metadata,
+        )
 
     conn = connect(config.database_path)
     try:

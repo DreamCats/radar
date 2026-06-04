@@ -1,6 +1,7 @@
 export type MessageSource = "个人消息" | "个人群";
 export type SourceKey = "personal_message" | "group_message";
 export type IngestSource = "all" | SourceKey;
+export type ClassificationRetryMode = "needs_review" | "unknown" | "low_confidence";
 
 export type MessageItem = {
   message_id: string;
@@ -95,6 +96,27 @@ export type IngestResultItem = {
 export type IngestJobItem = {
   source_key: SourceKey;
   source: MessageSource;
+  run_id: string;
+  reused_existing: boolean;
+  status: "running";
+};
+
+export type ClassifyRequest = {
+  source: IngestSource;
+  start_time: string;
+  end_time: string;
+  force: boolean;
+  chunk_hours: number;
+  limit: number;
+  batch_size: number;
+  max_concurrency: number;
+  retry?: ClassificationRetryMode;
+  low_confidence_threshold: number;
+};
+
+export type ClassifyJobItem = {
+  source_key: IngestSource;
+  source: string;
   run_id: string;
   reused_existing: boolean;
   status: "running";

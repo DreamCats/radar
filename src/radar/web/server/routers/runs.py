@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query
 
 from radar.core.config import RadarConfig
 from radar.core.runs import RunStatus, list_runs
+from radar.web.server.classify_jobs import mark_stale_classify_runs
 from radar.web.server.deps import get_config
 from radar.web.server.ingest_jobs import mark_stale_ingest_runs
 from radar.web.server.schemas import RunListResponse
@@ -19,4 +20,5 @@ def runs(
     config: RadarConfig = Depends(get_config),
 ) -> RunListResponse:
     mark_stale_ingest_runs(config)
+    mark_stale_classify_runs(config)
     return RunListResponse(items=list_runs(config.database_path, kind=kind, status=status, limit=limit))
