@@ -105,7 +105,7 @@
 .message-table-head,
 .message-list-row {
   display: grid;
-  grid-template-columns: 136px 64px minmax(144px, 200px) minmax(0, 1fr);
+  grid-template-columns: 96px 48px 156px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -198,6 +198,7 @@
   line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 
 .message-detail-body {

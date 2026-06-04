@@ -288,10 +288,12 @@ function MessageListRow(props: {
       <span className="message-time">{formatTime(props.item.message_time)}</span>
       <span className="message-source">{props.item.source}</span>
       <span className="message-identity">
-        <strong>{props.item.group_name || "-"}</strong>
+        <strong title={props.item.group_name || "-"}>{props.item.group_name || "-"}</strong>
         <em>{props.item.sender}</em>
       </span>
-      <span className="message-summary">{props.item.raw_content}</span>
+      <span className="message-summary" title={props.item.raw_content}>
+        {props.item.raw_content}
+      </span>
     </button>
   );
 }
