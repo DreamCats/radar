@@ -85,6 +85,13 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON messages(source, sender, message_time DESC, message_id DESC);
         """,
     ),
+    (
+        "005_message_source_time_index",
+        """
+        CREATE INDEX IF NOT EXISTS idx_messages_source_time
+            ON messages(source, message_time DESC, message_id DESC);
+        """,
+    ),
 ]
 
 MARKET_MIGRATIONS: list[Migration] = [

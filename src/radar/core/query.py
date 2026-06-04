@@ -40,6 +40,67 @@ class MessageGroupSummary(BaseModel):
 def list_messages(conn: sqlite3.Connection, filters: MessageFilters) -> MessagePage:
     """按时间倒序分页查询消息，默认不允许一次返回全量。"""
 
+    if not filters.keyword:
+        return _list_messages_by_time(conn, filters)
+    return _list_messages_with_keyword(conn, filters)
+
+
+def _list_messages_by_time(conn: sqlite3.Connection, filters: MessageFilters) -> MessagePage:
+    """无关键词首屏路径：按时间索引取候选，再做页内去重。"""
+
+    base_where, base_params = _base_message_conditions(filters, include_cursor=False)
+    cursor_time = filters.cursor_time
+    cursor_id = filters.cursor_id
+    batch_limit = max(filters.limit * 4, 100)
+    items: list[RawMessage] = []
+    seen: set[tuple[str, str, str, str, str]] = set()
+
+    while len(items) <= filters.limit:
+        where = list(base_where)
+        params = list(base_params)
+        if cursor_time and cursor_id:
+            # 时间相同时用 message_id 继续排序，保证翻页稳定且不重复。
+            where.append("(m.message_time, m.message_id) < (?, ?)")
+            params.extend([cursor_time.isoformat(), cursor_id])
+
+        sql = ["SELECT m.* FROM messages m"]
+        if where:
+            sql.append("WHERE " + " AND ".join(where))
+        sql.append("ORDER BY m.message_time DESC, m.message_id DESC LIMIT ?")
+        params.append(batch_limit)
+
+        rows = conn.execute(" ".join(sql), params).fetchall()
+        if not rows:
+            break
+
+        for row in rows:
+            fingerprint = _row_fingerprint(row)
+            if fingerprint in seen:
+                continue
+            seen.add(fingerprint)
+            items.append(_row_to_message(row))
+            if len(items) > filters.limit:
+                break
+
+        if len(items) > filters.limit or len(rows) < batch_limit:
+            break
+
+        last_row = rows[-1]
+        cursor_time = datetime.fromisoformat(last_row["message_time"])
+        cursor_id = last_row["message_id"]
+
+    has_more = len(items) > filters.limit
+    page_items = items[: filters.limit]
+    if not has_more or not page_items:
+        return MessagePage(items=page_items)
+
+    last = page_items[-1]
+    return MessagePage(items=page_items, next_cursor_time=last.message_time, next_cursor_id=last.message_id)
+
+
+def _list_messages_with_keyword(conn: sqlite3.Connection, filters: MessageFilters) -> MessagePage:
+    """关键词路径仍走数据库内去重，保证搜索语义稳定。"""
+
     sql = [
         "SELECT * FROM (",
         """
@@ -54,35 +115,20 @@ def list_messages(conn: sqlite3.Connection, filters: MessageFilters) -> MessageP
     where: list[str] = []
     params: list[object] = []
 
-    keyword = filters.keyword.strip() if filters.keyword else None
-    if keyword and len(keyword) >= 3:
+    keyword = filters.keyword.strip()
+    if len(keyword) >= 3:
         sql.append("JOIN messages_fts fts ON fts.message_id = m.message_id")
         where.append("messages_fts MATCH ?")
         params.append(keyword)
-    elif keyword:
+    else:
         # FTS5 trigram 对 1-2 字中文词不稳定，短词用 SQL LIKE 兜底，但仍在数据库内执行。
         where.append("(m.raw_content LIKE ? OR m.sender LIKE ? OR m.group_name LIKE ?)")
         like_keyword = f"%{keyword}%"
         params.extend([like_keyword, like_keyword, like_keyword])
-    if filters.source:
-        where.append("m.source = ?")
-        params.append(filters.source)
-    if filters.group_name:
-        where.append("m.group_name = ?")
-        params.append(filters.group_name)
-    if filters.sender:
-        where.append("m.sender = ?")
-        params.append(filters.sender)
-    if filters.start_time:
-        where.append("m.message_time >= ?")
-        params.append(filters.start_time.isoformat())
-    if filters.end_time:
-        where.append("m.message_time <= ?")
-        params.append(filters.end_time.isoformat())
-    if filters.cursor_time and filters.cursor_id:
-        # 时间相同时用 message_id 继续排序，保证翻页稳定且不重复。
-        where.append("(m.message_time, m.message_id) < (?, ?)")
-        params.extend([filters.cursor_time.isoformat(), filters.cursor_id])
+
+    base_where, base_params = _base_message_conditions(filters, include_cursor=True)
+    where.extend(base_where)
+    params.extend(base_params)
 
     if where:
         sql.append("WHERE " + " AND ".join(where))
@@ -99,6 +145,31 @@ def list_messages(conn: sqlite3.Connection, filters: MessageFilters) -> MessageP
 
     last = items[-1]
     return MessagePage(items=items, next_cursor_time=last.message_time, next_cursor_id=last.message_id)
+
+
+def _base_message_conditions(filters: MessageFilters, *, include_cursor: bool) -> tuple[list[str], list[object]]:
+    where: list[str] = []
+    params: list[object] = []
+    if filters.source:
+        where.append("m.source = ?")
+        params.append(filters.source)
+    if filters.group_name:
+        where.append("m.group_name = ?")
+        params.append(filters.group_name)
+    if filters.sender:
+        where.append("m.sender = ?")
+        params.append(filters.sender)
+    if filters.start_time:
+        where.append("m.message_time >= ?")
+        params.append(filters.start_time.isoformat())
+    if filters.end_time:
+        where.append("m.message_time <= ?")
+        params.append(filters.end_time.isoformat())
+    if include_cursor and filters.cursor_time and filters.cursor_id:
+        # 时间相同时用 message_id 继续排序，保证翻页稳定且不重复。
+        where.append("(m.message_time, m.message_id) < (?, ?)")
+        params.extend([filters.cursor_time.isoformat(), filters.cursor_id])
+    return where, params
 
 
 def list_message_groups(
@@ -153,4 +224,14 @@ def _row_to_message(row: sqlite3.Row) -> RawMessage:
         group_name=row["group_name"],
         fetch_time=datetime.fromisoformat(row["fetch_time"]),
         fetch_window=row["fetch_window"],
+    )
+
+
+def _row_fingerprint(row: sqlite3.Row) -> tuple[str, str, str, str, str]:
+    return (
+        row["source"],
+        row["sender"],
+        row["message_time"],
+        row["raw_content"],
+        row["group_name"] or "",
     )
