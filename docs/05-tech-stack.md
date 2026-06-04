@@ -21,7 +21,9 @@
 radar (Python / uv)
 ├── core/          数据核（CLI 和 Web 共享，逻辑只写一遍）
 │   ├── fetch      微信 API 拉取（复用 stock-news 逻辑）
-│   ├── store      SQLite 落盘 + 去重 + 查询
+│   ├── store      SQLite 落盘 + 去重 + 窗口缓存
+│   ├── messages   消息/会话分页查询
+│   ├── usecases   ingest / classification 等业务编排
 │   └── models     pydantic
 ├── cli/           click —— radar fetch / list / stats ...
 └── web/

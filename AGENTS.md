@@ -33,7 +33,7 @@ src/radar/
 │   ├── fetch.py      微信 API 拉取和原始字段标准化
 │   ├── db.py         SQLite migration 和 schema 版本
 │   ├── store.py      SQLite 写入、去重、窗口缓存
-│   ├── query.py      消息筛选、分页、搜索
+│   ├── messages/     消息筛选、分页、搜索、会话列表
 │   ├── runs.py       core 执行审计记录
 │   ├── filtering.py  硬过滤规则
 │   ├── llm/          LLM provider 解析和协议客户端
@@ -53,6 +53,8 @@ web/ui/            React/Vite 前端，只调用 Web API
 - `core/` 是唯一业务真相来源；CLI 和 Web 后端都只能编排 core，不允许复制业务逻辑。
 - `core/` 不依赖 click、FastAPI、React、浏览器概念。
 - `core/usecases/` 放跨模块编排，例如分片拉取、过滤、写库、窗口记录；底层 SQL 仍留在 `store.py`。
+- `core/usecases/classification/` 放消息分类 usecase、范围编排和 prompt；不要放进 `core/llm/`。
+- `core/messages/` 放消息和会话的分页查询模型；CLI/Web 从这里取查询能力。
 - `core/llm/` 只放 provider 解析、协议请求、JSON 解析等通用能力；prompt、任务语义和分类规则应放在后续 usecase。
 - `core/tushare/` 不依赖 tushare-cli 的独立配置、click、formatter 或安装脚本；配置统一走 radar 的 `market` 和 `secrets.market`。
 - Tushare API 地址使用 `market.api_url`；为兼容 stock-news 旧配置，可接受 `market.tushare_api_url` 作为别名。
@@ -63,7 +65,7 @@ web/ui/            React/Vite 前端，只调用 Web API
 - Web 前端不保存业务规则，只做展示、筛选控件、分页加载、交互状态。
 - Web 前端按 `api/`、`pages/`、`components/`、`lib/`、`types.ts` 分层；页面负责状态和交互，组件负责展示，API 层负责 HTTP。
 - 新增 Web 功能时先判断放在哪一层，不要继续往 `main.tsx` 或单个大页面里堆逻辑。
-- SQLite 表结构、索引、FTS5、去重逻辑集中在 storage/query 层，不散落到接口层。
+- SQLite 表结构、索引、FTS5、去重逻辑集中在 store/messages 层，不散落到接口层。
 - SQLite schema 变更必须通过 `core/db.py` migration 追加版本，不直接改已落地表结构。
 - `runs` 只记录执行审计摘要和脱敏 metadata，不存真实消息内容或敏感 token。
 
@@ -127,10 +129,10 @@ web/ui/            React/Vite 前端，只调用 Web API
 
 ## 10. 常见改动路径
 
-- 改数据模型：先看 `docs/01-data-source.md`，再改 `src/radar/core/models.py`，同步 store/query 和测试。
+- 改数据模型：先看 `docs/01-data-source.md`，再改 `src/radar/core/models.py`，同步 store/messages 和测试。
 - 改拉取逻辑：先改 `src/radar/core/fetch.py`，CLI/Web 不应直接变化。
 - 改入库或索引：改 `src/radar/core/store.py`，说明迁移策略。
-- 改查询筛选：改 `src/radar/core/query.py`，同时覆盖 CLI 输出和 Web API。
+- 改查询筛选：改 `src/radar/core/messages/query.py` 或 `src/radar/core/messages/conversations.py`，同时覆盖 CLI 输出和 Web API。
 - 加 CLI 命令：在 `src/radar/cli/` 添加薄封装，复用 core。
 - 加 Web API：在 `src/radar/web/server/` 添加路由，复用 core 查询模型。
 - 改 UI：先读 `DESIGN.md` 和 `demo/`，保持暗色、信息密度、分页/虚拟滚动约束。

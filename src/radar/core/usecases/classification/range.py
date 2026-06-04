@@ -9,7 +9,7 @@ from radar.core.config import RadarConfig
 from radar.core.models import ClassificationRetryMode, MessageSource
 from radar.core.runs import fail_run, finish_run, start_run
 from radar.core.store import connect, init_db, list_messages_for_classification
-from radar.core.usecases.classify_messages import (
+from radar.core.usecases.classification.messages import (
     CLASSIFY_BATCH_SIZE,
     CLASSIFY_MAX_CONCURRENCY,
     NEEDS_REVIEW_THRESHOLD,

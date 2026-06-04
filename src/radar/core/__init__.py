@@ -2,8 +2,8 @@
 
 from radar.core.config import RadarConfig
 from radar.core.llm import LlmConfigError, chat, chat_json, chat_json_list
+from radar.core.messages import MessageFilters, MessagePage, list_messages
 from radar.core.models import MessageSource, RawMessage
-from radar.core.query import MessageFilters, MessagePage, list_messages
 from radar.core.runs import RunRecord, fail_run, finish_run, get_run, start_run
 from radar.core.store import connect, init_db, upsert_messages
 from radar.core.tushare import (

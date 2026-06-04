@@ -44,12 +44,12 @@ src/radar/
 │   ├── fetch.py               # 微信 API 拉取和标准化
 │   ├── filtering.py           # 硬过滤规则
 │   ├── llm/                   # LLM provider 解析和协议客户端
+│   ├── messages/              # 消息和会话查询分页
 │   ├── models.py              # pydantic 数据模型
-│   ├── query.py               # SQLite 查询和分页
 │   ├── runs.py                # core 执行审计记录
 │   ├── store.py               # SQLite schema、去重、窗口缓存
 │   ├── tushare/               # Tushare provider、缓存、历史数据和股票解析
-│   └── usecases/              # 跨模块编排
+│   └── usecases/              # 跨模块编排，classification/ 放消息分类
 └── web/server/
     ├── app.py                 # FastAPI app 创建
     ├── deps.py                # Web 依赖注入

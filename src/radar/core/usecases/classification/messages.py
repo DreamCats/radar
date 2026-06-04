@@ -17,7 +17,7 @@ from radar.core.models import (
     RawMessage,
 )
 from radar.core.runs import fail_run, finish_run, start_run
-from radar.core.usecases.classify_prompts import CLASSIFY_SYSTEM_PROMPT
+from radar.core.usecases.classification.prompts import CLASSIFY_SYSTEM_PROMPT
 from radar.core.store import (
     connect,
     init_db,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from radar.core.models import RawMessage
-from radar.core.query import MessageFilters, list_message_groups, list_messages
+from radar.core.messages import MessageFilters, list_message_groups, list_messages
 from radar.core.store import (
     fetch_window_covered,
     fetch_window_exists,

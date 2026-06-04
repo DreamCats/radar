@@ -459,7 +459,7 @@ def test_classify_messages_writes_finished_batch_before_next_batch(tmp_path):
 def test_classify_batch_with_llm_disables_thinking(monkeypatch, tmp_path):
     config = _config(tmp_path)
     seen_kwargs = {}
-    classify_module = importlib.import_module("radar.core.usecases.classify_messages")
+    classify_module = importlib.import_module("radar.core.usecases.classification.messages")
 
     def fake_resolve_provider(_config, *, provider_name=None, task=None):
         assert provider_name == "test-provider"

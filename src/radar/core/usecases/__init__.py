@@ -1,11 +1,12 @@
 """Core use cases that orchestrate lower-level capabilities."""
 
-from radar.core.usecases.classify_messages import (
+from radar.core.usecases.classification import (
     ClassifyMessagesResult,
+    ClassifyRangeResult,
     classify_batch_with_llm,
     classify_messages,
+    classify_messages_range,
 )
-from radar.core.usecases.classify_range import ClassifyRangeResult, classify_messages_range
 from radar.core.usecases.ingest_wechat import (
     IngestRangeResult,
     IngestWindowResult,

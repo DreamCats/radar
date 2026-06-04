@@ -5,9 +5,14 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from radar.core.config import RadarConfig
-from radar.core.conversations import ConversationFilters, list_conversations
+from radar.core.messages import (
+    ConversationFilters,
+    MessageFilters,
+    list_conversations,
+    list_message_groups,
+    list_messages,
+)
 from radar.core.models import MessageSource
-from radar.core.query import MessageFilters, list_message_groups, list_messages
 from radar.core.store import connect, init_db
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import ConversationPageResponse, MessageGroupListResponse, MessagePageResponse
