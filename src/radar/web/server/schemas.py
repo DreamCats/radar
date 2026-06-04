@@ -31,7 +31,6 @@ class ConversationItem(BaseModel):
     latest_time: datetime
     latest_content: str
     latest_message_id: str
-    message_count: int
 
 
 class ConversationPageResponse(BaseModel):

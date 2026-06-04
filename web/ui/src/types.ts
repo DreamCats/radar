@@ -27,7 +27,6 @@ export type MessageConversationItem = {
   latest_time: string;
   latest_content: string;
   latest_message_id: string;
-  message_count: number;
 };
 
 export type MessageConversationPage = {

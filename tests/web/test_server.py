@@ -46,6 +46,25 @@ def test_message_groups_endpoint_reads_distinct_groups(tmp_path):
     assert response.json()["items"][0]["group_name"] == "东财策略"
 
 
+def test_conversations_endpoint_omits_message_count(tmp_path):
+    config = _config(tmp_path)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, [_message()])
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    for params in ({"source": "group_message"}, {"source": "group_message", "keyword": "固态"}):
+        response = client.get("/api/conversations", params=params)
+
+        assert response.status_code == 200
+        item = response.json()["items"][0]
+        assert item["title"] == "东财策略"
+        assert "message_count" not in item
+
+
 def test_root_endpoint_points_to_dashboard(tmp_path):
     client = TestClient(create_app(_config(tmp_path)))
     response = client.get("/")

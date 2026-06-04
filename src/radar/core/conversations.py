@@ -29,7 +29,6 @@ class ConversationSummary(BaseModel):
     latest_time: datetime
     latest_content: str
     latest_message_id: str
-    message_count: int
 
 
 class ConversationPage(BaseModel):
@@ -99,7 +98,6 @@ def list_conversations(conn: sqlite3.Connection, filters: ConversationFilters) -
                        source,
                        conversation_title,
                        source || ':' || conversation_title AS conversation_key,
-                       COUNT(*) AS conversation_count,
                        MAX(message_time || char(31) || message_id) AS latest_key
                 FROM keyed
                 GROUP BY source, conversation_title
@@ -112,8 +110,7 @@ def list_conversations(conn: sqlite3.Connection, filters: ConversationFilters) -
                     m.sender,
                     m.message_time,
                     m.raw_content,
-                    m.message_id,
-                    latest.conversation_count
+                    m.message_id
                 FROM latest
                 JOIN messages m
                   ON m.message_id = substr(latest.latest_key, instr(latest.latest_key, char(31)) + 1)
@@ -125,8 +122,7 @@ def list_conversations(conn: sqlite3.Connection, filters: ConversationFilters) -
                 sender,
                 message_time,
                 raw_content,
-                message_id,
-                conversation_count
+                message_id
             FROM page
             WHERE 1 = 1
             """
@@ -164,7 +160,6 @@ def _list_conversations_by_identity(conn: sqlite3.Connection, filters: Conversat
             SELECT source,
                    group_name AS conversation_title,
                    source || ':' || group_name AS conversation_key,
-                   COUNT(*) AS conversation_count,
                    MAX(message_time || char(31) || message_id) AS latest_key
             FROM messages
             WHERE {" AND ".join(where)}
@@ -185,7 +180,6 @@ def _list_conversations_by_identity(conn: sqlite3.Connection, filters: Conversat
             SELECT source,
                    sender AS conversation_title,
                    source || ':' || sender AS conversation_key,
-                   COUNT(*) AS conversation_count,
                    MAX(message_time || char(31) || message_id) AS latest_key
             FROM messages
             WHERE {" AND ".join(where)}
@@ -209,8 +203,7 @@ def _list_conversations_by_identity(conn: sqlite3.Connection, filters: Conversat
                 m.sender,
                 m.message_time,
                 m.raw_content,
-                m.message_id,
-                latest.conversation_count
+                m.message_id
             FROM latest
             JOIN messages m
               ON m.message_id = substr(latest.latest_key, instr(latest.latest_key, char(31)) + 1)
@@ -222,8 +215,7 @@ def _list_conversations_by_identity(conn: sqlite3.Connection, filters: Conversat
             sender,
             message_time,
             raw_content,
-            message_id,
-            conversation_count
+            message_id
         FROM page
         WHERE 1 = 1
         """,
@@ -250,7 +242,6 @@ def _conversation_page_from_rows(rows: list[sqlite3.Row], limit: int) -> Convers
             latest_time=datetime.fromisoformat(row["message_time"]),
             latest_content=row["raw_content"],
             latest_message_id=row["message_id"],
-            message_count=row["conversation_count"],
         )
         for row in page_rows
     ]
