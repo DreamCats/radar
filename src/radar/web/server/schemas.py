@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from radar.core.models import ClassificationRetryMode, MessageSource, RawMessage
+from radar.core.organize import OrganizeClassificationCluster, OrganizeClassificationSummary
 from radar.core.runs import RunRecord
 
 SourceKey = Literal["personal_message", "group_message"]
@@ -116,3 +117,8 @@ class ClassifyMessagesJobItem(BaseModel):
 
 class ClassifyMessagesJobResponse(BaseModel):
     items: list[ClassifyMessagesJobItem]
+
+
+class OrganizeClassificationResponse(BaseModel):
+    summary: OrganizeClassificationSummary
+    clusters: list[OrganizeClassificationCluster]

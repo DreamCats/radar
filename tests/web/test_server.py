@@ -6,9 +6,9 @@ from threading import Event
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
-from radar.core.models import RawMessage
+from radar.core.models import MessageClassification, RawMessage
 from radar.core.runs import finish_run, get_run, start_run
-from radar.core.store import connect, init_db, upsert_messages
+from radar.core.store import connect, init_db, upsert_message_classifications, upsert_messages
 from radar.core.usecases import IngestRangeResult
 from radar.web.server.app import create_app
 
@@ -64,6 +64,28 @@ def test_conversations_endpoint_omits_message_count(tmp_path):
         item = response.json()["items"][0]
         assert item["title"] == "东财策略"
         assert "message_count" not in item
+
+
+def test_organize_classifications_endpoint_returns_clusters(tmp_path):
+    config = _config(tmp_path)
+    message = _message()
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, [message])
+        upsert_message_classifications(conn, [_classification(message, "research", 0.92, "研究观点")])
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/organize/classifications", params={"source": "group_message"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["summary"]["total_count"] == 1
+    assert data["clusters"][0]["category"] == "research"
+    assert data["clusters"][0]["label"] == "研究观点"
+    assert data["clusters"][0]["evidence"][0]["message_id"] == "m1"
 
 
 def test_root_endpoint_points_to_dashboard(tmp_path):
@@ -335,4 +357,21 @@ def _message() -> RawMessage:
         group_name="东财策略",
         fetch_time=datetime.fromisoformat("2026-06-04T10:01:00"),
         fetch_window="20260604090000-20260604110000",
+    )
+
+
+def _classification(message: RawMessage, category: str, confidence: float, reason: str) -> MessageClassification:
+    now = datetime.fromisoformat("2026-06-04T12:00:00")
+    return MessageClassification(
+        message_id=message.message_id,
+        category=category,
+        confidence=confidence,
+        reason=reason,
+        status="auto",
+        classifier_type="llm",
+        llm_provider="test-provider",
+        prompt_version="test",
+        classifier_version="test",
+        created_at=now,
+        updated_at=now,
     )

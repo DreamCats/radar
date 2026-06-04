@@ -484,6 +484,29 @@ def test_classify_batch_with_llm_disables_thinking(monkeypatch, tmp_path):
     assert results[0].category == "research"
 
 
+def test_classify_batch_remaps_tool_ad_to_research(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    classify_module = importlib.import_module("radar.core.usecases.classification.messages")
+
+    def fake_resolve_provider(_config, *, provider_name=None, task=None):
+        return "test-provider", None
+
+    def fake_chat_json_list(_config, _messages, **_kwargs):
+        return [{"index": 1, "category": "tool_ad", "confidence": 0.9, "reason": "金融信息入口"}]
+
+    monkeypatch.setattr(classify_module, "resolve_provider", fake_resolve_provider)
+    monkeypatch.setattr(classify_module, "chat_json_list", fake_chat_json_list)
+
+    results = classify_batch_with_llm(
+        config,
+        [_message("m1", "2026-06-04T10:00:00", "智能投研系统榜单")],
+        "test-provider",
+    )
+
+    assert results[0].category == "research"
+    assert results[0].status == "auto"
+
+
 def _config(tmp_path) -> RadarConfig:
     return RadarConfig(storage={"data_dir": tmp_path, "database": tmp_path / "radar.sqlite3"})
 

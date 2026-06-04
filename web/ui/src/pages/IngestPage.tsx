@@ -6,23 +6,8 @@ import { DateField, SelectField } from "../components/FormFields";
 import { JobRunCard } from "../components/JobRunCard";
 import { PanelTitle } from "../components/PanelTitle";
 import { toIso } from "../lib/datetime";
+import { buildPresetRange, rangeLabel, RANGE_PRESETS, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
 import type { ClassifyJobItem, IngestJobItem, IngestSource, RunItem } from "../types";
-
-type RangePreset = "today" | "yesterday" | "last24h" | "last7d" | "custom";
-
-type LocalRange = {
-  startDate: string;
-  startTime: string;
-  endDate: string;
-  endTime: string;
-};
-
-const PRESETS: Array<[RangePreset, string]> = [
-  ["today", "今天"],
-  ["yesterday", "昨天"],
-  ["last24h", "近 24 小时"],
-  ["last7d", "近 7 天"],
-];
 
 export function IngestPage() {
   const [source, setSource] = useState<IngestSource>("all");
@@ -164,7 +149,7 @@ export function IngestPage() {
       </div>
 
       <div className="range-presets" aria-label="快捷时间窗口">
-        {PRESETS.map(([value, label]) => (
+        {RANGE_PRESETS.map(([value, label]) => (
           <button
             className={preset === value ? "preset-button active" : "preset-button"}
             key={value}
@@ -229,7 +214,7 @@ export function IngestPage() {
           </div>
           <div className="ingest-stat">
             <span>窗口</span>
-            <strong>{preset === "custom" ? "自定义" : PRESETS.find(([value]) => value === preset)?.[1]}</strong>
+            <strong>{preset === "custom" ? "自定义" : RANGE_PRESETS.find(([value]) => value === preset)?.[1]}</strong>
           </div>
         </aside>
       </div>
@@ -334,67 +319,4 @@ export function IngestPage() {
       </section>
     </section>
   );
-}
-
-function buildPresetRange(preset: RangePreset): LocalRange {
-  const now = new Date();
-  if (preset === "yesterday") {
-    const day = addDays(startOfDay(now), -1);
-    return buildRange(day, endOfDay(day));
-  }
-  if (preset === "last24h") {
-    return buildRange(addHours(now, -24), now);
-  }
-  if (preset === "last7d") {
-    return buildRange(addDays(now, -7), now);
-  }
-  return buildRange(startOfDay(now), now);
-}
-
-// 前端只负责生成本地时间窗口，后端继续按同一 ingest API 执行。
-function buildRange(start: Date, end: Date): LocalRange {
-  return {
-    startDate: formatDate(start),
-    startTime: formatTime(start),
-    endDate: formatDate(end),
-    endTime: formatTime(end),
-  };
-}
-
-function toLocalIso(date: string, time: string): string {
-  return date && time ? `${date}T${time}:00` : "";
-}
-
-function rangeLabel(range: LocalRange): string {
-  return `${range.startDate} ${range.startTime} - ${range.endDate} ${range.endTime}`;
-}
-
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0);
-}
-
-function endOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59);
-}
-
-function addDays(date: Date, days: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
-}
-
-function addHours(date: Date, hours: number): Date {
-  return new Date(date.getTime() + hours * 60 * 60 * 1000);
-}
-
-function formatDate(date: Date): string {
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getDate()}`.padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
-function formatTime(date: Date): string {
-  const hour = `${date.getHours()}`.padStart(2, "0");
-  const minute = `${date.getMinutes()}`.padStart(2, "0");
-  return `${hour}:${minute}`;
 }

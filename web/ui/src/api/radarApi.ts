@@ -9,6 +9,8 @@ import type {
   MessageGroupItem,
   MessagePage,
   MessageQuery,
+  OrganizeClassificationPage,
+  OrganizeClassificationQuery,
   RunItem,
 } from "../types";
 
@@ -25,6 +27,12 @@ export async function fetchConversations(query: MessageConversationQuery): Promi
 export async function fetchMessageGroups(query: { source?: string; keyword?: string; limit?: number } = {}): Promise<MessageGroupItem[]> {
   const data = await getJson<{ items: MessageGroupItem[] }>(`/api/message-groups?${params(query)}`);
   return data.items;
+}
+
+export async function fetchOrganizeClassifications(
+  query: OrganizeClassificationQuery = {},
+): Promise<OrganizeClassificationPage> {
+  return getJson(`/api/organize/classifications?${params(query)}`);
 }
 
 export async function fetchRuns(): Promise<RunItem[]> {

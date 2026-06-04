@@ -1,6 +1,7 @@
 export type MessageSource = "个人消息" | "个人群";
 export type SourceKey = "personal_message" | "group_message";
 export type IngestSource = "all" | SourceKey;
+export type MessageCategory = "research" | "recommendation" | "event" | "industry" | "tool_ad" | "chat" | "unknown";
 export type ClassificationRetryMode = "needs_review" | "unknown" | "low_confidence";
 
 export type MessageItem = {
@@ -120,4 +121,48 @@ export type ClassifyJobItem = {
   run_id: string;
   reused_existing: boolean;
   status: "running";
+};
+
+export type OrganizeEvidenceMessage = {
+  message_id: string;
+  source: MessageSource;
+  sender: string;
+  group_name?: string | null;
+  message_time: string;
+  raw_content: string;
+  category: MessageCategory;
+  confidence: number;
+  reason: string;
+  status: string;
+};
+
+export type OrganizeClassificationCluster = {
+  category: MessageCategory;
+  label: string;
+  count: number;
+  average_confidence: number;
+  low_confidence_count: number;
+  latest_time: string;
+  evidence: OrganizeEvidenceMessage[];
+};
+
+export type OrganizeClassificationSummary = {
+  total_count: number;
+  cluster_count: number;
+  low_confidence_count: number;
+  average_confidence: number;
+};
+
+export type OrganizeClassificationPage = {
+  summary: OrganizeClassificationSummary;
+  clusters: OrganizeClassificationCluster[];
+};
+
+export type OrganizeClassificationQuery = {
+  source?: SourceKey;
+  keyword?: string;
+  start_time?: string;
+  end_time?: string;
+  evidence_limit?: number;
+  low_confidence_threshold?: number;
 };

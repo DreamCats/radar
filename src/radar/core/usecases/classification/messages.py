@@ -27,9 +27,9 @@ from radar.core.store import (
 from radar.core.work_pool import run_work_pool
 
 CLASSIFY_BATCH_SIZE = 16
-CLASSIFY_PROMPT_VERSION = "classify-batch-v2"
+CLASSIFY_PROMPT_VERSION = "classify-batch-v3"
 CLASSIFY_TASK = "classify"
-CLASSIFIER_VERSION = "llm-v2"
+CLASSIFIER_VERSION = "llm-v3"
 CLASSIFY_MAX_CONCURRENCY = 10
 MAX_LLM_CONTENT_CHARS = 800
 NEEDS_REVIEW_THRESHOLD = 0.65
@@ -44,7 +44,6 @@ _CATEGORIES: set[MessageCategory] = {
     "recommendation",
     "event",
     "industry",
-    "tool_ad",
     "chat",
     "unknown",
 }
@@ -353,6 +352,8 @@ def _as_int(value: object) -> int | None:
 
 def _as_category(value: object) -> MessageCategory:
     text = str(value or "unknown")
+    if text == "tool_ad":
+        return "research"
     return text if text in _CATEGORIES else "unknown"
 
 
@@ -365,7 +366,7 @@ def _as_confidence(value: object) -> float:
 
 
 def _status_for(category: MessageCategory, confidence: float) -> ClassificationStatus:
-    if category in {"chat", "tool_ad"}:
+    if category == "chat":
         return "ignored"
     if confidence >= NEEDS_REVIEW_THRESHOLD:
         return "auto"
