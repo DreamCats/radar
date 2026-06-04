@@ -7,9 +7,7 @@ import { formatTime } from "../lib/datetime";
 import {
   buildSenderStats,
   displayName,
-  isSelfConversation,
   isSelfName,
-  isSelfMessage,
   matchesMessage,
   mergeMessages,
   normalizeKeyword,
@@ -46,10 +44,7 @@ export function WechatPage() {
   const threadRef = useRef<HTMLDivElement | null>(null);
   const threadScrollIntentRef = useRef<ThreadScrollIntent | null>(null);
 
-  const conversations = useMemo(
-    () => conversationPage.items.filter((item) => !isSelfConversation(item)),
-    [conversationPage.items],
-  );
+  const conversations = conversationPage.items;
   const selectedConversation = conversations.find((item) => item.key === selectedKey) ?? conversations[0] ?? null;
   const senderStats = useMemo(() => buildSenderStats(threadItems), [threadItems]);
   const matchedSenderStats = useMemo(() => {
@@ -112,11 +107,10 @@ export function WechatPage() {
     setError(null);
     try {
       const data = await fetchConversations(nextQuery);
-      const visible = data.items.filter((item) => !isSelfConversation(item));
       setConversationPage(data);
       setQuery(nextQuery);
       setSelectedKey((current) =>
-        current && visible.some((item) => item.key === current) ? current : visible[0]?.key ?? null,
+        current && data.items.some((item) => item.key === current) ? current : data.items[0]?.key ?? null,
       );
       if (pushHistory) {
         setHistory((items) => [...items, query]);
@@ -148,9 +142,8 @@ export function WechatPage() {
         cursor_id: older ? threadCursor.id ?? undefined : undefined,
         limit: threadLimit,
       });
-      const visible = data.items.filter((item) => !isSelfMessage(item));
       threadScrollIntentRef.current = scrollIntent;
-      setThreadItems((current) => (older ? mergeMessages(current, visible) : mergeMessages([], visible)));
+      setThreadItems((current) => (older ? mergeMessages(current, data.items) : mergeMessages([], data.items)));
       setThreadCursor({ time: data.next_cursor_time, id: data.next_cursor_id });
     } catch (err) {
       threadScrollIntentRef.current = null;
@@ -186,7 +179,6 @@ export function WechatPage() {
               <h2>微信</h2>
               <span>{conversations.length} 个会话</span>
             </div>
-            <span className="wechat-state">隐藏自发</span>
           </div>
           {error && <p className="error-line">{error}</p>}
           <div
