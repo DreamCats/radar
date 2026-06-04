@@ -27,11 +27,28 @@ class MessagePage(BaseModel):
     next_cursor_id: str | None = None
 
 
+class MessageGroupSummary(BaseModel):
+    """消息里的群名聚合结果，先不引入复杂群维表。"""
+
+    group_name: str
+    message_count: int
+    first_seen_at: datetime
+    last_seen_at: datetime
+
+
 def list_messages(conn: sqlite3.Connection, filters: MessageFilters) -> MessagePage:
     """按时间倒序分页查询消息，默认不允许一次返回全量。"""
 
     sql = [
-        "SELECT m.* FROM messages m",
+        "SELECT * FROM (",
+        """
+        SELECT m.*,
+               ROW_NUMBER() OVER (
+                   PARTITION BY m.source, m.sender, m.message_time, m.raw_content, COALESCE(m.group_name, '')
+                   ORDER BY m.message_id
+               ) AS dedupe_rank
+        FROM messages m
+        """,
     ]
     where: list[str] = []
     params: list[object] = []
@@ -65,7 +82,8 @@ def list_messages(conn: sqlite3.Connection, filters: MessageFilters) -> MessageP
 
     if where:
         sql.append("WHERE " + " AND ".join(where))
-    sql.append("ORDER BY m.message_time DESC, m.message_id DESC LIMIT ?")
+    sql.append(") WHERE dedupe_rank = 1")
+    sql.append("ORDER BY message_time DESC, message_id DESC LIMIT ?")
     params.append(filters.limit + 1)
 
     rows = conn.execute(" ".join(sql), params).fetchall()
@@ -77,6 +95,48 @@ def list_messages(conn: sqlite3.Connection, filters: MessageFilters) -> MessageP
 
     last = items[-1]
     return MessagePage(items=items, next_cursor_time=last.message_time, next_cursor_id=last.message_id)
+
+
+def list_message_groups(
+    conn: sqlite3.Connection,
+    *,
+    source: MessageSource | None = None,
+    keyword: str | None = None,
+    limit: int = 200,
+) -> list[MessageGroupSummary]:
+    """从消息表聚合群名，供筛选下拉和后续群管理能力复用。"""
+
+    sql = [
+        """
+        SELECT
+            group_name,
+            COUNT(*) AS message_count,
+            MIN(message_time) AS first_seen_at,
+            MAX(message_time) AS last_seen_at
+        FROM messages
+        WHERE group_name IS NOT NULL AND group_name <> ''
+        """
+    ]
+    params: list[object] = []
+    if source:
+        sql.append("AND source = ?")
+        params.append(source)
+    if keyword:
+        sql.append("AND group_name LIKE ?")
+        params.append(f"%{keyword}%")
+    sql.append("GROUP BY group_name ORDER BY message_count DESC, last_seen_at DESC LIMIT ?")
+    params.append(limit)
+
+    rows = conn.execute(" ".join(sql), params).fetchall()
+    return [
+        MessageGroupSummary(
+            group_name=row["group_name"],
+            message_count=row["message_count"],
+            first_seen_at=datetime.fromisoformat(row["first_seen_at"]),
+            last_seen_at=datetime.fromisoformat(row["last_seen_at"]),
+        )
+        for row in rows
+    ]
 
 
 def _row_to_message(row: sqlite3.Row) -> RawMessage:

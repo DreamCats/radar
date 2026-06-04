@@ -12,7 +12,11 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
 
         tables = _tables(conn)
         assert {"schema_migrations", "messages", "messages_fts", "fetch_windows", "runs"} <= tables
-        assert applied_migrations(conn) == {"001_init_messages", "002_init_runs"}
+        assert applied_migrations(conn) == {
+            "001_init_messages",
+            "002_init_runs",
+            "003_message_fingerprint_index",
+        }
     finally:
         conn.close()
 
@@ -37,7 +41,7 @@ def test_migrations_are_idempotent(tmp_path):
         migrate_message_db(conn)
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 2
+        assert count == 3
     finally:
         conn.close()
 

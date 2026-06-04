@@ -69,6 +69,13 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON runs(status, started_at DESC);
         """,
     ),
+    (
+        "003_message_fingerprint_index",
+        """
+        CREATE INDEX IF NOT EXISTS idx_messages_fingerprint_lookup
+            ON messages(source, sender, message_time, group_name);
+        """,
+    ),
 ]
 
 MARKET_MIGRATIONS: list[Migration] = [

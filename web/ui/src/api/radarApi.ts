@@ -1,9 +1,14 @@
-import type { IngestRequest, IngestResultItem, MessagePage, MessageQuery, RunItem } from "../types";
+import type { IngestRequest, IngestResultItem, MessageGroupItem, MessagePage, MessageQuery, RunItem } from "../types";
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
 
 export async function fetchMessages(query: MessageQuery): Promise<MessagePage> {
   return getJson(`/api/messages?${params(query)}`);
+}
+
+export async function fetchMessageGroups(query: { source?: string; keyword?: string; limit?: number } = {}): Promise<MessageGroupItem[]> {
+  const data = await getJson<{ items: MessageGroupItem[] }>(`/api/message-groups?${params(query)}`);
+  return data.items;
 }
 
 export async function fetchRuns(): Promise<RunItem[]> {

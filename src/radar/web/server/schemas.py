@@ -23,6 +23,17 @@ class MessagePageResponse(BaseModel):
     next_cursor_id: str | None = None
 
 
+class MessageGroupItem(BaseModel):
+    group_name: str
+    message_count: int
+    first_seen_at: datetime
+    last_seen_at: datetime
+
+
+class MessageGroupListResponse(BaseModel):
+    items: list[MessageGroupItem]
+
+
 class RunListResponse(BaseModel):
     items: list[RunRecord]
 

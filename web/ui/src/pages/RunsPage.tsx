@@ -24,9 +24,9 @@ export function RunsPage() {
   }, []);
 
   return (
-    <section className="content-panel full">
+    <section className="content-panel panel full runs-panel">
       <PanelTitle title="最近运行" meta={`${runs.length} 条`}>
-        <button className="icon-button" type="button" onClick={() => void refresh()} title="刷新">
+        <button className="btn btn-sm" type="button" onClick={() => void refresh()} title="刷新">
           <RefreshCw size={16} />
           刷新
         </button>

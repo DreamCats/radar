@@ -30,6 +30,22 @@ def test_messages_endpoint_reads_paged_messages(tmp_path):
     assert data["items"][0]["raw_content"] == "固态电池观点"
 
 
+def test_message_groups_endpoint_reads_distinct_groups(tmp_path):
+    config = _config(tmp_path)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, [_message()])
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/message-groups", params={"source": "group_message"})
+
+    assert response.status_code == 200
+    assert response.json()["items"][0]["group_name"] == "东财策略"
+
+
 def test_root_endpoint_points_to_dashboard(tmp_path):
     client = TestClient(create_app(_config(tmp_path)))
     response = client.get("/")

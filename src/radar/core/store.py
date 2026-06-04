@@ -27,6 +27,8 @@ def upsert_messages(conn: sqlite3.Connection, messages: list[RawMessage]) -> int
 
     inserted = 0
     for message in messages:
+        if _message_fingerprint_exists(conn, message):
+            continue
         cursor = conn.execute(
             """
             INSERT OR IGNORE INTO messages (
@@ -56,6 +58,30 @@ def upsert_messages(conn: sqlite3.Connection, messages: list[RawMessage]) -> int
             )
     conn.commit()
     return inserted
+
+
+def _message_fingerprint_exists(conn: sqlite3.Connection, message: RawMessage) -> bool:
+    """兼容历史迁移和 API 重复返回：同源、同人、同时间、同内容视为同一条。"""
+
+    row = conn.execute(
+        """
+        SELECT 1 FROM messages
+        WHERE source = ?
+          AND sender = ?
+          AND message_time = ?
+          AND raw_content = ?
+          AND COALESCE(group_name, '') = ?
+        LIMIT 1
+        """,
+        (
+            message.source,
+            message.sender,
+            message.message_time.isoformat(),
+            message.raw_content,
+            message.group_name or "",
+        ),
+    ).fetchone()
+    return row is not None
 
 
 def fetch_window_exists(

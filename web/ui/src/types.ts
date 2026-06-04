@@ -19,6 +19,13 @@ export type MessagePage = {
   next_cursor_id?: string | null;
 };
 
+export type MessageGroupItem = {
+  group_name: string;
+  message_count: number;
+  first_seen_at: string;
+  last_seen_at: string;
+};
+
 export type MessageQuery = {
   source?: string;
   group_name?: string;

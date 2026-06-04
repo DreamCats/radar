@@ -6,10 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from radar.core.config import RadarConfig
 from radar.core.models import MessageSource
-from radar.core.query import MessageFilters, list_messages
+from radar.core.query import MessageFilters, list_message_groups, list_messages
 from radar.core.store import connect, init_db
 from radar.web.server.deps import get_config
-from radar.web.server.schemas import MessagePageResponse
+from radar.web.server.schemas import MessageGroupListResponse, MessagePageResponse
 
 SOURCE_ALIASES: dict[str, MessageSource] = {
     "personal_message": "个人消息",
@@ -56,10 +56,26 @@ def messages(
     return MessagePageResponse(**page.model_dump())
 
 
+@router.get("/message-groups", response_model=MessageGroupListResponse)
+def message_groups(
+    source: str | None = Query(default="group_message"),
+    keyword: str | None = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=1000),
+    config: RadarConfig = Depends(get_config),
+) -> MessageGroupListResponse:
+    source_value = _source_value(source)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        groups = list_message_groups(conn, source=source_value, keyword=keyword, limit=limit)
+    finally:
+        conn.close()
+    return MessageGroupListResponse(items=[group.model_dump() for group in groups])
+
+
 def _source_value(source: str | None) -> MessageSource | None:
     if not source:
         return None
     if source not in SOURCE_ALIASES:
         raise HTTPException(status_code=400, detail="source 必须是个人消息或个人群")
     return SOURCE_ALIASES[source]
-

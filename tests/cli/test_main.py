@@ -215,6 +215,7 @@ def test_dashboard_command_starts_uvicorn(monkeypatch, tmp_path):
                     "args": args,
                     "cwd": cwd,
                     "env_config_dir": env.get("RADAR_CONFIG_DIR"),
+                    "env_api_base": env.get("VITE_RADAR_API_BASE"),
                     "start_new_session": start_new_session,
                 }
             )
@@ -264,6 +265,7 @@ def test_dashboard_command_starts_uvicorn(monkeypatch, tmp_path):
             ],
             "cwd": Path(__file__).resolve().parents[2],
             "env_config_dir": str(config_dir),
+            "env_api_base": "http://127.0.0.1:9000",
             "start_new_session": True,
         },
         {
@@ -279,6 +281,7 @@ def test_dashboard_command_starts_uvicorn(monkeypatch, tmp_path):
             ],
             "cwd": Path(__file__).resolve().parents[2] / "web" / "ui",
             "env_config_dir": str(config_dir),
+            "env_api_base": "http://127.0.0.1:9000",
             "start_new_session": True,
         },
     ]

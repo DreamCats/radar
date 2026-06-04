@@ -85,7 +85,14 @@ def test_ingest_wechat_range_fetches_chunks_and_skips_existing(tmp_path):
         timeout: float,
     ) -> list[RawMessage]:
         calls.append((start, end))
-        messages = [_message(f"m{start.hour}", "东财策略")]
+        messages = [
+            _message(
+                f"m{start.hour}",
+                "东财策略",
+                message_time=f"2026-06-04T{start.hour:02d}:30:00",
+                content=f"测试消息 {start.hour}",
+            )
+        ]
         if start.hour == 9:
             messages.append(_message("m-blacklisted", "汇师小学二年级（1）班"))
         return messages
@@ -232,13 +239,19 @@ def _config(tmp_path) -> RadarConfig:
     )
 
 
-def _message(message_id: str, group_name: str) -> RawMessage:
+def _message(
+    message_id: str,
+    group_name: str,
+    *,
+    message_time: str = "2026-06-04T09:30:00",
+    content: str = "测试消息",
+) -> RawMessage:
     return RawMessage(
         message_id=message_id,
         source="个人群",
         sender="tester",
-        message_time=datetime.fromisoformat("2026-06-04T09:30:00"),
-        raw_content="测试消息",
+        message_time=datetime.fromisoformat(message_time),
+        raw_content=content,
         group_name=group_name,
         fetch_time=datetime.fromisoformat("2026-06-04T09:31:00"),
         fetch_window="20260604090000-20260604100000",

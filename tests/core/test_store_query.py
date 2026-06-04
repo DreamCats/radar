@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from radar.core.models import RawMessage
-from radar.core.query import MessageFilters, list_messages
+from radar.core.query import MessageFilters, list_message_groups, list_messages
 from radar.core.store import (
     fetch_window_covered,
     fetch_window_exists,
@@ -42,6 +42,34 @@ def test_keyword_search(sqlite_conn):
     page = list_messages(sqlite_conn, MessageFilters(keyword="固态", limit=10))
 
     assert [item.message_id for item in page.items] == ["m2"]
+
+
+def test_upsert_skips_duplicate_message_fingerprint(sqlite_conn):
+    init_db(sqlite_conn)
+
+    first = _message("m1", "2026-06-04T10:00:00", "东财策略", "AI 算力观点")
+    duplicate = _message("m1-copy", "2026-06-04T10:00:00", "东财策略", "AI 算力观点")
+
+    assert upsert_messages(sqlite_conn, [first, duplicate]) == 1
+    page = list_messages(sqlite_conn, MessageFilters(limit=10))
+
+    assert [item.message_id for item in page.items] == ["m1"]
+
+
+def test_list_message_groups(sqlite_conn):
+    init_db(sqlite_conn)
+    upsert_messages(
+        sqlite_conn,
+        [
+            _message("m1", "2026-06-04T10:00:00", "东财策略", "AI 算力观点"),
+            _message("m2", "2026-06-04T09:00:00", "最强科技", "固态电池"),
+            _message("m3", "2026-06-04T08:00:00", "东财策略", "PCB"),
+        ],
+    )
+
+    groups = list_message_groups(sqlite_conn, source="个人群", limit=10)
+
+    assert [(item.group_name, item.message_count) for item in groups] == [("东财策略", 2), ("最强科技", 1)]
 
 
 def test_fetch_window_record(sqlite_conn):

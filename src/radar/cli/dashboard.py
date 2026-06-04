@@ -41,6 +41,7 @@ def dashboard(
     env = os.environ.copy()
     if isinstance(config_dir, Path):
         env["RADAR_CONFIG_DIR"] = str(config_dir)
+    env["VITE_RADAR_API_BASE"] = f"http://{host}:{port}"
 
     backend_args = [
         sys.executable,
