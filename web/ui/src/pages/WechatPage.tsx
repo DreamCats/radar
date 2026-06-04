@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 import { fetchConversations, fetchMessageGroups, fetchMessages } from "../api/radarApi";
@@ -22,6 +22,10 @@ const defaultQuery: MessageConversationQuery = {
 
 const threadLimit = 30;
 
+type ThreadScrollIntent =
+  | { mode: "bottom" }
+  | { mode: "preserve"; scrollTop: number; scrollHeight: number };
+
 export function WechatPage() {
   const [query, setQuery] = useState<MessageConversationQuery>(defaultQuery);
   const [conversationPage, setConversationPage] = useState<MessageConversationPage>({ items: [] });
@@ -38,6 +42,7 @@ export function WechatPage() {
   const [error, setError] = useState<string | null>(null);
   const [threadError, setThreadError] = useState<string | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
+  const threadScrollIntentRef = useRef<ThreadScrollIntent | null>(null);
 
   const conversations = useMemo(
     () => conversationPage.items.filter((item) => !isSelfConversation(item)),
@@ -84,6 +89,21 @@ export function WechatPage() {
     }
   }, [selectedConversation?.key]);
 
+  useLayoutEffect(() => {
+    const thread = threadRef.current;
+    const intent = threadScrollIntentRef.current;
+    if (!thread || !intent) {
+      return;
+    }
+
+    if (intent.mode === "bottom") {
+      thread.scrollTop = thread.scrollHeight;
+    } else {
+      thread.scrollTop = thread.scrollHeight - intent.scrollHeight + intent.scrollTop;
+    }
+    threadScrollIntentRef.current = null;
+  }, [threadItems]);
+
   async function loadConversations(nextQuery: MessageConversationQuery, pushHistory = false) {
     setLoading(true);
     setError(null);
@@ -111,6 +131,11 @@ export function WechatPage() {
     }
     setThreadLoading(true);
     setThreadError(null);
+    const thread = threadRef.current;
+    const scrollIntent: ThreadScrollIntent =
+      older && thread
+        ? { mode: "preserve", scrollTop: thread.scrollTop, scrollHeight: thread.scrollHeight }
+        : { mode: "bottom" };
     try {
       const data = await fetchMessages({
         source: sourceKey(conversation.source),
@@ -123,9 +148,11 @@ export function WechatPage() {
         limit: threadLimit,
       });
       const visible = data.items.filter((item) => !isSelfMessage(item));
+      threadScrollIntentRef.current = scrollIntent;
       setThreadItems((current) => (older ? mergeMessages(current, visible) : mergeMessages([], visible)));
       setThreadCursor({ time: data.next_cursor_time, id: data.next_cursor_id });
     } catch (err) {
+      threadScrollIntentRef.current = null;
       setThreadError(err instanceof Error ? err.message : "消息加载失败");
     } finally {
       setThreadLoading(false);
