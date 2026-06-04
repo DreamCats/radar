@@ -7,7 +7,7 @@
 }
 
 .wechat-filter-bar {
-  grid-template-columns: 110px minmax(96px, 1fr) minmax(120px, 1.1fr) minmax(142px, 1fr) minmax(142px, 1fr) 84px;
+  grid-template-columns: 110px minmax(96px, 1fr) minmax(120px, 1.2fr) 84px;
   align-items: end;
   min-width: 0;
 }

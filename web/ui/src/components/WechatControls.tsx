@@ -1,8 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 
-import { DateField, SelectField, TextField } from "./FormFields";
-import { toIso } from "../lib/datetime";
+import { SelectField, TextField } from "./FormFields";
 import { avatarText } from "../lib/wechat";
 import type { MessageConversationQuery } from "../types";
 
@@ -46,16 +45,6 @@ export function WechatFilters(props: {
         label="关键词"
         value={props.query.keyword ?? ""}
         onChange={(value) => props.onChange({ ...props.query, keyword: value })}
-      />
-      <DateField
-        label="开始"
-        value={props.query.start_time ?? ""}
-        onChange={(value) => props.onChange({ ...props.query, start_time: toIso(value) })}
-      />
-      <DateField
-        label="结束"
-        value={props.query.end_time ?? ""}
-        onChange={(value) => props.onChange({ ...props.query, end_time: toIso(value) })}
       />
       <button className="btn btn-primary" type="submit" disabled={props.loading}>
         <Search size={16} />

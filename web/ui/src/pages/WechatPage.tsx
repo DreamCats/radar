@@ -141,8 +141,6 @@ export function WechatPage() {
         source: sourceKey(conversation.source),
         group_name: conversation.source === "个人群" ? conversation.title : undefined,
         sender: conversation.source === "个人消息" ? conversation.title : undefined,
-        start_time: query.start_time,
-        end_time: query.end_time,
         cursor_time: older ? threadCursor.time ?? undefined : undefined,
         cursor_id: older ? threadCursor.id ?? undefined : undefined,
         limit: threadLimit,
