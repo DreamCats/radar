@@ -47,6 +47,17 @@
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease);
+}
+
+.preset-button:hover:not(:disabled) {
+  border-color: var(--color-hairline-strong);
+  background: var(--color-surface-1);
+  color: var(--color-ink-muted);
 }
 
 .preset-button.active {
@@ -94,6 +105,10 @@
   color: var(--color-ink-muted);
   background: var(--color-surface-1);
   font-size: 12px;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease);
 }
 
 .toggle-field input {

@@ -184,7 +184,6 @@ export function WechatPage() {
                     {conversation.source} · {conversation.latest_sender}
                   </span>
                 </span>
-                <span className="wechat-count">{conversation.message_count}</span>
               </button>
             ))}
             {!loading && conversations.length === 0 && <p className="empty-line">暂无数据</p>}

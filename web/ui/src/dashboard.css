@@ -77,6 +77,10 @@
   text-decoration: none;
   font-size: 13px;
   cursor: pointer;
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease);
 }
 
 .nav-item:hover:not(:disabled) {
@@ -91,6 +95,7 @@
 
 .nav-item.active svg {
   color: var(--color-primary);
+  transition: color var(--motion-base) var(--motion-ease);
 }
 
 .nav-item.disabled {
@@ -118,6 +123,10 @@
   color: var(--color-ink-muted);
   padding: 0 10px;
   font-size: 13px;
+}
+
+.pulse-dot {
+  animation: radar-status-pulse 1.8s var(--motion-ease) infinite;
 }
 
 .dashboard-page {
@@ -167,6 +176,15 @@
   margin-top: 2px;
   color: var(--color-ink-subtle);
   font-size: 12px;
+}
+
+.metric-card strong,
+.metric-card span,
+.module-dot {
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease);
 }
 
 .metric-card.succeeded strong {

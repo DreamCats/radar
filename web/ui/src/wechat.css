@@ -79,7 +79,7 @@
 .wechat-conversation {
   position: relative;
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
+  grid-template-columns: 38px minmax(0, 1fr);
   gap: 10px;
   width: 100%;
   min-height: 78px;
@@ -90,6 +90,10 @@
   padding: 10px 14px;
   text-align: left;
   cursor: pointer;
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease);
 }
 
 .wechat-conversation:hover,
@@ -114,6 +118,9 @@
   font-size: 13px;
   font-weight: 600;
   overflow: hidden;
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease);
 }
 
 .wechat-avatar.small {
@@ -134,7 +141,8 @@
 }
 
 .wechat-conversation-title {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
 }
@@ -148,17 +156,19 @@
 }
 
 .wechat-conversation-title strong {
+  min-width: 0;
   color: var(--color-ink);
   font-size: 13px;
   font-weight: 600;
 }
 
 .wechat-conversation-title em {
-  margin-left: auto;
   color: var(--color-ink-tertiary);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
   font-style: normal;
+  line-height: 1.2;
+  text-align: right;
 }
 
 .wechat-conversation-preview {
@@ -169,18 +179,6 @@
 .wechat-conversation-meta {
   color: var(--color-ink-subtle);
   font-size: 12px;
-}
-
-.wechat-count {
-  align-self: center;
-  min-width: 20px;
-  border-radius: var(--radius-pill);
-  background: var(--color-success);
-  color: var(--color-canvas);
-  padding: 1px 6px;
-  font-size: 11px;
-  font-weight: 700;
-  text-align: center;
 }
 
 .wechat-pager {
@@ -283,6 +281,10 @@
   padding: 0 8px;
   font-size: 12px;
   cursor: pointer;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease);
 }
 
 .wechat-sender-chip:hover,
@@ -320,6 +322,17 @@
   padding: 5px 12px;
   font-size: 12px;
   cursor: pointer;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease);
+}
+
+.wechat-thread-older:hover:not(:disabled) {
+  border-color: var(--color-hairline-strong);
+  background: var(--color-surface-3);
+  color: var(--color-ink-muted);
 }
 
 .wechat-thread-older:disabled {
@@ -376,6 +389,9 @@
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) var(--motion-ease);
 }
 
 @media (max-width: 1180px) {
