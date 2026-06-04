@@ -76,6 +76,15 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON messages(source, sender, message_time, group_name);
         """,
     ),
+    (
+        "004_message_conversation_indexes",
+        """
+        CREATE INDEX IF NOT EXISTS idx_messages_group_conversation
+            ON messages(source, group_name, message_time DESC, message_id DESC);
+        CREATE INDEX IF NOT EXISTS idx_messages_sender_conversation
+            ON messages(source, sender, message_time DESC, message_id DESC);
+        """,
+    ),
 ]
 
 MARKET_MIGRATIONS: list[Migration] = [

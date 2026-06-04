@@ -19,6 +19,23 @@ export type MessagePage = {
   next_cursor_id?: string | null;
 };
 
+export type MessageConversationItem = {
+  key: string;
+  title: string;
+  source: MessageSource;
+  latest_sender: string;
+  latest_time: string;
+  latest_content: string;
+  latest_message_id: string;
+  message_count: number;
+};
+
+export type MessageConversationPage = {
+  items: MessageConversationItem[];
+  next_cursor_time?: string | null;
+  next_cursor_key?: string | null;
+};
+
 export type MessageGroupItem = {
   group_name: string;
   message_count: number;
@@ -29,12 +46,17 @@ export type MessageGroupItem = {
 export type MessageQuery = {
   source?: string;
   group_name?: string;
+  sender?: string;
   keyword?: string;
   start_time?: string;
   end_time?: string;
   cursor_time?: string;
   cursor_id?: string;
   limit?: number;
+};
+
+export type MessageConversationQuery = Omit<MessageQuery, "cursor_id" | "sender"> & {
+  cursor_key?: string;
 };
 
 export type RunItem = {

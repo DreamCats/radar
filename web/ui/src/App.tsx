@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { Activity, BarChart3, Database, Inbox, RadioTower, RefreshCw, Search } from "lucide-react";
+import { Activity, BarChart3, Database, Inbox, MessageCircle, RadioTower, RefreshCw, Search } from "lucide-react";
 
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
 import { MessagesPage } from "./pages/MessagesPage";
 import { RunsPage } from "./pages/RunsPage";
+import { WechatPage } from "./pages/WechatPage";
 
-type TabKey = "dashboard" | "messages" | "runs" | "ingest";
+type TabKey = "dashboard" | "wechat" | "messages" | "runs" | "ingest";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "总览", icon: Activity },
+  { key: "wechat", label: "微信", icon: MessageCircle },
   { key: "messages", label: "消息", icon: Inbox },
   { key: "ingest", label: "拉取", icon: Database },
   { key: "runs", label: "运行", icon: RefreshCw },
@@ -78,6 +80,7 @@ export function App() {
         </header>
         <div className="content">
           {tab === "dashboard" && <DashboardPage onOpenMessages={() => setTab("messages")} />}
+          {tab === "wechat" && <WechatPage />}
           {tab === "messages" && <MessagesPage />}
           {tab === "runs" && <RunsPage />}
           {tab === "ingest" && <IngestPage />}
@@ -90,6 +93,7 @@ export function App() {
 function pageTitle(tab: TabKey): string {
   const titles: Record<TabKey, string> = {
     dashboard: "原数据总览",
+    wechat: "微信消息",
     messages: "消息查询",
     runs: "运行记录",
     ingest: "手动拉取",

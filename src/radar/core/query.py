@@ -13,6 +13,7 @@ class MessageFilters(BaseModel):
 
     source: MessageSource | None = None
     group_name: str | None = None
+    sender: str | None = None
     keyword: str | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None
@@ -69,6 +70,9 @@ def list_messages(conn: sqlite3.Connection, filters: MessageFilters) -> MessageP
     if filters.group_name:
         where.append("m.group_name = ?")
         params.append(filters.group_name)
+    if filters.sender:
+        where.append("m.sender = ?")
+        params.append(filters.sender)
     if filters.start_time:
         where.append("m.message_time >= ?")
         params.append(filters.start_time.isoformat())

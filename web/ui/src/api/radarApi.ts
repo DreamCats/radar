@@ -2,6 +2,8 @@ import type {
   IngestJobItem,
   IngestRequest,
   IngestResultItem,
+  MessageConversationPage,
+  MessageConversationQuery,
   MessageGroupItem,
   MessagePage,
   MessageQuery,
@@ -12,6 +14,10 @@ const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
 
 export async function fetchMessages(query: MessageQuery): Promise<MessagePage> {
   return getJson(`/api/messages?${params(query)}`);
+}
+
+export async function fetchConversations(query: MessageConversationQuery): Promise<MessageConversationPage> {
+  return getJson(`/api/conversations?${params(query)}`);
 }
 
 export async function fetchMessageGroups(query: { source?: string; keyword?: string; limit?: number } = {}): Promise<MessageGroupItem[]> {
@@ -58,7 +64,7 @@ async function getJson<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-function params(query: MessageQuery): string {
+function params(query: Record<string, unknown>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined && value !== "") {

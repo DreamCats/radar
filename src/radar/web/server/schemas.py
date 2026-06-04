@@ -23,6 +23,23 @@ class MessagePageResponse(BaseModel):
     next_cursor_id: str | None = None
 
 
+class ConversationItem(BaseModel):
+    key: str
+    title: str
+    source: MessageSource
+    latest_sender: str
+    latest_time: datetime
+    latest_content: str
+    latest_message_id: str
+    message_count: int
+
+
+class ConversationPageResponse(BaseModel):
+    items: list[ConversationItem]
+    next_cursor_time: datetime | None = None
+    next_cursor_key: str | None = None
+
+
 class MessageGroupItem(BaseModel):
     group_name: str
     message_count: int
