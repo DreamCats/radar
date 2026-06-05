@@ -10,7 +10,7 @@ from radar.core.market_anchors import (
     ensure_market_anchors,
     refresh_market_anchors,
 )
-from radar.core.models import MessageSource, RawMessage
+from radar.core.models import MessageAnchor, MessageSource, RawMessage
 from radar.core.organize import (
     OrganizeClassificationCluster,
     OrganizeClassificationFilters,
@@ -30,19 +30,28 @@ from radar.core.tushare import (
     resolve_stock,
 )
 from radar.core.usecases import (
+    AggregateTopicsResult,
+    AnchorRangeResult,
     IngestRangeResult,
     IngestWindowResult,
+    RefineAggregateTopicsResult,
     SmokeResult,
+    aggregate_topics,
+    anchor_messages_range,
     ingest_wechat_range,
     ingest_wechat_window,
+    refine_aggregate_topics,
     test_llm,
     test_market,
 )
 
 __all__ = [
     "MessageFilters",
+    "MessageAnchor",
     "MessagePage",
     "MessageSource",
+    "AnchorRangeResult",
+    "AggregateTopicsResult",
     "MarketAnchor",
     "EnsureMarketAnchorsResult",
     "OrganizeClassificationCluster",
@@ -53,6 +62,7 @@ __all__ = [
     "RadarConfig",
     "RawMessage",
     "RefreshMarketAnchorsResult",
+    "RefineAggregateTopicsResult",
     "RunRecord",
     "TushareApiError",
     "TushareConfigError",
@@ -62,6 +72,8 @@ __all__ = [
     "IngestWindowResult",
     "LlmConfigError",
     "SmokeResult",
+    "aggregate_topics",
+    "anchor_messages_range",
     "chat",
     "chat_json",
     "chat_json_list",
@@ -78,6 +90,7 @@ __all__ = [
     "resolve_stock",
     "ensure_market_anchors",
     "refresh_market_anchors",
+    "refine_aggregate_topics",
     "start_run",
     "test_llm",
     "test_market",

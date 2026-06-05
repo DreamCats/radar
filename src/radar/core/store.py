@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+import json
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 from radar.core.db import migrate_message_db
-from radar.core.models import ClassificationRetryMode, MessageClassification, MessageSource, RawMessage
+from radar.core.models import (
+    ClassificationRetryMode,
+    MessageAnchor,
+    MessageCategory,
+    MessageClassification,
+    MessageSource,
+    RawMessage,
+)
 
 
 def connect(database_path: Path) -> sqlite3.Connection:
@@ -165,6 +174,153 @@ def list_messages_for_classification(
     params.append(limit)
     rows = conn.execute(" ".join(part for part in sql if part), params).fetchall()
     return [_row_to_message(row) for row in rows]
+
+
+def list_messages_for_anchoring(
+    conn: sqlite3.Connection,
+    *,
+    source: MessageSource | None = None,
+    category: MessageCategory | None = None,
+    categories: list[MessageCategory] | None = None,
+    min_classification_confidence: float | None = None,
+    start_time: str | None = None,
+    end_time: str | None = None,
+    end_inclusive: bool = True,
+    cursor_time: str | None = None,
+    cursor_id: str | None = None,
+    limit: int = 500,
+    force: bool = False,
+    extractor_version: str,
+) -> list[RawMessage]:
+    """读取待抽 anchor 消息；空命中也靠 status 表记录，避免增量反复扫描。"""
+
+    where: list[str] = []
+    join_params: list[object] = []
+    where_params: list[object] = []
+    joins: list[str] = []
+    category_values = list(categories or [])
+    if category:
+        category_values.append(category)
+    category_values = sorted(set(category_values))
+    if category_values:
+        joins.append("JOIN message_classifications c ON c.message_id = m.message_id")
+        placeholders = ", ".join("?" for _ in category_values)
+        where.append(f"c.category IN ({placeholders}) AND c.status != ?")
+        where_params.extend([*category_values, "ignored"])
+    elif min_classification_confidence is not None:
+        joins.append("JOIN message_classifications c ON c.message_id = m.message_id")
+        where.append("c.status != ?")
+        where_params.append("ignored")
+    if min_classification_confidence is not None:
+        where.append("c.confidence >= ?")
+        where_params.append(min_classification_confidence)
+    if not force:
+        joins.append(
+            """
+            LEFT JOIN message_anchor_status mas
+              ON mas.message_id = m.message_id AND mas.extractor_version = ?
+            """
+        )
+        join_params.append(extractor_version)
+        where.append("mas.message_id IS NULL")
+    if source:
+        where.append("m.source = ?")
+        where_params.append(source)
+    if start_time:
+        where.append("m.message_time >= ?")
+        where_params.append(start_time)
+    if end_time:
+        operator = "<=" if end_inclusive else "<"
+        where.append(f"m.message_time {operator} ?")
+        where_params.append(end_time)
+    if cursor_time and cursor_id:
+        where.append("(m.message_time, m.message_id) < (?, ?)")
+        where_params.extend([cursor_time, cursor_id])
+
+    sql = ["SELECT m.* FROM messages m", *joins]
+    if where:
+        sql.append("WHERE " + " AND ".join(where))
+    sql.append("ORDER BY m.message_time DESC, m.message_id DESC LIMIT ?")
+    params = [*join_params, *where_params]
+    params.append(limit)
+    rows = conn.execute(" ".join(part for part in sql if part), params).fetchall()
+    return [_row_to_message(row) for row in rows]
+
+
+def replace_message_anchors(
+    conn: sqlite3.Connection,
+    *,
+    message_ids: list[str],
+    anchors: list[MessageAnchor],
+    trade_date: str,
+    extractor_version: str,
+) -> int:
+    """替换一批消息的 anchor 结果；即使没有命中也写入已处理状态。"""
+
+    if not message_ids:
+        return 0
+
+    now = datetime.now().isoformat()
+    placeholders = ", ".join("?" for _ in message_ids)
+    delete_params = [*message_ids, extractor_version]
+    conn.execute(
+        f"""
+        DELETE FROM message_anchors
+        WHERE message_id IN ({placeholders}) AND extractor_version = ?
+        """,
+        delete_params,
+    )
+    conn.executemany(
+        """
+        INSERT INTO message_anchors (
+            message_id, anchor_id, anchor_type, name, confidence, evidence_json,
+            extractor_version, trade_date, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            (
+                item.message_id,
+                item.anchor_id,
+                item.anchor_type,
+                item.name,
+                item.confidence,
+                json.dumps(item.evidence, ensure_ascii=False, default=str),
+                item.extractor_version,
+                item.trade_date,
+                item.created_at.isoformat(),
+                item.updated_at.isoformat(),
+            )
+            for item in anchors
+        ],
+    )
+
+    counts: dict[str, int] = {}
+    for item in anchors:
+        counts[item.message_id] = counts.get(item.message_id, 0) + 1
+    conn.executemany(
+        """
+        INSERT INTO message_anchor_status (
+            message_id, extractor_version, trade_date, anchor_count, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(message_id, extractor_version) DO UPDATE SET
+            trade_date = excluded.trade_date,
+            anchor_count = excluded.anchor_count,
+            updated_at = excluded.updated_at
+        """,
+        [
+            (
+                message_id,
+                extractor_version,
+                trade_date,
+                counts.get(message_id, 0),
+                now,
+                now,
+            )
+            for message_id in message_ids
+        ],
+    )
+    conn.commit()
+    return len(anchors)
 
 
 def _append_classification_retry_condition(

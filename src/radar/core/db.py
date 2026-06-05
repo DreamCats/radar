@@ -117,6 +117,66 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON message_classifications(status, updated_at DESC);
         """,
     ),
+    (
+        "007_message_anchors",
+        """
+        CREATE TABLE IF NOT EXISTS message_anchors (
+            message_id        TEXT NOT NULL,
+            anchor_id         TEXT NOT NULL,
+            anchor_type       TEXT NOT NULL,
+            name              TEXT NOT NULL,
+            confidence        REAL NOT NULL,
+            evidence_json     TEXT NOT NULL DEFAULT '[]',
+            extractor_version TEXT NOT NULL,
+            trade_date        TEXT NOT NULL,
+            created_at        TEXT NOT NULL,
+            updated_at        TEXT NOT NULL,
+            PRIMARY KEY (message_id, anchor_id, extractor_version),
+            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_message_anchors_anchor
+            ON message_anchors(anchor_type, name, trade_date);
+        CREATE INDEX IF NOT EXISTS idx_message_anchors_message
+            ON message_anchors(message_id, extractor_version);
+
+        CREATE TABLE IF NOT EXISTS message_anchor_status (
+            message_id        TEXT NOT NULL,
+            extractor_version TEXT NOT NULL,
+            trade_date        TEXT NOT NULL,
+            anchor_count      INTEGER NOT NULL,
+            created_at        TEXT NOT NULL,
+            updated_at        TEXT NOT NULL,
+            PRIMARY KEY (message_id, extractor_version),
+            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_message_anchor_status_version
+            ON message_anchor_status(extractor_version, trade_date);
+        """,
+    ),
+    (
+        "008_aggregate_refine_results",
+        """
+        CREATE TABLE IF NOT EXISTS aggregate_refine_results (
+            input_hash         TEXT PRIMARY KEY,
+            run_id             TEXT NOT NULL,
+            trade_date         TEXT NOT NULL,
+            start_time         TEXT NOT NULL,
+            end_time           TEXT NOT NULL,
+            extractor_version  TEXT NOT NULL,
+            prompt_version     TEXT NOT NULL,
+            candidate_count    INTEGER NOT NULL,
+            theme_count        INTEGER NOT NULL,
+            result_json        TEXT NOT NULL,
+            created_at         TEXT NOT NULL,
+            updated_at         TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_aggregate_refine_results_window
+            ON aggregate_refine_results(trade_date, start_time, end_time, updated_at DESC);
+        """,
+    ),
 ]
 
 MARKET_MIGRATIONS: list[Migration] = [

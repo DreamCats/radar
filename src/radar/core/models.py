@@ -18,6 +18,7 @@ MessageCategory = Literal[
 ClassificationStatus = Literal["auto", "needs_review", "confirmed", "ignored"]
 ClassifierType = Literal["rule", "llm", "manual"]
 ClassificationRetryMode = Literal["needs_review", "unknown", "low_confidence"]
+MessageAnchorType = Literal["stock", "concept", "industry", "theme"]
 
 
 class RawMessage(BaseModel):
@@ -46,6 +47,21 @@ class MessageClassification(BaseModel):
     model: str | None = None
     prompt_version: str | None = None
     classifier_version: str = "rule-v1"
+    created_at: datetime
+    updated_at: datetime
+
+
+class MessageAnchor(BaseModel):
+    """原始消息命中的市场 anchor；用于后续主题聚合的结构化抓手。"""
+
+    message_id: str
+    anchor_id: str
+    anchor_type: MessageAnchorType
+    name: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    evidence: list[dict[str, object]] = Field(default_factory=list)
+    extractor_version: str
+    trade_date: str
     created_at: datetime
     updated_at: datetime
 
