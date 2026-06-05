@@ -9,9 +9,12 @@ import type { MessageOverview, OrganizeClassificationPage, RunItem } from "../ty
 
 const emptyClassificationPage: OrganizeClassificationPage = {
   summary: {
+    classified_count: 0,
     total_count: 0,
     cluster_count: 0,
     low_confidence_count: 0,
+    noise_count: 0,
+    hidden_count: 0,
     average_confidence: 0,
   },
   clusters: [],
@@ -30,7 +33,7 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
     try {
       const [overviewData, classificationData, runItems] = await Promise.all([
         fetchMessageOverview({ days: 14, top_limit: 8 }),
-        fetchOrganizeClassifications({ evidence_limit: 0, low_confidence_threshold: 0.65 }),
+        fetchOrganizeClassifications({ evidence_limit: 0, low_confidence_threshold: 0.75 }),
         fetchRuns(),
       ]);
       setOverview(overviewData);

@@ -26,6 +26,13 @@ _CATEGORY_ORDER: tuple[MessageCategory, ...] = (
     "event",
     "chat",
 )
+_ACTIONABLE_DISPLAY_CATEGORIES: tuple[MessageCategory, ...] = (
+    "recommendation",
+    "research",
+    "industry",
+    "event",
+)
+ORGANIZE_DISPLAY_CONFIDENCE_THRESHOLD = 0.75
 
 
 class OrganizeClassificationFilters(BaseModel):
@@ -37,7 +44,7 @@ class OrganizeClassificationFilters(BaseModel):
     start_time: datetime | None = None
     end_time: datetime | None = None
     evidence_limit: int = Field(default=8, ge=0, le=30)
-    low_confidence_threshold: float = Field(default=0.65, ge=0.0, le=1.0)
+    low_confidence_threshold: float = Field(default=ORGANIZE_DISPLAY_CONFIDENCE_THRESHOLD, ge=0.0, le=1.0)
 
 
 class OrganizeEvidenceMessage(BaseModel):
@@ -64,9 +71,12 @@ class OrganizeClassificationCluster(BaseModel):
 
 
 class OrganizeClassificationSummary(BaseModel):
+    classified_count: int
     total_count: int
     cluster_count: int
     low_confidence_count: int
+    noise_count: int
+    hidden_count: int
     average_confidence: float
 
 
@@ -81,9 +91,10 @@ def list_classification_clusters(
 ) -> OrganizeClassificationPage:
     """读取离线分类结果，按 category 聚合并附带少量可回溯证据。"""
 
-    where, params = _classification_conditions(filters)
-    summary = _classification_summary(conn, where, params, filters.low_confidence_threshold)
-    rows = _classification_cluster_rows(conn, where, params, filters.low_confidence_threshold)
+    base_where, base_params = _base_conditions(filters)
+    visible_where, visible_params = _visible_conditions(base_where, base_params, filters.low_confidence_threshold)
+    summary = _classification_summary(conn, base_where, base_params, filters.low_confidence_threshold)
+    rows = _classification_cluster_rows(conn, visible_where, visible_params, filters.low_confidence_threshold)
     clusters = [
         OrganizeClassificationCluster(
             category=row["display_category"],
@@ -92,32 +103,26 @@ def list_classification_clusters(
             average_confidence=round(float(row["average_confidence"] or 0), 4),
             low_confidence_count=row["low_confidence_count"],
             latest_time=datetime.fromisoformat(row["latest_time"]),
-            evidence=_classification_evidence(conn, filters, row["display_category"], where, params),
+            evidence=_classification_evidence(conn, filters, row["display_category"], visible_where, visible_params),
         )
         for row in rows
     ]
     return OrganizeClassificationPage(summary=summary, clusters=clusters)
 
 
-def _classification_conditions(filters: OrganizeClassificationFilters) -> tuple[list[str], list[object]]:
+def _base_conditions(filters: OrganizeClassificationFilters) -> tuple[list[str], list[object]]:
     where: list[str] = []
     params: list[object] = []
     if filters.source:
         where.append("m.source = ?")
         params.append(filters.source)
     if filters.category:
-        if filters.category == "unknown":
-            where.append("1 = 0")
-            return where, params
         if filters.category == "research":
             where.append("c.category IN (?, ?)")
             params.extend(["research", "tool_ad"])
         else:
             where.append("c.category = ?")
             params.append(filters.category)
-    else:
-        where.append(f"{_DISPLAY_CATEGORY_SQL} != ?")
-        params.append("unknown")
     if filters.start_time:
         where.append("m.message_time >= ?")
         params.append(filters.start_time.isoformat())
@@ -141,31 +146,80 @@ def _classification_conditions(filters: OrganizeClassificationFilters) -> tuple[
     return where, params
 
 
+def _visible_conditions(
+    base_where: list[str],
+    base_params: list[object],
+    low_confidence_threshold: float,
+) -> tuple[list[str], list[object]]:
+    where = list(base_where)
+    params = list(base_params)
+    where.append(
+        f"""
+        c.status IN ('auto', 'confirmed')
+        AND c.confidence >= ?
+        AND {_DISPLAY_CATEGORY_SQL} IN {_actionable_category_sql()}
+        """
+    )
+    params.append(low_confidence_threshold)
+    return where, params
+
+
 def _classification_summary(
     conn: sqlite3.Connection,
     where: list[str],
     params: list[object],
     low_confidence_threshold: float,
 ) -> OrganizeClassificationSummary:
+    visible_sql = (
+        f"c.status IN ('auto', 'confirmed') "
+        f"AND c.confidence >= ? "
+        f"AND {_DISPLAY_CATEGORY_SQL} IN {_actionable_category_sql()}"
+    )
+    review_sql = (
+        f"{_DISPLAY_CATEGORY_SQL} != 'chat' "
+        "AND c.status != 'ignored' "
+        f"AND (c.status = 'needs_review' OR c.confidence < ? OR {_DISPLAY_CATEGORY_SQL} = 'unknown')"
+    )
+    noise_sql = f"c.status = 'ignored' OR {_DISPLAY_CATEGORY_SQL} = 'chat'"
     sql = [
         f"""
-        SELECT
-            COUNT(*) AS total_count,
-            COUNT(DISTINCT {_DISPLAY_CATEGORY_SQL}) AS cluster_count,
-            AVG(c.confidence) AS average_confidence,
-            SUM(CASE WHEN c.status = 'needs_review' OR c.confidence < ? THEN 1 ELSE 0 END) AS low_confidence_count
-        FROM message_classifications c
-        JOIN messages m ON m.message_id = c.message_id
+        WITH scoped AS (
+            SELECT
+                c.confidence,
+                {_DISPLAY_CATEGORY_SQL} AS display_category,
+                CASE WHEN {visible_sql} THEN 1 ELSE 0 END AS is_visible,
+                CASE WHEN {review_sql} THEN 1 ELSE 0 END AS is_review,
+                CASE WHEN {noise_sql} THEN 1 ELSE 0 END AS is_noise
+            FROM message_classifications c
+            JOIN messages m ON m.message_id = c.message_id
         """
     ]
-    query_params: list[object] = [low_confidence_threshold, *params]
+    query_params: list[object] = [low_confidence_threshold, low_confidence_threshold, *params]
     if where:
         sql.append("WHERE " + " AND ".join(where))
+    sql.append(
+        """
+        )
+        SELECT
+            COUNT(*) AS classified_count,
+            SUM(is_visible) AS total_count,
+            COUNT(DISTINCT CASE WHEN is_visible = 1 THEN display_category END) AS cluster_count,
+            AVG(CASE WHEN is_visible = 1 THEN confidence ELSE NULL END) AS average_confidence,
+            SUM(is_review) AS low_confidence_count,
+            SUM(is_noise) AS noise_count
+        FROM scoped
+        """
+    )
     row = conn.execute(" ".join(sql), query_params).fetchone()
+    classified_count = row["classified_count"] or 0
+    total_count = row["total_count"] or 0
     return OrganizeClassificationSummary(
-        total_count=row["total_count"] or 0,
+        classified_count=classified_count,
+        total_count=total_count,
         cluster_count=row["cluster_count"] or 0,
         low_confidence_count=row["low_confidence_count"] or 0,
+        noise_count=row["noise_count"] or 0,
+        hidden_count=max(classified_count - total_count, 0),
         average_confidence=round(float(row["average_confidence"] or 0), 4),
     )
 
@@ -198,6 +252,11 @@ def _classification_cluster_rows(
 def _category_order_sql() -> str:
     whens = " ".join(f"WHEN '{category}' THEN {index}" for index, category in enumerate(_CATEGORY_ORDER, start=1))
     return f"CASE display_category {whens} ELSE 99 END"
+
+
+def _actionable_category_sql() -> str:
+    categories = ", ".join(f"'{category}'" for category in _ACTIONABLE_DISPLAY_CATEGORIES)
+    return f"({categories})"
 
 
 def _classification_evidence(

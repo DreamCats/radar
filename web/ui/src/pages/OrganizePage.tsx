@@ -12,9 +12,12 @@ type SourceFilter = "all" | SourceKey;
 
 const emptyPage: OrganizeClassificationPage = {
   summary: {
+    classified_count: 0,
     total_count: 0,
     cluster_count: 0,
     low_confidence_count: 0,
+    noise_count: 0,
+    hidden_count: 0,
     average_confidence: 0,
   },
   clusters: [],
@@ -48,7 +51,7 @@ export function OrganizePage() {
         start_time: startValue,
         end_time: endValue,
         evidence_limit: 12,
-        low_confidence_threshold: 0.65,
+        low_confidence_threshold: 0.75,
       });
       setPage(data);
       setSelectedCategory((current) => {
@@ -72,6 +75,8 @@ export function OrganizePage() {
     () => page.clusters.find((cluster) => cluster.category === selectedCategory) ?? page.clusters[0] ?? null,
     [page.clusters, selectedCategory],
   );
+  const recommendationCount = countByCategory(page.clusters, "recommendation");
+  const researchCount = countByCategory(page.clusters, "research");
 
   function applyPreset(value: RangePreset) {
     setPreset(value);
@@ -163,15 +168,15 @@ export function OrganizePage() {
       {error && <p className="error-line">{error}</p>}
 
       <div className="organize-metrics">
-        <Metric label="分类簇" value={page.summary.cluster_count} detail="category" />
-        <Metric label="覆盖消息" value={page.summary.total_count} detail="已分类" />
-        <Metric label="平均置信" value={`${Math.round(page.summary.average_confidence * 100)}%`} detail="LLM 输出" />
-        <Metric label="待复核" value={page.summary.low_confidence_count} detail="低置信" />
+        <Metric label="有效消息" value={page.summary.total_count} detail="高置信" />
+        <Metric label="投资推荐" value={recommendationCount} detail="可行动" />
+        <Metric label="研究观点" value={researchCount} detail="可阅读" />
+        <Metric label="已收起" value={page.summary.hidden_count} detail="低置信 闲聊" />
       </div>
 
       <div className="organize-workspace">
         <section className="content-panel organize-cluster-panel">
-          <PanelTitle title="分类簇" meta={loading ? "加载中" : `${page.clusters.length} 个分类`} />
+          <PanelTitle title="有效分类" meta={loading ? "加载中" : `${page.clusters.length} 个分类`} />
           <div className="cluster-list">
             {page.clusters.map((cluster) => (
               <ClusterRow
@@ -198,7 +203,7 @@ export function OrganizePage() {
                   <Tags size={13} />
                   {selected.category}
                 </span>
-                <span>{selected.low_confidence_count} 条待复核</span>
+                <span>平均置信 {Math.round(selected.average_confidence * 100)}%</span>
                 <span>{selected.evidence.length} 条证据</span>
               </div>
               <div className="evidence-list">
@@ -224,7 +229,7 @@ function ClusterRow(props: { cluster: OrganizeClassificationCluster; selected: b
       <span className={`cluster-hotness ${scoreTone(props.cluster.average_confidence)}`} />
       <span className="cluster-main">
         <strong>{props.cluster.label}</strong>
-        <em>{props.cluster.category} · {props.cluster.low_confidence_count} 待复核</em>
+        <em>{props.cluster.category} · 高置信</em>
         <span>{latest?.reason ?? "暂无分类理由"}</span>
       </span>
       <span className="cluster-side">
@@ -263,6 +268,10 @@ function Metric(props: { label: string; value: number | string; detail: string }
       <em>{props.detail}</em>
     </div>
   );
+}
+
+function countByCategory(clusters: OrganizeClassificationCluster[], category: string): number {
+  return clusters.find((cluster) => cluster.category === category)?.count ?? 0;
 }
 
 function scoreTone(value: number): "high" | "medium" | "low" {

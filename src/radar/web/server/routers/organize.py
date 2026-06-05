@@ -6,7 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from radar.core.config import RadarConfig
 from radar.core.models import MessageCategory, MessageSource
-from radar.core.organize import OrganizeClassificationFilters, list_classification_clusters
+from radar.core.organize import (
+    ORGANIZE_DISPLAY_CONFIDENCE_THRESHOLD,
+    OrganizeClassificationFilters,
+    list_classification_clusters,
+)
 from radar.core.store import connect, init_db
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import OrganizeClassificationResponse
@@ -37,7 +41,7 @@ def classification_clusters(
     start_time: datetime | None = Query(default=None),
     end_time: datetime | None = Query(default=None),
     evidence_limit: int = Query(default=8, ge=0, le=30),
-    low_confidence_threshold: float = Query(default=0.65, ge=0, le=1),
+    low_confidence_threshold: float = Query(default=ORGANIZE_DISPLAY_CONFIDENCE_THRESHOLD, ge=0, le=1),
     config: RadarConfig = Depends(get_config),
 ) -> OrganizeClassificationResponse:
     filters = OrganizeClassificationFilters(

@@ -137,6 +137,43 @@ def test_organize_classifications_endpoint_can_skip_evidence(tmp_path):
     assert data["clusters"][0]["evidence"] == []
 
 
+def test_organize_classifications_endpoint_hides_low_value_rows(tmp_path):
+    config = _config(tmp_path)
+    messages = [
+        _message(message_id="m1", message_time="2026-06-04T10:00:00"),
+        _message(message_id="m2", message_time="2026-06-04T10:01:00"),
+        _message(message_id="m3", message_time="2026-06-04T10:02:00"),
+        _message(message_id="m4", message_time="2026-06-04T10:03:00"),
+    ]
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, messages)
+        upsert_message_classifications(
+            conn,
+            [
+                _classification(messages[0], "research", 0.92, "研究观点"),
+                _classification(messages[1], "unknown", 0.20, "信息不足", status="needs_review"),
+                _classification(messages[2], "chat", 0.90, "闲聊", status="ignored"),
+                _classification(messages[3], "research", 0.70, "基本确定"),
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/organize/classifications")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["summary"]["classified_count"] == 4
+    assert data["summary"]["total_count"] == 1
+    assert data["summary"]["low_confidence_count"] == 2
+    assert data["summary"]["noise_count"] == 1
+    assert data["summary"]["hidden_count"] == 3
+    assert [cluster["category"] for cluster in data["clusters"]] == ["research"]
+
+
 def test_root_endpoint_points_to_dashboard(tmp_path):
     client = TestClient(create_app(_config(tmp_path)))
     response = client.get("/")
@@ -416,14 +453,21 @@ def _message(
     )
 
 
-def _classification(message: RawMessage, category: str, confidence: float, reason: str) -> MessageClassification:
+def _classification(
+    message: RawMessage,
+    category: str,
+    confidence: float,
+    reason: str,
+    *,
+    status: str = "auto",
+) -> MessageClassification:
     now = datetime.fromisoformat("2026-06-04T12:00:00")
     return MessageClassification(
         message_id=message.message_id,
         category=category,
         confidence=confidence,
         reason=reason,
-        status="auto",
+        status=status,
         classifier_type="llm",
         llm_provider="test-provider",
         prompt_version="test",

@@ -13,7 +13,6 @@ import type { OrganizeClassificationCluster } from "../types";
 
 const COLORS = {
   stable: "var(--color-primary-hover)",
-  review: "var(--color-signal-hot)",
   grid: "var(--color-hairline)",
   text: "var(--color-ink-subtle)",
 };
@@ -22,8 +21,6 @@ type ChartRow = {
   category: string;
   label: string;
   count: number;
-  stable_count: number;
-  low_confidence_count: number;
   average_confidence: number;
 };
 
@@ -35,14 +32,12 @@ export function ClassificationDistributionChart(props: {
     category: cluster.category,
     label: shortLabel(cluster.label, 10),
     count: cluster.count,
-    stable_count: Math.max(cluster.count - cluster.low_confidence_count, 0),
-    low_confidence_count: cluster.low_confidence_count,
     average_confidence: cluster.average_confidence,
   }));
 
   return (
     <section className="content-panel panel chart-panel">
-      <PanelTitle title="分类分布" meta={`${props.totalCount} 条消息 · ${props.clusters.length} 个分类`} />
+      <PanelTitle title="有效分类分布" meta={`${props.totalCount} 条消息 · ${props.clusters.length} 个分类`} />
       <div className="chart-canvas">
         {data.length === 0 ? (
           <p className="empty-line chart-empty">暂无分类结果。先在作业页执行消息分类。</p>
@@ -60,8 +55,7 @@ export function ClassificationDistributionChart(props: {
                 width={82}
               />
               <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="stable_count" name="高置信" stackId="count" fill={COLORS.stable} radius={[0, 0, 0, 0]} />
-              <Bar dataKey="low_confidence_count" name="待复核" stackId="count" fill={COLORS.review} radius={[0, 5, 5, 0]} />
+              <Bar dataKey="count" name="有效消息" fill={COLORS.stable} radius={[0, 5, 5, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

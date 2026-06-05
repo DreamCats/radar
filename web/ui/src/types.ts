@@ -188,9 +188,12 @@ export type OrganizeClassificationCluster = {
 };
 
 export type OrganizeClassificationSummary = {
+  classified_count: number;
   total_count: number;
   cluster_count: number;
   low_confidence_count: number;
+  noise_count: number;
+  hidden_count: number;
   average_confidence: number;
 };
 

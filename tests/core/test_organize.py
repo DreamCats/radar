@@ -31,13 +31,15 @@ def test_list_classification_clusters_groups_with_evidence(tmp_path):
     finally:
         conn.close()
 
-    assert page.summary.total_count == 2
+    assert page.summary.classified_count == 2
+    assert page.summary.total_count == 1
     assert page.summary.cluster_count == 1
     assert page.summary.low_confidence_count == 1
+    assert page.summary.hidden_count == 1
     assert page.clusters[0].category == "research"
     assert page.clusters[0].label == "研究观点"
-    assert page.clusters[0].count == 2
-    assert [item.message_id for item in page.clusters[0].evidence] == ["m3", "m1"]
+    assert page.clusters[0].count == 1
+    assert [item.message_id for item in page.clusters[0].evidence] == ["m1"]
     assert page.clusters[0].evidence[0].category == "research"
 
 
@@ -58,7 +60,7 @@ def test_list_classification_clusters_can_skip_evidence(tmp_path):
     assert page.clusters[0].evidence == []
 
 
-def test_list_classification_clusters_orders_by_value_and_hides_unknown(tmp_path):
+def test_list_classification_clusters_orders_by_value_and_hides_low_value_rows(tmp_path):
     config = _config(tmp_path)
     messages = [
         _message("m1", "2026-06-04T10:00:00", "研究观点"),
@@ -66,18 +68,24 @@ def test_list_classification_clusters_orders_by_value_and_hides_unknown(tmp_path
         _message("m3", "2026-06-04T10:02:00", "继续重点推荐"),
         _message("m4", "2026-06-04T10:03:00", "信息残缺"),
         _message("m5", "2026-06-04T10:04:00", "产能变化"),
+        _message("m6", "2026-06-04T10:05:00", "收到"),
+        _message("m7", "2026-06-04T10:06:00", "低置信研究"),
+        _message("m8", "2026-06-04T10:07:00", "基本确定研究"),
     ]
     _seed(config, messages)
     _seed_classifications(
         config,
-        [
-            _classification(messages[0], "research", 0.90, "研究观点"),
-            _classification(messages[1], "event", 0.90, "会议活动"),
-            _classification(messages[2], "recommendation", 0.90, "投资推荐"),
-            _classification(messages[3], "unknown", 0.40, "信息不足", status="needs_review"),
-            _classification(messages[4], "industry", 0.90, "产业变化"),
-        ],
-    )
+            [
+                _classification(messages[0], "research", 0.90, "研究观点"),
+                _classification(messages[1], "event", 0.90, "会议活动"),
+                _classification(messages[2], "recommendation", 0.90, "投资推荐"),
+                _classification(messages[3], "unknown", 0.40, "信息不足", status="needs_review"),
+                _classification(messages[4], "industry", 0.90, "产业变化"),
+                _classification(messages[5], "chat", 0.90, "闲聊", status="ignored"),
+                _classification(messages[6], "research", 0.50, "低置信", status="needs_review"),
+                _classification(messages[7], "research", 0.70, "基本确定"),
+            ],
+        )
 
     conn = connect(config.database_path)
     try:
@@ -86,11 +94,17 @@ def test_list_classification_clusters_orders_by_value_and_hides_unknown(tmp_path
     finally:
         conn.close()
 
+    assert page.summary.classified_count == 8
     assert page.summary.total_count == 4
     assert page.summary.cluster_count == 4
-    assert page.summary.low_confidence_count == 0
+    assert page.summary.low_confidence_count == 3
+    assert page.summary.noise_count == 1
+    assert page.summary.hidden_count == 4
     assert [cluster.category for cluster in page.clusters] == ["recommendation", "research", "industry", "event"]
+    assert [cluster.low_confidence_count for cluster in page.clusters] == [0, 0, 0, 0]
+    assert hidden.summary.classified_count == 1
     assert hidden.summary.total_count == 0
+    assert hidden.summary.low_confidence_count == 1
     assert hidden.clusters == []
 
 
