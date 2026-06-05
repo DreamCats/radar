@@ -11,11 +11,17 @@ from radar.core.messages import (
     list_conversations,
     list_message_groups,
     list_messages,
+    get_message_overview,
 )
 from radar.core.models import MessageSource
 from radar.core.store import connect, init_db
 from radar.web.server.deps import get_config
-from radar.web.server.schemas import ConversationPageResponse, MessageGroupListResponse, MessagePageResponse
+from radar.web.server.schemas import (
+    ConversationPageResponse,
+    MessageGroupListResponse,
+    MessageOverviewResponse,
+    MessagePageResponse,
+)
 
 SOURCE_ALIASES: dict[str, MessageSource] = {
     "personal_message": "个人消息",
@@ -62,6 +68,21 @@ def messages(
     finally:
         conn.close()
     return MessagePageResponse(**page.model_dump())
+
+
+@router.get("/messages/overview", response_model=MessageOverviewResponse)
+def messages_overview(
+    days: int = Query(default=14, ge=1, le=90),
+    top_limit: int = Query(default=8, ge=3, le=20),
+    config: RadarConfig = Depends(get_config),
+) -> MessageOverviewResponse:
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        overview = get_message_overview(conn, days=days, top_limit=top_limit)
+    finally:
+        conn.close()
+    return MessageOverviewResponse(**overview.model_dump())
 
 
 @router.get("/conversations", response_model=ConversationPageResponse)

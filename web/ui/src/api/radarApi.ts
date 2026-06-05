@@ -7,6 +7,7 @@ import type {
   MessageConversationPage,
   MessageConversationQuery,
   MessageGroupItem,
+  MessageOverview,
   MessagePage,
   MessageQuery,
   OrganizeClassificationPage,
@@ -27,6 +28,10 @@ export async function fetchConversations(query: MessageConversationQuery): Promi
 export async function fetchMessageGroups(query: { source?: string; keyword?: string; limit?: number } = {}): Promise<MessageGroupItem[]> {
   const data = await getJson<{ items: MessageGroupItem[] }>(`/api/message-groups?${params(query)}`);
   return data.items;
+}
+
+export async function fetchMessageOverview(query: { days?: number; top_limit?: number } = {}): Promise<MessageOverview> {
+  return getJson(`/api/messages/overview?${params(query)}`);
 }
 
 export async function fetchOrganizeClassifications(

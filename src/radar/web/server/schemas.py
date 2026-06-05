@@ -52,6 +52,47 @@ class MessageGroupListResponse(BaseModel):
     items: list[MessageGroupItem]
 
 
+class MessageOverviewSummaryResponse(BaseModel):
+    total_count: int
+    group_message_count: int
+    personal_message_count: int
+    group_count: int
+    sender_count: int
+    first_message_time: datetime | None = None
+    latest_message_time: datetime | None = None
+
+
+class MessageOverviewBucketResponse(BaseModel):
+    date: str
+    total_count: int
+    group_message_count: int
+    personal_message_count: int
+
+
+class MessageOverviewSourceResponse(BaseModel):
+    source: MessageSource
+    count: int
+
+
+class MessageOverviewGroupResponse(BaseModel):
+    group_name: str
+    count: int
+    last_message_time: datetime
+
+
+class MessageOverviewHourResponse(BaseModel):
+    hour: int
+    count: int
+
+
+class MessageOverviewResponse(BaseModel):
+    summary: MessageOverviewSummaryResponse
+    date_buckets: list[MessageOverviewBucketResponse]
+    source_breakdown: list[MessageOverviewSourceResponse]
+    top_groups: list[MessageOverviewGroupResponse]
+    hourly_buckets: list[MessageOverviewHourResponse]
+
+
 class RunListResponse(BaseModel):
     items: list[RunRecord]
 

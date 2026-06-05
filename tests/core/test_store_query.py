@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from radar.core.models import RawMessage
-from radar.core.messages import MessageFilters, list_message_groups, list_messages
+from radar.core.messages import MessageFilters, get_message_overview, list_message_groups, list_messages
 from radar.core.store import (
     fetch_window_covered,
     fetch_window_exists,
@@ -72,6 +72,41 @@ def test_list_message_groups(sqlite_conn):
     assert [(item.group_name, item.message_count) for item in groups] == [("东财策略", 2), ("最强科技", 1)]
 
 
+def test_message_overview_aggregates_without_loading_messages(sqlite_conn):
+    init_db(sqlite_conn)
+    upsert_messages(
+        sqlite_conn,
+        [
+            _message("m1", "2026-06-04T10:00:00", "东财策略", "AI 算力观点"),
+            _message("m2", "2026-06-04T09:00:00", "最强科技", "固态电池"),
+            _message("m3", "2026-06-02T08:00:00", "东财策略", "PCB"),
+            _message(
+                "m4",
+                "2026-06-03T08:30:00",
+                None,
+                "私聊消息",
+                source="个人消息",
+                sender="friend",
+            ),
+        ],
+    )
+
+    overview = get_message_overview(sqlite_conn, days=3, top_limit=5)
+
+    assert overview.summary.total_count == 4
+    assert overview.summary.group_message_count == 3
+    assert overview.summary.personal_message_count == 1
+    assert overview.summary.group_count == 2
+    assert [(item.date, item.total_count) for item in overview.date_buckets] == [
+        ("2026-06-02", 1),
+        ("2026-06-03", 1),
+        ("2026-06-04", 2),
+    ]
+    assert [(item.source, item.count) for item in overview.source_breakdown] == [("个人群", 3), ("个人消息", 1)]
+    assert [(item.group_name, item.count) for item in overview.top_groups] == [("东财策略", 2), ("最强科技", 1)]
+    assert overview.hourly_buckets[8].count == 2
+
+
 def test_fetch_window_record(sqlite_conn):
     init_db(sqlite_conn)
 
@@ -128,11 +163,19 @@ def test_fetch_window_covered_by_larger_window(sqlite_conn):
     )
 
 
-def _message(message_id: str, message_time: str, group_name: str, content: str) -> RawMessage:
+def _message(
+    message_id: str,
+    message_time: str,
+    group_name: str | None,
+    content: str,
+    *,
+    source: str = "个人群",
+    sender: str = "tester",
+) -> RawMessage:
     return RawMessage(
         message_id=message_id,
-        source="个人群",
-        sender="tester",
+        source=source,
+        sender=sender,
         message_time=datetime.fromisoformat(message_time),
         raw_content=content,
         group_name=group_name,

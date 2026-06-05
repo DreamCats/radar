@@ -47,6 +47,35 @@ def test_message_groups_endpoint_reads_distinct_groups(tmp_path):
     assert response.json()["items"][0]["group_name"] == "东财策略"
 
 
+def test_messages_overview_endpoint_returns_aggregates(tmp_path):
+    config = _config(tmp_path)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(
+            conn,
+            [
+                _message("m1", "2026-06-04T10:00:00", "个人群", "东财策略"),
+                _message("m2", "2026-06-04T09:00:00", "个人群", "东财策略"),
+                _message("m3", "2026-06-03T09:00:00", "个人消息", None, sender="friend"),
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/messages/overview", params={"days": 2, "top_limit": 3})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["summary"]["total_count"] == 3
+    assert data["summary"]["group_message_count"] == 2
+    assert data["summary"]["personal_message_count"] == 1
+    assert [item["total_count"] for item in data["date_buckets"]] == [1, 2]
+    assert data["top_groups"][0]["group_name"] == "东财策略"
+    assert data["top_groups"][0]["count"] == 2
+
+
 def test_conversations_endpoint_omits_message_count(tmp_path):
     config = _config(tmp_path)
     conn = connect(config.database_path)
@@ -347,14 +376,21 @@ def _config(tmp_path, **overrides) -> RadarConfig:
     )
 
 
-def _message() -> RawMessage:
+def _message(
+    message_id: str = "m1",
+    message_time: str = "2026-06-04T10:00:00",
+    source: str = "个人群",
+    group_name: str | None = "东财策略",
+    *,
+    sender: str = "tester",
+) -> RawMessage:
     return RawMessage(
-        message_id="m1",
-        source="个人群",
-        sender="tester",
-        message_time=datetime.fromisoformat("2026-06-04T10:00:00"),
+        message_id=message_id,
+        source=source,
+        sender=sender,
+        message_time=datetime.fromisoformat(message_time),
         raw_content="固态电池观点",
-        group_name="东财策略",
+        group_name=group_name,
         fetch_time=datetime.fromisoformat("2026-06-04T10:01:00"),
         fetch_window="20260604090000-20260604110000",
     )

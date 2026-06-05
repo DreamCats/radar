@@ -44,6 +44,47 @@ export type MessageGroupItem = {
   last_seen_at: string;
 };
 
+export type MessageOverviewSummary = {
+  total_count: number;
+  group_message_count: number;
+  personal_message_count: number;
+  group_count: number;
+  sender_count: number;
+  first_message_time?: string | null;
+  latest_message_time?: string | null;
+};
+
+export type MessageOverviewBucket = {
+  date: string;
+  total_count: number;
+  group_message_count: number;
+  personal_message_count: number;
+};
+
+export type MessageOverviewSource = {
+  source: MessageSource;
+  count: number;
+};
+
+export type MessageOverviewGroup = {
+  group_name: string;
+  count: number;
+  last_message_time: string;
+};
+
+export type MessageOverviewHour = {
+  hour: number;
+  count: number;
+};
+
+export type MessageOverview = {
+  summary: MessageOverviewSummary;
+  date_buckets: MessageOverviewBucket[];
+  source_breakdown: MessageOverviewSource[];
+  top_groups: MessageOverviewGroup[];
+  hourly_buckets: MessageOverviewHour[];
+};
+
 export type MessageQuery = {
   source?: string;
   group_name?: string;
