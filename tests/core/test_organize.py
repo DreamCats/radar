@@ -4,7 +4,12 @@ from datetime import datetime
 
 from radar.core.config import RadarConfig
 from radar.core.models import MessageClassification, RawMessage
-from radar.core.organize import OrganizeClassificationFilters, list_classification_clusters
+from radar.core.organize import (
+    OrganizeClassificationFilters,
+    OrganizeEvidenceFilters,
+    list_classification_clusters,
+    list_classification_evidence,
+)
 from radar.core.store import connect, init_db, upsert_message_classifications, upsert_messages
 
 
@@ -106,6 +111,44 @@ def test_list_classification_clusters_orders_by_value_and_hides_low_value_rows(t
     assert hidden.summary.total_count == 0
     assert hidden.summary.low_confidence_count == 1
     assert hidden.clusters == []
+
+
+def test_list_classification_evidence_pages_by_time_and_message_id(tmp_path):
+    config = _config(tmp_path)
+    messages = [
+        _message("m1", "2026-06-04T10:00:00", "第一条研究"),
+        _message("m2", "2026-06-04T10:01:00", "第二条研究"),
+        _message("m3", "2026-06-04T10:02:00", "第三条研究"),
+    ]
+    _seed(config, messages)
+    _seed_classifications(
+        config,
+        [
+            _classification(messages[0], "research", 0.90, "研究观点"),
+            _classification(messages[1], "research", 0.90, "研究观点"),
+            _classification(messages[2], "research", 0.90, "研究观点"),
+        ],
+    )
+
+    conn = connect(config.database_path)
+    try:
+        first = list_classification_evidence(conn, OrganizeEvidenceFilters(category="research", limit=2))
+        second = list_classification_evidence(
+            conn,
+            OrganizeEvidenceFilters(
+                category="research",
+                limit=2,
+                cursor_time=first.next_cursor_time,
+                cursor_id=first.next_cursor_id,
+            ),
+        )
+    finally:
+        conn.close()
+
+    assert [item.message_id for item in first.items] == ["m3", "m2"]
+    assert first.next_cursor_id == "m2"
+    assert [item.message_id for item in second.items] == ["m1"]
+    assert second.next_cursor_id is None
 
 
 def _config(tmp_path) -> RadarConfig:

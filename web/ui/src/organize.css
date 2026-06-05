@@ -342,6 +342,15 @@
   overflow-x: hidden;
 }
 
+.evidence-footer {
+  min-height: 36px;
+  border-bottom: 1px solid var(--color-hairline);
+  color: var(--color-ink-tertiary);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+}
+
 .evidence-item {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);

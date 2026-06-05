@@ -8,12 +8,14 @@ from radar.core.config import RadarConfig
 from radar.core.models import MessageCategory, MessageSource
 from radar.core.organize import (
     ORGANIZE_DISPLAY_CONFIDENCE_THRESHOLD,
+    OrganizeEvidenceFilters,
     OrganizeClassificationFilters,
     list_classification_clusters,
+    list_classification_evidence,
 )
 from radar.core.store import connect, init_db
 from radar.web.server.deps import get_config
-from radar.web.server.schemas import OrganizeClassificationResponse
+from radar.web.server.schemas import OrganizeClassificationResponse, OrganizeEvidencePageResponse
 
 SOURCE_ALIASES: dict[str, MessageSource] = {
     "personal_message": "个人消息",
@@ -40,7 +42,7 @@ def classification_clusters(
     keyword: str | None = Query(default=None),
     start_time: datetime | None = Query(default=None),
     end_time: datetime | None = Query(default=None),
-    evidence_limit: int = Query(default=8, ge=0, le=30),
+    evidence_limit: int = Query(default=30, ge=0, le=50),
     low_confidence_threshold: float = Query(default=ORGANIZE_DISPLAY_CONFIDENCE_THRESHOLD, ge=0, le=1),
     config: RadarConfig = Depends(get_config),
 ) -> OrganizeClassificationResponse:
@@ -60,6 +62,42 @@ def classification_clusters(
     finally:
         conn.close()
     return OrganizeClassificationResponse(**page.model_dump())
+
+
+@router.get("/classifications/evidence", response_model=OrganizeEvidencePageResponse)
+def classification_evidence(
+    category: str = Query(),
+    source: str | None = Query(default=None),
+    keyword: str | None = Query(default=None),
+    start_time: datetime | None = Query(default=None),
+    end_time: datetime | None = Query(default=None),
+    cursor_time: datetime | None = Query(default=None),
+    cursor_id: str | None = Query(default=None),
+    limit: int = Query(default=30, ge=1, le=50),
+    low_confidence_threshold: float = Query(default=ORGANIZE_DISPLAY_CONFIDENCE_THRESHOLD, ge=0, le=1),
+    config: RadarConfig = Depends(get_config),
+) -> OrganizeEvidencePageResponse:
+    if bool(cursor_time) != bool(cursor_id):
+        raise HTTPException(status_code=400, detail="cursor_time 和 cursor_id 必须一起传")
+
+    filters = OrganizeEvidenceFilters(
+        source=_source_value(source),
+        category=_category_value(category),
+        keyword=keyword,
+        start_time=start_time,
+        end_time=end_time,
+        cursor_time=cursor_time,
+        cursor_id=cursor_id,
+        limit=limit,
+        low_confidence_threshold=low_confidence_threshold,
+    )
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        page = list_classification_evidence(conn, filters)
+    finally:
+        conn.close()
+    return OrganizeEvidencePageResponse(**page.model_dump())
 
 
 def _source_value(source: str | None) -> MessageSource | None:

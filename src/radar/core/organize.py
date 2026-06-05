@@ -43,7 +43,7 @@ class OrganizeClassificationFilters(BaseModel):
     keyword: str | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None
-    evidence_limit: int = Field(default=8, ge=0, le=30)
+    evidence_limit: int = Field(default=30, ge=0, le=50)
     low_confidence_threshold: float = Field(default=ORGANIZE_DISPLAY_CONFIDENCE_THRESHOLD, ge=0.0, le=1.0)
 
 
@@ -85,6 +85,19 @@ class OrganizeClassificationPage(BaseModel):
     clusters: list[OrganizeClassificationCluster]
 
 
+class OrganizeEvidenceFilters(OrganizeClassificationFilters):
+    category: MessageCategory
+    cursor_time: datetime | None = None
+    cursor_id: str | None = None
+    limit: int = Field(default=30, ge=1, le=50)
+
+
+class OrganizeEvidencePage(BaseModel):
+    items: list[OrganizeEvidenceMessage]
+    next_cursor_time: datetime | None = None
+    next_cursor_id: str | None = None
+
+
 def list_classification_clusters(
     conn: sqlite3.Connection,
     filters: OrganizeClassificationFilters,
@@ -108,6 +121,29 @@ def list_classification_clusters(
         for row in rows
     ]
     return OrganizeClassificationPage(summary=summary, clusters=clusters)
+
+
+def list_classification_evidence(
+    conn: sqlite3.Connection,
+    filters: OrganizeEvidenceFilters,
+) -> OrganizeEvidencePage:
+    base_where, base_params = _base_conditions(filters)
+    visible_where, visible_params = _visible_conditions(base_where, base_params, filters.low_confidence_threshold)
+    items = _classification_evidence(
+        conn,
+        filters,
+        filters.category,
+        visible_where,
+        visible_params,
+        limit=filters.limit + 1,
+        cursor_time=filters.cursor_time,
+        cursor_id=filters.cursor_id,
+    )
+    page_items = items[: filters.limit]
+    if len(items) <= filters.limit or not page_items:
+        return OrganizeEvidencePage(items=page_items)
+    last = page_items[-1]
+    return OrganizeEvidencePage(items=page_items, next_cursor_time=last.message_time, next_cursor_id=last.message_id)
 
 
 def _base_conditions(filters: OrganizeClassificationFilters) -> tuple[list[str], list[object]]:
@@ -265,6 +301,10 @@ def _classification_evidence(
     category: MessageCategory,
     base_where: list[str],
     base_params: list[object],
+    *,
+    limit: int | None = None,
+    cursor_time: datetime | None = None,
+    cursor_id: str | None = None,
 ) -> list[OrganizeEvidenceMessage]:
     where = list(base_where)
     params = list(base_params)
@@ -275,6 +315,10 @@ def _classification_evidence(
         else:
             where.append("c.category = ?")
             params.append(category)
+    if cursor_time and cursor_id:
+        # 证据列表按时间倒序翻页，同一时间用 message_id 保证稳定且不重复。
+        where.append("(m.message_time, m.message_id) < (?, ?)")
+        params.extend([cursor_time.isoformat(), cursor_id])
     sql = [
         """
         SELECT
@@ -287,7 +331,7 @@ def _classification_evidence(
     if where:
         sql.append("WHERE " + " AND ".join(where))
     sql.append("ORDER BY m.message_time DESC, m.message_id DESC LIMIT ?")
-    params.append(filters.evidence_limit)
+    params.append(filters.evidence_limit if limit is None else limit)
     rows = conn.execute(" ".join(sql), params).fetchall()
     return [_row_to_evidence(row) for row in rows]
 

@@ -210,3 +210,16 @@ export type OrganizeClassificationQuery = {
   evidence_limit?: number;
   low_confidence_threshold?: number;
 };
+
+export type OrganizeEvidencePage = {
+  items: OrganizeEvidenceMessage[];
+  next_cursor_time?: string | null;
+  next_cursor_id?: string | null;
+};
+
+export type OrganizeEvidenceQuery = Omit<OrganizeClassificationQuery, "evidence_limit"> & {
+  category: MessageCategory;
+  cursor_time?: string;
+  cursor_id?: string;
+  limit?: number;
+};

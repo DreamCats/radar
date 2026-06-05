@@ -12,6 +12,8 @@ import type {
   MessageQuery,
   OrganizeClassificationPage,
   OrganizeClassificationQuery,
+  OrganizeEvidencePage,
+  OrganizeEvidenceQuery,
   RunItem,
 } from "../types";
 
@@ -38,6 +40,10 @@ export async function fetchOrganizeClassifications(
   query: OrganizeClassificationQuery = {},
 ): Promise<OrganizeClassificationPage> {
   return getJson(`/api/organize/classifications?${params(query)}`);
+}
+
+export async function fetchOrganizeEvidence(query: OrganizeEvidenceQuery): Promise<OrganizeEvidencePage> {
+  return getJson(`/api/organize/classifications/evidence?${params(query)}`);
 }
 
 export async function fetchRuns(): Promise<RunItem[]> {

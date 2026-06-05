@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type UIEvent } from "react";
 import { CalendarDays, RefreshCw, Search, Sparkles, Tags } from "lucide-react";
 
-import { fetchOrganizeClassifications } from "../api/radarApi";
+import { fetchOrganizeClassifications, fetchOrganizeEvidence } from "../api/radarApi";
 import { DateField, SelectField } from "../components/FormFields";
 import { PanelTitle } from "../components/PanelTitle";
 import { formatTime, toIso } from "../lib/datetime";
@@ -9,6 +9,7 @@ import { buildPresetRange, rangeLabel, RANGE_PRESETS, toLocalIso, type LocalRang
 import type { OrganizeClassificationCluster, OrganizeClassificationPage, OrganizeEvidenceMessage, SourceKey } from "../types";
 
 type SourceFilter = "all" | SourceKey;
+const EVIDENCE_PAGE_SIZE = 30;
 
 const emptyPage: OrganizeClassificationPage = {
   summary: {
@@ -32,7 +33,10 @@ export function OrganizePage() {
   const [page, setPage] = useState<OrganizeClassificationPage>(emptyPage);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMoreCategory, setLoadingMoreCategory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [evidenceError, setEvidenceError] = useState<string | null>(null);
+  const evidenceListRef = useRef<HTMLDivElement | null>(null);
   const startValue = toLocalIso(range.startDate, range.startTime);
   const endValue = toLocalIso(range.endDate, range.endTime);
   const canSubmit = Boolean(startValue && endValue) && startValue <= endValue;
@@ -50,10 +54,11 @@ export function OrganizePage() {
         keyword: submittedKeyword,
         start_time: startValue,
         end_time: endValue,
-        evidence_limit: 12,
+        evidence_limit: EVIDENCE_PAGE_SIZE,
         low_confidence_threshold: 0.75,
       });
       setPage(data);
+      setEvidenceError(null);
       setSelectedCategory((current) => {
         if (current && data.clusters.some((cluster) => cluster.category === current)) {
           return current;
@@ -77,6 +82,13 @@ export function OrganizePage() {
   );
   const recommendationCount = countByCategory(page.clusters, "recommendation");
   const researchCount = countByCategory(page.clusters, "research");
+  const hasMoreEvidence = selected ? selected.evidence.length < selected.count : false;
+  const loadingMore = Boolean(selected && loadingMoreCategory === selected.category);
+
+  useEffect(() => {
+    setEvidenceError(null);
+    evidenceListRef.current?.scrollTo({ top: 0 });
+  }, [selectedCategory]);
 
   function applyPreset(value: RangePreset) {
     setPreset(value);
@@ -90,6 +102,56 @@ export function OrganizePage() {
     const timeKey = target === "start" ? "startTime" : "endTime";
     setPreset("custom");
     setRange((current) => ({ ...current, [dateKey]: date ?? "", [timeKey]: time.slice(0, 5) }));
+  }
+
+  async function loadMoreEvidence() {
+    if (!selected || !hasMoreEvidence || loading || loadingMoreCategory) {
+      return;
+    }
+    const last = selected.evidence[selected.evidence.length - 1];
+    if (!last) {
+      return;
+    }
+    const category = selected.category;
+    setLoadingMoreCategory(category);
+    setEvidenceError(null);
+    try {
+      const data = await fetchOrganizeEvidence({
+        category,
+        source: source === "all" ? undefined : source,
+        keyword: submittedKeyword,
+        start_time: startValue,
+        end_time: endValue,
+        cursor_time: last.message_time,
+        cursor_id: last.message_id,
+        limit: EVIDENCE_PAGE_SIZE,
+        low_confidence_threshold: 0.75,
+      });
+      setPage((current) => ({
+        ...current,
+        clusters: current.clusters.map((cluster) => {
+          if (cluster.category !== category) {
+            return cluster;
+          }
+          const currentLast = cluster.evidence[cluster.evidence.length - 1];
+          if (currentLast?.message_id !== last.message_id) {
+            return cluster;
+          }
+          return { ...cluster, evidence: mergeEvidence(cluster.evidence, data.items) };
+        }),
+      }));
+    } catch (err) {
+      setEvidenceError(err instanceof Error ? err.message : "证据消息加载失败");
+    } finally {
+      setLoadingMoreCategory(null);
+    }
+  }
+
+  function handleEvidenceScroll(event: UIEvent<HTMLDivElement>) {
+    const target = event.currentTarget;
+    if (target.scrollHeight - target.scrollTop - target.clientHeight < 120) {
+      void loadMoreEvidence();
+    }
   }
 
   return (
@@ -204,12 +266,15 @@ export function OrganizePage() {
                   {selected.category}
                 </span>
                 <span>平均置信 {Math.round(selected.average_confidence * 100)}%</span>
-                <span>{selected.evidence.length} 条证据</span>
+                <span>已加载 {selected.evidence.length} 条</span>
               </div>
-              <div className="evidence-list">
+              <div className="evidence-list" ref={evidenceListRef} onScroll={handleEvidenceScroll}>
                 {selected.evidence.map((item) => (
                   <EvidenceItem item={item} key={item.message_id} />
                 ))}
+                <div className="evidence-footer">
+                  {evidenceError || (loadingMore ? "加载中" : hasMoreEvidence ? "还有更多" : "已全部加载")}
+                </div>
               </div>
             </>
           ) : (
@@ -272,6 +337,21 @@ function Metric(props: { label: string; value: number | string; detail: string }
 
 function countByCategory(clusters: OrganizeClassificationCluster[], category: string): number {
   return clusters.find((cluster) => cluster.category === category)?.count ?? 0;
+}
+
+function mergeEvidence(
+  current: OrganizeEvidenceMessage[],
+  next: OrganizeEvidenceMessage[],
+): OrganizeEvidenceMessage[] {
+  const seen = new Set(current.map((item) => item.message_id));
+  const merged = [...current];
+  for (const item of next) {
+    if (!seen.has(item.message_id)) {
+      seen.add(item.message_id);
+      merged.push(item);
+    }
+  }
+  return merged;
 }
 
 function scoreTone(value: number): "high" | "medium" | "low" {

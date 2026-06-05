@@ -174,6 +174,63 @@ def test_organize_classifications_endpoint_hides_low_value_rows(tmp_path):
     assert [cluster["category"] for cluster in data["clusters"]] == ["research"]
 
 
+def test_organize_classification_evidence_endpoint_pages_results(tmp_path):
+    config = _config(tmp_path)
+    messages = [
+        _message(message_id="m1", message_time="2026-06-04T10:00:00"),
+        _message(message_id="m2", message_time="2026-06-04T10:01:00"),
+        _message(message_id="m3", message_time="2026-06-04T10:02:00"),
+    ]
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, messages)
+        upsert_message_classifications(
+            conn,
+            [
+                _classification(messages[0], "research", 0.92, "研究观点"),
+                _classification(messages[1], "research", 0.92, "研究观点"),
+                _classification(messages[2], "research", 0.92, "研究观点"),
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    first = client.get("/api/organize/classifications/evidence", params={"category": "research", "limit": 2})
+
+    assert first.status_code == 200
+    first_data = first.json()
+    assert [item["message_id"] for item in first_data["items"]] == ["m3", "m2"]
+    assert first_data["next_cursor_id"] == "m2"
+
+    second = client.get(
+        "/api/organize/classifications/evidence",
+        params={
+            "category": "research",
+            "limit": 2,
+            "cursor_time": first_data["next_cursor_time"],
+            "cursor_id": first_data["next_cursor_id"],
+        },
+    )
+
+    assert second.status_code == 200
+    second_data = second.json()
+    assert [item["message_id"] for item in second_data["items"]] == ["m1"]
+    assert second_data["next_cursor_id"] is None
+
+
+def test_organize_classification_evidence_endpoint_requires_cursor_pair(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+    response = client.get(
+        "/api/organize/classifications/evidence",
+        params={"category": "research", "cursor_id": "m1"},
+    )
+
+    assert response.status_code == 400
+    assert "cursor_time" in response.json()["detail"]
+
+
 def test_root_endpoint_points_to_dashboard(tmp_path):
     client = TestClient(create_app(_config(tmp_path)))
     response = client.get("/")
