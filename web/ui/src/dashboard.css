@@ -224,8 +224,7 @@
   min-width: 0;
 }
 
-.chart-panel:first-child,
-.chart-panel:last-child {
+.chart-panel:first-child {
   grid-column: span 2;
 }
 
@@ -235,8 +234,7 @@
   padding: 12px;
 }
 
-.chart-panel:first-child .chart-canvas,
-.chart-panel:last-child .chart-canvas {
+.chart-panel:first-child .chart-canvas {
   height: 310px;
 }
 
@@ -310,8 +308,7 @@
     grid-template-columns: 1fr;
   }
 
-  .chart-panel:first-child,
-  .chart-panel:last-child {
+  .chart-panel:first-child {
     grid-column: span 1;
   }
 }

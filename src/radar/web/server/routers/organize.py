@@ -36,7 +36,7 @@ def classification_clusters(
     keyword: str | None = Query(default=None),
     start_time: datetime | None = Query(default=None),
     end_time: datetime | None = Query(default=None),
-    evidence_limit: int = Query(default=8, ge=1, le=30),
+    evidence_limit: int = Query(default=8, ge=0, le=30),
     low_confidence_threshold: float = Query(default=0.65, ge=0, le=1),
     config: RadarConfig = Depends(get_config),
 ) -> OrganizeClassificationResponse:

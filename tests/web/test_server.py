@@ -117,6 +117,26 @@ def test_organize_classifications_endpoint_returns_clusters(tmp_path):
     assert data["clusters"][0]["evidence"][0]["message_id"] == "m1"
 
 
+def test_organize_classifications_endpoint_can_skip_evidence(tmp_path):
+    config = _config(tmp_path)
+    message = _message()
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, [message])
+        upsert_message_classifications(conn, [_classification(message, "research", 0.92, "研究观点")])
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/organize/classifications", params={"evidence_limit": 0})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["summary"]["total_count"] == 1
+    assert data["clusters"][0]["evidence"] == []
+
+
 def test_root_endpoint_points_to_dashboard(tmp_path):
     client = TestClient(create_app(_config(tmp_path)))
     response = client.get("/")

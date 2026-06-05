@@ -1,13 +1,25 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, RefreshCw } from "lucide-react";
 
-import { fetchMessageOverview, fetchRuns } from "../api/radarApi";
+import { fetchMessageOverview, fetchOrganizeClassifications, fetchRuns } from "../api/radarApi";
+import { ClassificationDistributionChart } from "../components/ClassificationDistributionChart";
 import { TopGroupsChart, TrendChart } from "../components/OverviewCharts";
 import { formatTime } from "../lib/datetime";
-import type { MessageOverview, RunItem } from "../types";
+import type { MessageOverview, OrganizeClassificationPage, RunItem } from "../types";
+
+const emptyClassificationPage: OrganizeClassificationPage = {
+  summary: {
+    total_count: 0,
+    cluster_count: 0,
+    low_confidence_count: 0,
+    average_confidence: 0,
+  },
+  clusters: [],
+};
 
 export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }) {
   const [overview, setOverview] = useState<MessageOverview | null>(null);
+  const [classificationPage, setClassificationPage] = useState<OrganizeClassificationPage>(emptyClassificationPage);
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,8 +28,13 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
     setLoading(true);
     setError(null);
     try {
-      const [overviewData, runItems] = await Promise.all([fetchMessageOverview({ days: 14, top_limit: 8 }), fetchRuns()]);
+      const [overviewData, classificationData, runItems] = await Promise.all([
+        fetchMessageOverview({ days: 14, top_limit: 8 }),
+        fetchOrganizeClassifications({ evidence_limit: 0, low_confidence_threshold: 0.65 }),
+        fetchRuns(),
+      ]);
       setOverview(overviewData);
+      setClassificationPage(classificationData);
       setRuns(runItems);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
@@ -58,6 +75,10 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
       <div className="overview-chart-grid">
         <TrendChart overview={overview} />
         <TopGroupsChart data={overview?.top_groups ?? []} />
+        <ClassificationDistributionChart
+          clusters={classificationPage.clusters}
+          totalCount={classificationPage.summary.total_count}
+        />
       </div>
     </section>
   );

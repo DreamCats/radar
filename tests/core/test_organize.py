@@ -41,6 +41,23 @@ def test_list_classification_clusters_groups_with_evidence(tmp_path):
     assert page.clusters[0].evidence[0].category == "research"
 
 
+def test_list_classification_clusters_can_skip_evidence(tmp_path):
+    config = _config(tmp_path)
+    message = _message("m1", "2026-06-04T10:00:00", "玻璃基板研究观点")
+    _seed(config, [message])
+    _seed_classifications(config, [_classification(message, "research", 0.90, "研究观点")])
+
+    conn = connect(config.database_path)
+    try:
+        page = list_classification_clusters(conn, OrganizeClassificationFilters(evidence_limit=0))
+    finally:
+        conn.close()
+
+    assert page.summary.total_count == 1
+    assert page.clusters[0].count == 1
+    assert page.clusters[0].evidence == []
+
+
 def test_list_classification_clusters_orders_by_value_and_hides_unknown(tmp_path):
     config = _config(tmp_path)
     messages = [

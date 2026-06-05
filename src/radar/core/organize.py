@@ -36,7 +36,7 @@ class OrganizeClassificationFilters(BaseModel):
     keyword: str | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None
-    evidence_limit: int = Field(default=8, ge=1, le=30)
+    evidence_limit: int = Field(default=8, ge=0, le=30)
     low_confidence_threshold: float = Field(default=0.65, ge=0.0, le=1.0)
 
 
