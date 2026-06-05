@@ -90,12 +90,23 @@ class MessageOverviewHourResponse(BaseModel):
     count: int
 
 
+class MessageAnchorHeatResponse(BaseModel):
+    name: str
+    anchor_type: Literal["stock", "concept", "industry", "theme"]
+    mention_count: int
+    message_count: int
+    high_value_count: int
+    average_confidence: float
+    latest_message_time: datetime
+
+
 class MessageOverviewResponse(BaseModel):
     summary: MessageOverviewSummaryResponse
     date_buckets: list[MessageOverviewBucketResponse]
     source_breakdown: list[MessageOverviewSourceResponse]
     top_groups: list[MessageOverviewGroupResponse]
     hourly_buckets: list[MessageOverviewHourResponse]
+    anchor_heat: list[MessageAnchorHeatResponse]
 
 
 class RunListResponse(BaseModel):

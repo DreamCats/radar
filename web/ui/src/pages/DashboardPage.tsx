@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, RefreshCw } from "lucide-react";
 
-import { fetchMessageOverview, fetchOrganizeClassifications, fetchRuns } from "../api/radarApi";
+import { fetchMessageOverview, fetchOrganizeAggregates, fetchOrganizeClassifications, fetchRuns } from "../api/radarApi";
 import { ClassificationDistributionChart } from "../components/ClassificationDistributionChart";
-import { TopGroupsChart, TrendChart } from "../components/OverviewCharts";
+import { AnchorHeatChart, ThemePriorityBubbleChart, TopGroupsChart, TrendChart } from "../components/OverviewCharts";
 import { formatTime } from "../lib/datetime";
-import type { MessageOverview, OrganizeClassificationPage, RunItem } from "../types";
+import type { MessageOverview, OrganizeAggregatePage, OrganizeClassificationPage, RunItem } from "../types";
 
 const emptyClassificationPage: OrganizeClassificationPage = {
   summary: {
@@ -20,9 +20,15 @@ const emptyClassificationPage: OrganizeClassificationPage = {
   clusters: [],
 };
 
+const emptyAggregatePage: OrganizeAggregatePage = {
+  result: null,
+  themes: [],
+};
+
 export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }) {
   const [overview, setOverview] = useState<MessageOverview | null>(null);
   const [classificationPage, setClassificationPage] = useState<OrganizeClassificationPage>(emptyClassificationPage);
+  const [aggregatePage, setAggregatePage] = useState<OrganizeAggregatePage>(emptyAggregatePage);
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,13 +37,15 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
     setLoading(true);
     setError(null);
     try {
-      const [overviewData, classificationData, runItems] = await Promise.all([
-        fetchMessageOverview({ days: 14, top_limit: 8 }),
+      const [overviewData, classificationData, aggregateData, runItems] = await Promise.all([
+        fetchMessageOverview({ days: 14, top_limit: 8, anchor_limit: 20 }),
         fetchOrganizeClassifications({ evidence_limit: 0, low_confidence_threshold: 0.75 }),
+        fetchOrganizeAggregates({ evidence_limit: 0 }),
         fetchRuns(),
       ]);
       setOverview(overviewData);
       setClassificationPage(classificationData);
+      setAggregatePage(aggregateData);
       setRuns(runItems);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
@@ -77,6 +85,8 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
       {error && <p className="error-line">{error}</p>}
       <div className="overview-chart-grid">
         <TrendChart overview={overview} />
+        <AnchorHeatChart data={overview?.anchor_heat ?? []} />
+        <ThemePriorityBubbleChart themes={aggregatePage.themes} />
         <TopGroupsChart data={overview?.top_groups ?? []} />
         <ClassificationDistributionChart
           clusters={classificationPage.clusters}

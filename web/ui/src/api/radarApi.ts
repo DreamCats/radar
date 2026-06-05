@@ -40,7 +40,9 @@ export async function fetchMessageGroups(query: { source?: string; keyword?: str
   return data.items;
 }
 
-export async function fetchMessageOverview(query: { days?: number; top_limit?: number } = {}): Promise<MessageOverview> {
+export async function fetchMessageOverview(
+  query: { days?: number; top_limit?: number; anchor_limit?: number } = {},
+): Promise<MessageOverview> {
   return getJson(`/api/messages/overview?${params(query)}`);
 }
 

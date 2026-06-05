@@ -77,12 +77,23 @@ export type MessageOverviewHour = {
   count: number;
 };
 
+export type MessageAnchorHeat = {
+  name: string;
+  anchor_type: "stock" | "concept" | "industry" | "theme";
+  mention_count: number;
+  message_count: number;
+  high_value_count: number;
+  average_confidence: number;
+  latest_message_time: string;
+};
+
 export type MessageOverview = {
   summary: MessageOverviewSummary;
   date_buckets: MessageOverviewBucket[];
   source_breakdown: MessageOverviewSource[];
   top_groups: MessageOverviewGroup[];
   hourly_buckets: MessageOverviewHour[];
+  anchor_heat: MessageAnchorHeat[];
 };
 
 export type MessageQuery = {
