@@ -235,6 +235,54 @@ export type AggregateRefineResult = {
   themes: RefinedTheme[];
 };
 
+export type OrganizeAggregateSummary = {
+  run_id: string;
+  input_hash: string;
+  status: string;
+  trade_date: string;
+  start_time: string;
+  end_time: string;
+  candidate_count: number;
+  theme_count: number;
+  llm_batch_count: number;
+  failed_llm_batches: number;
+  max_concurrency: number;
+  evidence_message_count: number;
+};
+
+export type OrganizeAggregateTheme = RefinedTheme & {
+  theme_index: number;
+  priority_score: number;
+  evidence: OrganizeEvidenceMessage[];
+};
+
+export type OrganizeAggregatePage = {
+  result?: OrganizeAggregateSummary | null;
+  themes: OrganizeAggregateTheme[];
+};
+
+export type OrganizeAggregateQuery = {
+  source?: SourceKey;
+  keyword?: string;
+  start_time?: string;
+  end_time?: string;
+  evidence_limit?: number;
+};
+
+export type OrganizeAggregateEvidencePage = {
+  items: OrganizeEvidenceMessage[];
+  next_cursor_time?: string | null;
+  next_cursor_id?: string | null;
+};
+
+export type OrganizeAggregateEvidenceQuery = Omit<OrganizeAggregateQuery, "evidence_limit"> & {
+  run_id: string;
+  theme_index: number;
+  cursor_time?: string;
+  cursor_id?: string;
+  limit?: number;
+};
+
 export type OrganizeEvidenceMessage = {
   message_id: string;
   source: MessageSource;

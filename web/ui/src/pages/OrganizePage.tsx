@@ -1,14 +1,28 @@
-import { useEffect, useMemo, useRef, useState, type UIEvent } from "react";
-import { CalendarDays, RefreshCw, Search, Sparkles, Tags } from "lucide-react";
+import { useEffect, useMemo, useState, type UIEvent } from "react";
+import { CalendarDays, RefreshCw, Search } from "lucide-react";
 
-import { fetchOrganizeClassifications, fetchOrganizeEvidence } from "../api/radarApi";
+import {
+  fetchOrganizeAggregateEvidence,
+  fetchOrganizeAggregates,
+  fetchOrganizeClassifications,
+  fetchOrganizeEvidence,
+} from "../api/radarApi";
 import { DateField, SelectField } from "../components/FormFields";
+import { OrganizeAggregateView } from "../components/OrganizeAggregateView";
+import { OrganizeClassificationView } from "../components/OrganizeClassificationView";
 import { PanelTitle } from "../components/PanelTitle";
-import { formatTime, toIso } from "../lib/datetime";
+import { toIso } from "../lib/datetime";
 import { buildPresetRange, rangeLabel, RANGE_PRESETS, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
-import type { OrganizeClassificationCluster, OrganizeClassificationPage, OrganizeEvidenceMessage, SourceKey } from "../types";
+import type {
+  OrganizeAggregatePage,
+  OrganizeClassificationCluster,
+  OrganizeClassificationPage,
+  OrganizeEvidenceMessage,
+  SourceKey,
+} from "../types";
 
 type SourceFilter = "all" | SourceKey;
+type OrganizeMode = "classification" | "aggregate";
 const EVIDENCE_PAGE_SIZE = 30;
 
 const emptyPage: OrganizeClassificationPage = {
@@ -24,19 +38,28 @@ const emptyPage: OrganizeClassificationPage = {
   clusters: [],
 };
 
+const emptyAggregatePage: OrganizeAggregatePage = {
+  result: null,
+  themes: [],
+};
+
 export function OrganizePage() {
+  const [mode, setMode] = useState<OrganizeMode>("classification");
   const [source, setSource] = useState<SourceFilter>("all");
   const [keyword, setKeyword] = useState("");
   const [submittedKeyword, setSubmittedKeyword] = useState("");
   const [range, setRange] = useState<LocalRange>(() => buildPresetRange("today"));
   const [preset, setPreset] = useState<RangePreset>("today");
   const [page, setPage] = useState<OrganizeClassificationPage>(emptyPage);
+  const [aggregatePage, setAggregatePage] = useState<OrganizeAggregatePage>(emptyAggregatePage);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedThemeIndex, setSelectedThemeIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMoreCategory, setLoadingMoreCategory] = useState<string | null>(null);
+  const [loadingMoreTheme, setLoadingMoreTheme] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [evidenceError, setEvidenceError] = useState<string | null>(null);
-  const evidenceListRef = useRef<HTMLDivElement | null>(null);
+  const [aggregateEvidenceError, setAggregateEvidenceError] = useState<string | null>(null);
   const startValue = toLocalIso(range.startDate, range.startTime);
   const endValue = toLocalIso(range.endDate, range.endTime);
   const canSubmit = Boolean(startValue && endValue) && startValue <= endValue;
@@ -49,12 +72,28 @@ export function OrganizePage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchOrganizeClassifications({
+      const query = {
         source: source === "all" ? undefined : source,
         keyword: submittedKeyword,
         start_time: startValue,
         end_time: endValue,
         evidence_limit: EVIDENCE_PAGE_SIZE,
+      };
+      if (mode === "aggregate") {
+        const data = await fetchOrganizeAggregates(query);
+        setAggregatePage(data);
+        setAggregateEvidenceError(null);
+        setSelectedThemeIndex((current) => {
+          if (current !== null && data.themes.some((theme) => theme.theme_index === current)) {
+            return current;
+          }
+          return data.themes[0]?.theme_index ?? null;
+        });
+        return;
+      }
+
+      const data = await fetchOrganizeClassifications({
+        ...query,
         low_confidence_threshold: 0.75,
       });
       setPage(data);
@@ -74,21 +113,44 @@ export function OrganizePage() {
 
   useEffect(() => {
     void load();
-  }, [source, submittedKeyword, startValue, endValue]);
+  }, [mode, source, submittedKeyword, startValue, endValue]);
 
   const selected = useMemo(
     () => page.clusters.find((cluster) => cluster.category === selectedCategory) ?? page.clusters[0] ?? null,
     [page.clusters, selectedCategory],
   );
+  const selectedTheme = useMemo(
+    () => aggregatePage.themes.find((theme) => theme.theme_index === selectedThemeIndex) ?? aggregatePage.themes[0] ?? null,
+    [aggregatePage.themes, selectedThemeIndex],
+  );
   const recommendationCount = countByCategory(page.clusters, "recommendation");
   const researchCount = countByCategory(page.clusters, "research");
   const hasMoreEvidence = selected ? selected.evidence.length < selected.count : false;
   const loadingMore = Boolean(selected && loadingMoreCategory === selected.category);
+  const hasMoreAggregateEvidence = selectedTheme ? selectedTheme.evidence.length < selectedTheme.evidence_message_ids.length : false;
+  const loadingMoreAggregate = selectedTheme ? loadingMoreTheme === selectedTheme.theme_index : false;
+  const metrics =
+    mode === "aggregate" && aggregatePage.result
+      ? [
+          ["主题数", aggregatePage.result.theme_count, "可阅读"],
+          ["候选簇", aggregatePage.result.candidate_count, "本地聚合"],
+          ["证据消息", aggregatePage.result.evidence_message_count, "已覆盖"],
+          ["失败批次", aggregatePage.result.failed_llm_batches, "LLM refine"],
+        ]
+      : [
+          ["有效消息", page.summary.total_count, "高置信"],
+          ["投资推荐", recommendationCount, "可行动"],
+          ["研究观点", researchCount, "可阅读"],
+          ["已收起", page.summary.hidden_count, "低置信 闲聊"],
+        ];
 
   useEffect(() => {
     setEvidenceError(null);
-    evidenceListRef.current?.scrollTo({ top: 0 });
   }, [selectedCategory]);
+
+  useEffect(() => {
+    setAggregateEvidenceError(null);
+  }, [selectedThemeIndex]);
 
   function applyPreset(value: RangePreset) {
     setPreset(value);
@@ -147,10 +209,58 @@ export function OrganizePage() {
     }
   }
 
+  async function loadMoreAggregateEvidence() {
+    if (!selectedTheme || !aggregatePage.result || !hasMoreAggregateEvidence || loading || loadingMoreTheme !== null) {
+      return;
+    }
+    const last = selectedTheme.evidence[selectedTheme.evidence.length - 1];
+    if (!last) {
+      return;
+    }
+    const themeIndex = selectedTheme.theme_index;
+    setLoadingMoreTheme(themeIndex);
+    setAggregateEvidenceError(null);
+    try {
+      const data = await fetchOrganizeAggregateEvidence({
+        run_id: aggregatePage.result.run_id,
+        theme_index: themeIndex,
+        source: source === "all" ? undefined : source,
+        keyword: submittedKeyword,
+        cursor_time: last.message_time,
+        cursor_id: last.message_id,
+        limit: EVIDENCE_PAGE_SIZE,
+      });
+      setAggregatePage((current) => ({
+        ...current,
+        themes: current.themes.map((theme) => {
+          if (theme.theme_index !== themeIndex) {
+            return theme;
+          }
+          const currentLast = theme.evidence[theme.evidence.length - 1];
+          if (currentLast?.message_id !== last.message_id) {
+            return theme;
+          }
+          return { ...theme, evidence: mergeEvidence(theme.evidence, data.items) };
+        }),
+      }));
+    } catch (err) {
+      setAggregateEvidenceError(err instanceof Error ? err.message : "聚类证据加载失败");
+    } finally {
+      setLoadingMoreTheme(null);
+    }
+  }
+
   function handleEvidenceScroll(event: UIEvent<HTMLDivElement>) {
     const target = event.currentTarget;
     if (target.scrollHeight - target.scrollTop - target.clientHeight < 120) {
       void loadMoreEvidence();
+    }
+  }
+
+  function handleAggregateEvidenceScroll(event: UIEvent<HTMLDivElement>) {
+    const target = event.currentTarget;
+    if (target.scrollHeight - target.scrollTop - target.clientHeight < 120) {
+      void loadMoreAggregateEvidence();
     }
   }
 
@@ -159,10 +269,10 @@ export function OrganizePage() {
       <div className="organize-header">
         <PanelTitle title="整理" />
         <div className="organize-mode-tabs" aria-label="整理模式">
-          <button className="active" type="button">
+          <button className={mode === "classification" ? "active" : ""} type="button" onClick={() => setMode("classification")}>
             分类
           </button>
-          <button type="button" disabled>
+          <button className={mode === "aggregate" ? "active" : ""} type="button" onClick={() => setMode("aggregate")}>
             聚类
           </button>
         </div>
@@ -196,21 +306,13 @@ export function OrganizePage() {
           <Search size={15} />
           <input
             aria-label="搜索整理结果"
-            placeholder="搜分类理由、原文、发送人"
+            placeholder={mode === "aggregate" ? "搜主题、逻辑、标的、证据" : "搜分类理由、原文、发送人"}
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
           />
         </div>
-        <DateField
-          label="开始"
-          value={startValue}
-          onChange={(value) => updateDateTime("start", value)}
-        />
-        <DateField
-          label="结束"
-          value={endValue}
-          onChange={(value) => updateDateTime("end", value)}
-        />
+        <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
+        <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
         <SelectField
           label="来源"
           value={source}
@@ -230,101 +332,35 @@ export function OrganizePage() {
       {error && <p className="error-line">{error}</p>}
 
       <div className="organize-metrics">
-        <Metric label="有效消息" value={page.summary.total_count} detail="高置信" />
-        <Metric label="投资推荐" value={recommendationCount} detail="可行动" />
-        <Metric label="研究观点" value={researchCount} detail="可阅读" />
-        <Metric label="已收起" value={page.summary.hidden_count} detail="低置信 闲聊" />
+        {metrics.map(([label, value, detail]) => (
+          <Metric detail={String(detail)} key={String(label)} label={String(label)} value={value} />
+        ))}
       </div>
 
-      <div className="organize-workspace">
-        <section className="content-panel organize-cluster-panel">
-          <PanelTitle title="有效分类" meta={loading ? "加载中" : `${page.clusters.length} 个分类`} />
-          <div className="cluster-list">
-            {page.clusters.map((cluster) => (
-              <ClusterRow
-                cluster={cluster}
-                key={cluster.category}
-                selected={cluster.category === selected?.category}
-                onSelect={() => setSelectedCategory(cluster.category)}
-              />
-            ))}
-            {!loading && page.clusters.length === 0 && <p className="empty-line">暂无分类结果。先在作业页执行消息分类。</p>}
-          </div>
-        </section>
-
-        <section className="content-panel organize-evidence-panel">
-          {selected ? (
-            <>
-              <PanelTitle title={selected.label} meta={`${selected.count} 条消息`}>
-                <span className={`organize-score ${scoreTone(selected.average_confidence)}`}>
-                  {Math.round(selected.average_confidence * 100)}%
-                </span>
-              </PanelTitle>
-              <div className="organize-tags">
-                <span>
-                  <Tags size={13} />
-                  {selected.category}
-                </span>
-                <span>最近 {formatTime(selected.latest_time)}</span>
-                <span>平均置信 {Math.round(selected.average_confidence * 100)}%</span>
-                <span>已加载 {selected.evidence.length} 条</span>
-              </div>
-              <div className="evidence-list" ref={evidenceListRef} onScroll={handleEvidenceScroll}>
-                {selected.evidence.map((item) => (
-                  <EvidenceItem item={item} key={item.message_id} />
-                ))}
-                <div className="evidence-footer">
-                  {evidenceError || (loadingMore ? "加载中" : hasMoreEvidence ? "还有更多" : "已全部加载")}
-                </div>
-              </div>
-            </>
-          ) : (
-            <p className="empty-line">选择一个分类查看证据消息。</p>
-          )}
-        </section>
-
-      </div>
+      {mode === "classification" ? (
+        <OrganizeClassificationView
+          evidenceError={evidenceError}
+          hasMoreEvidence={hasMoreEvidence}
+          loading={loading}
+          loadingMore={loadingMore}
+          page={page}
+          selected={selected}
+          onEvidenceScroll={handleEvidenceScroll}
+          onSelect={setSelectedCategory}
+        />
+      ) : (
+        <OrganizeAggregateView
+          evidenceError={aggregateEvidenceError}
+          hasMoreEvidence={hasMoreAggregateEvidence}
+          loading={loading}
+          loadingMore={loadingMoreAggregate}
+          page={aggregatePage}
+          selected={selectedTheme}
+          onEvidenceScroll={handleAggregateEvidenceScroll}
+          onSelect={setSelectedThemeIndex}
+        />
+      )}
     </section>
-  );
-}
-
-function ClusterRow(props: { cluster: OrganizeClassificationCluster; selected: boolean; onSelect: () => void }) {
-  const latest = props.cluster.evidence[0];
-  return (
-    <button className={props.selected ? "cluster-row active" : "cluster-row"} type="button" onClick={props.onSelect}>
-      <span className={`cluster-hotness ${scoreTone(props.cluster.average_confidence)}`} />
-      <span className="cluster-main">
-        <strong>{props.cluster.label}</strong>
-        <em>{props.cluster.category} · 高置信</em>
-        <span>{latest?.reason ?? "暂无分类理由"}</span>
-      </span>
-      <span className="cluster-side">
-        <strong>{props.cluster.count}</strong>
-        <em>{Math.round(props.cluster.average_confidence * 100)}%</em>
-      </span>
-    </button>
-  );
-}
-
-function EvidenceItem(props: { item: OrganizeEvidenceMessage }) {
-  return (
-    <article className="evidence-item">
-      <div className="evidence-avatar">{shortName(props.item.sender)}</div>
-      <div className="evidence-body">
-        <div className="evidence-meta">
-          <span className="evidence-identity">
-            <strong>{props.item.sender}</strong>
-            <span>{props.item.group_name || props.item.source}</span>
-          </span>
-          <time>{formatTime(props.item.message_time)}</time>
-        </div>
-        <p>{props.item.raw_content}</p>
-        <div className="evidence-reason">
-          <Sparkles size={13} />
-          {props.item.reason}
-        </div>
-      </div>
-    </article>
   );
 }
 
@@ -355,22 +391,4 @@ function mergeEvidence(
     }
   }
   return merged;
-}
-
-function scoreTone(value: number): "high" | "medium" | "low" {
-  if (value >= 0.75) {
-    return "high";
-  }
-  if (value >= 0.65) {
-    return "medium";
-  }
-  return "low";
-}
-
-function shortName(name: string): string {
-  const cleaned = name.trim();
-  if (/^[a-z0-9]/i.test(cleaned)) {
-    return cleaned.slice(0, 2).toUpperCase();
-  }
-  return cleaned.slice(0, 2);
 }

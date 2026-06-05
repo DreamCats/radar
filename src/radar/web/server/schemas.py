@@ -7,6 +7,10 @@ from pydantic import BaseModel, Field
 
 from radar.core.models import ClassificationRetryMode, MessageCategory, MessageSource, RawMessage
 from radar.core.organize import OrganizeClassificationCluster, OrganizeClassificationSummary, OrganizeEvidenceMessage
+from radar.core.organize_aggregates import (
+    OrganizeAggregateEvidencePage,
+    OrganizeAggregatePage,
+)
 from radar.core.runs import RunRecord
 from radar.core.usecases.aggregation import RefineAggregateTopicsResult
 
@@ -215,3 +219,11 @@ class OrganizeEvidencePageResponse(BaseModel):
     items: list[OrganizeEvidenceMessage]
     next_cursor_time: datetime | None = None
     next_cursor_id: str | None = None
+
+
+class OrganizeAggregateResponse(OrganizeAggregatePage):
+    pass
+
+
+class OrganizeAggregateEvidencePageResponse(OrganizeAggregateEvidencePage):
+    pass

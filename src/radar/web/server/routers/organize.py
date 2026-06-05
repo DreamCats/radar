@@ -13,9 +13,20 @@ from radar.core.organize import (
     list_classification_clusters,
     list_classification_evidence,
 )
+from radar.core.organize_aggregates import (
+    OrganizeAggregateEvidenceFilters,
+    OrganizeAggregateFilters,
+    list_aggregate_evidence,
+    list_aggregate_themes,
+)
 from radar.core.store import connect, init_db
 from radar.web.server.deps import get_config
-from radar.web.server.schemas import OrganizeClassificationResponse, OrganizeEvidencePageResponse
+from radar.web.server.schemas import (
+    OrganizeAggregateEvidencePageResponse,
+    OrganizeAggregateResponse,
+    OrganizeClassificationResponse,
+    OrganizeEvidencePageResponse,
+)
 
 SOURCE_ALIASES: dict[str, MessageSource] = {
     "personal_message": "个人消息",
@@ -98,6 +109,63 @@ def classification_evidence(
     finally:
         conn.close()
     return OrganizeEvidencePageResponse(**page.model_dump())
+
+
+@router.get("/aggregates", response_model=OrganizeAggregateResponse)
+def aggregate_themes(
+    source: str | None = Query(default=None),
+    keyword: str | None = Query(default=None),
+    start_time: datetime | None = Query(default=None),
+    end_time: datetime | None = Query(default=None),
+    evidence_limit: int = Query(default=30, ge=0, le=100),
+    config: RadarConfig = Depends(get_config),
+) -> OrganizeAggregateResponse:
+    filters = OrganizeAggregateFilters(
+        source=_source_value(source),
+        keyword=keyword,
+        start_time=start_time,
+        end_time=end_time,
+        evidence_limit=evidence_limit,
+    )
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        page = list_aggregate_themes(conn, filters)
+    finally:
+        conn.close()
+    return OrganizeAggregateResponse(**page.model_dump())
+
+
+@router.get("/aggregates/evidence", response_model=OrganizeAggregateEvidencePageResponse)
+def aggregate_evidence(
+    run_id: str = Query(),
+    theme_index: int = Query(ge=0),
+    source: str | None = Query(default=None),
+    keyword: str | None = Query(default=None),
+    cursor_time: datetime | None = Query(default=None),
+    cursor_id: str | None = Query(default=None),
+    limit: int = Query(default=30, ge=1, le=50),
+    config: RadarConfig = Depends(get_config),
+) -> OrganizeAggregateEvidencePageResponse:
+    if bool(cursor_time) != bool(cursor_id):
+        raise HTTPException(status_code=400, detail="cursor_time 和 cursor_id 必须一起传")
+
+    filters = OrganizeAggregateEvidenceFilters(
+        run_id=run_id,
+        theme_index=theme_index,
+        source=_source_value(source),
+        keyword=keyword,
+        cursor_time=cursor_time,
+        cursor_id=cursor_id,
+        limit=limit,
+    )
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        page = list_aggregate_evidence(conn, filters)
+    finally:
+        conn.close()
+    return OrganizeAggregateEvidencePageResponse(**page.model_dump())
 
 
 def _source_value(source: str | None) -> MessageSource | None:

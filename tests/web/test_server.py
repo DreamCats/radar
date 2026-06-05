@@ -233,6 +233,87 @@ def test_organize_classification_evidence_endpoint_requires_cursor_pair(tmp_path
     assert "cursor_time" in response.json()["detail"]
 
 
+def test_organize_aggregates_endpoint_returns_latest_result_with_evidence(tmp_path):
+    config = _config(tmp_path)
+    messages = [
+        _message(message_id="m1", message_time="2026-06-04T10:00:00"),
+        _message(message_id="m2", message_time="2026-06-04T10:01:00"),
+    ]
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, messages)
+        upsert_message_classifications(
+            conn,
+            [
+                _classification(messages[0], "research", 0.92, "研究观点"),
+                _classification(messages[1], "recommendation", 0.93, "投资推荐"),
+            ],
+        )
+        store_refine_result(conn, _refine_result("run-refine", ["m1", "m2"]))
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/organize/aggregates",
+        params={
+            "start_time": "2026-06-04T09:00:00",
+            "end_time": "2026-06-04T12:00:00",
+            "evidence_limit": 1,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["result"]["run_id"] == "run-refine"
+    assert data["result"]["theme_count"] == 1
+    assert data["themes"][0]["theme_name"] == "固态电池聚类"
+    assert data["themes"][0]["priority_score"] > 0
+    assert [item["message_id"] for item in data["themes"][0]["evidence"]] == ["m2"]
+
+
+def test_organize_aggregate_evidence_endpoint_pages_results(tmp_path):
+    config = _config(tmp_path)
+    messages = [
+        _message(message_id="m1", message_time="2026-06-04T10:00:00"),
+        _message(message_id="m2", message_time="2026-06-04T10:01:00"),
+        _message(message_id="m3", message_time="2026-06-04T10:02:00"),
+    ]
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, messages)
+        upsert_message_classifications(conn, [_classification(message, "research", 0.92, "研究观点") for message in messages])
+        store_refine_result(conn, _refine_result("run-refine", ["m1", "m2", "m3"]))
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    first = client.get("/api/organize/aggregates/evidence", params={"run_id": "run-refine", "theme_index": 0, "limit": 2})
+
+    assert first.status_code == 200
+    first_data = first.json()
+    assert [item["message_id"] for item in first_data["items"]] == ["m3", "m2"]
+    assert first_data["next_cursor_id"] == "m2"
+
+    second = client.get(
+        "/api/organize/aggregates/evidence",
+        params={
+            "run_id": "run-refine",
+            "theme_index": 0,
+            "limit": 2,
+            "cursor_time": first_data["next_cursor_time"],
+            "cursor_id": first_data["next_cursor_id"],
+        },
+    )
+
+    assert second.status_code == 200
+    second_data = second.json()
+    assert [item["message_id"] for item in second_data["items"]] == ["m1"]
+    assert second_data["next_cursor_id"] is None
+
+
 def test_root_endpoint_points_to_dashboard(tmp_path):
     client = TestClient(create_app(_config(tmp_path)))
     response = client.get("/")
@@ -711,4 +792,42 @@ def _classification(
         classifier_version="test",
         created_at=now,
         updated_at=now,
+    )
+
+
+def _refine_result(run_id: str, evidence_ids: list[str]) -> RefineAggregateTopicsResult:
+    local_result = AggregateTopicsResult(
+        trade_date="20260604",
+        extractor_version="test",
+        start_time=datetime.fromisoformat("2026-06-04T09:00:00"),
+        end_time=datetime.fromisoformat("2026-06-04T12:00:00"),
+        categories=["research", "recommendation"],
+        min_classification_confidence=0.7,
+        scoped_message_count=len(evidence_ids),
+        anchored_message_count=len(evidence_ids),
+        topic_count=1,
+        topics=[],
+    )
+    return RefineAggregateTopicsResult(
+        run_id=run_id,
+        input_hash=f"hash-{run_id}",
+        status="succeeded",
+        trade_date="20260604",
+        extractor_version="test",
+        prompt_version="test-prompt",
+        candidate_count=1,
+        theme_count=1,
+        llm_batch_count=1,
+        failed_llm_batches=0,
+        max_concurrency=2,
+        local_result=local_result,
+        themes=[
+            RefinedTheme(
+                theme_name="固态电池聚类",
+                summary="固态电池观点聚合",
+                evidence_message_ids=evidence_ids,
+                confidence=0.82,
+                actionability_score=78,
+            )
+        ],
     )

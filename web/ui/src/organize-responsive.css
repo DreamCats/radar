@@ -19,13 +19,18 @@
   }
 
   .cluster-list,
-  .evidence-list {
+  .evidence-list,
+  .aggregate-detail-scroll {
     max-height: 420px;
   }
 }
 
 @media (max-width: 560px) {
   .organize-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .aggregate-stock-list {
     grid-template-columns: 1fr;
   }
 }

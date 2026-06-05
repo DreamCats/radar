@@ -14,6 +14,10 @@ import type {
   MessageOverview,
   MessagePage,
   MessageQuery,
+  OrganizeAggregateEvidencePage,
+  OrganizeAggregateEvidenceQuery,
+  OrganizeAggregatePage,
+  OrganizeAggregateQuery,
   OrganizeClassificationPage,
   OrganizeClassificationQuery,
   OrganizeEvidencePage,
@@ -48,6 +52,18 @@ export async function fetchOrganizeClassifications(
 
 export async function fetchOrganizeEvidence(query: OrganizeEvidenceQuery): Promise<OrganizeEvidencePage> {
   return getJson(`/api/organize/classifications/evidence?${params(query)}`);
+}
+
+export async function fetchOrganizeAggregates(
+  query: OrganizeAggregateQuery = {},
+): Promise<OrganizeAggregatePage> {
+  return getJson(`/api/organize/aggregates?${params(query)}`);
+}
+
+export async function fetchOrganizeAggregateEvidence(
+  query: OrganizeAggregateEvidenceQuery,
+): Promise<OrganizeAggregateEvidencePage> {
+  return getJson(`/api/organize/aggregates/evidence?${params(query)}`);
 }
 
 export async function fetchRuns(query: { kind?: string; status?: RunItem["status"]; limit?: number } = {}): Promise<RunItem[]> {
