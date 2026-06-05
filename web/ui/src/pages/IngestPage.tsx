@@ -3,7 +3,6 @@ import { CalendarDays, Play, RotateCcw } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import {
-  fetchAggregateRefineResults,
   fetchRuns,
   startAggregateRefineJob,
   startAnchorMessagesJob,
@@ -25,7 +24,7 @@ import {
 } from "../lib/jobRuns";
 import { panelMotionState } from "../lib/motion";
 import { buildPresetRange, rangeLabel, RANGE_PRESETS, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
-import type { AggregateRefineResult, IngestSource, RunItem } from "../types";
+import type { IngestSource, RunItem } from "../types";
 
 export function IngestPage() {
   const initialRange = useMemo(() => buildPresetRange("today"), []);
@@ -38,7 +37,6 @@ export function IngestPage() {
   const [force, setForce] = useState(false);
   const [trackedJobs, setTrackedJobs] = useState<TrackedJob[]>([]);
   const [runs, setRuns] = useState<RunItem[]>([]);
-  const [refineResults, setRefineResults] = useState<AggregateRefineResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -68,12 +66,11 @@ export function IngestPage() {
 
     async function refresh() {
       try {
-        const [items, results] = await Promise.all([fetchRuns(), fetchAggregateRefineResults()]);
+        const items = await fetchRuns();
         if (cancelled) {
           return;
         }
         setRuns(items);
-        setRefineResults(results);
         const tracked = items.filter((item) => runIds.has(item.run_id));
         const hasRunning = tracked.length < runIds.size || tracked.some((item) => item.status === "running");
         if (hasRunning) {
@@ -99,17 +96,15 @@ export function IngestPage() {
   async function refreshRunsAndResults() {
     setError(null);
     try {
-      const [runItems, runningItems, resultItems] = await Promise.all([
+      const [runItems, runningItems] = await Promise.all([
         fetchRuns(),
         fetchRuns({ status: "running", limit: 50 }),
-        fetchAggregateRefineResults(),
       ]);
       setRuns(mergeRuns(runItems, runningItems));
       const restoredJobs = runningItems.map(trackedJobFromRun).filter((item): item is TrackedJob => item !== null);
       if (restoredJobs.length > 0) {
         setTrackedJobs((current) => mergeTrackedJobs(restoredJobs, current));
       }
-      setRefineResults(resultItems);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载作业数据失败");
     }
@@ -231,7 +226,7 @@ export function IngestPage() {
   return (
     <section className="ingest-page job-center-page">
       <div className="ingest-header">
-        <PanelTitle title="作业中心" meta="执行 / 历史 / 产物" />
+        <PanelTitle title="作业中心" meta="执行 / 历史" />
         <div className="ingest-window-pill">
           <CalendarDays size={15} />
           {rangeLabel(range)}
@@ -349,39 +344,6 @@ export function IngestPage() {
         </aside>
       </div>
 
-      <section className="content-panel ingest-results job-artifacts-panel">
-        <div className="ingest-result-head">
-          <div>
-            <h2>聚合产物</h2>
-            <p>{refineResults.length ? `最近 ${refineResults.length} 次 refine` : "等待产物"}</p>
-          </div>
-          {refineResults[0] && (
-            <div className="result-total">
-              {refineResults[0].candidate_count} 候选 / {refineResults[0].theme_count} 主题
-            </div>
-          )}
-        </div>
-        <div className="artifact-list">
-          {refineResults.length === 0 && <p className="empty-line">暂无聚合产物。执行聚合 Refine 后，这里会展示最新主题。</p>}
-          {refineResults.slice(0, 3).map((result) => (
-            <article className="artifact-card" key={result.input_hash}>
-              <div className="artifact-card-head">
-                <strong>{result.trade_date}</strong>
-                <span>{result.status} · {result.theme_count} 主题 · {result.llm_batch_count} 批次</span>
-              </div>
-              <div className="artifact-theme-list">
-                {result.themes.slice(0, 5).map((theme) => (
-                  <div className="artifact-theme" key={`${result.input_hash}-${theme.theme_name}`}>
-                    <span>{theme.theme_name}</span>
-                    <strong>{Math.round(theme.actionability_score)}</strong>
-                    <p>{theme.summary}</p>
-                  </div>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
     </section>
   );
 }

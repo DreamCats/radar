@@ -7,8 +7,7 @@
 
 .job-template-panel,
 .job-config-panel,
-.job-queue-panel,
-.job-artifacts-panel {
+.job-queue-panel {
   min-width: 0;
 }
 
@@ -43,9 +42,7 @@
   background: var(--color-surface-2);
 }
 
-.job-template strong,
-.artifact-card-head strong,
-.artifact-theme span {
+.job-template strong {
   display: block;
   color: var(--color-ink);
   font-size: 13px;
@@ -129,64 +126,6 @@
   display: none;
 }
 
-.artifact-list {
-  display: grid;
-  gap: 0;
-}
-
-.artifact-card {
-  display: grid;
-  gap: var(--space-xs);
-  border-bottom: 1px solid var(--color-hairline);
-  padding: 12px 14px;
-}
-
-.artifact-card:last-child {
-  border-bottom: 0;
-}
-
-.artifact-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-}
-
-.artifact-card-head span {
-  color: var(--color-ink-subtle);
-  font-size: 12px;
-}
-
-.artifact-theme-list {
-  display: grid;
-  gap: 6px;
-}
-
-.artifact-theme {
-  display: grid;
-  grid-template-columns: minmax(120px, 0.9fr) 42px minmax(0, 2fr);
-  gap: var(--space-xs);
-  align-items: start;
-  min-height: 30px;
-}
-
-.artifact-theme strong {
-  justify-self: start;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-pill);
-  padding: 2px 8px;
-  color: var(--color-primary);
-  background: var(--color-canvas);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.artifact-theme p {
-  color: var(--color-ink-subtle);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
 @media (max-width: 1280px) {
   .job-center-grid {
     grid-template-columns: 1fr;
@@ -199,9 +138,7 @@
 
 @media (max-width: 900px) {
   .job-config-grid,
-  .job-template-list,
-  .artifact-card-head,
-  .artifact-theme {
+  .job-template-list {
     grid-template-columns: 1fr;
   }
 }
