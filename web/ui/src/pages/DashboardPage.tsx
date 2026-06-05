@@ -2,13 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, RefreshCw } from "lucide-react";
 
 import { fetchMessageOverview, fetchRuns } from "../api/radarApi";
-import {
-  HourlyActivityChart,
-  RunTotalsChart,
-  SourceBreakdownChart,
-  TopGroupsChart,
-  TrendChart,
-} from "../components/OverviewCharts";
+import { TopGroupsChart, TrendChart } from "../components/OverviewCharts";
 import { formatTime } from "../lib/datetime";
 import type { MessageOverview, RunItem } from "../types";
 
@@ -63,10 +57,7 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
       {error && <p className="error-line">{error}</p>}
       <div className="overview-chart-grid">
         <TrendChart overview={overview} />
-        <SourceBreakdownChart data={overview?.source_breakdown ?? []} />
         <TopGroupsChart data={overview?.top_groups ?? []} />
-        <HourlyActivityChart data={overview?.hourly_buckets ?? []} />
-        <RunTotalsChart runs={runs} />
       </div>
     </section>
   );

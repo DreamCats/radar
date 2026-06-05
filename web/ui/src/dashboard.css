@@ -240,29 +240,12 @@
   height: 310px;
 }
 
-.donut-layout {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  height: 100%;
-}
-
-.chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  min-height: 24px;
-  color: var(--color-ink-muted);
-  font-size: 12px;
-}
-
-.chart-legend span,
 .chart-tooltip span {
   display: inline-flex;
   align-items: center;
   gap: 7px;
 }
 
-.chart-legend i,
 .chart-tooltip i {
   width: 8px;
   height: 8px;
