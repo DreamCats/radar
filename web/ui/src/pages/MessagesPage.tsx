@@ -1,10 +1,12 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { fetchMessageGroups, fetchMessages } from "../api/radarApi";
 import { DateField, SelectField, TextField } from "../components/FormFields";
 import { PanelTitle } from "../components/PanelTitle";
 import { formatTime, toIso } from "../lib/datetime";
+import { panelMotionState } from "../lib/motion";
 import type { MessageItem, MessagePage, MessageQuery } from "../types";
 
 const defaultQuery: MessageQuery = {
@@ -161,7 +163,9 @@ function GroupNameField(props: {
   onChange: (value: string) => void;
 }) {
   const inputId = useId();
+  const shouldReduceMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
+  const menuMotion = panelMotionState(shouldReduceMotion);
   const options = useMemo(() => {
     const keyword = props.value.trim().toLocaleLowerCase();
     const matched = keyword
@@ -193,27 +197,36 @@ function GroupNameField(props: {
           }}
         />
         <span className="message-group-caret" aria-hidden="true" />
-        {shouldShow && (
-          <div className="message-group-menu" onMouseDown={(event) => event.preventDefault()}>
-            {options.length > 0 ? (
-              options.map((name) => (
-                <button
-                  className="message-group-option"
-                  key={name}
-                  type="button"
-                  onMouseDown={() => {
-                    props.onChange(name);
-                    setOpen(false);
-                  }}
-                >
-                  {name}
-                </button>
-              ))
-            ) : (
-              <span className="message-group-empty">没有匹配的{props.label}</span>
-            )}
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {shouldShow && (
+            <motion.div
+              animate={menuMotion.animate}
+              className="message-group-menu"
+              exit={menuMotion.exit}
+              initial={menuMotion.initial}
+              transition={menuMotion.transition}
+              onMouseDown={(event) => event.preventDefault()}
+            >
+              {options.length > 0 ? (
+                options.map((name) => (
+                  <button
+                    className="message-group-option"
+                    key={name}
+                    type="button"
+                    onMouseDown={() => {
+                      props.onChange(name);
+                      setOpen(false);
+                    }}
+                  >
+                    {name}
+                  </button>
+                ))
+              ) : (
+                <span className="message-group-empty">没有匹配的{props.label}</span>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -98,7 +98,6 @@
     background-color var(--motion-base) var(--motion-ease),
     box-shadow var(--motion-base) var(--motion-ease),
     color var(--motion-base) var(--motion-ease);
-  animation: wechat-conversation-enter 180ms var(--motion-ease) both;
 }
 
 .wechat-conversation-skeleton {
@@ -443,18 +442,6 @@
   transition:
     border-color var(--motion-base) var(--motion-ease),
     background-color var(--motion-base) var(--motion-ease);
-}
-
-@keyframes wechat-conversation-enter {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @keyframes wechat-skeleton-pulse {

@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { fetchConversations, fetchMessageGroups, fetchMessages } from "../api/radarApi";
 import { Avatar, WechatFilters } from "../components/WechatControls";
 import { formatTime } from "../lib/datetime";
+import { panelMotionState } from "../lib/motion";
 import {
   buildSenderStats,
   displayName,
@@ -22,11 +24,10 @@ const defaultQuery: MessageConversationQuery = {
 const threadLimit = 30;
 const conversationSkeletonItems = Array.from({ length: 7 }, (_, index) => index);
 
-type ThreadScrollIntent =
-  | { mode: "bottom" }
-  | { mode: "preserve"; scrollTop: number; scrollHeight: number };
+type ThreadScrollIntent = { mode: "bottom" } | { mode: "preserve"; scrollTop: number; scrollHeight: number };
 
 export function WechatPage() {
+  const shouldReduceMotion = useReducedMotion();
   const [query, setQuery] = useState<MessageConversationQuery>(defaultQuery);
   const [conversationPage, setConversationPage] = useState<MessageConversationPage>({ items: [] });
   const [history, setHistory] = useState<MessageConversationQuery[]>([]);
@@ -65,6 +66,7 @@ export function WechatPage() {
   const canNext = Boolean(conversationPage.next_cursor_time && conversationPage.next_cursor_key);
   const canLoadOlder = Boolean(threadCursor.time && threadCursor.id);
   const showConversationSkeleton = loading && conversations.length === 0;
+  const conversationMotion = panelMotionState(shouldReduceMotion);
 
   useEffect(() => {
     void loadConversations(defaultQuery);
@@ -185,33 +187,35 @@ export function WechatPage() {
             className={showConversationSkeleton ? "wechat-conversation-list is-loading" : "wechat-conversation-list"}
             aria-busy={showConversationSkeleton}
           >
-            {showConversationSkeleton &&
-              conversationSkeletonItems.map((item) => <ConversationSkeleton key={item} />)}
-            {!showConversationSkeleton &&
-              conversations.map((conversation) => (
-                <button
-                  className={
-                    conversation.key === selectedConversation?.key
-                      ? "wechat-conversation active"
-                      : "wechat-conversation"
-                  }
-                  key={conversation.key}
-                  type="button"
-                  onClick={() => setSelectedKey(conversation.key)}
-                >
-                  <Avatar name={conversation.title} />
-                  <span className="wechat-conversation-main">
-                    <span className="wechat-conversation-title">
-                      <strong>{conversation.title}</strong>
-                      <em>{formatTime(conversation.latest_time)}</em>
+            {showConversationSkeleton && conversationSkeletonItems.map((item) => <ConversationSkeleton key={item} />)}
+            <AnimatePresence initial={false}>
+              {!showConversationSkeleton &&
+                conversations.map((conversation) => (
+                  <motion.button
+                    animate={conversationMotion.animate}
+                    className={conversation.key === selectedConversation?.key ? "wechat-conversation active" : "wechat-conversation"}
+                    exit={conversationMotion.exit}
+                    initial={conversationMotion.initial}
+                    key={conversation.key}
+                    layout
+                    transition={conversationMotion.transition}
+                    type="button"
+                    onClick={() => setSelectedKey(conversation.key)}
+                  >
+                    <Avatar name={conversation.title} />
+                    <span className="wechat-conversation-main">
+                      <span className="wechat-conversation-title">
+                        <strong>{conversation.title}</strong>
+                        <em>{formatTime(conversation.latest_time)}</em>
+                      </span>
+                      <span className="wechat-conversation-preview">{conversation.latest_content}</span>
+                      <span className="wechat-conversation-meta">
+                        {conversation.source} · {conversation.latest_sender}
+                      </span>
                     </span>
-                    <span className="wechat-conversation-preview">{conversation.latest_content}</span>
-                    <span className="wechat-conversation-meta">
-                      {conversation.source} · {conversation.latest_sender}
-                    </span>
-                  </span>
-                </button>
-              ))}
+                  </motion.button>
+                ))}
+            </AnimatePresence>
             {!loading && conversations.length === 0 && <p className="empty-line">暂无数据</p>}
           </div>
           <div className="wechat-pager">
