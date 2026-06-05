@@ -5,6 +5,7 @@ import "./styles.css";
 import "./motion.css";
 import "./dashboard.css";
 import "./ingest.css";
+import "./job-center.css";
 import "./messages.css";
 import "./organize.css";
 import "./organize-responsive.css";

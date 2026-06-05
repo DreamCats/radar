@@ -1,0 +1,207 @@
+.job-center-grid {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 360px;
+  gap: var(--space-md);
+  align-items: start;
+}
+
+.job-template-panel,
+.job-config-panel,
+.job-queue-panel,
+.job-artifacts-panel {
+  min-width: 0;
+}
+
+.job-template-list {
+  display: grid;
+  gap: 6px;
+}
+
+.job-template {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 9px 10px;
+  color: var(--color-ink-muted);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.job-template:hover:not(:disabled) {
+  border-color: var(--color-hairline);
+  background: var(--color-surface-1);
+}
+
+.job-template.active {
+  border-color: var(--color-hairline-strong);
+  color: var(--color-ink);
+  background: var(--color-surface-2);
+}
+
+.job-template strong,
+.artifact-card-head strong,
+.artifact-theme span {
+  display: block;
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.job-template small {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.job-config-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) repeat(2, minmax(180px, 1fr)) minmax(112px, 0.6fr) 112px 124px;
+  align-items: end;
+  gap: var(--space-xs);
+}
+
+.job-config-motion {
+  min-width: 0;
+}
+
+.job-config-grid .field {
+  min-width: 0;
+}
+
+.job-config-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: var(--space-sm);
+}
+
+.job-config-hints span,
+.job-queue-summary span {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  padding: 4px 9px;
+  color: var(--color-ink-subtle);
+  background: var(--color-canvas);
+  font-size: 12px;
+}
+
+.job-queue-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+
+.job-list.compact .job-card {
+  padding: 10px 0;
+}
+
+.job-list.compact .job-card:first-child {
+  padding-top: 0;
+}
+
+.job-list.compact .job-card:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.job-list.compact > div:first-of-type .job-card {
+  padding-top: 0;
+}
+
+.job-list.compact > div:last-child .job-card {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.job-list.compact .job-progress {
+  height: 4px;
+}
+
+.job-list.compact .job-details {
+  display: none;
+}
+
+.artifact-list {
+  display: grid;
+  gap: 0;
+}
+
+.artifact-card {
+  display: grid;
+  gap: var(--space-xs);
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 12px 14px;
+}
+
+.artifact-card:last-child {
+  border-bottom: 0;
+}
+
+.artifact-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.artifact-card-head span {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.artifact-theme-list {
+  display: grid;
+  gap: 6px;
+}
+
+.artifact-theme {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) 42px minmax(0, 2fr);
+  gap: var(--space-xs);
+  align-items: start;
+  min-height: 30px;
+}
+
+.artifact-theme strong {
+  justify-self: start;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  color: var(--color-primary);
+  background: var(--color-canvas);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.artifact-theme p {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 1280px) {
+  .job-center-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .job-template-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .job-config-grid,
+  .job-template-list,
+  .artifact-card-head,
+  .artifact-theme {
+    grid-template-columns: 1fr;
+  }
+}

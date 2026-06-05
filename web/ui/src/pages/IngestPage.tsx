@@ -1,42 +1,63 @@
-import { useEffect, useState } from "react";
-import { Bot, CalendarDays, Play, RotateCcw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, Play, RotateCcw } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import { fetchRuns, startClassifyMessagesJob, startIngestWechatJob } from "../api/radarApi";
-import { DateField, SelectField } from "../components/FormFields";
+import {
+  fetchAggregateRefineResults,
+  fetchRuns,
+  startAggregateRefineJob,
+  startAnchorMessagesJob,
+  startClassifyMessagesJob,
+  startIngestWechatJob,
+} from "../api/radarApi";
+import { DateField, SelectField, TextField } from "../components/FormFields";
 import { JobRunCard } from "../components/JobRunCard";
 import { PanelTitle } from "../components/PanelTitle";
 import { toIso } from "../lib/datetime";
+import { configHints, DEFAULT_CATEGORIES, JOB_TEMPLATES, SOURCE_OPTIONS } from "../lib/jobTemplates";
+import {
+  mergeRuns,
+  mergeTrackedJobs,
+  sourceLabel,
+  trackedJobFromRun,
+  type JobTemplateKey,
+  type TrackedJob,
+} from "../lib/jobRuns";
+import { panelMotionState } from "../lib/motion";
 import { buildPresetRange, rangeLabel, RANGE_PRESETS, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
-import type { ClassifyJobItem, IngestJobItem, IngestSource, RunItem } from "../types";
+import type { AggregateRefineResult, IngestSource, RunItem } from "../types";
 
 export function IngestPage() {
+  const initialRange = useMemo(() => buildPresetRange("today"), []);
+  const shouldReduceMotion = useReducedMotion();
+  const [selectedJob, setSelectedJob] = useState<JobTemplateKey>("ingest");
   const [source, setSource] = useState<IngestSource>("all");
-  const [classifySource, setClassifySource] = useState<IngestSource>("all");
-  const [range, setRange] = useState<LocalRange>(() => buildPresetRange("today"));
+  const [range, setRange] = useState<LocalRange>(initialRange);
   const [preset, setPreset] = useState<RangePreset>("today");
+  const [tradeDate, setTradeDate] = useState(() => dateToTradeDate(initialRange.endDate));
   const [force, setForce] = useState(false);
-  const [classifyForce, setClassifyForce] = useState(false);
-  const [jobs, setJobs] = useState<IngestJobItem[]>([]);
-  const [classifyJobs, setClassifyJobs] = useState<ClassifyJobItem[]>([]);
+  const [trackedJobs, setTrackedJobs] = useState<TrackedJob[]>([]);
   const [runs, setRuns] = useState<RunItem[]>([]);
+  const [refineResults, setRefineResults] = useState<AggregateRefineResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [classifySubmitting, setClassifySubmitting] = useState(false);
 
   const startValue = toLocalIso(range.startDate, range.startTime);
   const endValue = toLocalIso(range.endDate, range.endTime);
-  const canSubmit = Boolean(startValue && endValue) && startValue <= endValue;
-  const rows = jobs.map((job) => ({ job, run: runs.find((run) => run.run_id === job.run_id) }));
-  const classifyRows = classifyJobs.map((job) => ({ job, run: runs.find((run) => run.run_id === job.run_id) }));
+  const validWindow = Boolean(startValue && endValue) && startValue <= endValue;
+  const canSubmit = validWindow;
+  const selectedTemplate = JOB_TEMPLATES.find((item) => item.key === selectedJob) ?? JOB_TEMPLATES[0];
+  const rows = trackedJobs.map((job) => ({ job, run: runs.find((run) => run.run_id === job.run_id) }));
   const active = submitting || rows.some(({ run }) => !run || run.status === "running");
-  const classifyActive = classifySubmitting || classifyRows.some(({ run }) => !run || run.status === "running");
-  const anyActive = active || classifyActive;
-  const trackedRuns = [...rows, ...classifyRows].map(({ run }) => run).filter((run): run is RunItem => Boolean(run));
-  const finishedCount = trackedRuns.filter((run) => run.status !== "running").length;
-  const runningCount = jobs.length + classifyJobs.length - finishedCount;
+  const runningCount = rows.filter(({ run }) => !run || run.status === "running").length;
+  const finishedCount = rows.length - runningCount;
+  const jobMotion = panelMotionState(shouldReduceMotion);
 
   useEffect(() => {
-    const trackedJobs = [...jobs, ...classifyJobs];
+    void refreshRunsAndResults();
+  }, []);
+
+  useEffect(() => {
     if (trackedJobs.length === 0) {
       return undefined;
     }
@@ -47,11 +68,12 @@ export function IngestPage() {
 
     async function refresh() {
       try {
-        const items = await fetchRuns();
+        const [items, results] = await Promise.all([fetchRuns(), fetchAggregateRefineResults()]);
         if (cancelled) {
           return;
         }
         setRuns(items);
+        setRefineResults(results);
         const tracked = items.filter((item) => runIds.has(item.run_id));
         const hasRunning = tracked.length < runIds.size || tracked.some((item) => item.status === "running");
         if (hasRunning) {
@@ -72,61 +94,126 @@ export function IngestPage() {
         window.clearTimeout(timer);
       }
     };
-  }, [jobs, classifyJobs]);
+  }, [trackedJobs]);
 
-  async function submit() {
+  async function refreshRunsAndResults() {
+    setError(null);
+    try {
+      const [runItems, runningItems, resultItems] = await Promise.all([
+        fetchRuns(),
+        fetchRuns({ status: "running", limit: 50 }),
+        fetchAggregateRefineResults(),
+      ]);
+      setRuns(mergeRuns(runItems, runningItems));
+      const restoredJobs = runningItems.map(trackedJobFromRun).filter((item): item is TrackedJob => item !== null);
+      if (restoredJobs.length > 0) {
+        setTrackedJobs((current) => mergeTrackedJobs(restoredJobs, current));
+      }
+      setRefineResults(resultItems);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载作业数据失败");
+    }
+  }
+
+  async function submitSelectedJob() {
     setSubmitting(true);
     setError(null);
     try {
-      const items = await startIngestWechatJob({
-        source,
-        start_time: startValue,
-        end_time: endValue,
-        force,
-        chunk_hours: 1,
-        concurrency: 4,
-      });
-      setJobs(items);
-      setRuns([]);
+      const start_time = startValue;
+      const end_time = endValue;
+      const newJobs = await startJob(selectedJob, { start_time, end_time });
+      setTrackedJobs((current) => mergeTrackedJobs(newJobs, current));
+      await refreshRunsAndResults();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "拉取失败");
+      setError(err instanceof Error ? err.message : "作业提交失败");
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function submitClassify() {
-    setClassifySubmitting(true);
-    setError(null);
-    try {
+  async function startJob(kind: JobTemplateKey, window: { start_time: string; end_time: string }): Promise<TrackedJob[]> {
+    if (kind === "ingest") {
+      const items = await startIngestWechatJob({
+        source,
+        start_time: window.start_time,
+        end_time: window.end_time,
+        force,
+        chunk_hours: 1,
+        concurrency: 4,
+      });
+      return items.map((item) => ({
+        kind,
+        source: item.source,
+        run_id: item.run_id,
+        reused_existing: item.reused_existing,
+      }));
+    }
+    if (kind === "classify") {
       const items = await startClassifyMessagesJob({
-        source: classifySource,
-        start_time: startValue,
-        end_time: endValue,
-        force: classifyForce,
+        source,
+        start_time: window.start_time,
+        end_time: window.end_time,
+        force,
         chunk_hours: 1,
         limit: 500,
         batch_size: 16,
         max_concurrency: 10,
         low_confidence_threshold: 0.65,
       });
-      setClassifyJobs(items);
-      setRuns([]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "分类失败");
-    } finally {
-      setClassifySubmitting(false);
+      return items.map((item) => ({
+        kind,
+        source: item.source,
+        run_id: item.run_id,
+        reused_existing: item.reused_existing,
+      }));
     }
+    if (kind === "anchor") {
+      const items = await startAnchorMessagesJob({
+        trade_date: tradeDate,
+        source,
+        start_time: window.start_time,
+        end_time: window.end_time,
+        force,
+        chunk_hours: 1,
+        limit: 500,
+        categories: DEFAULT_CATEGORIES,
+        min_classification_confidence: 0.7,
+        max_anchors: 7,
+      });
+      return items.map((item) => ({
+        kind,
+        source: sourceLabel(source),
+        run_id: item.run_id,
+        reused_existing: item.reused_existing,
+      }));
+    }
+    const items = await startAggregateRefineJob({
+      trade_date: tradeDate,
+      source,
+      start_time: window.start_time,
+      end_time: window.end_time,
+      force,
+      categories: DEFAULT_CATEGORIES,
+      min_classification_confidence: 0.7,
+      min_messages: 2,
+      candidate_limit: 50,
+      evidence_limit: 3,
+      batch_size: 5,
+      max_concurrency: 10,
+    });
+    return items.map((item) => ({
+      kind,
+      source: sourceLabel(source),
+      run_id: item.run_id,
+      reused_existing: item.reused_existing,
+    }));
   }
 
   function applyPreset(value: RangePreset) {
+    const nextRange = buildPresetRange(value);
     setPreset(value);
-    setRange(buildPresetRange(value));
-  }
-
-  function updateRange(key: keyof LocalRange, value: string) {
-    setPreset("custom");
-    setRange((current) => ({ ...current, [key]: value }));
+    setRange(nextRange);
+    setTradeDate(dateToTradeDate(nextRange.endDate));
   }
 
   function updateDateTime(target: "start" | "end", value: string) {
@@ -136,12 +223,15 @@ export function IngestPage() {
     const timeKey = target === "start" ? "startTime" : "endTime";
     setPreset("custom");
     setRange((current) => ({ ...current, [dateKey]: date ?? "", [timeKey]: time.slice(0, 5) }));
+    if (target === "end" && date) {
+      setTradeDate(dateToTradeDate(date));
+    }
   }
 
   return (
-    <section className="ingest-page">
+    <section className="ingest-page job-center-page">
       <div className="ingest-header">
-        <PanelTitle title="数据作业" meta="拉取 / 分类" />
+        <PanelTitle title="作业中心" meta="执行 / 历史 / 产物" />
         <div className="ingest-window-pill">
           <CalendarDays size={15} />
           {rangeLabel(range)}
@@ -161,162 +251,141 @@ export function IngestPage() {
         ))}
       </div>
 
-      <div className="ingest-grid">
-        <section className="content-panel ingest-control-panel">
-          <div className="ingest-card-head">
-            <PanelTitle title="微信数据源" meta="原始入库" />
-          </div>
-          <div className="ingest-form-v2">
-            <SelectField
-              label="来源"
-              value={source}
-              onChange={(value) => setSource(value as IngestSource)}
-              options={[
-                ["all", "全部"],
-                ["personal_message", "个人消息"],
-                ["group_message", "个人群"],
-              ]}
-            />
-
-            <DateField
-              label="开始"
-              value={startValue}
-              onChange={(value) => updateDateTime("start", value)}
-            />
-            <DateField
-              label="结束"
-              value={endValue}
-              onChange={(value) => updateDateTime("end", value)}
-            />
-
-            <label className="toggle-field">
-              <input checked={force} type="checkbox" onChange={(event) => setForce(event.target.checked)} />
-              <span>强制重拉</span>
-            </label>
-
-            <button className="primary-button ingest-submit" type="button" disabled={active || !canSubmit} onClick={submit}>
-              {active ? <RotateCcw size={16} /> : <Play size={16} />}
-              {submitting ? "提交中" : active ? "拉取中" : "开始拉取"}
-            </button>
-          </div>
-          {!canSubmit && <p className="error-line">请选择有效的开始和结束时间。</p>}
-          {error && <p className="error-line">{error}</p>}
-        </section>
-
-        <aside className="ingest-side">
-          <div className="ingest-stat">
-            <span>拉取分片</span>
-            <strong>1h</strong>
-          </div>
-          <div className="ingest-stat">
-            <span>拉取并发</span>
-            <strong>4</strong>
-          </div>
-          <div className="ingest-stat">
-            <span>窗口</span>
-            <strong>{preset === "custom" ? "自定义" : RANGE_PRESETS.find(([value]) => value === preset)?.[1]}</strong>
+      <div className="job-center-grid">
+        <aside className="content-panel job-template-panel">
+          <PanelTitle title="作业类型" meta={`${JOB_TEMPLATES.length} 个模板`} />
+          <div className="job-template-list">
+            {JOB_TEMPLATES.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  className={selectedJob === item.key ? "job-template active" : "job-template"}
+                  key={item.key}
+                  type="button"
+                  onClick={() => setSelectedJob(item.key)}
+                >
+                  <Icon size={16} />
+                  <span>
+                    <strong>{item.title}</strong>
+                    <small>{item.meta}</small>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </aside>
-      </div>
 
-      <div className="ingest-grid">
-        <section className="content-panel ingest-control-panel">
-          <div className="ingest-card-head">
-            <PanelTitle title="消息分类" meta="LLM 派生" />
-          </div>
-          <div className="ingest-form-v2">
-            <SelectField
-              label="来源"
-              value={classifySource}
-              onChange={(value) => setClassifySource(value as IngestSource)}
-              options={[
-                ["all", "全部"],
-                ["personal_message", "个人消息"],
-                ["group_message", "个人群"],
-              ]}
-            />
-
-            <DateField
-              label="开始"
-              value={startValue}
-              onChange={(value) => updateDateTime("start", value)}
-            />
-            <DateField
-              label="结束"
-              value={endValue}
-              onChange={(value) => updateDateTime("end", value)}
-            />
-
-            <label className="toggle-field">
-              <input checked={classifyForce} type="checkbox" onChange={(event) => setClassifyForce(event.target.checked)} />
-              <span>强制重跑</span>
-            </label>
-            <button
-              className="primary-button ingest-submit"
-              type="button"
-              disabled={classifyActive || !canSubmit}
-              onClick={submitClassify}
+        <section className="content-panel job-config-panel">
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div
+              animate={jobMotion.animate}
+              className="job-config-motion"
+              exit={jobMotion.exit}
+              initial={jobMotion.initial}
+              key={selectedJob}
+              transition={jobMotion.transition}
             >
-              {classifyActive ? <RotateCcw size={16} /> : <Bot size={16} />}
-              {classifySubmitting ? "提交中" : classifyActive ? "分类中" : "开始分类"}
-            </button>
-          </div>
+              <div className="ingest-card-head">
+                <PanelTitle title={selectedTemplate.title} meta={selectedTemplate.meta} />
+              </div>
+              <div className="job-config-grid">
+                <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
+                <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
+                <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
+                {(selectedJob === "anchor" || selectedJob === "refine") && (
+                  <TextField label="交易日" value={tradeDate} onChange={setTradeDate} />
+                )}
+                <label className="toggle-field">
+                  <input checked={force} type="checkbox" onChange={(event) => setForce(event.target.checked)} />
+                  <span>{selectedJob === "ingest" ? "强制重拉" : "强制重跑"}</span>
+                </label>
+                <button className="primary-button ingest-submit" type="button" disabled={active || !canSubmit} onClick={submitSelectedJob}>
+                  {active ? <RotateCcw size={16} /> : <Play size={16} />}
+                  {submitting ? "提交中" : active ? "运行中" : "开始执行"}
+                </button>
+              </div>
+              {!validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}
+              {error && <p className="error-line">{error}</p>}
+              <div className="job-config-hints">
+                {configHints(selectedJob).map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </section>
 
-        <aside className="ingest-side">
-          <div className="ingest-stat">
-            <span>时间分片</span>
-            <strong>1h</strong>
+        <aside className="content-panel job-queue-panel">
+          <PanelTitle title="运行队列" meta={`${runningCount} 运行中`} />
+          <div className="job-queue-summary">
+            <span>{finishedCount} 已结束</span>
+            <button className="btn btn-sm" type="button" onClick={() => void refreshRunsAndResults()}>
+              刷新
+            </button>
           </div>
-          <div className="ingest-stat">
-            <span>单批消息</span>
-            <strong>16</strong>
-          </div>
-          <div className="ingest-stat">
-            <span>LLM 并发</span>
-            <strong>10</strong>
+          <div className="job-list compact">
+            {rows.length === 0 && <p className="empty-line">暂无跟踪作业。</p>}
+            <AnimatePresence initial={false}>
+              {rows.slice(0, 5).map(({ job, run }) => (
+                <motion.div
+                  animate={jobMotion.animate}
+                  exit={jobMotion.exit}
+                  initial={jobMotion.initial}
+                  key={`${job.kind}-${job.run_id}`}
+                  layout
+                  transition={jobMotion.transition}
+                >
+                  <JobRunCard
+                    kind={job.kind === "refine" ? "refine" : job.kind}
+                    run={run}
+                    runId={job.run_id}
+                    source={job.source}
+                    reusedExisting={job.reused_existing}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </aside>
       </div>
 
-      <section className="content-panel ingest-results">
+      <section className="content-panel ingest-results job-artifacts-panel">
         <div className="ingest-result-head">
           <div>
-            <h2>作业结果</h2>
-            <p>{jobs.length || classifyJobs.length ? `${anyActive ? "运行中" : "已完成"} · 作业 ${jobs.length + classifyJobs.length} 个` : "等待执行"}</p>
+            <h2>聚合产物</h2>
+            <p>{refineResults.length ? `最近 ${refineResults.length} 次 refine` : "等待产物"}</p>
           </div>
-          {jobs.length + classifyJobs.length > 0 && (
+          {refineResults[0] && (
             <div className="result-total">
-              {runningCount} 个运行中 / {finishedCount} 个已结束
+              {refineResults[0].candidate_count} 候选 / {refineResults[0].theme_count} 主题
             </div>
           )}
         </div>
-        <div className="job-list">
-          {jobs.length + classifyJobs.length === 0 && (
-            <p className="empty-line">暂无作业。选择时间窗口后，可以先拉取微信数据源，再执行消息分类。</p>
-          )}
-          {rows.map(({ job, run }) => (
-            <JobRunCard
-              key={`${job.source_key}-${job.run_id}`}
-              kind="ingest"
-              run={run}
-              runId={job.run_id}
-              source={job.source}
-              reusedExisting={job.reused_existing}
-            />
-          ))}
-          {classifyRows.map(({ job, run }) => (
-            <JobRunCard
-              key={`classify-${job.source_key}-${job.run_id}`}
-              kind="classify"
-              run={run}
-              runId={job.run_id}
-              source={job.source}
-              reusedExisting={job.reused_existing}
-            />
+        <div className="artifact-list">
+          {refineResults.length === 0 && <p className="empty-line">暂无聚合产物。执行聚合 Refine 后，这里会展示最新主题。</p>}
+          {refineResults.slice(0, 3).map((result) => (
+            <article className="artifact-card" key={result.input_hash}>
+              <div className="artifact-card-head">
+                <strong>{result.trade_date}</strong>
+                <span>{result.status} · {result.theme_count} 主题 · {result.llm_batch_count} 批次</span>
+              </div>
+              <div className="artifact-theme-list">
+                {result.themes.slice(0, 5).map((theme) => (
+                  <div className="artifact-theme" key={`${result.input_hash}-${theme.theme_name}`}>
+                    <span>{theme.theme_name}</span>
+                    <strong>{Math.round(theme.actionability_score)}</strong>
+                    <p>{theme.summary}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
           ))}
         </div>
       </section>
     </section>
   );
+}
+
+function dateToTradeDate(value: string): string {
+  return value.replace(/-/g, "");
 }

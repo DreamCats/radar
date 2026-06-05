@@ -164,6 +164,77 @@ export type ClassifyJobItem = {
   status: "running";
 };
 
+export type AnchorRequest = {
+  trade_date: string;
+  source: IngestSource;
+  start_time: string;
+  end_time: string;
+  force: boolean;
+  chunk_hours: number;
+  limit: number;
+  categories: MessageCategory[];
+  min_classification_confidence: number;
+  max_anchors: number;
+};
+
+export type AggregateRefineRequest = {
+  trade_date: string;
+  source: IngestSource;
+  start_time: string;
+  end_time: string;
+  force: boolean;
+  categories: MessageCategory[];
+  min_classification_confidence: number;
+  min_messages: number;
+  candidate_limit: number;
+  evidence_limit: number;
+  batch_size: number;
+  max_concurrency: number;
+};
+
+export type DerivedJobItem = {
+  job_type: "anchor" | "aggregate_refine";
+  run_id: string;
+  reused_existing: boolean;
+  status: "running";
+};
+
+export type RefinedThemeStock = {
+  name: string;
+  reason: string;
+  confidence: number;
+};
+
+export type RefinedTheme = {
+  theme_name: string;
+  aliases: string[];
+  summary: string;
+  investment_logic: string;
+  catalysts: string[];
+  related_stocks: RefinedThemeStock[];
+  evidence_message_ids: string[];
+  novelty: string;
+  confidence: number;
+  actionability_score: number;
+  risk_notes: string[];
+  merge_from_candidate_ids: string[];
+};
+
+export type AggregateRefineResult = {
+  run_id: string;
+  input_hash: string;
+  status: string;
+  trade_date: string;
+  extractor_version: string;
+  prompt_version: string;
+  candidate_count: number;
+  theme_count: number;
+  llm_batch_count: number;
+  failed_llm_batches: number;
+  max_concurrency: number;
+  themes: RefinedTheme[];
+};
+
 export type OrganizeEvidenceMessage = {
   message_id: string;
   source: MessageSource;

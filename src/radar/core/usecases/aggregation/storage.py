@@ -20,6 +20,21 @@ def load_refine_result(conn: sqlite3.Connection, input_hash: str) -> RefineAggre
     return RefineAggregateTopicsResult.model_validate_json(row["result_json"])
 
 
+def list_refine_results(conn: sqlite3.Connection, *, limit: int = 10) -> list[RefineAggregateTopicsResult]:
+    if limit < 1 or limit > 50:
+        raise ValueError("limit 必须在 1 到 50 之间")
+    rows = conn.execute(
+        """
+        SELECT result_json
+        FROM aggregate_refine_results
+        ORDER BY updated_at DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    return [RefineAggregateTopicsResult.model_validate_json(row["result_json"]) for row in rows]
+
+
 def store_refine_result(conn: sqlite3.Connection, result: RefineAggregateTopicsResult) -> None:
     now = datetime.now().isoformat()
     conn.execute(

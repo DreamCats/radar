@@ -1,6 +1,10 @@
 import type {
   ClassifyJobItem,
   ClassifyRequest,
+  AggregateRefineRequest,
+  AggregateRefineResult,
+  AnchorRequest,
+  DerivedJobItem,
   IngestJobItem,
   IngestRequest,
   IngestResultItem,
@@ -46,8 +50,13 @@ export async function fetchOrganizeEvidence(query: OrganizeEvidenceQuery): Promi
   return getJson(`/api/organize/classifications/evidence?${params(query)}`);
 }
 
-export async function fetchRuns(): Promise<RunItem[]> {
-  const data = await getJson<{ items: RunItem[] }>("/api/runs?limit=20");
+export async function fetchRuns(query: { kind?: string; status?: RunItem["status"]; limit?: number } = {}): Promise<RunItem[]> {
+  const data = await getJson<{ items: RunItem[] }>(`/api/runs?${params({ limit: 20, ...query })}`);
+  return data.items;
+}
+
+export async function fetchAggregateRefineResults(): Promise<AggregateRefineResult[]> {
+  const data = await getJson<{ items: AggregateRefineResult[] }>("/api/aggregate/refine/results?limit=5");
   return data.items;
 }
 
@@ -87,6 +96,32 @@ export async function startClassifyMessagesJob(request: ClassifyRequest): Promis
     throw new Error(await errorText(response));
   }
   const data = (await response.json()) as { items: ClassifyJobItem[] };
+  return data.items;
+}
+
+export async function startAnchorMessagesJob(request: AnchorRequest): Promise<DerivedJobItem[]> {
+  const response = await fetch(`${apiBase}/api/anchor/messages/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: DerivedJobItem[] };
+  return data.items;
+}
+
+export async function startAggregateRefineJob(request: AggregateRefineRequest): Promise<DerivedJobItem[]> {
+  const response = await fetch(`${apiBase}/api/aggregate/refine/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: DerivedJobItem[] };
   return data.items;
 }
 

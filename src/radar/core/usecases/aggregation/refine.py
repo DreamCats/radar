@@ -54,6 +54,7 @@ def refine_aggregate_topics(
     provider_name: str | None = None,
     provider_names: list[str] | None = None,
     force: bool = False,
+    run_id: str | None = None,
     llm_batch_refiner: RefineBatchFn | None = None,
 ) -> RefineAggregateTopicsResult:
     """对本地聚合候选做 LLM refinement；使用输入 hash 支持增量跳过。"""
@@ -95,16 +96,6 @@ def refine_aggregate_topics(
         candidates=candidates,
     )
 
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        if not force:
-            cached = load_refine_result(conn, input_hash)
-            if cached is not None:
-                return cached.model_copy(update={"status": "skipped"})
-    finally:
-        conn.close()
-
     run_metadata = {
         "trade_date": trade_date,
         "start_time": start_time.isoformat(),
@@ -120,12 +111,34 @@ def refine_aggregate_topics(
         "input_hash": input_hash,
         "force": force,
     }
-    run_id = start_run(
-        config.database_path,
-        kind=REFINE_TASK,
-        target=_run_target(trade_date, start_time, end_time, source),
-        metadata=run_metadata,
-    )
+
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        if not force:
+            cached = load_refine_result(conn, input_hash)
+            if cached is not None:
+                result = cached.model_copy(update={"status": "skipped", "run_id": run_id or cached.run_id})
+                if run_id is not None:
+                    finish_run(
+                        config.database_path,
+                        run_id,
+                        status="skipped",
+                        raw_count=result.candidate_count,
+                        stored_count=result.theme_count,
+                        metadata=run_metadata | result.model_dump(exclude={"local_result", "themes"}),
+                    )
+                return result
+    finally:
+        conn.close()
+
+    if run_id is None:
+        run_id = start_run(
+            config.database_path,
+            kind=REFINE_TASK,
+            target=_run_target(trade_date, start_time, end_time, source),
+            metadata=run_metadata,
+        )
     try:
         themes, failed_batches, actual_concurrency = _refine_candidates(
             config,

@@ -5,10 +5,9 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
 import { MessagesPage } from "./pages/MessagesPage";
 import { OrganizePage } from "./pages/OrganizePage";
-import { RunsPage } from "./pages/RunsPage";
 import { WechatPage } from "./pages/WechatPage";
 
-type TabKey = "dashboard" | "wechat" | "messages" | "organize" | "runs" | "ingest";
+type TabKey = "dashboard" | "wechat" | "messages" | "organize" | "ingest";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "总览", icon: Activity },
@@ -16,7 +15,6 @@ const NAV_ITEMS = [
   { key: "messages", label: "消息", icon: Inbox },
   { key: "organize", label: "整理", icon: Layers3 },
   { key: "ingest", label: "作业", icon: Database },
-  { key: "runs", label: "运行", icon: RefreshCw },
 ] satisfies Array<{ key: TabKey; label: string; icon: typeof Activity }>;
 
 export function App() {
@@ -85,7 +83,6 @@ export function App() {
           {tab === "wechat" && <WechatPage />}
           {tab === "messages" && <MessagesPage />}
           {tab === "organize" && <OrganizePage />}
-          {tab === "runs" && <RunsPage />}
           {tab === "ingest" && <IngestPage />}
         </div>
       </section>
@@ -99,8 +96,7 @@ function pageTitle(tab: TabKey): string {
     wechat: "微信消息",
     messages: "消息查询",
     organize: "消息整理",
-    runs: "运行记录",
-    ingest: "数据作业",
+    ingest: "作业中心",
   };
   return titles[tab];
 }

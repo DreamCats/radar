@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Clock3, LoaderCircle } from "lucide-react";
 
 import type { RunItem } from "../types";
 
-type JobRunKind = "ingest" | "classify";
+type JobRunKind = "ingest" | "classify" | "anchor" | "refine";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -15,10 +15,10 @@ type JobRunCardProps = {
 export function JobRunCard({ kind, source, run, runId, reusedExisting = false }: JobRunCardProps) {
   const status = run?.status ?? "running";
   const metadata = run?.metadata ?? {};
-  const title = `${kind === "ingest" ? "拉取" : "分类"} · ${source}`;
+  const title = `${kindTitle(kind)} · ${source}`;
   const progress = progressPercent(kind, run);
   const stage = textValue(metadata.stage) || statusText(kind, status);
-  const metrics = kind === "ingest" ? ingestMetrics(run) : classifyMetrics(run);
+  const metrics = jobMetrics(kind, run);
   const detail = detailText(run);
 
   return (
@@ -68,7 +68,13 @@ function StatusIcon({ status }: { status: RunItem["status"] | "running" }) {
 
 function progressPercent(kind: JobRunKind, run?: RunItem): number {
   if (!run || run.status === "running") {
-    return kind === "ingest" ? ingestProgress(run) : classifyProgress(run);
+    if (kind === "ingest") {
+      return ingestProgress(run);
+    }
+    if (kind === "classify" || kind === "anchor") {
+      return chunkProgress(run);
+    }
+    return refineProgress(run);
   }
   return 100;
 }
@@ -83,7 +89,7 @@ function ingestProgress(run?: RunItem): number {
   return boundedPercent(done, total);
 }
 
-function classifyProgress(run?: RunItem): number {
+function chunkProgress(run?: RunItem): number {
   const metadata = run?.metadata ?? {};
   const total = numberValue(metadata.chunk_count);
   const done = numberValue(metadata.completed_chunk_count);
@@ -91,6 +97,29 @@ function classifyProgress(run?: RunItem): number {
     return numberValue(metadata.scanned_count) > 0 ? 25 : 8;
   }
   return boundedPercent(done, total);
+}
+
+function refineProgress(run?: RunItem): number {
+  const metadata = run?.metadata ?? {};
+  const total = numberValue(metadata.llm_batch_count) || numberValue(metadata.batch_count);
+  const done = numberValue(metadata.completed_batch_count);
+  if (!total) {
+    return numberValue(metadata.candidate_count) > 0 ? 35 : 8;
+  }
+  return boundedPercent(done, total);
+}
+
+function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
+  if (kind === "ingest") {
+    return ingestMetrics(run);
+  }
+  if (kind === "classify") {
+    return classifyMetrics(run);
+  }
+  if (kind === "anchor") {
+    return anchorMetrics(run);
+  }
+  return refineMetrics(run);
 }
 
 function ingestMetrics(run?: RunItem): string[] {
@@ -133,6 +162,37 @@ function classifyMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
+function anchorMetrics(run?: RunItem): string[] {
+  const metadata = run?.metadata ?? {};
+  const scanned = run?.raw_count || numberValue(metadata.scanned_count);
+  const anchors = run?.stored_count || numberValue(metadata.anchor_count);
+  const anchored = numberValue(metadata.anchored_message_count);
+  const chunkCount = numberValue(metadata.chunk_count);
+  const completedChunks = numberValue(metadata.completed_chunk_count);
+  return [
+    chunkCount ? `分片 ${completedChunks}/${chunkCount}` : "",
+    `扫描 ${scanned} 条`,
+    `命中消息 ${anchored} 条`,
+    `anchor ${anchors} 个`,
+    durationText(run),
+  ].filter(Boolean);
+}
+
+function refineMetrics(run?: RunItem): string[] {
+  const metadata = run?.metadata ?? {};
+  const candidates = run?.raw_count || numberValue(metadata.candidate_count);
+  const themes = run?.stored_count || numberValue(metadata.theme_count);
+  const batches = numberValue(metadata.llm_batch_count);
+  const failed = run?.filtered_count || numberValue(metadata.failed_llm_batches);
+  return [
+    `候选 ${candidates} 个`,
+    `主题 ${themes} 个`,
+    batches ? `批次 ${batches}` : "",
+    failed ? `失败批次 ${failed}` : "失败批次 0",
+    durationText(run),
+  ].filter(Boolean);
+}
+
 function detailText(run?: RunItem): string {
   if (!run) {
     return "任务已提交，等待服务端返回运行状态。";
@@ -156,6 +216,19 @@ function statusText(kind: JobRunKind, status: RunItem["status"] | "running"): st
     return kind === "ingest" ? "已覆盖" : "无需处理";
   }
   return "失败";
+}
+
+function kindTitle(kind: JobRunKind): string {
+  if (kind === "ingest") {
+    return "拉取";
+  }
+  if (kind === "classify") {
+    return "分类";
+  }
+  if (kind === "anchor") {
+    return "Anchor";
+  }
+  return "聚合 refine";
 }
 
 function durationText(run?: RunItem): string {

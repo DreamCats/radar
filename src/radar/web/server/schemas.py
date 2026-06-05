@@ -5,9 +5,10 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from radar.core.models import ClassificationRetryMode, MessageSource, RawMessage
+from radar.core.models import ClassificationRetryMode, MessageCategory, MessageSource, RawMessage
 from radar.core.organize import OrganizeClassificationCluster, OrganizeClassificationSummary, OrganizeEvidenceMessage
 from radar.core.runs import RunRecord
+from radar.core.usecases.aggregation import RefineAggregateTopicsResult
 
 SourceKey = Literal["personal_message", "group_message"]
 JobSourceKey = Literal["all", "personal_message", "group_message"]
@@ -158,6 +159,51 @@ class ClassifyMessagesJobItem(BaseModel):
 
 class ClassifyMessagesJobResponse(BaseModel):
     items: list[ClassifyMessagesJobItem]
+
+
+class AnchorMessagesRequest(BaseModel):
+    trade_date: str
+    source: JobSourceKey = "all"
+    start_time: datetime
+    end_time: datetime
+    force: bool = False
+    chunk_hours: int = Field(default=1, ge=1, le=24)
+    limit: int = Field(default=500, ge=1, le=5000)
+    categories: list[MessageCategory] = Field(default_factory=lambda: ["research", "recommendation", "industry"])
+    min_classification_confidence: float = Field(default=0.7, ge=0, le=1)
+    max_anchors: int = Field(default=7, ge=1, le=20)
+
+
+class AggregateRefineRequest(BaseModel):
+    trade_date: str
+    source: JobSourceKey = "all"
+    start_time: datetime
+    end_time: datetime
+    force: bool = False
+    categories: list[MessageCategory] = Field(default_factory=lambda: ["research", "recommendation", "industry"])
+    min_classification_confidence: float = Field(default=0.7, ge=0, le=1)
+    min_messages: int = Field(default=2, ge=1, le=100)
+    candidate_limit: int = Field(default=50, ge=1, le=100)
+    evidence_limit: int = Field(default=3, ge=0, le=10)
+    batch_size: int = Field(default=5, ge=1, le=30)
+    max_concurrency: int = Field(default=10, ge=1, le=16)
+    provider_name: str | None = None
+    provider_names: list[str] | None = None
+
+
+class DerivedJobItem(BaseModel):
+    job_type: Literal["anchor", "aggregate_refine"]
+    run_id: str
+    reused_existing: bool = False
+    status: Literal["running"]
+
+
+class DerivedJobResponse(BaseModel):
+    items: list[DerivedJobItem]
+
+
+class AggregateRefineResultListResponse(BaseModel):
+    items: list[RefineAggregateTopicsResult]
 
 
 class OrganizeClassificationResponse(BaseModel):
