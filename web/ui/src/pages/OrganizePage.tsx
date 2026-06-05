@@ -255,7 +255,7 @@ export function OrganizePage() {
         <section className="content-panel organize-evidence-panel">
           {selected ? (
             <>
-              <PanelTitle title={selected.label} meta={`${selected.count} 条消息 · 最近 ${formatTime(selected.latest_time)}`}>
+              <PanelTitle title={selected.label} meta={`${selected.count} 条消息`}>
                 <span className={`organize-score ${scoreTone(selected.average_confidence)}`}>
                   {Math.round(selected.average_confidence * 100)}%
                 </span>
@@ -265,6 +265,7 @@ export function OrganizePage() {
                   <Tags size={13} />
                   {selected.category}
                 </span>
+                <span>最近 {formatTime(selected.latest_time)}</span>
                 <span>平均置信 {Math.round(selected.average_confidence * 100)}%</span>
                 <span>已加载 {selected.evidence.length} 条</span>
               </div>
@@ -311,8 +312,10 @@ function EvidenceItem(props: { item: OrganizeEvidenceMessage }) {
       <div className="evidence-avatar">{shortName(props.item.sender)}</div>
       <div className="evidence-body">
         <div className="evidence-meta">
-          <strong>{props.item.sender}</strong>
-          <span>{props.item.group_name || props.item.source}</span>
+          <span className="evidence-identity">
+            <strong>{props.item.sender}</strong>
+            <span>{props.item.group_name || props.item.source}</span>
+          </span>
           <time>{formatTime(props.item.message_time)}</time>
         </div>
         <p>{props.item.raw_content}</p>
