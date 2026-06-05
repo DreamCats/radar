@@ -8,6 +8,7 @@ from click.testing import CliRunner
 
 from radar.cli.main import main
 from radar.core.models import RawMessage
+from radar.core.market_anchors import EnsureMarketAnchorsResult, RefreshMarketAnchorsResult
 from radar.core.store import connect, init_db, upsert_messages
 from radar.core.usecases import ClassifyRangeResult, IngestRangeResult, SmokeResult
 
@@ -307,6 +308,106 @@ def test_market_smoke_command_invokes_usecase(monkeypatch, tmp_path):
             "market_database": tmp_path / "data" / "market.sqlite3",
             "date_text": "20260603",
             "use_cache": False,
+        }
+    ]
+
+
+def test_market_anchor_refresh_command_invokes_core(monkeypatch, tmp_path):
+    config_dir = _config_dir(tmp_path)
+    calls: list[dict] = []
+
+    def fake_refresh(config, *, trade_date, use_cache):
+        calls.append(
+            {
+                "market_database": config.market_database_path,
+                "trade_date": trade_date,
+                "use_cache": use_cache,
+            }
+        )
+        return RefreshMarketAnchorsResult(
+            trade_date=trade_date,
+            anchor_count=3,
+            member_count=5,
+            source_counts={"dc_concept": 1, "dc_concept_cons": 2},
+        )
+
+    monkeypatch.setattr("radar.cli.market.refresh_market_anchors", fake_refresh)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "--config-dir",
+            str(config_dir),
+            "market",
+            "anchors",
+            "refresh",
+            "--trade-date",
+            "20260604",
+            "--no-cache",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "market/anchors: trade_date=20260604 anchors=3 members=5" in result.output
+    assert "sources={'dc_concept': 1, 'dc_concept_cons': 2}" in result.output
+    assert calls == [
+        {
+            "market_database": tmp_path / "data" / "market.sqlite3",
+            "trade_date": "20260604",
+            "use_cache": False,
+        }
+    ]
+
+
+def test_market_anchor_ensure_command_invokes_core(monkeypatch, tmp_path):
+    config_dir = _config_dir(tmp_path)
+    calls: list[dict] = []
+
+    def fake_ensure(config, *, trade_date, min_anchor_count, force, use_cache):
+        calls.append(
+            {
+                "market_database": config.market_database_path,
+                "trade_date": trade_date,
+                "min_anchor_count": min_anchor_count,
+                "force": force,
+                "use_cache": use_cache,
+            }
+        )
+        return EnsureMarketAnchorsResult(
+            trade_date=trade_date,
+            anchor_count=1099,
+            member_count=6031,
+            refreshed=False,
+            skipped_reason="anchor 词库已存在",
+        )
+
+    monkeypatch.setattr("radar.cli.market.ensure_market_anchors", fake_ensure)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "--config-dir",
+            str(config_dir),
+            "market",
+            "anchors",
+            "ensure",
+            "--trade-date",
+            "20260604",
+            "--min-anchors",
+            "1000",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "market/anchors: trade_date=20260604 status=skipped anchors=1099 members=6031" in result.output
+    assert "reason=anchor 词库已存在" in result.output
+    assert calls == [
+        {
+            "market_database": tmp_path / "data" / "market.sqlite3",
+            "trade_date": "20260604",
+            "min_anchor_count": 1000,
+            "force": False,
+            "use_cache": True,
         }
     ]
 

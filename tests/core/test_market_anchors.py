@@ -1,0 +1,215 @@
+from __future__ import annotations
+
+import sqlite3
+from pathlib import Path
+from typing import Any
+
+from radar.core.config import RadarConfig, RadarSecrets
+from radar.core.market_anchors import ensure_market_anchors, list_market_anchors, refresh_market_anchors
+
+
+def test_refresh_market_anchors_builds_dictionary(tmp_path: Path):
+    calls: list[tuple[str, dict[str, Any] | None, str | list[str] | None]] = []
+
+    def fake_call(config, api_name, params, fields):
+        calls.append((api_name, params, fields))
+        return _rows(api_name)
+
+    result = refresh_market_anchors(
+        _config(tmp_path),
+        trade_date="20260604",
+        tushare_call=fake_call,
+    )
+
+    assert result.anchor_count == 7
+    assert result.member_count == 7
+    assert result.failed_sources == {}
+    assert result.source_counts == {
+        "dc_concept": 1,
+        "dc_concept_cons": 2,
+        "kpl_list": 1,
+        "kpl_concept_cons": 1,
+        "tdx_index": 2,
+    }
+    assert [call[0] for call in calls] == [
+        "dc_concept",
+        "dc_concept_cons",
+        "kpl_list",
+        "kpl_concept_cons",
+        "tdx_index",
+    ]
+
+    anchors = list_market_anchors(_config(tmp_path), trade_date="20260604", limit=20)
+    names = {anchor.name for anchor in anchors}
+    assert {"人形机器人", "机器人", "通达信机器人", "电机", "算力"} <= names
+
+    conn = sqlite3.connect(tmp_path / "market.sqlite3")
+    try:
+        member_rows = conn.execute(
+            "SELECT ts_code, stock_name, reason FROM market_anchor_members ORDER BY ts_code, stock_name"
+        ).fetchall()
+    finally:
+        conn.close()
+    assert ("603915.SH", "国茂股份", "减速器") in member_rows
+    assert ("002164.SZ", "宁波东力", "行星减速器") in member_rows
+
+
+def test_refresh_market_anchors_replaces_same_trade_date(tmp_path: Path):
+    config = _config(tmp_path)
+
+    refresh_market_anchors(config, trade_date="20260604", tushare_call=lambda *_: _rows("dc_concept"))
+    refresh_market_anchors(config, trade_date="20260604", tushare_call=lambda *_: [])
+
+    assert list_market_anchors(config, trade_date="20260604") == []
+
+
+def test_ensure_market_anchors_skips_existing_dictionary(tmp_path: Path):
+    config = _config(tmp_path)
+    calls = 0
+
+    refresh_market_anchors(config, trade_date="20260604", tushare_call=lambda *_: _rows("dc_concept"))
+
+    def fail_if_called(config, api_name, params, fields):
+        nonlocal calls
+        calls += 1
+        raise AssertionError("不应请求 Tushare")
+
+    result = ensure_market_anchors(
+        config,
+        trade_date="20260604",
+        min_anchor_count=1,
+        tushare_call=fail_if_called,
+    )
+
+    assert result.refreshed is False
+    assert result.skipped_reason == "anchor 词库已存在"
+    assert result.anchor_count == 1
+    assert calls == 0
+
+
+def test_refresh_market_anchors_preserves_failed_source_rows(tmp_path: Path):
+    config = _config(tmp_path)
+    refresh_market_anchors(config, trade_date="20260604", tushare_call=lambda _config, api, _params, _fields: _rows(api))
+
+    def fail_kpl(config, api_name, params, fields):
+        if api_name == "kpl_list":
+            raise RuntimeError("频率超限")
+        return _rows(api_name)
+
+    result = refresh_market_anchors(config, trade_date="20260604", tushare_call=fail_kpl)
+
+    assert "kpl_concepts" in result.failed_sources
+    conn = sqlite3.connect(tmp_path / "market.sqlite3")
+    try:
+        preserved = conn.execute(
+            """
+            SELECT COUNT(*) FROM market_anchors
+            WHERE trade_date = '20260604' AND source IN ('kpl_list', 'kpl_concept_cons')
+            """
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    assert preserved == 3
+
+
+def test_refresh_market_anchors_records_optional_source_failure(tmp_path: Path):
+    def fake_call(config, api_name, params, fields):
+        if api_name == "kpl_list":
+            raise RuntimeError("频率超限")
+        return _rows(api_name)
+
+    result = refresh_market_anchors(
+        _config(tmp_path),
+        trade_date="20260604",
+        tushare_call=fake_call,
+    )
+
+    assert result.anchor_count > 0
+    assert "kpl_concepts" in result.failed_sources
+
+
+def _rows(api_name: str) -> list[dict[str, Any]]:
+    rows = {
+        "dc_concept": [
+            {
+                "theme_code": "000084.DC",
+                "trade_date": "20260604",
+                "name": "人形机器人",
+                "hot": "910",
+                "lead_stock": "国茂股份",
+                "lead_stock_code": "603915.SH",
+            }
+        ],
+        "dc_concept_cons": [
+            {
+                "ts_code": "603915.SH",
+                "trade_date": "20260604",
+                "name": "国茂股份",
+                "theme_code": "000084.DC",
+                "industry_code": "BK001",
+                "industry": "电机",
+                "reason": "减速器",
+                "hot_num": "394",
+            },
+            {
+                "ts_code": "002164.SZ",
+                "trade_date": "20260604",
+                "name": "宁波东力",
+                "theme_code": "000084.DC",
+                "industry_code": "BK001",
+                "industry": "电机",
+                "reason": "行星减速器",
+                "hot_num": "639",
+            },
+        ],
+        "kpl_list": [
+            {
+                "ts_code": "603915.SH",
+                "name": "国茂股份",
+                "trade_date": "20260604",
+                "lu_desc": "机器人",
+                "tag": "涨停",
+                "theme": "机器人、减速器",
+                "status": "首板",
+            }
+        ],
+        "kpl_concept_cons": [
+            {
+                "ts_code": "000084.KP",
+                "name": "机器人",
+                "con_name": "国茂股份",
+                "con_code": "603915.SH",
+                "trade_date": "20260604",
+                "desc": "精密减速器",
+                "hot_num": 394,
+            }
+        ],
+        "tdx_index": [
+            {
+                "ts_code": "880001.TDX",
+                "trade_date": "20260604",
+                "name": "通达信机器人",
+                "idx_type": "概念板块",
+            },
+            {
+                "ts_code": "880002.TDX",
+                "trade_date": "20260604",
+                "name": "算力",
+                "idx_type": "概念板块",
+            },
+        ],
+    }
+    return rows.get(api_name, [])
+
+
+def _config(tmp_path: Path) -> RadarConfig:
+    return RadarConfig(
+        storage={"data_dir": tmp_path},
+        market={
+            "provider": "tushare",
+            "secret_ref": "tushare_main",
+            "api_url": "https://example.invalid/tushare",
+            "database": tmp_path / "market.sqlite3",
+        },
+        secrets=RadarSecrets(market={"tushare_main": {"token": "secret-token"}}),
+    )

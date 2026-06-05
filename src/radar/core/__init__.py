@@ -3,6 +3,13 @@
 from radar.core.config import RadarConfig
 from radar.core.llm import LlmConfigError, chat, chat_json, chat_json_list
 from radar.core.messages import MessageFilters, MessagePage, list_messages
+from radar.core.market_anchors import (
+    EnsureMarketAnchorsResult,
+    MarketAnchor,
+    RefreshMarketAnchorsResult,
+    ensure_market_anchors,
+    refresh_market_anchors,
+)
 from radar.core.models import MessageSource, RawMessage
 from radar.core.organize import (
     OrganizeClassificationCluster,
@@ -36,6 +43,8 @@ __all__ = [
     "MessageFilters",
     "MessagePage",
     "MessageSource",
+    "MarketAnchor",
+    "EnsureMarketAnchorsResult",
     "OrganizeClassificationCluster",
     "OrganizeClassificationFilters",
     "OrganizeClassificationPage",
@@ -43,6 +52,7 @@ __all__ = [
     "OrganizeEvidenceMessage",
     "RadarConfig",
     "RawMessage",
+    "RefreshMarketAnchorsResult",
     "RunRecord",
     "TushareApiError",
     "TushareConfigError",
@@ -66,6 +76,8 @@ __all__ = [
     "list_messages",
     "list_classification_clusters",
     "resolve_stock",
+    "ensure_market_anchors",
+    "refresh_market_anchors",
     "start_run",
     "test_llm",
     "test_market",

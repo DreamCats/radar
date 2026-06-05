@@ -145,6 +145,43 @@ MARKET_MIGRATIONS: list[Migration] = [
             ON tushare_history(api_name, ts_code, date_key);
         """,
     ),
+    (
+        "002_market_anchors",
+        """
+        CREATE TABLE IF NOT EXISTS market_anchors (
+            anchor_id     TEXT PRIMARY KEY,
+            anchor_type   TEXT NOT NULL,
+            name          TEXT NOT NULL,
+            aliases_json  TEXT NOT NULL DEFAULT '[]',
+            source        TEXT NOT NULL,
+            source_code   TEXT NOT NULL DEFAULT '',
+            trade_date    TEXT NOT NULL,
+            hot_score     REAL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            updated_at    TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_market_anchors_type_name
+            ON market_anchors(anchor_type, name);
+        CREATE INDEX IF NOT EXISTS idx_market_anchors_source_date
+            ON market_anchors(source, trade_date);
+
+        CREATE TABLE IF NOT EXISTS market_anchor_members (
+            anchor_id     TEXT NOT NULL,
+            ts_code       TEXT NOT NULL,
+            stock_name    TEXT NOT NULL,
+            reason        TEXT,
+            source        TEXT NOT NULL,
+            trade_date    TEXT NOT NULL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            PRIMARY KEY (anchor_id, ts_code, source, trade_date),
+            FOREIGN KEY (anchor_id) REFERENCES market_anchors(anchor_id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_market_anchor_members_stock
+            ON market_anchor_members(ts_code, trade_date);
+        """,
+    ),
 ]
 
 

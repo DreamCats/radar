@@ -37,8 +37,14 @@ def test_market_db_migrations_are_independent(tmp_path):
         migrate_market_db(conn)
 
         tables = _tables(conn)
-        assert {"schema_migrations", "tushare_cache", "tushare_history"} <= tables
-        assert applied_migrations(conn) == {"001_init_market"}
+        assert {
+            "schema_migrations",
+            "tushare_cache",
+            "tushare_history",
+            "market_anchors",
+            "market_anchor_members",
+        } <= tables
+        assert applied_migrations(conn) == {"001_init_market", "002_market_anchors"}
         assert "messages" not in tables
     finally:
         conn.close()
