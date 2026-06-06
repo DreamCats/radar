@@ -484,7 +484,14 @@ export type StrategyStockCandidate = {
   sector_names: string[];
   win_rate_t5?: number | null;
   average_excess_return_t5?: number | null;
+  first_seen_time?: string | null;
   latest_message_time?: string | null;
+  lifecycle_state?: StrategyStockLifecycleState | null;
+  lifecycle_reason?: string | null;
+  signal_age_days?: number | null;
+  price_return_since_first_seen?: number | null;
+  recent_price_return_3d?: number | null;
+  drawdown_from_high_since_first_seen?: number | null;
 };
 
 export type StrategyDashboard = {

@@ -4,8 +4,11 @@ import json
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import TypeVar
 
-from radar.core.usecases.strategy.models import StrategyRelatedStock, StrategyStockLifecycleState
+from radar.core.usecases.strategy.models import StrategyRelatedStock, StrategyStockCandidate, StrategyStockLifecycleState
+
+StockWithLifecycle = TypeVar("StockWithLifecycle", StrategyRelatedStock, StrategyStockCandidate)
 
 
 @dataclass(frozen=True)
@@ -29,7 +32,18 @@ def annotate_related_stock_lifecycle(
     return annotated
 
 
-def _annotate_stock(conn: sqlite3.Connection, stock: StrategyRelatedStock, *, as_of: datetime) -> StrategyRelatedStock:
+def annotate_stock_candidate_lifecycle(
+    market_conn: sqlite3.Connection | None,
+    stocks: list[StrategyStockCandidate],
+    *,
+    as_of: datetime,
+) -> list[StrategyStockCandidate]:
+    if market_conn is None:
+        return stocks
+    return [_annotate_stock(market_conn, stock, as_of=as_of) for stock in stocks]
+
+
+def _annotate_stock(conn: sqlite3.Connection, stock: StockWithLifecycle, *, as_of: datetime) -> StockWithLifecycle:
     if stock.first_seen_time is None:
         return stock.model_copy(update={"lifecycle_state": "缺少价格", "lifecycle_reason": "缺少首现时间。"})
 

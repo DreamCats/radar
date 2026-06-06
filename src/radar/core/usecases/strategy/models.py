@@ -95,7 +95,14 @@ class StrategyStockCandidate(BaseModel):
     sector_names: list[str] = Field(default_factory=list)
     win_rate_t5: float | None = None
     average_excess_return_t5: float | None = None
+    first_seen_time: datetime | None = None
     latest_message_time: datetime | None = None
+    lifecycle_state: StrategyStockLifecycleState | None = None
+    lifecycle_reason: str | None = None
+    signal_age_days: int | None = None
+    price_return_since_first_seen: float | None = None
+    recent_price_return_3d: float | None = None
+    drawdown_from_high_since_first_seen: float | None = None
 
 
 class StrategyDashboard(BaseModel):

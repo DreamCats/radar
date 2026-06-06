@@ -133,6 +133,11 @@ def test_strategy_marks_related_stock_lifecycle_from_market_prices(tmp_path: Pat
     assert stock.signal_age_days == 4
     assert "首现后 +30.0%" in (stock.lifecycle_reason or "")
 
+    candidate = dashboard.stock_candidates[0]
+    assert candidate.stock_name == "风华高科"
+    assert candidate.lifecycle_state == "已兑现"
+    assert candidate.price_return_since_first_seen == 0.3
+
 
 def _config(tmp_path: Path) -> RadarConfig:
     return RadarConfig(storage={"data_dir": tmp_path / "data", "database": tmp_path / "radar.sqlite3"})

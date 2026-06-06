@@ -286,6 +286,11 @@
   font-size: 12px;
 }
 
+.strategy-compact-row.stock {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
 .strategy-compact-row strong {
   overflow: hidden;
   color: var(--color-ink-muted);
@@ -293,6 +298,25 @@
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.strategy-compact-row.stock > span,
+.strategy-compact-row.stock > small {
+  overflow-wrap: anywhere;
+}
+
+.strategy-compact-row.stock > small {
+  grid-column: 1 / -1;
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.strategy-compact-main {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .strategy-summary-panel {

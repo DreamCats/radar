@@ -250,6 +250,7 @@ def stock_candidates(
             GROUP_CONCAT(DISTINCT e.sector_name) AS sectors,
             AVG(w.win) AS win_rate,
             AVG(w.excess_return_rate) AS average_excess_return,
+            MIN(e.message_time) AS first_time,
             MAX(e.message_time) AS latest_time
         FROM recommendation_events e
         JOIN recommendation_backtest_windows w ON w.event_id = e.event_id
@@ -275,6 +276,7 @@ def stock_candidates(
             average_excess_return_t5=float(row["average_excess_return"])
             if row["average_excess_return"] is not None
             else None,
+            first_seen_time=datetime.fromisoformat(str(row["first_time"])) if row["first_time"] else None,
             latest_message_time=datetime.fromisoformat(str(row["latest_time"])) if row["latest_time"] else None,
         )
         for row in rows

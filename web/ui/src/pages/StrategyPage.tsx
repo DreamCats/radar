@@ -208,9 +208,19 @@ function SourceRow({ item }: { item: StrategySourceSignal }) {
 function StockRow({ item }: { item: StrategyStockCandidate }) {
   return (
     <article className="strategy-compact-row stock">
-      <strong>{item.stock_name}</strong>
-      <span>{item.source_count} 来源 · {item.event_count} 事件</span>
-      <em>{formatPercent(item.average_excess_return_t5, true)}</em>
+      <div className="strategy-compact-main">
+        <strong>{item.stock_name}</strong>
+        {item.lifecycle_state && (
+          <span className={`strategy-stock-state strategy-stock-state-${item.lifecycle_state}`}>
+            {item.lifecycle_state}
+          </span>
+        )}
+      </div>
+      <span>
+        {item.source_count} 来源 · {item.event_count} 事件 · 首现后 {formatPercent(item.price_return_since_first_seen, true)}
+      </span>
+      <em>T+5 {formatPercent(item.average_excess_return_t5, true)}</em>
+      {item.lifecycle_reason && <small>{item.lifecycle_reason}</small>}
     </article>
   );
 }

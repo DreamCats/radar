@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from radar.core.config import RadarConfig
 from radar.core.db import migrate_market_db
 from radar.core.store import connect, init_db
-from radar.core.usecases.strategy.lifecycle import annotate_related_stock_lifecycle
+from radar.core.usecases.strategy.lifecycle import annotate_related_stock_lifecycle, annotate_stock_candidate_lifecycle
 from radar.core.usecases.strategy.details import (
     backtest_metrics_for_anchors,
     latest_theme_briefs,
@@ -180,6 +180,8 @@ def build_strategy_dashboard_from_conn(
         for stats in shortlisted
     ]
     opportunities.sort(key=lambda item: (item.score, item.reliability_score, item.recent_message_count), reverse=True)
+    stock_pool = stock_candidates(conn, start_time=start_time, end_time=end_time, limit=12)
+    stock_pool = annotate_stock_candidate_lifecycle(market_conn, stock_pool, as_of=end_time)
     return StrategyDashboard(
         start_time=start_time,
         end_time=end_time,
@@ -188,7 +190,7 @@ def build_strategy_dashboard_from_conn(
         opportunity_count=len(candidates),
         opportunities=opportunities[:limit],
         source_quality=source_quality(conn, start_time=start_time, end_time=end_time, limit=10),
-        stock_candidates=stock_candidates(conn, start_time=start_time, end_time=end_time, limit=12),
+        stock_candidates=stock_pool,
     )
 
 
