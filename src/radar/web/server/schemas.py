@@ -19,7 +19,7 @@ from radar.core.usecases.recommendation_backtest import (
     BacktestGroupBy,
     RecommendationBacktestSummaryResult,
 )
-from radar.core.usecases.strategy import StrategyDashboard
+from radar.core.usecases.strategy import StrategyDashboard, StrategySnapshotSaveResult, StrategyValidationSummary
 
 SourceKey = Literal["personal_message", "group_message"]
 JobSourceKey = Literal["all", "personal_message", "group_message"]
@@ -225,8 +225,22 @@ class RecommendationBacktestRequest(BaseModel):
     force: bool = False
 
 
+class StrategySnapshotSaveRequest(BaseModel):
+    days: int = Field(default=30, ge=7, le=180)
+    recent_days: int = Field(default=7, ge=1, le=30)
+    limit: int = Field(default=12, ge=1, le=50)
+    force: bool = False
+
+
+class StrategySnapshotBackfillJobRequest(BaseModel):
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    windows: list[int] = Field(default_factory=lambda: [1, 3, 5, 10])
+    benchmark_ts_code: str = DEFAULT_BENCHMARK_TS_CODE
+
+
 class DerivedJobItem(BaseModel):
-    job_type: Literal["anchor", "aggregate_refine", "recommendation_backtest"]
+    job_type: Literal["anchor", "aggregate_refine", "recommendation_backtest", "strategy_backfill"]
     run_id: str
     reused_existing: bool = False
     status: Literal["running"]
@@ -241,6 +255,14 @@ class RecommendationBacktestSummaryResponse(RecommendationBacktestSummaryResult)
 
 
 class StrategyDashboardResponse(StrategyDashboard):
+    pass
+
+
+class StrategySnapshotSaveResponse(StrategySnapshotSaveResult):
+    pass
+
+
+class StrategyValidationResponse(StrategyValidationSummary):
     pass
 
 

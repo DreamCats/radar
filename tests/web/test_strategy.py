@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from threading import Event
 
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
 from radar.core.models import MessageAnchor, MessageClassification, RawMessage
+from radar.core.runs import get_run
 from radar.core.store import connect, init_db, replace_message_anchors, upsert_message_classifications, upsert_messages
+from radar.core.usecases.strategy.snapshots import StrategySnapshotBackfillResult, StrategySnapshotSaveResult
 from radar.web.server.app import create_app
 
 
@@ -42,6 +45,108 @@ def test_strategy_opportunities_endpoint_returns_ranked_items(tmp_path: Path):
     assert data["opportunities"][0]["recent_message_count"] == 3
     assert data["opportunities"][0]["opportunity_backtest"]["event_count"] == 0
     assert data["opportunities"][0]["selected_stock_backtest"]["event_count"] == 0
+
+
+def test_strategy_validation_endpoint_returns_empty_summary(tmp_path: Path):
+    client = TestClient(create_app(_config(tmp_path)))
+    response = client.get("/api/strategy/validation", params={"window_days": 5})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["window_days"] == 5
+    assert data["snapshot_count"] == 0
+    assert data["matured_stock_count"] == 0
+    assert data["by_decision_bucket"] == []
+
+
+def test_strategy_snapshot_save_endpoint_uses_cache(monkeypatch, tmp_path: Path):
+    config = _config(tmp_path)
+    calls: list[dict] = []
+
+    def fake_save(config, *, days, recent_days, limit, force):
+        calls.append({"days": days, "recent_days": recent_days, "limit": limit, "force": force})
+        return StrategySnapshotSaveResult(
+            snapshot_id="snap-1",
+            generated_at=datetime.fromisoformat("2026-06-07T12:00:00"),
+            stock_count=2,
+            opportunity_count=3,
+            reused_existing=True,
+        )
+
+    monkeypatch.setattr("radar.web.server.routers.strategy.save_cached_strategy_snapshot", fake_save)
+
+    client = TestClient(create_app(config))
+    response = client.post(
+        "/api/strategy/snapshots",
+        json={"days": 30, "recent_days": 7, "limit": 12, "force": False},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["snapshot_id"] == "snap-1"
+    assert data["reused_existing"] is True
+    assert calls == [{"days": 30, "recent_days": 7, "limit": 12, "force": False}]
+
+
+def test_strategy_backfill_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path: Path):
+    config = _config(tmp_path)
+    calls: list[dict] = []
+    started = Event()
+    finished = Event()
+    release = Event()
+
+    def fake_backfill(config, *, windows, benchmark_ts_code, snapshot_start_time, snapshot_end_time):
+        try:
+            started.set()
+            release.wait(timeout=2)
+            calls.append(
+                {
+                    "windows": windows,
+                    "benchmark_ts_code": benchmark_ts_code,
+                    "snapshot_start_time": snapshot_start_time,
+                    "snapshot_end_time": snapshot_end_time,
+                }
+            )
+            return StrategySnapshotBackfillResult(
+                snapshot_count=1,
+                stock_count=2,
+                refreshed_count=1,
+                pending_count=1,
+                missing_price_count=0,
+                failed_count=0,
+                windows=windows,
+            )
+        finally:
+            finished.set()
+
+    monkeypatch.setattr("radar.web.server.strategy_jobs.backfill_strategy_snapshot_returns", fake_backfill)
+
+    client = TestClient(create_app(config))
+    payload = {
+        "start_time": "2026-05-08T00:00:00",
+        "end_time": "2026-06-07T00:00:00",
+        "windows": [1, 3, 5, 10],
+        "benchmark_ts_code": "000300.SH",
+    }
+    response = client.post("/api/strategy/snapshots/backfill/jobs", json=payload)
+
+    assert response.status_code == 200
+    first = response.json()["items"][0]
+    assert first["job_type"] == "strategy_backfill"
+    assert first["status"] == "running"
+    assert first["reused_existing"] is False
+    assert started.wait(timeout=1)
+    assert get_run(config.database_path, first["run_id"]) is not None
+
+    response = client.post("/api/strategy/snapshots/backfill/jobs", json=payload)
+    second = response.json()["items"][0]
+
+    assert second["run_id"] == first["run_id"]
+    assert second["reused_existing"] is True
+    release.set()
+    assert finished.wait(timeout=1)
+    assert calls[0]["snapshot_start_time"] == datetime.fromisoformat("2026-05-08T00:00:00")
+    assert calls[0]["snapshot_end_time"] == datetime.fromisoformat("2026-06-07T00:00:00")
 
 
 def _config(tmp_path: Path) -> RadarConfig:

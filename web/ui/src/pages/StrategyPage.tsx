@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Gauge, RefreshCw, ShieldAlert, TrendingUp, Users } from "lucide-react";
+import { Gauge, RefreshCw, Save, ShieldAlert, TrendingUp, Users } from "lucide-react";
 
-import { fetchStrategyOpportunities } from "../api/radarApi";
+import { fetchStrategyOpportunities, fetchStrategyValidation, saveStrategySnapshot } from "../api/radarApi";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
 import { formatTime } from "../lib/datetime";
@@ -12,18 +12,28 @@ import type {
   StrategyRelatedStock,
   StrategySourceSignal,
   StrategyStockCandidate,
+  StrategyValidationMetric,
+  StrategyValidationSummary,
 } from "../types";
 
 export function StrategyPage() {
   const [data, setData] = useState<StrategyDashboard | null>(null);
+  const [validation, setValidation] = useState<StrategyValidationSummary | null>(null);
   const [loading, setLoading] = useState(false);
+  const [savingSnapshot, setSavingSnapshot] = useState(false);
+  const [snapshotMessage, setSnapshotMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function refresh() {
     setLoading(true);
     setError(null);
     try {
-      setData(await fetchStrategyOpportunities({ days: 30, recent_days: 7, limit: 12 }));
+      const [nextData, nextValidation] = await Promise.all([
+        fetchStrategyOpportunities({ days: 30, recent_days: 7, limit: 12 }),
+        fetchStrategyValidation({ window_days: 5, source_limit: 8 }),
+      ]);
+      setData(nextData);
+      setValidation(nextValidation);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
     } finally {
@@ -34,6 +44,21 @@ export function StrategyPage() {
   useEffect(() => {
     void refresh();
   }, []);
+
+  async function saveCurrentSnapshot() {
+    setSavingSnapshot(true);
+    setSnapshotMessage(null);
+    setError(null);
+    try {
+      const result = await saveStrategySnapshot({ days: 30, recent_days: 7, limit: 12, force: false });
+      setSnapshotMessage(result.reused_existing ? `已复用快照 ${result.snapshot_id.slice(0, 8)}` : `已保存快照 ${result.snapshot_id.slice(0, 8)}`);
+      setValidation(await fetchStrategyValidation({ window_days: 5, source_limit: 8 }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存快照失败");
+    } finally {
+      setSavingSnapshot(false);
+    }
+  }
 
   const opportunities = data?.opportunities ?? [];
   const focusCount = opportunities.filter((item) => item.attention_level === "重点关注").length;
@@ -48,6 +73,10 @@ export function StrategyPage() {
         <p>{initialLoading ? "正在加载机会信号策略" : data ? `策略窗口 ${formatTime(data.start_time)} - ${formatTime(data.end_time)}` : "暂无策略数据"}</p>
         <div>
           {loading && !initialLoading && <PageRefreshProgress label="正在刷新策略" />}
+          <button className="btn btn-sm" type="button" onClick={() => void saveCurrentSnapshot()} disabled={savingSnapshot || loading}>
+            <Save size={15} />
+            {savingSnapshot ? "保存中" : "保存当前快照"}
+          </button>
           <button className="btn btn-sm" type="button" onClick={() => void refresh()} disabled={loading}>
             <RefreshCw size={15} />
             刷新
@@ -63,6 +92,7 @@ export function StrategyPage() {
         <Metric label="今日可看" value={actionableStockCount} detail="未过热的股票信号" />
         <Metric label="风险升高" value={riskCount} detail="反证或风险词偏高" />
       </div>
+      {snapshotMessage && <p className="success-line">{snapshotMessage}</p>}
       {error && <p className="error-line">{error}</p>}
       <div className="strategy-grid">
         <section className="panel strategy-main-panel">
@@ -76,6 +106,7 @@ export function StrategyPage() {
           </div>
         </section>
         <aside className="strategy-side-stack">
+          <StrategyValidationPanel summary={validation} />
           <section className="panel">
             <PanelTitle title="来源质量" meta="T+5 超额 · 近 30 天" />
             <div className="strategy-compact-list">
@@ -97,6 +128,61 @@ export function StrategyPage() {
         </>
       )}
     </section>
+  );
+}
+
+function StrategyValidationPanel({ summary }: { summary: StrategyValidationSummary | null }) {
+  const bucketRows = summary?.by_decision_bucket ?? [];
+  const sourceRows = summary?.top_sources ?? [];
+  return (
+    <section className="panel strategy-validation-panel">
+      <PanelTitle
+        title="策略验证"
+        meta={summary ? `T+${summary.window_days} 超额 · ${summary.matured_stock_count} 个成熟样本` : "等待快照回填"}
+      />
+      {summary && summary.matured_stock_count > 0 ? (
+        <div className="strategy-validation-body">
+          <div className="strategy-validation-kpis">
+            <ValidationKpi label="快照" value={summary.snapshot_count} />
+            <ValidationKpi label="成熟样本" value={summary.matured_stock_count} />
+            <ValidationKpi label="最新快照" value={summary.latest_snapshot_time ? formatTime(summary.latest_snapshot_time).slice(5, 16) : "-"} />
+          </div>
+          <ValidationTable title="分层表现" rows={bucketRows} />
+          <ValidationTable title="首提来源 Top" rows={sourceRows.slice(0, 5)} compact />
+        </div>
+      ) : (
+        <p className="strategy-validation-empty">暂无已回填快照。先在策略页保存当前快照，再到作业页回填已有快照。</p>
+      )}
+    </section>
+  );
+}
+
+function ValidationKpi(props: { label: string; value: number | string }) {
+  return (
+    <div className="strategy-validation-kpi">
+      <span>{props.label}</span>
+      <strong>{props.value}</strong>
+    </div>
+  );
+}
+
+function ValidationTable(props: { title: string; rows: StrategyValidationMetric[]; compact?: boolean }) {
+  return (
+    <div className="strategy-validation-table">
+      <strong>{props.title}</strong>
+      {props.rows.length ? (
+        props.rows.map((row) => (
+          <article className="strategy-validation-row" key={row.label}>
+            <span>{row.label}</span>
+            <em>{row.sample_count} 样本</em>
+            <b>{formatPercent(row.average_excess_return, true)}</b>
+            {!props.compact && <small>胜率 {formatPercent(row.win_rate)} · 回撤 {formatPercent(row.average_max_drawdown, true)}</small>}
+          </article>
+        ))
+      ) : (
+        <p className="strategy-validation-empty">暂无样本</p>
+      )}
+    </div>
   );
 }
 

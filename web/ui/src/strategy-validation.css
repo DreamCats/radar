@@ -1,0 +1,92 @@
+.strategy-validation-panel {
+  min-width: 0;
+}
+
+.strategy-validation-body {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.strategy-validation-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.strategy-validation-kpi {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-1);
+  padding: 8px;
+}
+
+.strategy-validation-kpi span,
+.strategy-validation-row em,
+.strategy-validation-row small,
+.strategy-validation-empty {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.strategy-validation-kpi strong {
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strategy-validation-table {
+  display: grid;
+  gap: 6px;
+}
+
+.strategy-validation-table > strong {
+  color: var(--color-ink-muted);
+  font-size: 12px;
+}
+
+.strategy-validation-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-1);
+  padding: 7px 8px;
+}
+
+.strategy-validation-row span {
+  overflow: hidden;
+  color: var(--color-ink-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strategy-validation-row b {
+  color: var(--color-market-up);
+  font-size: 12px;
+}
+
+.strategy-validation-row small {
+  grid-column: 1 / -1;
+}
+
+.strategy-validation-empty {
+  margin: 0;
+  padding: 10px;
+}
+
+@media (max-width: 560px) {
+  .strategy-validation-kpis,
+  .strategy-validation-row {
+    grid-template-columns: 1fr;
+  }
+}

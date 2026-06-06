@@ -9,6 +9,7 @@ import {
   startClassifyMessagesJob,
   startIngestWechatJob,
   startRecommendationBacktestJob,
+  startStrategyBackfillJob,
 } from "../api/radarApi";
 import { DateField, SelectField, TextField } from "../components/FormFields";
 import { JobRunCard } from "../components/JobRunCard";
@@ -202,6 +203,20 @@ export function IngestPage() {
         reused_existing: item.reused_existing,
       }));
     }
+    if (kind === "strategyBackfill") {
+      const items = await startStrategyBackfillJob({
+        start_time: window.start_time,
+        end_time: window.end_time,
+        windows: [1, 3, 5, 10],
+        benchmark_ts_code: "000300.SH",
+      });
+      return items.map((item) => ({
+        kind,
+        source: "机会信号",
+        run_id: item.run_id,
+        reused_existing: item.reused_existing,
+      }));
+    }
     const items = await startAggregateRefineJob({
       trade_date: tradeDate,
       source,
@@ -245,7 +260,8 @@ export function IngestPage() {
 
   function selectJob(kind: JobTemplateKey) {
     setSelectedJob(kind);
-    if (kind === "backtest" && selectedJob !== "backtest" && preset === "today") {
+    const needsHistoryWindow = kind === "backtest" || kind === "strategyBackfill";
+    if (needsHistoryWindow && selectedJob !== kind && preset === "today") {
       const nextRange = buildPresetRange("last30d");
       setPreset("last30d");
       setRange(nextRange);
@@ -314,16 +330,20 @@ export function IngestPage() {
                 <PanelTitle title={selectedTemplate.title} meta={selectedTemplate.meta} />
               </div>
               <div className="job-config-grid">
-                <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
+                {selectedJob !== "strategyBackfill" && (
+                  <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
+                )}
                 <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
                 <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
                 {(selectedJob === "anchor" || selectedJob === "refine") && (
                   <TextField label="交易日" value={tradeDate} onChange={setTradeDate} />
                 )}
-                <label className="toggle-field">
-                  <input checked={force} type="checkbox" onChange={(event) => setForce(event.target.checked)} />
-                  <span>{selectedJob === "ingest" ? "强制重拉" : "强制重跑"}</span>
-                </label>
+                {selectedJob !== "strategyBackfill" && (
+                  <label className="toggle-field">
+                    <input checked={force} type="checkbox" onChange={(event) => setForce(event.target.checked)} />
+                    <span>{forceLabel(selectedJob)}</span>
+                  </label>
+                )}
                 <button className="primary-button ingest-submit" type="button" disabled={active || !canSubmit} onClick={submitSelectedJob}>
                   {active ? <RotateCcw size={16} /> : <Play size={16} />}
                   {submitting ? "提交中" : active ? "运行中" : "开始执行"}
@@ -389,4 +409,11 @@ function backtestWindowDays(startDate: string, endDate: string): number {
     return 30;
   }
   return Math.max(1, Math.round((end - start) / 86400000) + 1);
+}
+
+function forceLabel(kind: JobTemplateKey): string {
+  if (kind === "ingest") {
+    return "强制重拉";
+  }
+  return "强制重跑";
 }

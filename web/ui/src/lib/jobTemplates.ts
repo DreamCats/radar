@@ -1,4 +1,4 @@
-import { Anchor, Bot, ChartNoAxesCombined, Database, Sparkles } from "lucide-react";
+import { Anchor, Bot, ChartNoAxesCombined, Database, Search, Sparkles } from "lucide-react";
 
 import type { IngestSource, MessageCategory } from "../types";
 import type { JobTemplateKey } from "./jobRuns";
@@ -17,6 +17,7 @@ export const JOB_TEMPLATES = [
   { key: "anchor", title: "Anchor 抽取", meta: "本地词库", icon: Anchor },
   { key: "refine", title: "聚合 Refine", meta: "LLM 聚合", icon: Sparkles },
   { key: "backtest", title: "推荐回测补齐", meta: "T+N 补齐", icon: ChartNoAxesCombined },
+  { key: "strategyBackfill", title: "策略快照回填", meta: "已有快照 T+N", icon: Search },
 ] satisfies Array<{ key: JobTemplateKey; title: string; meta: string; icon: typeof Database }>;
 
 export function configHints(kind: JobTemplateKey): string[] {
@@ -31,6 +32,9 @@ export function configHints(kind: JobTemplateKey): string[] {
   }
   if (kind === "backtest") {
     return ["默认近 30 天", "补齐 T+1/T+2/T+3/T+5", "已完成窗口自动跳过", "未成熟下次继续补"];
+  }
+  if (kind === "strategyBackfill") {
+    return ["默认近 30 天快照", "只回填已有快照", "回填 T+1/T+3/T+5/T+10", "未成熟下次继续补"];
   }
   return ["候选 50", "单批 5", "LLM 并发 10", "命中缓存则跳过"];
 }

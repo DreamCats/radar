@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
 from collections.abc import Sequence
 
 Migration = tuple[str, str]
+_MIGRATION_LOCK = threading.Lock()
 
 
 MESSAGE_MIGRATIONS: list[Migration] = [
@@ -426,17 +428,20 @@ def migrate_market_db(conn: sqlite3.Connection) -> None:
 
 
 def migrate(conn: sqlite3.Connection, migrations: Sequence[Migration]) -> None:
-    _ensure_migration_table(conn)
-    applied = applied_migrations(conn)
-    for version, sql in migrations:
-        if version in applied:
-            continue
-        conn.executescript(sql)
-        conn.execute(
-            "INSERT INTO schema_migrations (version, applied_at) VALUES (?, datetime('now'))",
-            (version,),
-        )
-        conn.commit()
+    with _MIGRATION_LOCK:
+        conn.execute("PRAGMA busy_timeout = 5000")
+        _ensure_migration_table(conn)
+        applied = applied_migrations(conn)
+        for version, sql in migrations:
+            if version in applied:
+                continue
+            conn.executescript(sql)
+            conn.execute(
+                "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?, datetime('now'))",
+                (version,),
+            )
+            conn.commit()
+            applied.add(version)
 
 
 def applied_migrations(conn: sqlite3.Connection) -> set[str]:

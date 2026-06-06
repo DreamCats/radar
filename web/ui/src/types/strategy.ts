@@ -135,8 +135,34 @@ export type StrategyDashboard = {
   stock_candidates: StrategyStockCandidate[];
 };
 
+export type StrategyValidationMetric = {
+  label: string;
+  sample_count: number;
+  win_rate?: number | null;
+  average_return?: number | null;
+  average_excess_return?: number | null;
+  average_max_drawdown?: number | null;
+};
+
+export type StrategyValidationSummary = {
+  window_days: number;
+  benchmark_ts_code: string;
+  snapshot_count: number;
+  matured_stock_count: number;
+  latest_snapshot_time?: string | null;
+  by_decision_bucket: StrategyValidationMetric[];
+  by_credibility_level: StrategyValidationMetric[];
+  top_sources: StrategyValidationMetric[];
+};
+
 export type StrategyQuery = {
   days?: number;
   recent_days?: number;
   limit?: number;
+};
+
+export type StrategyValidationQuery = {
+  window_days?: number;
+  benchmark?: string;
+  source_limit?: number;
 };

@@ -1,6 +1,6 @@
 import type { IngestSource, RunItem } from "../types";
 
-export type JobTemplateKey = "ingest" | "classify" | "anchor" | "refine" | "backtest";
+export type JobTemplateKey = "ingest" | "classify" | "anchor" | "refine" | "backtest" | "strategyBackfill";
 
 export type TrackedJob = {
   kind: JobTemplateKey;
@@ -15,6 +15,7 @@ const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   message_anchor_range: "anchor",
   aggregate_refine: "refine",
   recommendation_backtest_refresh: "backtest",
+  strategy_snapshot_backfill: "strategyBackfill",
 };
 
 const SOURCE_LABELS: Record<IngestSource, string> = {
@@ -67,6 +68,9 @@ export function sourceLabel(value: IngestSource): string {
 }
 
 function sourceFromRun(run: RunItem): string {
+  if (run.kind === "strategy_snapshot_backfill") {
+    return "机会信号";
+  }
   const source = textValue(run.metadata.source);
   if (source && !isSourceKey(source)) {
     return source;

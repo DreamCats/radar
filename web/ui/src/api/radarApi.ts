@@ -26,7 +26,12 @@ import type {
   RecommendationBacktestSummary,
   RunItem,
   StrategyDashboard,
+  StrategySnapshotBackfillJobRequest,
+  StrategySnapshotSaveRequest,
+  StrategySnapshotSaveResult,
   StrategyQuery,
+  StrategyValidationQuery,
+  StrategyValidationSummary,
 } from "../types";
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
@@ -97,6 +102,10 @@ export async function fetchStrategyOpportunities(query: StrategyQuery = {}): Pro
   return getJson(`/api/strategy/opportunities?${params(query)}`);
 }
 
+export async function fetchStrategyValidation(query: StrategyValidationQuery = {}): Promise<StrategyValidationSummary> {
+  return getJson(`/api/strategy/validation?${params(query)}`);
+}
+
 export async function ingestWechat(request: IngestRequest): Promise<IngestResultItem[]> {
   const response = await fetch(`${apiBase}/api/ingest/wechat`, {
     method: "POST",
@@ -164,6 +173,31 @@ export async function startAggregateRefineJob(request: AggregateRefineRequest): 
 
 export async function startRecommendationBacktestJob(request: RecommendationBacktestRequest): Promise<DerivedJobItem[]> {
   const response = await fetch(`${apiBase}/api/recommendation/backtest/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: DerivedJobItem[] };
+  return data.items;
+}
+
+export async function saveStrategySnapshot(request: StrategySnapshotSaveRequest): Promise<StrategySnapshotSaveResult> {
+  const response = await fetch(`${apiBase}/api/strategy/snapshots`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  return (await response.json()) as StrategySnapshotSaveResult;
+}
+
+export async function startStrategyBackfillJob(request: StrategySnapshotBackfillJobRequest): Promise<DerivedJobItem[]> {
+  const response = await fetch(`${apiBase}/api/strategy/snapshots/backfill/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

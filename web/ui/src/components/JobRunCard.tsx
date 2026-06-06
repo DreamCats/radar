@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Clock3, LoaderCircle } from "lucide-react";
 
 import type { RunItem } from "../types";
 
-type JobRunKind = "ingest" | "classify" | "anchor" | "refine" | "backtest";
+type JobRunKind = "ingest" | "classify" | "anchor" | "refine" | "backtest" | "strategyBackfill";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -74,7 +74,7 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "classify" || kind === "anchor") {
       return chunkProgress(run);
     }
-    if (kind === "backtest") {
+    if (kind === "backtest" || kind === "strategyBackfill") {
       return backtestProgress(run);
     }
     return refineProgress(run);
@@ -134,6 +134,9 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   }
   if (kind === "backtest") {
     return backtestMetrics(run);
+  }
+  if (kind === "strategyBackfill") {
+    return strategyBackfillMetrics(run);
   }
   return refineMetrics(run);
 }
@@ -230,6 +233,25 @@ function backtestMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
+function strategyBackfillMetrics(run?: RunItem): string[] {
+  const metadata = run?.metadata ?? {};
+  const snapshots = numberValue(metadata.snapshot_count);
+  const stocks = run?.raw_count || 0;
+  const refreshed = numberValue(metadata.refreshed_count) || run?.stored_count || 0;
+  const pending = numberValue(metadata.pending_count);
+  const missing = numberValue(metadata.missing_price_count);
+  const failed = numberValue(metadata.failed_count);
+  return [
+    `快照 ${snapshots} 份`,
+    `股票 ${stocks} 个`,
+    `已回填 ${refreshed}`,
+    `待成熟 ${pending}`,
+    `缺行情 ${missing}`,
+    `失败 ${failed}`,
+    durationText(run),
+  ].filter(Boolean);
+}
+
 function detailText(run?: RunItem): string {
   if (!run) {
     return "任务已提交，等待服务端返回运行状态。";
@@ -267,6 +289,9 @@ function kindTitle(kind: JobRunKind): string {
   }
   if (kind === "backtest") {
     return "推荐回测补齐";
+  }
+  if (kind === "strategyBackfill") {
+    return "策略快照回填";
   }
   return "聚合 refine";
 }

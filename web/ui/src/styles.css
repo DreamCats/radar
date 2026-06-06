@@ -455,10 +455,15 @@ button:disabled {
 }
 
 .error-line,
+.success-line,
 .empty-line {
   padding: 12px;
   color: var(--color-market-down);
   font-size: 13px;
+}
+
+.success-line {
+  color: var(--color-market-up);
 }
 
 .empty-line {

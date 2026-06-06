@@ -6,7 +6,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from radar.core.config import RadarConfig
 from radar.core.db import migrate_market_db
@@ -25,6 +25,7 @@ class StrategySnapshotSaveResult(BaseModel):
     generated_at: datetime
     stock_count: int
     opportunity_count: int
+    reused_existing: bool = False
 
 
 class StrategySnapshotBackfillResult(BaseModel):
@@ -35,6 +36,26 @@ class StrategySnapshotBackfillResult(BaseModel):
     missing_price_count: int = 0
     failed_count: int = 0
     windows: list[int]
+
+
+class StrategyValidationMetric(BaseModel):
+    label: str
+    sample_count: int = 0
+    win_rate: float | None = None
+    average_return: float | None = None
+    average_excess_return: float | None = None
+    average_max_drawdown: float | None = None
+
+
+class StrategyValidationSummary(BaseModel):
+    window_days: int
+    benchmark_ts_code: str
+    snapshot_count: int = 0
+    matured_stock_count: int = 0
+    latest_snapshot_time: datetime | None = None
+    by_decision_bucket: list[StrategyValidationMetric] = Field(default_factory=list)
+    by_credibility_level: list[StrategyValidationMetric] = Field(default_factory=list)
+    top_sources: list[StrategyValidationMetric] = Field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -144,6 +165,8 @@ def backfill_strategy_snapshot_returns(
     windows: list[int] | None = None,
     benchmark_ts_code: str = DEFAULT_SNAPSHOT_BENCHMARK,
     snapshot_id: str | None = None,
+    snapshot_start_time: datetime | None = None,
+    snapshot_end_time: datetime | None = None,
 ) -> StrategySnapshotBackfillResult:
     conn = connect(config.database_path)
     market_conn = connect(config.market_database_path)
@@ -156,6 +179,8 @@ def backfill_strategy_snapshot_returns(
             windows=windows or list(DEFAULT_SNAPSHOT_WINDOWS),
             benchmark_ts_code=benchmark_ts_code,
             snapshot_id=snapshot_id,
+            snapshot_start_time=snapshot_start_time,
+            snapshot_end_time=snapshot_end_time,
         )
     finally:
         conn.close()
@@ -169,8 +194,15 @@ def backfill_strategy_snapshot_returns_from_conn(
     windows: list[int],
     benchmark_ts_code: str,
     snapshot_id: str | None = None,
+    snapshot_start_time: datetime | None = None,
+    snapshot_end_time: datetime | None = None,
 ) -> StrategySnapshotBackfillResult:
-    snapshot_rows = _snapshot_rows(conn, snapshot_id=snapshot_id)
+    snapshot_rows = _snapshot_rows(
+        conn,
+        snapshot_id=snapshot_id,
+        snapshot_start_time=snapshot_start_time,
+        snapshot_end_time=snapshot_end_time,
+    )
     result = StrategySnapshotBackfillResult(snapshot_count=len(snapshot_rows), windows=sorted(set(windows)))
     for snapshot in snapshot_rows:
         stock_rows = _snapshot_stock_rows(conn, str(snapshot["snapshot_id"]))
@@ -206,13 +238,150 @@ def backfill_strategy_snapshot_returns_from_conn(
     return result
 
 
-def _snapshot_rows(conn: sqlite3.Connection, *, snapshot_id: str | None) -> list[sqlite3.Row]:
+def summarize_strategy_validation(
+    config: RadarConfig,
+    *,
+    window_days: int = 5,
+    benchmark_ts_code: str = DEFAULT_SNAPSHOT_BENCHMARK,
+    source_limit: int = 8,
+) -> StrategyValidationSummary:
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        return summarize_strategy_validation_from_conn(
+            conn,
+            window_days=window_days,
+            benchmark_ts_code=benchmark_ts_code,
+            source_limit=source_limit,
+        )
+    finally:
+        conn.close()
+
+
+def summarize_strategy_validation_from_conn(
+    conn: sqlite3.Connection,
+    *,
+    window_days: int,
+    benchmark_ts_code: str,
+    source_limit: int = 8,
+) -> StrategyValidationSummary:
+    snapshot_stats = conn.execute(
+        """
+        SELECT COUNT(*) AS snapshot_count, MAX(generated_at) AS latest_snapshot_time
+        FROM strategy_snapshots
+        WHERE strategy_type = ?
+        """,
+        (STRATEGY_TYPE,),
+    ).fetchone()
+    matured_stock_count = conn.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM strategy_snapshot_stocks s
+        JOIN strategy_snapshot_returns r ON r.snapshot_id = s.snapshot_id AND r.ts_code = s.ts_code
+        WHERE r.window_days = ?
+          AND r.benchmark_ts_code = ?
+          AND r.status = 'succeeded'
+        """,
+        (window_days, benchmark_ts_code),
+    ).fetchone()
+    latest_text = snapshot_stats["latest_snapshot_time"] if snapshot_stats else None
+    return StrategyValidationSummary(
+        window_days=window_days,
+        benchmark_ts_code=benchmark_ts_code,
+        snapshot_count=int(snapshot_stats["snapshot_count"] or 0) if snapshot_stats else 0,
+        matured_stock_count=int(matured_stock_count["count"] or 0) if matured_stock_count else 0,
+        latest_snapshot_time=datetime.fromisoformat(str(latest_text)) if latest_text else None,
+        by_decision_bucket=_metric_rows(conn, "s.decision_bucket", window_days, benchmark_ts_code),
+        by_credibility_level=_metric_rows(
+            conn,
+            "COALESCE(s.credibility_level, '待验证')",
+            window_days,
+            benchmark_ts_code,
+        ),
+        top_sources=_metric_rows(
+            conn,
+            "COALESCE(s.first_source_name, '未知来源')",
+            window_days,
+            benchmark_ts_code,
+            limit=source_limit,
+        ),
+    )
+
+
+def _metric_rows(
+    conn: sqlite3.Connection,
+    label_expr: str,
+    window_days: int,
+    benchmark_ts_code: str,
+    *,
+    limit: int | None = None,
+) -> list[StrategyValidationMetric]:
+    limit_sql = "LIMIT ?" if limit else ""
+    params: list[object] = [window_days, benchmark_ts_code]
+    if limit:
+        params.append(limit)
+    rows = conn.execute(
+        f"""
+        SELECT
+            {label_expr} AS label,
+            COUNT(*) AS sample_count,
+            AVG(CASE WHEN r.excess_return_rate > 0 THEN 1.0 ELSE 0.0 END) AS win_rate,
+            AVG(r.return_rate) AS average_return,
+            AVG(r.excess_return_rate) AS average_excess_return,
+            AVG(r.max_drawdown_rate) AS average_max_drawdown
+        FROM strategy_snapshot_stocks s
+        JOIN strategy_snapshot_returns r ON r.snapshot_id = s.snapshot_id AND r.ts_code = s.ts_code
+        WHERE r.window_days = ?
+          AND r.benchmark_ts_code = ?
+          AND r.status = 'succeeded'
+        GROUP BY label
+        ORDER BY average_excess_return DESC, sample_count DESC
+        {limit_sql}
+        """,
+        params,
+    ).fetchall()
+    return [
+        StrategyValidationMetric(
+            label=str(row["label"]),
+            sample_count=int(row["sample_count"] or 0),
+            win_rate=float(row["win_rate"]) if row["win_rate"] is not None else None,
+            average_return=float(row["average_return"]) if row["average_return"] is not None else None,
+            average_excess_return=float(row["average_excess_return"])
+            if row["average_excess_return"] is not None
+            else None,
+            average_max_drawdown=float(row["average_max_drawdown"])
+            if row["average_max_drawdown"] is not None
+            else None,
+        )
+        for row in rows
+    ]
+
+
+def _snapshot_rows(
+    conn: sqlite3.Connection,
+    *,
+    snapshot_id: str | None,
+    snapshot_start_time: datetime | None = None,
+    snapshot_end_time: datetime | None = None,
+) -> list[sqlite3.Row]:
     if snapshot_id:
         return conn.execute(
             "SELECT snapshot_id, end_time FROM strategy_snapshots WHERE snapshot_id = ?",
             (snapshot_id,),
         ).fetchall()
-    return conn.execute("SELECT snapshot_id, end_time FROM strategy_snapshots ORDER BY generated_at DESC").fetchall()
+    sql = ["SELECT snapshot_id, end_time FROM strategy_snapshots"]
+    where: list[str] = []
+    params: list[object] = []
+    if snapshot_start_time is not None:
+        where.append("end_time >= ?")
+        params.append(snapshot_start_time.isoformat())
+    if snapshot_end_time is not None:
+        where.append("end_time <= ?")
+        params.append(snapshot_end_time.isoformat())
+    if where:
+        sql.append("WHERE " + " AND ".join(where))
+    sql.append("ORDER BY generated_at DESC")
+    return conn.execute(" ".join(sql), params).fetchall()
 
 
 def _snapshot_stock_rows(conn: sqlite3.Connection, snapshot_id: str) -> list[sqlite3.Row]:
@@ -231,7 +400,7 @@ def _window_return(
     window: int,
 ) -> tuple[str, dict[str, object]]:
     stock_prices = _prices_from(conn, ts_code, start_key=base_date_key)
-    benchmark_prices = _prices_from(conn, benchmark_ts_code, start_key=base_date_key)
+    benchmark_prices = _prices_from(conn, benchmark_ts_code, start_key=base_date_key, api_name="index_daily")
     if not stock_prices or not benchmark_prices:
         return "missing_price", {"error_message": "缺少基准日价格"}
     if len(stock_prices) <= window or len(benchmark_prices) <= window:
@@ -258,18 +427,18 @@ def _window_return(
     }
 
 
-def _prices_from(conn: sqlite3.Connection, ts_code: str, *, start_key: str) -> list[_PricePoint]:
+def _prices_from(conn: sqlite3.Connection, ts_code: str, *, start_key: str, api_name: str = "daily") -> list[_PricePoint]:
     rows = conn.execute(
         """
         SELECT date_key, data
         FROM tushare_history
-        WHERE api_name = 'daily'
+        WHERE api_name = ?
           AND ts_code = ?
           AND date_key >= ?
         ORDER BY date_key
         LIMIT 80
         """,
-        (ts_code, start_key),
+        (api_name, ts_code, start_key),
     ).fetchall()
     prices: list[_PricePoint] = []
     for row in rows:

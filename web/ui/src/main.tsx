@@ -15,6 +15,7 @@ import "./organize.css";
 import "./organize-aggregate.css";
 import "./organize-responsive.css";
 import "./strategy.css";
+import "./strategy-validation.css";
 import "./wechat.css";
 
 createRoot(document.getElementById("root")!).render(<App />);

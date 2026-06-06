@@ -215,8 +215,31 @@ export type RecommendationBacktestRequest = {
   force: boolean;
 };
 
+export type StrategySnapshotSaveRequest = {
+  days: number;
+  recent_days: number;
+  limit: number;
+  force: boolean;
+};
+
+export type StrategySnapshotBackfillJobRequest = {
+  start_time: string;
+  end_time: string;
+  windows: number[];
+  benchmark_ts_code: string;
+};
+
+export type StrategySnapshotSaveResult = {
+  snapshot_id: string;
+  strategy_type: string;
+  generated_at: string;
+  stock_count: number;
+  opportunity_count: number;
+  reused_existing: boolean;
+};
+
 export type DerivedJobItem = {
-  job_type: "anchor" | "aggregate_refine" | "recommendation_backtest";
+  job_type: "anchor" | "aggregate_refine" | "recommendation_backtest" | "strategy_backfill";
   run_id: string;
   reused_existing: boolean;
   status: "running";
@@ -411,4 +434,7 @@ export type {
   StrategyStockLifecycleState,
   StrategyStockPricePosition,
   StrategyThemeBrief,
+  StrategyValidationMetric,
+  StrategyValidationQuery,
+  StrategyValidationSummary,
 } from "./types/strategy";

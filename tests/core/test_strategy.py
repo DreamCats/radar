@@ -9,7 +9,13 @@ from radar.core.db import migrate_market_db
 from radar.core.models import MessageAnchor, MessageClassification, RawMessage
 from radar.core.store import connect, init_db, replace_message_anchors, upsert_message_classifications, upsert_messages
 from radar.core.usecases.strategy import build_strategy_dashboard
-from radar.core.usecases.strategy.snapshots import backfill_strategy_snapshot_returns, save_strategy_snapshot
+from radar.core.usecases.strategy.snapshots import (
+    StrategySnapshotSaveResult,
+    backfill_strategy_snapshot_returns,
+    save_strategy_snapshot,
+    summarize_strategy_validation,
+)
+from radar.core.usecases.strategy.snapshot_cache import save_cached_strategy_snapshot
 
 
 def test_build_strategy_dashboard_ranks_anchor_breakout(tmp_path: Path):
@@ -325,6 +331,17 @@ def test_strategy_snapshot_persists_and_backfills_returns(tmp_path: Path):
     assert round(return_row["return_rate"], 4) == 0.2
     assert return_row["excess_return_rate"] > 0
     assert return_row["max_drawdown_rate"] == 0
+
+    summary = summarize_strategy_validation(config, window_days=3)
+    assert summary.snapshot_count == 1
+    assert summary.matured_stock_count == 1
+    assert summary.by_decision_bucket[0].sample_count == 1
+    assert summary.by_decision_bucket[0].average_excess_return is not None
+
+    cached = save_cached_strategy_snapshot(config, days=30, recent_days=7, limit=5)
+    assert isinstance(cached, StrategySnapshotSaveResult)
+    assert cached.snapshot_id == saved.snapshot_id
+    assert cached.reused_existing is True
 
 
 def _config(tmp_path: Path) -> RadarConfig:
