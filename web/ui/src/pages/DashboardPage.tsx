@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, RefreshCw } from "lucide-react";
 
-import { fetchMessageOverview, fetchOrganizeAggregates, fetchOrganizeClassifications, fetchRuns } from "../api/radarApi";
+import {
+  fetchMessageOverview,
+  fetchOrganizeAggregates,
+  fetchOrganizeClassifications,
+  fetchRecommendationBacktestSummary,
+  fetchRuns,
+} from "../api/radarApi";
 import { ClassificationDistributionChart } from "../components/ClassificationDistributionChart";
+import { LeaderboardAlphaChart } from "../components/LeaderboardAlphaChart";
 import { AnchorHeatChart, ThemePriorityBubbleChart, TopGroupsChart, TrendChart } from "../components/OverviewCharts";
 import { formatTime } from "../lib/datetime";
-import type { MessageOverview, OrganizeAggregatePage, OrganizeClassificationPage, RunItem } from "../types";
+import { buildPresetRange, toLocalIso } from "../lib/timeRange";
+import type { MessageOverview, OrganizeAggregatePage, OrganizeClassificationPage, RecommendationBacktestSummary, RunItem } from "../types";
 
 const emptyClassificationPage: OrganizeClassificationPage = {
   summary: {
@@ -25,10 +33,20 @@ const emptyAggregatePage: OrganizeAggregatePage = {
   themes: [],
 };
 
+const emptyBacktestSummary: RecommendationBacktestSummary = {
+  start_time: "",
+  end_time: "",
+  group_by: "analyst_sector",
+  windows: [1, 2, 3, 5],
+  row_count: 0,
+  rows: [],
+};
+
 export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }) {
   const [overview, setOverview] = useState<MessageOverview | null>(null);
   const [classificationPage, setClassificationPage] = useState<OrganizeClassificationPage>(emptyClassificationPage);
   const [aggregatePage, setAggregatePage] = useState<OrganizeAggregatePage>(emptyAggregatePage);
+  const [backtestSummary, setBacktestSummary] = useState<RecommendationBacktestSummary>(emptyBacktestSummary);
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,15 +55,24 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
     setLoading(true);
     setError(null);
     try {
-      const [overviewData, classificationData, aggregateData, runItems] = await Promise.all([
+      const backtestRange = buildPresetRange("last30d");
+      const [overviewData, classificationData, aggregateData, backtestData, runItems] = await Promise.all([
         fetchMessageOverview({ days: 14, top_limit: 8, anchor_limit: 20 }),
         fetchOrganizeClassifications({ evidence_limit: 0, low_confidence_threshold: 0.75 }),
         fetchOrganizeAggregates({ evidence_limit: 0 }),
+        fetchRecommendationBacktestSummary({
+          start_time: toLocalIso(backtestRange.startDate, backtestRange.startTime),
+          end_time: toLocalIso(backtestRange.endDate, backtestRange.endTime),
+          group_by: "analyst_sector",
+          min_count: 3,
+          limit: 200,
+        }),
         fetchRuns(),
       ]);
       setOverview(overviewData);
       setClassificationPage(classificationData);
       setAggregatePage(aggregateData);
+      setBacktestSummary(backtestData);
       setRuns(runItems);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
@@ -84,9 +111,10 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
       </div>
       {error && <p className="error-line">{error}</p>}
       <div className="overview-chart-grid">
-        <TrendChart overview={overview} />
-        <AnchorHeatChart data={overview?.anchor_heat ?? []} />
+        <LeaderboardAlphaChart rows={backtestSummary.rows} dimension={backtestSummary.group_by} />
         <ThemePriorityBubbleChart themes={aggregatePage.themes} />
+        <AnchorHeatChart data={overview?.anchor_heat ?? []} />
+        <TrendChart overview={overview} />
         <TopGroupsChart data={overview?.top_groups ?? []} />
         <ClassificationDistributionChart
           clusters={classificationPage.clusters}
