@@ -144,6 +144,11 @@ function OpportunityCard({ item }: { item: StrategyOpportunity }) {
                       {stock.lifecycle_state}
                     </span>
                   )}
+                  {stock.lifecycle_state === "发酵中" && stock.price_position && (
+                    <span className={`strategy-price-position strategy-price-position-${stock.price_position}`}>
+                      {stock.price_position}
+                    </span>
+                  )}
                 </div>
                 <em>T+5 {formatPercent(stock.average_excess_return_t5, true)}</em>
                 <small>
@@ -213,6 +218,11 @@ function StockRow({ item }: { item: StrategyStockCandidate }) {
         {item.lifecycle_state && (
           <span className={`strategy-stock-state strategy-stock-state-${item.lifecycle_state}`}>
             {item.lifecycle_state}
+          </span>
+        )}
+        {item.lifecycle_state === "发酵中" && item.price_position && (
+          <span className={`strategy-price-position strategy-price-position-${item.price_position}`}>
+            {item.price_position}
           </span>
         )}
       </div>

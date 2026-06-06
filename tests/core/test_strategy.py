@@ -128,6 +128,7 @@ def test_strategy_marks_related_stock_lifecycle_from_market_prices(tmp_path: Pat
 
     assert stock.stock_name == "风华高科"
     assert stock.lifecycle_state == "已兑现"
+    assert stock.price_position == "趋势健康"
     assert stock.first_seen_time == datetime.fromisoformat("2026-06-01T10:00:00")
     assert stock.price_return_since_first_seen == 0.3
     assert stock.signal_age_days == 4
@@ -136,7 +137,59 @@ def test_strategy_marks_related_stock_lifecycle_from_market_prices(tmp_path: Pat
     candidate = dashboard.stock_candidates[0]
     assert candidate.stock_name == "风华高科"
     assert candidate.lifecycle_state == "已兑现"
+    assert candidate.price_position == "趋势健康"
     assert candidate.price_return_since_first_seen == 0.3
+
+
+def test_strategy_marks_fermenting_stock_price_position(tmp_path: Path):
+    config = _config(tmp_path)
+    messages = [
+        _message("m1", "2026-06-01T10:00:00", "MLCC 中天科技 订单"),
+        _message("m2", "2026-06-02T10:00:00", "MLCC 中天科技 放量"),
+        _message("m3", "2026-06-05T10:00:00", "MLCC 中天科技 涨价"),
+    ]
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, messages)
+        upsert_message_classifications(conn, [_classification(message, "recommendation", 0.9) for message in messages])
+        replace_message_anchors(
+            conn,
+            message_ids=[message.message_id for message in messages],
+            anchors=[_anchor(message, "MLCC") for message in messages],
+            trade_date="20260605",
+            extractor_version="test-anchor",
+        )
+        for index, message in enumerate(messages, start=1):
+            _insert_backtest_event(
+                conn,
+                message,
+                index=index,
+                excess_return=0.08,
+                stock_name="中天科技",
+                ts_code="600522.SH",
+            )
+    finally:
+        conn.close()
+
+    market_conn = connect(config.market_database_path)
+    try:
+        migrate_market_db(market_conn)
+        _insert_daily_close(market_conn, "600522.SH", "20260601", 10)
+        _insert_daily_close(market_conn, "600522.SH", "20260602", 10.5)
+        _insert_daily_close(market_conn, "600522.SH", "20260603", 10.8)
+        _insert_daily_close(market_conn, "600522.SH", "20260604", 11.0)
+        _insert_daily_close(market_conn, "600522.SH", "20260605", 11.2)
+    finally:
+        market_conn.close()
+
+    dashboard = build_strategy_dashboard(config, days=30, recent_days=7, limit=5)
+    stock = dashboard.opportunities[0].related_stocks[0]
+
+    assert stock.stock_name == "中天科技"
+    assert stock.lifecycle_state == "发酵中"
+    assert stock.price_position == "趋势健康"
+    assert stock.price_return_since_first_seen == 0.12
 
 
 def _config(tmp_path: Path) -> RadarConfig:

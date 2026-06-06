@@ -399,6 +399,7 @@ export type OrganizeEvidenceQuery = Omit<OrganizeClassificationQuery, "evidence_
 
 export type StrategyAttentionLevel = "重点关注" | "继续验证" | "风险升高" | "样本不足" | "过度扩散";
 export type StrategyStockLifecycleState = "初现" | "发酵中" | "已兑现" | "回调再看" | "缺少价格";
+export type StrategyStockPricePosition = "趋势健康" | "可观察" | "震荡观察" | "回撤偏大" | "短线偏弱" | "首现后走弱" | "缺少价格";
 
 export type StrategyRelatedStock = {
   stock_name: string;
@@ -415,6 +416,7 @@ export type StrategyRelatedStock = {
   price_return_since_first_seen?: number | null;
   recent_price_return_3d?: number | null;
   drawdown_from_high_since_first_seen?: number | null;
+  price_position?: StrategyStockPricePosition | null;
 };
 
 export type StrategySourceSignal = {
@@ -492,6 +494,7 @@ export type StrategyStockCandidate = {
   price_return_since_first_seen?: number | null;
   recent_price_return_3d?: number | null;
   drawdown_from_high_since_first_seen?: number | null;
+  price_position?: StrategyStockPricePosition | null;
 };
 
 export type StrategyDashboard = {

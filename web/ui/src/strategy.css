@@ -246,7 +246,8 @@
   font-size: 11px;
 }
 
-.strategy-stock-state {
+.strategy-stock-state,
+.strategy-price-position {
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
   color: var(--color-ink-subtle);
@@ -267,6 +268,24 @@
 
 .strategy-stock-state-已兑现,
 .strategy-stock-state-回调再看 {
+  border-color: color-mix(in srgb, var(--color-market-down) 45%, var(--color-hairline));
+  color: var(--color-market-down);
+}
+
+.strategy-price-position-趋势健康,
+.strategy-price-position-可观察 {
+  border-color: color-mix(in srgb, var(--color-market-up) 45%, var(--color-hairline));
+  color: var(--color-market-up);
+}
+
+.strategy-price-position-震荡观察 {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 35%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+
+.strategy-price-position-回撤偏大,
+.strategy-price-position-短线偏弱,
+.strategy-price-position-首现后走弱 {
   border-color: color-mix(in srgb, var(--color-market-down) 45%, var(--color-hairline));
   color: var(--color-market-down);
 }

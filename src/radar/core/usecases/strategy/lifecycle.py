@@ -6,7 +6,12 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import TypeVar
 
-from radar.core.usecases.strategy.models import StrategyRelatedStock, StrategyStockCandidate, StrategyStockLifecycleState
+from radar.core.usecases.strategy.models import (
+    StrategyRelatedStock,
+    StrategyStockCandidate,
+    StrategyStockLifecycleState,
+    StrategyStockPricePosition,
+)
 
 StockWithLifecycle = TypeVar("StockWithLifecycle", StrategyRelatedStock, StrategyStockCandidate)
 
@@ -45,7 +50,9 @@ def annotate_stock_candidate_lifecycle(
 
 def _annotate_stock(conn: sqlite3.Connection, stock: StockWithLifecycle, *, as_of: datetime) -> StockWithLifecycle:
     if stock.first_seen_time is None:
-        return stock.model_copy(update={"lifecycle_state": "缺少价格", "lifecycle_reason": "缺少首现时间。"})
+        return stock.model_copy(
+            update={"lifecycle_state": "缺少价格", "lifecycle_reason": "缺少首现时间。", "price_position": "缺少价格"}
+        )
 
     prices = _daily_prices(conn, stock.ts_code, start=stock.first_seen_time, end=as_of)
     if not prices:
@@ -53,6 +60,7 @@ def _annotate_stock(conn: sqlite3.Connection, stock: StockWithLifecycle, *, as_o
             update={
                 "lifecycle_state": "缺少价格",
                 "lifecycle_reason": f"{_date_text(stock.first_seen_time)} 首现，本地暂无后续K线。",
+                "price_position": "缺少价格",
                 "signal_age_days": _age_days(stock.first_seen_time, as_of),
             }
         )
@@ -64,6 +72,13 @@ def _annotate_stock(conn: sqlite3.Connection, stock: StockWithLifecycle, *, as_o
     recent_3d = _ratio(latest_close, prices[-4].close) if len(prices) >= 4 else None
     drawdown = _ratio(latest_close, high_close)
     age_days = _age_days(stock.first_seen_time, as_of)
+    price_position = _price_position(
+        price_return=since_first,
+        recent_3d=recent_3d,
+        drawdown=drawdown,
+        latest_close=latest_close,
+        prices=prices,
+    )
     state = _lifecycle_state(
         signal_age_days=age_days,
         price_return=since_first,
@@ -79,6 +94,7 @@ def _annotate_stock(conn: sqlite3.Connection, stock: StockWithLifecycle, *, as_o
             "price_return_since_first_seen": round(since_first, 4),
             "recent_price_return_3d": round(recent_3d, 4) if recent_3d is not None else None,
             "drawdown_from_high_since_first_seen": round(drawdown, 4),
+            "price_position": price_position,
         }
     )
 
@@ -139,6 +155,30 @@ def _lifecycle_state(
     if source_count >= 3 or event_count >= 3 or signal_age_days <= 7:
         return "发酵中"
     return "发酵中"
+
+
+def _price_position(
+    *,
+    price_return: float,
+    recent_3d: float | None,
+    drawdown: float,
+    latest_close: float,
+    prices: list[_DailyPrice],
+) -> StrategyStockPricePosition:
+    ma5 = sum(item.close for item in prices[-5:]) / min(len(prices), 5)
+    near_high = drawdown >= -0.04
+    above_ma5 = latest_close >= ma5
+    if price_return > 0.08 and near_high and above_ma5 and (recent_3d is None or recent_3d > -0.03):
+        return "趋势健康"
+    if price_return > 0.03 and drawdown > -0.08 and above_ma5:
+        return "可观察"
+    if recent_3d is not None and recent_3d < -0.06:
+        return "短线偏弱"
+    if drawdown <= -0.1:
+        return "回撤偏大"
+    if price_return < -0.03:
+        return "首现后走弱"
+    return "震荡观察"
 
 
 def _reason(

@@ -9,6 +9,7 @@ from radar.core.models import MessageAnchorType
 
 StrategyAttentionLevel = Literal["重点关注", "继续验证", "风险升高", "样本不足", "过度扩散"]
 StrategyStockLifecycleState = Literal["初现", "发酵中", "已兑现", "回调再看", "缺少价格"]
+StrategyStockPricePosition = Literal["趋势健康", "可观察", "震荡观察", "回撤偏大", "短线偏弱", "首现后走弱", "缺少价格"]
 
 
 class StrategyRelatedStock(BaseModel):
@@ -26,6 +27,7 @@ class StrategyRelatedStock(BaseModel):
     price_return_since_first_seen: float | None = None
     recent_price_return_3d: float | None = None
     drawdown_from_high_since_first_seen: float | None = None
+    price_position: StrategyStockPricePosition | None = None
 
 
 class StrategySourceSignal(BaseModel):
@@ -103,6 +105,7 @@ class StrategyStockCandidate(BaseModel):
     price_return_since_first_seen: float | None = None
     recent_price_return_3d: float | None = None
     drawdown_from_high_since_first_seen: float | None = None
+    price_position: StrategyStockPricePosition | None = None
 
 
 class StrategyDashboard(BaseModel):
