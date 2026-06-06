@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from radar.core.config import RadarConfig
 from radar.core.store import connect, init_db
 from radar.core.usecases.strategy.details import (
+    backtest_metrics_for_anchors,
     latest_theme_briefs,
     match_themes,
     related_stocks_for_anchors,
@@ -16,6 +17,7 @@ from radar.core.usecases.strategy.details import (
     top_sources_for_anchor,
 )
 from radar.core.usecases.strategy.models import (
+    StrategyBacktestMetric,
     StrategyDashboard,
     StrategyOpportunity,
     StrategyRelatedStock,
@@ -144,6 +146,12 @@ def build_strategy_dashboard_from_conn(
         end_time=end_time,
         limit_per_anchor=5,
     )
+    backtest_by_anchor = backtest_metrics_for_anchors(
+        conn,
+        shortlisted,
+        start_time=start_time,
+        end_time=end_time,
+    )
     opportunities = [
         _opportunity_from_stats(
             conn,
@@ -154,6 +162,7 @@ def build_strategy_dashboard_from_conn(
             previous_days=previous_days,
             themes=themes,
             related_stocks=related_by_anchor.get((stats.anchor_type, stats.name), []),
+            opportunity_backtest=backtest_by_anchor.get((stats.anchor_type, stats.name), StrategyBacktestMetric()),
         )
         for stats in shortlisted
     ]
@@ -276,6 +285,7 @@ def _opportunity_from_stats(
     previous_days: float,
     themes: list[StrategyThemeBrief],
     related_stocks: list[StrategyRelatedStock],
+    opportunity_backtest: StrategyBacktestMetric,
 ) -> StrategyOpportunity:
     top_sources = top_sources_for_anchor(
         conn,
@@ -286,17 +296,13 @@ def _opportunity_from_stats(
         limit=3,
     )
     matched_themes = match_themes(stats.name, themes, limit=2)
-    t5_event_count = sum(stock.event_count for stock in related_stocks)
-    win_rate_t5 = _weighted_average(
-        [(stock.win_rate_t5, stock.event_count) for stock in related_stocks if stock.win_rate_t5 is not None]
-    )
-    average_excess_return_t5 = _weighted_average(
-        [
-            (stock.average_excess_return_t5, stock.event_count)
-            for stock in related_stocks
-            if stock.average_excess_return_t5 is not None
-        ]
-    )
+    selected_stock_backtest = _selected_stock_backtest(related_stocks)
+    t5_event_count = opportunity_backtest.matured_event_count
+    win_rate_t5 = opportunity_backtest.win_rate_t5
+    average_excess_return_t5 = opportunity_backtest.average_excess_return_t5
+    selected_t5_event_count = selected_stock_backtest.matured_event_count
+    selected_win_rate_t5 = selected_stock_backtest.win_rate_t5
+    selected_average_excess_return_t5 = selected_stock_backtest.average_excess_return_t5
     scored = score_opportunity(
         recent_message_count=stats.recent_message_count,
         previous_message_count=stats.previous_message_count,
@@ -322,7 +328,7 @@ def _opportunity_from_stats(
         attention_level=scored.attention_level,
         score=scored.score,
         reliability_score=scored.reliability_score,
-        reason=_reason(stats, acceleration=acceleration, t5_event_count=t5_event_count, win_rate_t5=win_rate_t5),
+        reason=_reason(stats, acceleration=acceleration, opportunity_backtest=opportunity_backtest),
         risk_summary=_risk_summary(stats, risk_terms, scored.risk_score, scored.crowding_penalty),
         recent_message_count=stats.recent_message_count,
         previous_message_count=stats.previous_message_count,
@@ -341,10 +347,49 @@ def _opportunity_from_stats(
         t5_event_count=t5_event_count,
         win_rate_t5=round(win_rate_t5, 4) if win_rate_t5 is not None else None,
         average_excess_return_t5=round(average_excess_return_t5, 4) if average_excess_return_t5 is not None else None,
+        opportunity_backtest=StrategyBacktestMetric(
+            event_count=opportunity_backtest.event_count,
+            matured_event_count=opportunity_backtest.matured_event_count,
+            pending_event_count=opportunity_backtest.pending_event_count,
+            win_rate_t5=round(win_rate_t5, 4) if win_rate_t5 is not None else None,
+            average_excess_return_t5=round(average_excess_return_t5, 4)
+            if average_excess_return_t5 is not None
+            else None,
+        ),
+        selected_stock_backtest=StrategyBacktestMetric(
+            event_count=selected_stock_backtest.event_count,
+            matured_event_count=selected_t5_event_count,
+            pending_event_count=selected_stock_backtest.pending_event_count,
+            win_rate_t5=round(selected_win_rate_t5, 4) if selected_win_rate_t5 is not None else None,
+            average_excess_return_t5=round(selected_average_excess_return_t5, 4)
+            if selected_average_excess_return_t5 is not None
+            else None,
+        ),
         latest_message_time=stats.latest_message_time,
         related_stocks=related_stocks,
         top_sources=top_sources,
         matched_themes=matched_themes,
+    )
+
+
+def _selected_stock_backtest(related_stocks: list[StrategyRelatedStock]) -> StrategyBacktestMetric:
+    event_count = sum(stock.event_count for stock in related_stocks)
+    win_rate_t5 = _weighted_average(
+        [(stock.win_rate_t5, stock.event_count) for stock in related_stocks if stock.win_rate_t5 is not None]
+    )
+    average_excess_return_t5 = _weighted_average(
+        [
+            (stock.average_excess_return_t5, stock.event_count)
+            for stock in related_stocks
+            if stock.average_excess_return_t5 is not None
+        ]
+    )
+    return StrategyBacktestMetric(
+        event_count=event_count,
+        matured_event_count=event_count,
+        pending_event_count=0,
+        win_rate_t5=win_rate_t5,
+        average_excess_return_t5=average_excess_return_t5,
     )
 
 
@@ -376,14 +421,16 @@ def _weighted_average(items: list[tuple[float | None, int]]) -> float | None:
     return sum((value or 0) * weight for value, weight in items) / total_weight
 
 
-def _reason(stats: _AnchorStats, *, acceleration: float, t5_event_count: int, win_rate_t5: float | None) -> str:
+def _reason(stats: _AnchorStats, *, acceleration: float, opportunity_backtest: StrategyBacktestMetric) -> str:
     parts = [
         f"近7天 {stats.recent_message_count} 条，较前序窗口约 {acceleration:.1f}x",
         f"{stats.sender_count} 位发送人 / {stats.group_count} 个群参与",
     ]
-    if t5_event_count:
-        win_text = f"{win_rate_t5 * 100:.0f}%" if win_rate_t5 is not None else "-"
-        parts.append(f"T+5 回测 {t5_event_count} 个事件，胜率 {win_text}")
+    if opportunity_backtest.matured_event_count:
+        win_text = f"{(opportunity_backtest.win_rate_t5 or 0) * 100:.0f}%"
+        parts.append(f"全量机会 T+5 成熟 {opportunity_backtest.matured_event_count} 个，胜率 {win_text}")
+    elif opportunity_backtest.pending_event_count:
+        parts.append(f"T+5 尚未成熟 {opportunity_backtest.pending_event_count} 个事件")
     return "；".join(parts)
 
 

@@ -6,6 +6,7 @@ from typing import Any
 
 from radar.core.usecases.aggregation.storage import list_refine_results
 from radar.core.usecases.strategy.models import (
+    StrategyBacktestMetric,
     StrategyRelatedStock,
     StrategySourceSignal,
     StrategyStockCandidate,
@@ -87,6 +88,69 @@ def related_stocks_for_anchors(
         key = (str(row["anchor_type"]), str(row["name"]))
         by_anchor.setdefault(key, []).append(_related_stock_from_row(row))
     return by_anchor
+
+
+def backtest_metrics_for_anchors(
+    conn: sqlite3.Connection,
+    stats_list: list[Any],
+    *,
+    start_time: datetime,
+    end_time: datetime,
+) -> dict[tuple[str, str], StrategyBacktestMetric]:
+    if not stats_list:
+        return {}
+
+    values_sql = ", ".join("(?, ?)" for _ in stats_list)
+    target_params: list[Any] = []
+    for stats in stats_list:
+        target_params.extend([stats.anchor_type, stats.name])
+    rows = conn.execute(
+        f"""
+        WITH target(anchor_type, name) AS (
+            VALUES {values_sql}
+        ),
+        matched AS (
+            SELECT DISTINCT
+                target.anchor_type,
+                target.name,
+                e.event_id,
+                w.status,
+                w.win,
+                w.excess_return_rate
+            FROM target
+            JOIN message_anchors a
+              ON a.anchor_type = target.anchor_type AND a.name = target.name
+            JOIN recommendation_events e ON e.message_id = a.message_id
+            LEFT JOIN recommendation_backtest_windows w
+              ON w.event_id = e.event_id AND w.window_days = 5
+            WHERE e.message_time >= ?
+              AND e.message_time <= ?
+        )
+        SELECT
+            anchor_type,
+            name,
+            COUNT(DISTINCT event_id) AS event_count,
+            COUNT(DISTINCT CASE WHEN status = 'succeeded' THEN event_id END) AS matured_event_count,
+            COUNT(DISTINCT CASE WHEN status IS NULL OR status = 'pending' THEN event_id END) AS pending_event_count,
+            AVG(CASE WHEN status = 'succeeded' THEN win END) AS win_rate,
+            AVG(CASE WHEN status = 'succeeded' THEN excess_return_rate END) AS average_excess_return
+        FROM matched
+        GROUP BY anchor_type, name
+        """,
+        [*target_params, start_time.isoformat(), end_time.isoformat()],
+    ).fetchall()
+    return {
+        (str(row["anchor_type"]), str(row["name"])): StrategyBacktestMetric(
+            event_count=int(row["event_count"] or 0),
+            matured_event_count=int(row["matured_event_count"] or 0),
+            pending_event_count=int(row["pending_event_count"] or 0),
+            win_rate_t5=float(row["win_rate"]) if row["win_rate"] is not None else None,
+            average_excess_return_t5=float(row["average_excess_return"])
+            if row["average_excess_return"] is not None
+            else None,
+        )
+        for row in rows
+    }
 
 
 def top_sources_for_anchor(

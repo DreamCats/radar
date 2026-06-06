@@ -40,6 +40,8 @@ def test_strategy_opportunities_endpoint_returns_ranked_items(tmp_path: Path):
     data = response.json()
     assert data["opportunities"][0]["name"] == "PCB"
     assert data["opportunities"][0]["recent_message_count"] == 3
+    assert data["opportunities"][0]["opportunity_backtest"]["event_count"] == 0
+    assert data["opportunities"][0]["selected_stock_backtest"]["event_count"] == 0
 
 
 def _config(tmp_path: Path) -> RadarConfig:

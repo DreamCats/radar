@@ -46,8 +46,10 @@ function SummaryCard({ item }: { item: StrategyOpportunity }) {
           <TrendingUp size={13} />
           {item.acceleration.toFixed(1)}x
         </span>
-        <span>{formatPercent(item.average_excess_return_t5, true)}</span>
-        <span>{item.t5_event_count || item.recent_message_count}样本</span>
+        <span>{formatPercent(item.opportunity_backtest.average_excess_return_t5, true)}</span>
+        <span>
+          {item.opportunity_backtest.matured_event_count}/{item.opportunity_backtest.event_count || item.recent_message_count}成熟
+        </span>
       </div>
     </article>
   );

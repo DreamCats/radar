@@ -425,6 +425,14 @@ export type StrategyThemeBrief = {
   risk_notes: string[];
 };
 
+export type StrategyBacktestMetric = {
+  event_count: number;
+  matured_event_count: number;
+  pending_event_count: number;
+  win_rate_t5?: number | null;
+  average_excess_return_t5?: number | null;
+};
+
 export type StrategyOpportunity = {
   key: string;
   name: string;
@@ -451,6 +459,8 @@ export type StrategyOpportunity = {
   t5_event_count: number;
   win_rate_t5?: number | null;
   average_excess_return_t5?: number | null;
+  opportunity_backtest: StrategyBacktestMetric;
+  selected_stock_backtest: StrategyBacktestMetric;
   latest_message_time: string;
   related_stocks: StrategyRelatedStock[];
   top_sources: StrategySourceSignal[];

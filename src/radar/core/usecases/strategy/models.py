@@ -36,6 +36,14 @@ class StrategyThemeBrief(BaseModel):
     risk_notes: list[str] = Field(default_factory=list)
 
 
+class StrategyBacktestMetric(BaseModel):
+    event_count: int = 0
+    matured_event_count: int = 0
+    pending_event_count: int = 0
+    win_rate_t5: float | None = None
+    average_excess_return_t5: float | None = None
+
+
 class StrategyOpportunity(BaseModel):
     key: str
     name: str
@@ -62,6 +70,8 @@ class StrategyOpportunity(BaseModel):
     t5_event_count: int = 0
     win_rate_t5: float | None = None
     average_excess_return_t5: float | None = None
+    opportunity_backtest: StrategyBacktestMetric = Field(default_factory=StrategyBacktestMetric)
+    selected_stock_backtest: StrategyBacktestMetric = Field(default_factory=StrategyBacktestMetric)
     latest_message_time: datetime
     related_stocks: list[StrategyRelatedStock] = Field(default_factory=list)
     top_sources: list[StrategySourceSignal] = Field(default_factory=list)

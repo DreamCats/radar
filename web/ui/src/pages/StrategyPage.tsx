@@ -111,8 +111,12 @@ function OpportunityCard({ item }: { item: StrategyOpportunity }) {
       <div className="strategy-signal-grid">
         <Signal label="拐点" value={`${item.acceleration.toFixed(1)}x`} icon={<TrendingUp size={15} />} />
         <Signal label="广度" value={`${item.sender_count}人/${item.group_count}群`} icon={<Users size={15} />} />
-        <Signal label="T+5 超额" value={formatPercent(item.average_excess_return_t5, true)} icon={<Gauge size={15} />} />
+        <Signal label="全量T+5" value={formatPercent(item.opportunity_backtest.average_excess_return_t5, true)} icon={<Gauge size={15} />} />
         <Signal label="风险" value={`${item.risk_count}条`} icon={<ShieldAlert size={15} />} />
+      </div>
+      <div className="strategy-backtest-strip">
+        <BacktestMetric label="全量机会" metric={item.opportunity_backtest} />
+        <BacktestMetric label="精选股票" metric={item.selected_stock_backtest} />
       </div>
       <div className="strategy-tag-row">
         {item.catalyst_terms.slice(0, 5).map((term) => (
@@ -151,6 +155,19 @@ function OpportunityCard({ item }: { item: StrategyOpportunity }) {
         </div>
       )}
     </article>
+  );
+}
+
+function BacktestMetric(props: { label: string; metric: StrategyOpportunity["opportunity_backtest"] }) {
+  return (
+    <div className="strategy-backtest-metric">
+      <span>{props.label}</span>
+      <strong>{formatPercent(props.metric.average_excess_return_t5, true)}</strong>
+      <em>
+        T+5 {formatPercent(props.metric.win_rate_t5)} · 成熟 {props.metric.matured_event_count}/{props.metric.event_count}
+        {props.metric.pending_event_count > 0 ? ` · 待 ${props.metric.pending_event_count}` : ""}
+      </em>
+    </div>
   );
 }
 
