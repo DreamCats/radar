@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from radar.core.config import RadarConfig
+from radar.core.db import migrate_market_db
 from radar.core.store import connect, init_db
+from radar.core.usecases.strategy.lifecycle import annotate_related_stock_lifecycle
 from radar.core.usecases.strategy.details import (
     backtest_metrics_for_anchors,
     latest_theme_briefs,
@@ -95,16 +97,26 @@ def build_strategy_dashboard(
         raise ValueError("limit 必须在 1 到 50 之间")
 
     conn = connect(config.database_path)
+    market_conn = connect(config.market_database_path)
     try:
         init_db(conn)
-        return build_strategy_dashboard_from_conn(conn, days=days, recent_days=recent_days, limit=limit)
+        migrate_market_db(market_conn)
+        return build_strategy_dashboard_from_conn(
+            conn,
+            market_conn=market_conn,
+            days=days,
+            recent_days=recent_days,
+            limit=limit,
+        )
     finally:
         conn.close()
+        market_conn.close()
 
 
 def build_strategy_dashboard_from_conn(
     conn: sqlite3.Connection,
     *,
+    market_conn: sqlite3.Connection | None = None,
     days: int = 30,
     recent_days: int = 7,
     limit: int = 10,
@@ -146,6 +158,7 @@ def build_strategy_dashboard_from_conn(
         end_time=end_time,
         limit_per_anchor=5,
     )
+    related_by_anchor = annotate_related_stock_lifecycle(market_conn, related_by_anchor, as_of=end_time)
     backtest_by_anchor = backtest_metrics_for_anchors(
         conn,
         shortlisted,

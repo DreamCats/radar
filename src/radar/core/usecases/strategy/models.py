@@ -8,15 +8,24 @@ from pydantic import BaseModel, Field
 from radar.core.models import MessageAnchorType
 
 StrategyAttentionLevel = Literal["重点关注", "继续验证", "风险升高", "样本不足", "过度扩散"]
+StrategyStockLifecycleState = Literal["初现", "发酵中", "已兑现", "回调再看", "缺少价格"]
 
 
 class StrategyRelatedStock(BaseModel):
     stock_name: str
     ts_code: str
     event_count: int
+    source_count: int = 0
     win_rate_t5: float | None = None
     average_excess_return_t5: float | None = None
+    first_seen_time: datetime | None = None
     latest_message_time: datetime | None = None
+    lifecycle_state: StrategyStockLifecycleState | None = None
+    lifecycle_reason: str | None = None
+    signal_age_days: int | None = None
+    price_return_since_first_seen: float | None = None
+    recent_price_return_3d: float | None = None
+    drawdown_from_high_since_first_seen: float | None = None
 
 
 class StrategySourceSignal(BaseModel):

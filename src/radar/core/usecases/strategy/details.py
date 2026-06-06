@@ -42,6 +42,7 @@ def related_stocks_for_anchors(
                 e.stock_name,
                 e.ts_code,
                 e.message_time,
+                COALESCE(e.analyst_id, e.source_candidate) AS source_key,
                 w.win,
                 w.excess_return_rate
             FROM target
@@ -61,8 +62,10 @@ def related_stocks_for_anchors(
                 stock_name,
                 ts_code,
                 COUNT(*) AS event_count,
+                COUNT(DISTINCT source_key) AS source_count,
                 AVG(win) AS win_rate,
                 AVG(excess_return_rate) AS average_excess_return,
+                MIN(message_time) AS first_time,
                 MAX(message_time) AS latest_time
             FROM matched
             GROUP BY anchor_type, name, stock_name, ts_code
@@ -342,8 +345,10 @@ def _related_stock_from_row(row: sqlite3.Row) -> StrategyRelatedStock:
         stock_name=str(row["stock_name"]),
         ts_code=str(row["ts_code"]),
         event_count=int(row["event_count"] or 0),
+        source_count=int(row["source_count"] or 0),
         win_rate_t5=float(row["win_rate"]) if row["win_rate"] is not None else None,
         average_excess_return_t5=float(row["average_excess_return"]) if row["average_excess_return"] is not None else None,
+        first_seen_time=datetime.fromisoformat(str(row["first_time"])) if row["first_time"] else None,
         latest_message_time=datetime.fromisoformat(str(row["latest_time"])) if row["latest_time"] else None,
     )
 

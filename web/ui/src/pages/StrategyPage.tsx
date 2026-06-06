@@ -136,10 +136,22 @@ function OpportunityCard({ item }: { item: StrategyOpportunity }) {
           <span className="strategy-section-label">相关股票</span>
           <div className="strategy-stock-strip">
             {topStocks.map((stock) => (
-              <span key={stock.ts_code}>
-                <strong>{stock.stock_name}</strong>
-                <em>{formatPercent(stock.average_excess_return_t5, true)}</em>
-              </span>
+              <article className="strategy-stock-pill" key={stock.ts_code}>
+                <div>
+                  <strong>{stock.stock_name}</strong>
+                  {stock.lifecycle_state && (
+                    <span className={`strategy-stock-state strategy-stock-state-${stock.lifecycle_state}`}>
+                      {stock.lifecycle_state}
+                    </span>
+                  )}
+                </div>
+                <em>T+5 {formatPercent(stock.average_excess_return_t5, true)}</em>
+                <small>
+                  首现后 {formatPercent(stock.price_return_since_first_seen, true)}
+                  {stock.signal_age_days !== undefined && stock.signal_age_days !== null ? ` · ${stock.signal_age_days}天` : ""}
+                </small>
+                {stock.lifecycle_reason && <small>{stock.lifecycle_reason}</small>}
+              </article>
             ))}
           </div>
         </div>
