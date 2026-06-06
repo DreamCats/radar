@@ -347,6 +347,22 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON strategy_snapshot_returns(status, updated_at DESC);
         """,
     ),
+    (
+        "012_view_cache",
+        """
+        CREATE TABLE IF NOT EXISTS view_cache (
+            cache_key      TEXT PRIMARY KEY,
+            dependency_key TEXT NOT NULL,
+            payload_json   TEXT NOT NULL,
+            created_at     TEXT NOT NULL,
+            expires_at     TEXT,
+            compute_ms     INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_view_cache_created
+            ON view_cache(created_at DESC);
+        """,
+    ),
 ]
 
 MARKET_MIGRATIONS: list[Migration] = [

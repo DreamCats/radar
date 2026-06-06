@@ -1,3 +1,5 @@
+import type { StrategyDashboard } from "./types/strategy";
+
 export type MessageSource = "个人消息" | "个人群";
 export type SourceKey = "personal_message" | "group_message";
 export type IngestSource = "all" | SourceKey;
@@ -94,6 +96,15 @@ export type MessageOverview = {
   top_groups: MessageOverviewGroup[];
   hourly_buckets: MessageOverviewHour[];
   anchor_heat: MessageAnchorHeat[];
+};
+
+export type DashboardSummary = {
+  overview: MessageOverview;
+  classifications: OrganizeClassificationPage;
+  aggregates: OrganizeAggregatePage;
+  backtest: RecommendationBacktestSummary;
+  strategy: StrategyDashboard;
+  runs: RunItem[];
 };
 
 export type MessageQuery = {

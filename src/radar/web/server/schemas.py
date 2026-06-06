@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from radar.core.models import ClassificationRetryMode, MessageCategory, MessageSource, RawMessage
+from radar.core.dashboard import DashboardSummaryPayload
 from radar.core.organize import OrganizeClassificationCluster, OrganizeClassificationSummary, OrganizeEvidenceMessage
 from radar.core.organize_aggregates import (
     OrganizeAggregateEvidencePage,
@@ -118,6 +119,10 @@ class MessageOverviewResponse(BaseModel):
 
 class RunListResponse(BaseModel):
     items: list[RunRecord]
+
+
+class DashboardSummaryResponse(DashboardSummaryPayload):
+    runs: list[RunRecord]
 
 
 class IngestWechatRequest(BaseModel):

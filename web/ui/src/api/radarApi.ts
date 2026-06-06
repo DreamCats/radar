@@ -4,6 +4,7 @@ import type {
   AggregateRefineRequest,
   AggregateRefineResult,
   AnchorRequest,
+  DashboardSummary,
   DerivedJobItem,
   IngestJobItem,
   IngestRequest,
@@ -38,6 +39,10 @@ const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
 
 export async function fetchMessages(query: MessageQuery): Promise<MessagePage> {
   return getJson(`/api/messages?${params(query)}`);
+}
+
+export async function fetchDashboardSummary(): Promise<DashboardSummary> {
+  return getJson("/api/dashboard/summary");
 }
 
 export async function fetchConversations(query: MessageConversationQuery): Promise<MessageConversationPage> {

@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
 import {
-  fetchMessageOverview,
-  fetchOrganizeAggregates,
-  fetchOrganizeClassifications,
-  fetchRecommendationBacktestSummary,
-  fetchRuns,
-  fetchStrategyOpportunities,
+  fetchDashboardSummary,
 } from "../api/radarApi";
 import { ClassificationDistributionChart } from "../components/ClassificationDistributionChart";
 import { LeaderboardAlphaChart } from "../components/LeaderboardAlphaChart";
@@ -15,7 +10,6 @@ import { AnchorHeatChart, ThemePriorityBubbleChart, TopGroupsChart, TrendChart }
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { StrategyTopSummary } from "../components/StrategyTopSummary";
 import { formatTime } from "../lib/datetime";
-import { buildPresetRange, toLocalIso } from "../lib/timeRange";
 import type {
   MessageOverview,
   OrganizeAggregatePage,
@@ -66,27 +60,13 @@ export function DashboardPage({ onOpenStrategy }: { onOpenStrategy: () => void }
     setLoading(true);
     setError(null);
     try {
-      const backtestRange = buildPresetRange("last30d");
-      const [overviewData, classificationData, aggregateData, backtestData, strategySummary, runItems] = await Promise.all([
-        fetchMessageOverview({ days: 14, top_limit: 8, anchor_limit: 20 }),
-        fetchOrganizeClassifications({ evidence_limit: 0, low_confidence_threshold: 0.75 }),
-        fetchOrganizeAggregates({ evidence_limit: 0 }),
-        fetchRecommendationBacktestSummary({
-          start_time: toLocalIso(backtestRange.startDate, backtestRange.startTime),
-          end_time: toLocalIso(backtestRange.endDate, backtestRange.endTime),
-          group_by: "analyst_sector",
-          min_count: 3,
-          limit: 200,
-        }),
-        fetchStrategyOpportunities({ days: 30, recent_days: 7, limit: 3 }),
-        fetchRuns(),
-      ]);
-      setOverview(overviewData);
-      setClassificationPage(classificationData);
-      setAggregatePage(aggregateData);
-      setBacktestSummary(backtestData);
-      setStrategyData(strategySummary);
-      setRuns(runItems);
+      const summary = await fetchDashboardSummary();
+      setOverview(summary.overview);
+      setClassificationPage(summary.classifications);
+      setAggregatePage(summary.aggregates);
+      setBacktestSummary(summary.backtest);
+      setStrategyData(summary.strategy);
+      setRuns(summary.runs);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
     } finally {

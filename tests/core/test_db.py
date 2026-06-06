@@ -28,6 +28,7 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "strategy_snapshots",
             "strategy_snapshot_stocks",
             "strategy_snapshot_returns",
+            "view_cache",
         } <= tables
         assert applied_migrations(conn) == {
             "001_init_messages",
@@ -41,6 +42,7 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "009_recommendation_backtest",
             "010_recommendation_identity_sector",
             "011_strategy_snapshots",
+            "012_view_cache",
         }
     finally:
         conn.close()
@@ -72,7 +74,7 @@ def test_migrations_are_idempotent(tmp_path):
         migrate_message_db(conn)
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 11
+        assert count == 12
     finally:
         conn.close()
 

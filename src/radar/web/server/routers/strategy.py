@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from radar.core.config import RadarConfig
 from radar.core.usecases.strategy import build_strategy_dashboard, save_cached_strategy_snapshot, summarize_strategy_validation
+from radar.core.view_cache import cached_model, cache_key, strategy_dependency_key, strategy_validation_dependency_key
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     DerivedJobResponse,
@@ -26,10 +27,18 @@ def strategy_opportunities(
     config: RadarConfig = Depends(get_config),
 ) -> StrategyDashboardResponse:
     try:
-        result = build_strategy_dashboard(config, days=days, recent_days=recent_days, limit=limit)
+        result = cached_model(
+            config.database_path,
+            key=cache_key("strategy.opportunities", {"days": days, "recent_days": recent_days, "limit": limit}),
+            dependency_key=strategy_dependency_key(config),
+            model_type=StrategyDashboardResponse,
+            compute=lambda: StrategyDashboardResponse(
+                **build_strategy_dashboard(config, days=days, recent_days=recent_days, limit=limit).model_dump()
+            ),
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return StrategyDashboardResponse(**result.model_dump())
+    return result
 
 
 @router.get("/validation", response_model=StrategyValidationResponse)
@@ -39,13 +48,23 @@ def strategy_validation(
     source_limit: int = Query(default=8, ge=1, le=30),
     config: RadarConfig = Depends(get_config),
 ) -> StrategyValidationResponse:
-    result = summarize_strategy_validation(
-        config,
-        window_days=window_days,
-        benchmark_ts_code=benchmark,
-        source_limit=source_limit,
+    return cached_model(
+        config.database_path,
+        key=cache_key(
+            "strategy.validation",
+            {"window_days": window_days, "benchmark": benchmark, "source_limit": source_limit},
+        ),
+        dependency_key=strategy_validation_dependency_key(config),
+        model_type=StrategyValidationResponse,
+        compute=lambda: StrategyValidationResponse(
+            **summarize_strategy_validation(
+                config,
+                window_days=window_days,
+                benchmark_ts_code=benchmark,
+                source_limit=source_limit,
+            ).model_dump()
+        ),
     )
-    return StrategyValidationResponse(**result.model_dump())
 
 
 @router.post("/snapshots", response_model=StrategySnapshotSaveResponse)
