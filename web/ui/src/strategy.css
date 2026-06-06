@@ -256,6 +256,31 @@
   font-weight: 600;
 }
 
+.strategy-credibility {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  color: var(--color-ink-subtle);
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.strategy-credibility-高可信 {
+  border-color: color-mix(in srgb, var(--color-market-up) 48%, var(--color-hairline));
+  color: var(--color-market-up);
+}
+
+.strategy-credibility-中可信,
+.strategy-credibility-待验证 {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 35%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+
+.strategy-credibility-低可信 {
+  border-color: color-mix(in srgb, var(--color-market-down) 45%, var(--color-hairline));
+  color: var(--color-market-down);
+}
+
 .strategy-stock-state-初现 {
   border-color: color-mix(in srgb, var(--color-market-up) 45%, var(--color-hairline));
   color: var(--color-market-up);

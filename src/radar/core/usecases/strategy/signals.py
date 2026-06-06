@@ -7,6 +7,10 @@ from datetime import datetime, timedelta
 from radar.core.config import RadarConfig
 from radar.core.db import migrate_market_db
 from radar.core.store import connect, init_db
+from radar.core.usecases.strategy.credibility import (
+    annotate_related_stock_credibility,
+    annotate_stock_candidate_credibility,
+)
 from radar.core.usecases.strategy.lifecycle import annotate_related_stock_lifecycle, annotate_stock_candidate_lifecycle
 from radar.core.usecases.strategy.details import (
     backtest_metrics_for_anchors,
@@ -159,6 +163,12 @@ def build_strategy_dashboard_from_conn(
         limit_per_anchor=5,
     )
     related_by_anchor = annotate_related_stock_lifecycle(market_conn, related_by_anchor, as_of=end_time)
+    related_by_anchor = annotate_related_stock_credibility(
+        conn,
+        related_by_anchor,
+        start_time=start_time,
+        end_time=end_time,
+    )
     backtest_by_anchor = backtest_metrics_for_anchors(
         conn,
         shortlisted,
@@ -182,6 +192,7 @@ def build_strategy_dashboard_from_conn(
     opportunities.sort(key=lambda item: (item.score, item.reliability_score, item.recent_message_count), reverse=True)
     stock_pool = stock_candidates(conn, start_time=start_time, end_time=end_time, limit=12)
     stock_pool = annotate_stock_candidate_lifecycle(market_conn, stock_pool, as_of=end_time)
+    stock_pool = annotate_stock_candidate_credibility(conn, stock_pool, start_time=start_time, end_time=end_time)
     return StrategyDashboard(
         start_time=start_time,
         end_time=end_time,

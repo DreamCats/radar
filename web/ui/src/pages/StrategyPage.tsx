@@ -6,7 +6,13 @@ import { fetchStrategyOpportunities } from "../api/radarApi";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
 import { formatTime } from "../lib/datetime";
-import type { StrategyDashboard, StrategyOpportunity, StrategySourceSignal, StrategyStockCandidate } from "../types";
+import type {
+  StrategyDashboard,
+  StrategyOpportunity,
+  StrategyRelatedStock,
+  StrategySourceSignal,
+  StrategyStockCandidate,
+} from "../types";
 
 export function StrategyPage() {
   const [data, setData] = useState<StrategyDashboard | null>(null);
@@ -149,12 +155,23 @@ function OpportunityCard({ item }: { item: StrategyOpportunity }) {
                       {stock.price_position}
                     </span>
                   )}
+                  {stock.event_credibility && (
+                    <span className={credibilityClass(stock.event_credibility.level)}>
+                      {stock.event_credibility.level}
+                    </span>
+                  )}
                 </div>
-                <em>T+5 {formatPercent(stock.average_excess_return_t5, true)}</em>
+                <em>实时 {stock.realtime_score.toFixed(0)} · T+5 {formatPercent(stock.average_excess_return_t5, true)}</em>
                 <small>
                   首现后 {formatPercent(stock.price_return_since_first_seen, true)}
                   {stock.signal_age_days !== undefined && stock.signal_age_days !== null ? ` · ${stock.signal_age_days}天` : ""}
                 </small>
+                {stock.event_credibility?.first_source_name && (
+                  <small>
+                    首提 {stock.event_credibility.first_source_name}
+                    {stock.event_credibility.risks[0] ? ` · ${stock.event_credibility.risks[0]}` : ""}
+                  </small>
+                )}
                 {stock.lifecycle_reason && <small>{stock.lifecycle_reason}</small>}
               </article>
             ))}
@@ -225,11 +242,20 @@ function StockRow({ item }: { item: StrategyStockCandidate }) {
             {item.price_position}
           </span>
         )}
+        {item.event_credibility && (
+          <span className={credibilityClass(item.event_credibility.level)}>{item.event_credibility.level}</span>
+        )}
       </div>
       <span>
-        {item.source_count} 来源 · {item.event_count} 事件 · 首现后 {formatPercent(item.price_return_since_first_seen, true)}
+        实时 {item.realtime_score.toFixed(0)} · {item.source_count} 来源 · {item.event_count} 事件
       </span>
       <em>T+5 {formatPercent(item.average_excess_return_t5, true)}</em>
+      {item.event_credibility?.first_source_name && (
+        <small>
+          首提 {item.event_credibility.first_source_name}
+          {item.event_credibility.reasons[0] ? ` · ${item.event_credibility.reasons[0]}` : ""}
+        </small>
+      )}
       {item.lifecycle_reason && <small>{item.lifecycle_reason}</small>}
     </article>
   );
@@ -247,6 +273,10 @@ function Metric(props: { label: string; value: number | string; detail: string }
 
 function levelClass(level: StrategyOpportunity["attention_level"]): string {
   return `strategy-level strategy-level-${level}`;
+}
+
+function credibilityClass(level: NonNullable<StrategyRelatedStock["event_credibility"]>["level"]): string {
+  return `strategy-credibility strategy-credibility-${level}`;
 }
 
 function formatPercent(value?: number | null, signed = false): string {

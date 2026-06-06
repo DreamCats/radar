@@ -192,6 +192,65 @@ def test_strategy_marks_fermenting_stock_price_position(tmp_path: Path):
     assert stock.price_return_since_first_seen == 0.12
 
 
+def test_strategy_scores_event_credibility_from_first_event(tmp_path: Path):
+    config = _config(tmp_path)
+    messages = [
+        _message("m1", "2026-06-01T10:00:00", "MLCC 涨价 订单 扩产 客户突破 商络电子"),
+        _message("m2", "2026-06-02T10:00:00", "MLCC 放量 供不应求 商络电子"),
+        _message("m3", "2026-06-05T10:00:00", "MLCC 业绩 预期差 商络电子"),
+    ]
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, messages)
+        upsert_message_classifications(conn, [_classification(message, "recommendation", 0.9) for message in messages])
+        replace_message_anchors(
+            conn,
+            message_ids=[message.message_id for message in messages],
+            anchors=[_anchor(message, "MLCC") for message in messages],
+            trade_date="20260605",
+            extractor_version="test-anchor",
+        )
+        for index, message in enumerate(messages, start=1):
+            _insert_backtest_event(
+                conn,
+                message,
+                index=index,
+                excess_return=0.08,
+                stock_name="商络电子",
+                ts_code="300975.SZ",
+                source_name="强逻辑来源",
+            )
+    finally:
+        conn.close()
+
+    market_conn = connect(config.market_database_path)
+    try:
+        migrate_market_db(market_conn)
+        _insert_daily_close(market_conn, "300975.SZ", "20260601", 10)
+        _insert_daily_close(market_conn, "300975.SZ", "20260602", 10.4)
+        _insert_daily_close(market_conn, "300975.SZ", "20260603", 10.7)
+        _insert_daily_close(market_conn, "300975.SZ", "20260604", 10.9)
+        _insert_daily_close(market_conn, "300975.SZ", "20260605", 11.2)
+    finally:
+        market_conn.close()
+
+    dashboard = build_strategy_dashboard(config, days=30, recent_days=7, limit=5)
+    stock = dashboard.opportunities[0].related_stocks[0]
+
+    assert stock.stock_name == "商络电子"
+    assert stock.realtime_score >= 60
+    assert stock.event_credibility is not None
+    assert stock.event_credibility.level == "中可信"
+    assert stock.event_credibility.first_source_name == "强逻辑来源"
+    assert stock.event_credibility.logic_hit_count >= 4
+    assert "来源成熟样本不足" in stock.event_credibility.risks
+
+    candidate = dashboard.stock_candidates[0]
+    assert candidate.event_credibility is not None
+    assert candidate.event_credibility.first_source_name == "强逻辑来源"
+
+
 def _config(tmp_path: Path) -> RadarConfig:
     return RadarConfig(storage={"data_dir": tmp_path / "data", "database": tmp_path / "radar.sqlite3"})
 
@@ -248,6 +307,7 @@ def _insert_backtest_event(
     excess_return: float,
     stock_name: str | None = None,
     ts_code: str | None = None,
+    source_name: str | None = None,
 ) -> None:
     now = datetime.fromisoformat("2026-06-07T12:00:00")
     event_id = f"event-{index}"
@@ -265,7 +325,7 @@ def _insert_backtest_event(
             event_id,
             message.message_id,
             message.source,
-            f"source-{index}",
+            source_name or f"source-{index}",
             message.group_name,
             "recommendation",
             0.9,

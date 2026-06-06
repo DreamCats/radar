@@ -10,6 +10,23 @@ from radar.core.models import MessageAnchorType
 StrategyAttentionLevel = Literal["重点关注", "继续验证", "风险升高", "样本不足", "过度扩散"]
 StrategyStockLifecycleState = Literal["初现", "发酵中", "已兑现", "回调再看", "缺少价格"]
 StrategyStockPricePosition = Literal["趋势健康", "可观察", "震荡观察", "回撤偏大", "短线偏弱", "首现后走弱", "缺少价格"]
+StrategyEventCredibilityLevel = Literal["高可信", "中可信", "低可信", "待验证"]
+
+
+class StrategyEventCredibility(BaseModel):
+    score: float = 0.0
+    level: StrategyEventCredibilityLevel = "待验证"
+    first_source_name: str | None = None
+    first_group_name: str | None = None
+    first_event_time: datetime | None = None
+    first_message_stock_count: int = 0
+    source_matured_event_count: int = 0
+    source_win_rate_t5: float | None = None
+    source_average_excess_return_t5: float | None = None
+    logic_hit_count: int = 0
+    hype_hit_count: int = 0
+    reasons: list[str] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
 
 
 class StrategyRelatedStock(BaseModel):
@@ -28,6 +45,8 @@ class StrategyRelatedStock(BaseModel):
     recent_price_return_3d: float | None = None
     drawdown_from_high_since_first_seen: float | None = None
     price_position: StrategyStockPricePosition | None = None
+    realtime_score: float = 0.0
+    event_credibility: StrategyEventCredibility | None = None
 
 
 class StrategySourceSignal(BaseModel):
@@ -106,6 +125,8 @@ class StrategyStockCandidate(BaseModel):
     recent_price_return_3d: float | None = None
     drawdown_from_high_since_first_seen: float | None = None
     price_position: StrategyStockPricePosition | None = None
+    realtime_score: float = 0.0
+    event_credibility: StrategyEventCredibility | None = None
 
 
 class StrategyDashboard(BaseModel):
