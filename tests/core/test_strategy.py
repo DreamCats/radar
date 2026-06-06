@@ -9,6 +9,7 @@ from radar.core.db import migrate_market_db
 from radar.core.models import MessageAnchor, MessageClassification, RawMessage
 from radar.core.store import connect, init_db, replace_message_anchors, upsert_message_classifications, upsert_messages
 from radar.core.usecases.strategy import build_strategy_dashboard
+from radar.core.usecases.strategy.snapshots import backfill_strategy_snapshot_returns, save_strategy_snapshot
 
 
 def test_build_strategy_dashboard_ranks_anchor_breakout(tmp_path: Path):
@@ -252,6 +253,78 @@ def test_strategy_scores_event_credibility_from_first_event(tmp_path: Path):
     candidate = dashboard.stock_candidates[0]
     assert candidate.event_credibility is not None
     assert candidate.event_credibility.first_source_name == "强逻辑来源"
+
+
+def test_strategy_snapshot_persists_and_backfills_returns(tmp_path: Path):
+    config = _config(tmp_path)
+    messages = [
+        _message("m1", "2026-06-05T10:00:00", "MLCC 订单 扩产 厦门钨业"),
+        _message("m2", "2026-06-04T10:00:00", "MLCC 涨价 厦门钨业"),
+        _message("m3", "2026-06-03T10:00:00", "MLCC 放量 厦门钨业"),
+    ]
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, messages)
+        upsert_message_classifications(conn, [_classification(message, "recommendation", 0.9) for message in messages])
+        replace_message_anchors(
+            conn,
+            message_ids=[message.message_id for message in messages],
+            anchors=[_anchor(message, "MLCC") for message in messages],
+            trade_date="20260605",
+            extractor_version="test-anchor",
+        )
+        for index, message in enumerate(messages, start=1):
+            _insert_backtest_event(
+                conn,
+                message,
+                index=index,
+                excess_return=0.08,
+                stock_name="厦门钨业",
+                ts_code="600549.SH",
+                source_name="高可信来源",
+            )
+    finally:
+        conn.close()
+
+    market_conn = connect(config.market_database_path)
+    try:
+        migrate_market_db(market_conn)
+        for offset, close in enumerate([10, 10.5, 11, 12], start=5):
+            _insert_daily_close(market_conn, "600549.SH", f"2026060{offset}", close)
+            _insert_daily_close(market_conn, "000300.SH", f"2026060{offset}", 100 + offset)
+    finally:
+        market_conn.close()
+
+    saved = save_strategy_snapshot(config, days=30, recent_days=7, limit=5)
+    backfilled = backfill_strategy_snapshot_returns(config, windows=[3], snapshot_id=saved.snapshot_id)
+
+    assert saved.stock_count == 1
+    assert backfilled.refreshed_count == 1
+
+    conn = connect(config.database_path)
+    try:
+        stock_row = conn.execute(
+            "SELECT decision_bucket, stock_name FROM strategy_snapshot_stocks WHERE snapshot_id = ?",
+            (saved.snapshot_id,),
+        ).fetchone()
+        return_row = conn.execute(
+            """
+            SELECT status, return_rate, excess_return_rate, max_drawdown_rate
+            FROM strategy_snapshot_returns
+            WHERE snapshot_id = ? AND ts_code = '600549.SH' AND window_days = 3
+            """,
+            (saved.snapshot_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    assert stock_row["stock_name"] == "厦门钨业"
+    assert stock_row["decision_bucket"] in {"今日可关注", "观察等待", "已兑现复盘"}
+    assert return_row["status"] == "succeeded"
+    assert round(return_row["return_rate"], 4) == 0.2
+    assert return_row["excess_return_rate"] > 0
+    assert return_row["max_drawdown_rate"] == 0
 
 
 def _config(tmp_path: Path) -> RadarConfig:
