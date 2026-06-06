@@ -2,6 +2,7 @@ export type StrategyAttentionLevel = "重点关注" | "继续验证" | "风险�
 export type StrategyStockLifecycleState = "初现" | "发酵中" | "已兑现" | "回调再看" | "缺少价格";
 export type StrategyStockPricePosition = "趋势健康" | "可观察" | "震荡观察" | "回撤偏大" | "短线偏弱" | "首现后走弱" | "缺少价格";
 export type StrategyEventCredibilityLevel = "高可信" | "中可信" | "低可信" | "待验证";
+export type StrategyStockDecisionBucket = "今日可关注" | "观察等待" | "已兑现复盘";
 
 export type StrategyEventCredibility = {
   score: number;
@@ -37,6 +38,8 @@ export type StrategyRelatedStock = {
   price_position?: StrategyStockPricePosition | null;
   realtime_score: number;
   event_credibility?: StrategyEventCredibility | null;
+  decision_bucket: StrategyStockDecisionBucket;
+  decision_reason?: string | null;
 };
 
 export type StrategySourceSignal = {
@@ -117,6 +120,8 @@ export type StrategyStockCandidate = {
   price_position?: StrategyStockPricePosition | null;
   realtime_score: number;
   event_credibility?: StrategyEventCredibility | null;
+  decision_bucket: StrategyStockDecisionBucket;
+  decision_reason?: string | null;
 };
 
 export type StrategyDashboard = {

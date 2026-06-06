@@ -128,6 +128,7 @@ def test_strategy_marks_related_stock_lifecycle_from_market_prices(tmp_path: Pat
 
     assert stock.stock_name == "风华高科"
     assert stock.lifecycle_state == "已兑现"
+    assert stock.decision_bucket == "已兑现复盘"
     assert stock.price_position == "趋势健康"
     assert stock.first_seen_time == datetime.fromisoformat("2026-06-01T10:00:00")
     assert stock.price_return_since_first_seen == 0.3
@@ -137,6 +138,7 @@ def test_strategy_marks_related_stock_lifecycle_from_market_prices(tmp_path: Pat
     candidate = dashboard.stock_candidates[0]
     assert candidate.stock_name == "风华高科"
     assert candidate.lifecycle_state == "已兑现"
+    assert candidate.decision_bucket == "已兑现复盘"
     assert candidate.price_position == "趋势健康"
     assert candidate.price_return_since_first_seen == 0.3
 
@@ -240,6 +242,7 @@ def test_strategy_scores_event_credibility_from_first_event(tmp_path: Path):
 
     assert stock.stock_name == "商络电子"
     assert stock.realtime_score >= 60
+    assert stock.decision_bucket == "今日可关注"
     assert stock.event_credibility is not None
     assert stock.event_credibility.level == "中可信"
     assert stock.event_credibility.first_source_name == "强逻辑来源"

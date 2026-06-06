@@ -11,6 +11,11 @@ from radar.core.usecases.strategy.credibility import (
     annotate_related_stock_credibility,
     annotate_stock_candidate_credibility,
 )
+from radar.core.usecases.strategy.decision import (
+    annotate_related_stock_decisions,
+    annotate_stock_candidate_decisions,
+    select_decision_stock_pool,
+)
 from radar.core.usecases.strategy.lifecycle import annotate_related_stock_lifecycle, annotate_stock_candidate_lifecycle
 from radar.core.usecases.strategy.details import (
     backtest_metrics_for_anchors,
@@ -169,6 +174,7 @@ def build_strategy_dashboard_from_conn(
         start_time=start_time,
         end_time=end_time,
     )
+    related_by_anchor = annotate_related_stock_decisions(related_by_anchor)
     backtest_by_anchor = backtest_metrics_for_anchors(
         conn,
         shortlisted,
@@ -190,9 +196,12 @@ def build_strategy_dashboard_from_conn(
         for stats in shortlisted
     ]
     opportunities.sort(key=lambda item: (item.score, item.reliability_score, item.recent_message_count), reverse=True)
-    stock_pool = stock_candidates(conn, start_time=start_time, end_time=end_time, limit=12)
+    stock_pool_limit = 12
+    stock_pool = stock_candidates(conn, start_time=start_time, end_time=end_time, limit=max(stock_pool_limit * 8, 80))
     stock_pool = annotate_stock_candidate_lifecycle(market_conn, stock_pool, as_of=end_time)
     stock_pool = annotate_stock_candidate_credibility(conn, stock_pool, start_time=start_time, end_time=end_time)
+    stock_pool = annotate_stock_candidate_decisions(stock_pool)
+    stock_pool = select_decision_stock_pool(stock_pool, limit=stock_pool_limit)
     return StrategyDashboard(
         start_time=start_time,
         end_time=end_time,

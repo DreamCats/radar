@@ -38,6 +38,8 @@ export function StrategyPage() {
   const opportunities = data?.opportunities ?? [];
   const focusCount = opportunities.filter((item) => item.attention_level === "重点关注").length;
   const riskCount = opportunities.filter((item) => item.attention_level === "风险升高").length;
+  const stockGroups = groupStocksByDecision(data?.stock_candidates ?? []);
+  const actionableStockCount = stockGroups[0].items.length;
   const initialLoading = loading && !data;
 
   return (
@@ -58,8 +60,8 @@ export function StrategyPage() {
       <div className="statbar metric-grid">
         <Metric label="机会候选" value={data?.opportunity_count ?? 0} detail="近 30 天派生信号" />
         <Metric label="重点关注" value={focusCount} detail="高分且可靠性足够" />
+        <Metric label="今日可看" value={actionableStockCount} detail="未过热的股票信号" />
         <Metric label="风险升高" value={riskCount} detail="反证或风险词偏高" />
-        <Metric label="更新时间" value={data ? formatTime(data.generated_at).slice(5, 16) : "-"} detail="本地只读聚合" />
       </div>
       {error && <p className="error-line">{error}</p>}
       <div className="strategy-grid">
@@ -83,10 +85,10 @@ export function StrategyPage() {
             </div>
           </section>
           <section className="panel">
-            <PanelTitle title="优质股票池" meta="回测事件聚合 · 非买入建议" />
-            <div className="strategy-compact-list">
-              {(data?.stock_candidates ?? []).map((item) => (
-                <StockRow item={item} key={item.ts_code} />
+            <PanelTitle title="决策股票池" meta="按可操作性分层 · 非买入建议" />
+            <div className="strategy-stock-groups">
+              {stockGroups.map((group) => (
+                <DecisionStockGroup group={group} key={group.bucket} />
               ))}
             </div>
           </section>
@@ -145,6 +147,7 @@ function OpportunityCard({ item }: { item: StrategyOpportunity }) {
               <article className="strategy-stock-pill" key={stock.ts_code}>
                 <div>
                   <strong>{stock.stock_name}</strong>
+                  <span className={decisionClass(stock.decision_bucket)}>{stock.decision_bucket}</span>
                   {stock.lifecycle_state && (
                     <span className={`strategy-stock-state strategy-stock-state-${stock.lifecycle_state}`}>
                       {stock.lifecycle_state}
@@ -172,6 +175,7 @@ function OpportunityCard({ item }: { item: StrategyOpportunity }) {
                     {stock.event_credibility.risks[0] ? ` · ${stock.event_credibility.risks[0]}` : ""}
                   </small>
                 )}
+                {stock.decision_reason && <small>{stock.decision_reason}</small>}
                 {stock.lifecycle_reason && <small>{stock.lifecycle_reason}</small>}
               </article>
             ))}
@@ -232,6 +236,7 @@ function StockRow({ item }: { item: StrategyStockCandidate }) {
     <article className="strategy-compact-row stock">
       <div className="strategy-compact-main">
         <strong>{item.stock_name}</strong>
+        <span className={decisionClass(item.decision_bucket)}>{item.decision_bucket}</span>
         {item.lifecycle_state && (
           <span className={`strategy-stock-state strategy-stock-state-${item.lifecycle_state}`}>
             {item.lifecycle_state}
@@ -256,8 +261,37 @@ function StockRow({ item }: { item: StrategyStockCandidate }) {
           {item.event_credibility.reasons[0] ? ` · ${item.event_credibility.reasons[0]}` : ""}
         </small>
       )}
+      {item.decision_reason && <small>{item.decision_reason}</small>}
       {item.lifecycle_reason && <small>{item.lifecycle_reason}</small>}
     </article>
+  );
+}
+
+type StockDecisionGroup = {
+  bucket: StrategyStockCandidate["decision_bucket"];
+  meta: string;
+  items: StrategyStockCandidate[];
+};
+
+function DecisionStockGroup({ group }: { group: StockDecisionGroup }) {
+  return (
+    <section className="strategy-stock-group">
+      <div className="strategy-stock-group-head">
+        <strong>{group.bucket}</strong>
+        <span>
+          {group.items.length} 个 · {group.meta}
+        </span>
+      </div>
+      {group.items.length ? (
+        <div className="strategy-compact-list">
+          {group.items.map((item) => (
+            <StockRow item={item} key={item.ts_code} />
+          ))}
+        </div>
+      ) : (
+        <p className="strategy-stock-group-empty">暂无</p>
+      )}
+    </section>
   );
 }
 
@@ -277,6 +311,30 @@ function levelClass(level: StrategyOpportunity["attention_level"]): string {
 
 function credibilityClass(level: NonNullable<StrategyRelatedStock["event_credibility"]>["level"]): string {
   return `strategy-credibility strategy-credibility-${level}`;
+}
+
+function decisionClass(bucket: StrategyRelatedStock["decision_bucket"]): string {
+  return `strategy-decision strategy-decision-${bucket}`;
+}
+
+function groupStocksByDecision(stocks: StrategyStockCandidate[]): StockDecisionGroup[] {
+  return [
+    {
+      bucket: "今日可关注",
+      meta: "发酵中/初现，位置未过热",
+      items: stocks.filter((item) => item.decision_bucket === "今日可关注"),
+    },
+    {
+      bucket: "观察等待",
+      meta: "逻辑或价格还需确认",
+      items: stocks.filter((item) => item.decision_bucket === "观察等待"),
+    },
+    {
+      bucket: "已兑现复盘",
+      meta: "不追高，用来验证来源",
+      items: stocks.filter((item) => item.decision_bucket === "已兑现复盘"),
+    },
+  ];
 }
 
 function formatPercent(value?: number | null, signed = false): string {

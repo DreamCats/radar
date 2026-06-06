@@ -11,6 +11,7 @@ StrategyAttentionLevel = Literal["重点关注", "继续验证", "风险升高",
 StrategyStockLifecycleState = Literal["初现", "发酵中", "已兑现", "回调再看", "缺少价格"]
 StrategyStockPricePosition = Literal["趋势健康", "可观察", "震荡观察", "回撤偏大", "短线偏弱", "首现后走弱", "缺少价格"]
 StrategyEventCredibilityLevel = Literal["高可信", "中可信", "低可信", "待验证"]
+StrategyStockDecisionBucket = Literal["今日可关注", "观察等待", "已兑现复盘"]
 
 
 class StrategyEventCredibility(BaseModel):
@@ -47,6 +48,8 @@ class StrategyRelatedStock(BaseModel):
     price_position: StrategyStockPricePosition | None = None
     realtime_score: float = 0.0
     event_credibility: StrategyEventCredibility | None = None
+    decision_bucket: StrategyStockDecisionBucket = "观察等待"
+    decision_reason: str | None = None
 
 
 class StrategySourceSignal(BaseModel):
@@ -127,6 +130,8 @@ class StrategyStockCandidate(BaseModel):
     price_position: StrategyStockPricePosition | None = None
     realtime_score: float = 0.0
     event_credibility: StrategyEventCredibility | None = None
+    decision_bucket: StrategyStockDecisionBucket = "观察等待"
+    decision_reason: str | None = None
 
 
 class StrategyDashboard(BaseModel):
