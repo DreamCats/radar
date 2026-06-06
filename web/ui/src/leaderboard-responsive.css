@@ -1,0 +1,43 @@
+@media (max-width: 1120px) {
+  .leaderboard-dimensions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .leaderboard-workspace {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .leaderboard-list-panel,
+  .leaderboard-detail-panel {
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 760px) {
+  .leaderboard-page {
+    overflow: auto;
+  }
+
+  .leaderboard-header,
+  .leaderboard-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .leaderboard-header {
+    display: grid;
+    align-items: start;
+  }
+
+  .leaderboard-toolbar,
+  .leaderboard-metrics,
+  .leaderboard-dimensions,
+  .leaderboard-window-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .leaderboard-window {
+    width: fit-content;
+    max-width: 100%;
+  }
+}

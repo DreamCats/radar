@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { Blocks, Building2, CalendarDays, CircleUserRound, RefreshCw, Search, Trophy, UsersRound } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { fetchRecommendationBacktestSummary } from "../api/radarApi";
 import { DateField, SelectField } from "../components/FormFields";
 import { PanelTitle } from "../components/PanelTitle";
 import { toIso } from "../lib/datetime";
+import { panelMotionState } from "../lib/motion";
 import { buildPresetRange, rangeLabel, RANGE_PRESETS, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
 import type { BacktestGroupBy, IngestSource, RecommendationBacktestSummary, RecommendationBacktestSummaryRow } from "../types";
 
@@ -34,6 +36,8 @@ const emptySummary: RecommendationBacktestSummary = {
 };
 
 export function LeaderboardPage() {
+  const shouldReduceMotion = useReducedMotion();
+  const requestIdRef = useRef(0);
   const [range, setRange] = useState<LocalRange>(() => buildPresetRange("last30d"));
   const [preset, setPreset] = useState<RangePreset>("last30d");
   const [source, setSource] = useState<IngestSource>("all");
@@ -54,6 +58,8 @@ export function LeaderboardPage() {
       setError("请选择有效的开始和结束时间。");
       return;
     }
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
     setLoading(true);
     setError(null);
     try {
@@ -76,6 +82,9 @@ export function LeaderboardPage() {
           limit: 200,
         }),
       ]);
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
       setSummary(nextSummary);
       setOverview(nextOverview);
       setSelectedKey((current) => {
@@ -85,9 +94,13 @@ export function LeaderboardPage() {
         return nextSummary.rows[0]?.key ?? null;
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "榜单加载失败");
+      if (requestId === requestIdRef.current) {
+        setError(err instanceof Error ? err.message : "榜单加载失败");
+      }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -100,11 +113,25 @@ export function LeaderboardPage() {
     [summary.rows, selectedKey],
   );
   const metrics = useMemo(() => buildOverviewMetrics(overview), [overview]);
-  const activeDimension = DIMENSIONS.find((item) => item.key === dimension) ?? DIMENSIONS[0];
+  const displayedDimension = isDimension(summary.group_by) ? summary.group_by : dimension;
+  const activeDimension = DIMENSIONS.find((item) => item.key === displayedDimension) ?? DIMENSIONS[0];
+  const requestedDimension = DIMENSIONS.find((item) => item.key === dimension) ?? DIMENSIONS[0];
+  const loadingLabel = loading && dimension !== displayedDimension ? `正在切换到 ${requestedDimension.label}` : "正在刷新榜单";
+  const panelMotion = panelMotionState(shouldReduceMotion);
+  const listKey = `${summary.group_by}:${summary.start_time}:${summary.end_time}:${summary.row_count}`;
+  const rowTransition = shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const };
 
   function applyPreset(value: RangePreset) {
     setPreset(value);
     setRange(buildPresetRange(value));
+  }
+
+  function selectDimension(nextDimension: Dimension) {
+    if (nextDimension !== dimension) {
+      setLoading(true);
+      setError(null);
+    }
+    setDimension(nextDimension);
   }
 
   function updateDateTime(target: "start" | "end", value: string) {
@@ -117,11 +144,11 @@ export function LeaderboardPage() {
   }
 
   return (
-    <section className="leaderboard-page">
+    <section className={loading ? "leaderboard-page loading" : "leaderboard-page"}>
       <div className="leaderboard-header">
         <PanelTitle title="推荐胜率榜" meta="已成熟 T+N 窗口">
           <button className="btn btn-sm" type="button" onClick={() => void load()} disabled={loading} title="刷新榜单">
-            <RefreshCw size={15} />
+            <RefreshCw className="leaderboard-refresh-icon" size={15} />
             刷新
           </button>
         </PanelTitle>
@@ -180,12 +207,14 @@ export function LeaderboardPage() {
       <div className="leaderboard-dimensions" aria-label="榜单维度">
         {DIMENSIONS.map((item) => {
           const Icon = item.icon;
+          const dimensionIndex = DIMENSIONS.findIndex((dimensionItem) => dimensionItem.key === item.key);
           return (
             <button
               className={dimension === item.key ? "leaderboard-dimension active" : "leaderboard-dimension"}
               key={item.key}
               type="button"
-              onClick={() => setDimension(item.key)}
+              onClick={() => selectDimension(item.key)}
+              style={{ "--dimension-index": dimensionIndex } as CSSProperties}
             >
               <Icon size={15} />
               <span>{item.label}</span>
@@ -197,54 +226,114 @@ export function LeaderboardPage() {
 
       {error && <p className="error-line">{error}</p>}
 
-      <div className="leaderboard-workspace">
-        <section className="content-panel leaderboard-list-panel">
+      <motion.div className="leaderboard-workspace" layout transition={rowTransition}>
+        <motion.section className="content-panel leaderboard-list-panel" layout transition={rowTransition}>
           <PanelTitle title={activeDimension.label} meta={loading ? "加载中" : `${summary.row_count} 组`} />
           <div className="leaderboard-list">
-            {summary.rows.map((row, index) => (
-              <button
-                className={selected?.key === row.key ? "leaderboard-row active" : "leaderboard-row"}
-                key={row.key}
-                type="button"
-                onClick={() => setSelectedKey(row.key)}
+            <AnimatePresence initial={false} mode="popLayout">
+              <motion.div
+                animate={panelMotion.animate}
+                className="leaderboard-list-motion"
+                exit={panelMotion.exit}
+                initial={panelMotion.initial}
+                key={listKey}
+                transition={panelMotion.transition}
               >
-                <span className="leaderboard-rank">{index + 1}</span>
-                <span className="leaderboard-row-main">
-                  <strong>{rowTitle(row, dimension)}</strong>
-                  <em>{rowSubtitle(row, dimension)}</em>
-                </span>
-                <span className="leaderboard-row-side">
-                  <strong>{formatPercent(metric(row, "win_rate_t5"))}</strong>
-                  <em>{sampleLabel(row, 5)}</em>
-                </span>
-              </button>
-            ))}
-            {!loading && summary.rows.length === 0 && <p className="empty-line">暂无已成熟回测结果。先在作业页执行推荐回测补齐。</p>}
+                {summary.rows.map((row, index) => (
+                  <motion.button
+                    animate={{ opacity: 1, x: 0 }}
+                    className={selected?.key === row.key ? "leaderboard-row active" : "leaderboard-row"}
+                    exit={{ opacity: 0, x: -8 }}
+                    initial={{ opacity: 0, x: shouldReduceMotion ? 0 : -8 }}
+                    key={row.key}
+                    layout
+                    transition={rowTransition}
+                    type="button"
+                    onClick={() => setSelectedKey(row.key)}
+                    style={{ "--row-index": Math.min(index, 12) } as CSSProperties}
+                  >
+                    <span className="leaderboard-rank">{index + 1}</span>
+                    <span className="leaderboard-row-main">
+                      <strong>{rowTitle(row, displayedDimension)}</strong>
+                      <em>{rowSubtitle(row, displayedDimension)}</em>
+                    </span>
+                    <span className="leaderboard-row-side">
+                      <strong>{formatPercent(metric(row, "win_rate_t5"))}</strong>
+                      <em>{sampleLabel(row, 5)}</em>
+                    </span>
+                  </motion.button>
+                ))}
+                {!loading && summary.rows.length === 0 && <p className="empty-line">暂无已成熟回测结果。先在作业页执行推荐回测补齐。</p>}
+              </motion.div>
+            </AnimatePresence>
           </div>
-        </section>
+          <AnimatePresence initial={false}>{loading && <LoadingOverlay label={loadingLabel} />}</AnimatePresence>
+        </motion.section>
 
-        <section className="content-panel leaderboard-detail-panel">
-          <PanelTitle title={selected ? rowTitle(selected, dimension) : "画像详情"} meta={selected ? confidenceLabel(selected) : "未选择"} />
-          {selected ? (
-            <>
-              <div className="leaderboard-detail-tags">
-                {detailTags(selected).map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
-              <div className="leaderboard-window-grid">
-                {summary.windows.map((window) => (
-                  <WindowCard key={window} row={selected} window={window} />
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="empty-line">选择一个榜单项查看 T+N 表现。</p>
-          )}
-        </section>
-      </div>
+        <motion.section className="content-panel leaderboard-detail-panel" layout transition={rowTransition}>
+          <PanelTitle title={selected ? rowTitle(selected, displayedDimension) : "画像详情"} meta={selected ? confidenceLabel(selected) : "未选择"} />
+          <AnimatePresence initial={false} mode="wait">
+            {selected ? (
+              <motion.div
+                animate={panelMotion.animate}
+                className="leaderboard-detail-body"
+                exit={panelMotion.exit}
+                initial={panelMotion.initial}
+                key={`${displayedDimension}:${selected.key}`}
+                layout
+                transition={panelMotion.transition}
+              >
+                <div className="leaderboard-detail-tags">
+                  {detailTags(selected).map((tag) => (
+                    <span key={tag}>{tag}</span>
+                  ))}
+                </div>
+                <div className="leaderboard-window-grid">
+                  {summary.windows.map((window) => (
+                    <WindowCard key={window} row={selected} window={window} />
+                  ))}
+                </div>
+              </motion.div>
+            ) : (
+              <motion.p
+                animate={panelMotion.animate}
+                className="empty-line"
+                exit={panelMotion.exit}
+                initial={panelMotion.initial}
+                key="empty-detail"
+                transition={panelMotion.transition}
+              >
+                选择一个榜单项查看 T+N 表现。
+              </motion.p>
+            )}
+          </AnimatePresence>
+          <AnimatePresence initial={false}>{loading && <LoadingOverlay label={loadingLabel} />}</AnimatePresence>
+        </motion.section>
+      </motion.div>
     </section>
   );
+}
+
+function LoadingOverlay(props: { label: string }) {
+  return (
+    <motion.div
+      animate={{ opacity: 1, y: 0 }}
+      className="leaderboard-loading-overlay"
+      exit={{ opacity: 0, y: -4 }}
+      initial={{ opacity: 0, y: -4 }}
+      transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <span className="leaderboard-loading-pill">
+        <i aria-hidden="true" />
+        {props.label}
+      </span>
+      <span className="leaderboard-loading-bar" aria-hidden="true" />
+    </motion.div>
+  );
+}
+
+function isDimension(value: BacktestGroupBy): value is Dimension {
+  return DIMENSIONS.some((item) => item.key === value);
 }
 
 function Metric(props: { label: string; value: number | string; detail: string; tone?: number | null }) {

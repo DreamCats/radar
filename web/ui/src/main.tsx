@@ -7,6 +7,8 @@ import "./dashboard.css";
 import "./ingest.css";
 import "./job-center.css";
 import "./leaderboard.css";
+import "./leaderboard-motion.css";
+import "./leaderboard-responsive.css";
 import "./messages.css";
 import "./organize.css";
 import "./organize-aggregate.css";
