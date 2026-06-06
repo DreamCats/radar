@@ -74,6 +74,7 @@ class MarketConfig(BaseModel):
     secret_ref: str | None = None
     api_url: str = "http://api.tushare.pro"
     timeout: float = 30.0
+    request_delay_ms: int = Field(default=150, ge=0)
     database: Path | None = None
 
     @model_validator(mode="before")
@@ -208,6 +209,10 @@ def _apply_env_overrides(config: RadarConfig) -> RadarConfig:
     tushare_api_url = os.getenv("RADAR_TUSHARE_API_URL")
     if tushare_api_url:
         config.market.api_url = tushare_api_url
+
+    request_delay_ms = os.getenv("RADAR_TUSHARE_REQUEST_DELAY_MS")
+    if request_delay_ms:
+        config.market.request_delay_ms = int(request_delay_ms)
 
     market_database = os.getenv("RADAR_MARKET_DATABASE")
     if market_database:

@@ -1,6 +1,6 @@
 import type { IngestSource, RunItem } from "../types";
 
-export type JobTemplateKey = "ingest" | "classify" | "anchor" | "refine";
+export type JobTemplateKey = "ingest" | "classify" | "anchor" | "refine" | "backtest";
 
 export type TrackedJob = {
   kind: JobTemplateKey;
@@ -14,6 +14,7 @@ const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   message_classify_range: "classify",
   message_anchor_range: "anchor",
   aggregate_refine: "refine",
+  recommendation_backtest_refresh: "backtest",
 };
 
 const SOURCE_LABELS: Record<IngestSource, string> = {

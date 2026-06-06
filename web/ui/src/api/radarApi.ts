@@ -22,6 +22,8 @@ import type {
   OrganizeClassificationQuery,
   OrganizeEvidencePage,
   OrganizeEvidenceQuery,
+  RecommendationBacktestRequest,
+  RecommendationBacktestSummary,
   RunItem,
 } from "../types";
 
@@ -78,6 +80,17 @@ export async function fetchAggregateRefineResults(): Promise<AggregateRefineResu
   return data.items;
 }
 
+export async function fetchRecommendationBacktestSummary(query: {
+  start_time: string;
+  end_time: string;
+  source?: string;
+  group_by?: string;
+  min_count?: number;
+  limit?: number;
+}): Promise<RecommendationBacktestSummary> {
+  return getJson(`/api/recommendation/backtest/summary?${params(query)}`);
+}
+
 export async function ingestWechat(request: IngestRequest): Promise<IngestResultItem[]> {
   const response = await fetch(`${apiBase}/api/ingest/wechat`, {
     method: "POST",
@@ -132,6 +145,19 @@ export async function startAnchorMessagesJob(request: AnchorRequest): Promise<De
 
 export async function startAggregateRefineJob(request: AggregateRefineRequest): Promise<DerivedJobItem[]> {
   const response = await fetch(`${apiBase}/api/aggregate/refine/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: DerivedJobItem[] };
+  return data.items;
+}
+
+export async function startRecommendationBacktestJob(request: RecommendationBacktestRequest): Promise<DerivedJobItem[]> {
+  const response = await fetch(`${apiBase}/api/recommendation/backtest/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

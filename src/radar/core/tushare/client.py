@@ -25,6 +25,7 @@ def resolve_provider(config: RadarConfig) -> RuntimeTushareProvider:
         api_url=config.market.api_url,
         token=secret.token,
         timeout=config.market.timeout,
+        request_delay_ms=config.market.request_delay_ms,
         database=config.market_database_path,
     )
 

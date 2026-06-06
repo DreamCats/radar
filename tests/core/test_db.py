@@ -21,6 +21,10 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "message_anchors",
             "message_anchor_status",
             "aggregate_refine_results",
+            "recommendation_events",
+            "recommendation_backtest_windows",
+            "analysts",
+            "analyst_aliases",
         } <= tables
         assert applied_migrations(conn) == {
             "001_init_messages",
@@ -31,6 +35,8 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "006_message_classifications",
             "007_message_anchors",
             "008_aggregate_refine_results",
+            "009_recommendation_backtest",
+            "010_recommendation_identity_sector",
         }
     finally:
         conn.close()
@@ -62,7 +68,7 @@ def test_migrations_are_idempotent(tmp_path):
         migrate_message_db(conn)
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 8
+        assert count == 10
     finally:
         conn.close()
 

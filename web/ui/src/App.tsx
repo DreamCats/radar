@@ -1,19 +1,21 @@
 import { useState } from "react";
-import { Activity, BarChart3, Database, Inbox, Layers3, MessageCircle, RadioTower, RefreshCw, Search } from "lucide-react";
+import { Activity, BarChart3, Database, Inbox, Layers3, ListOrdered, MessageCircle, RadioTower, RefreshCw, Search } from "lucide-react";
 
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
+import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { MessagesPage } from "./pages/MessagesPage";
 import { OrganizePage } from "./pages/OrganizePage";
 import { WechatPage } from "./pages/WechatPage";
 
-type TabKey = "dashboard" | "wechat" | "messages" | "organize" | "ingest";
+type TabKey = "dashboard" | "wechat" | "messages" | "organize" | "leaderboard" | "ingest";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "总览", icon: Activity },
   { key: "wechat", label: "微信", icon: MessageCircle },
   { key: "messages", label: "消息", icon: Inbox },
   { key: "organize", label: "整理", icon: Layers3 },
+  { key: "leaderboard", label: "榜单", icon: ListOrdered },
   { key: "ingest", label: "作业", icon: Database },
 ] satisfies Array<{ key: TabKey; label: string; icon: typeof Activity }>;
 
@@ -83,6 +85,7 @@ export function App() {
           {tab === "wechat" && <WechatPage />}
           {tab === "messages" && <MessagesPage />}
           {tab === "organize" && <OrganizePage />}
+          {tab === "leaderboard" && <LeaderboardPage />}
           {tab === "ingest" && <IngestPage />}
         </div>
       </section>
@@ -96,6 +99,7 @@ function pageTitle(tab: TabKey): string {
     wechat: "微信消息",
     messages: "消息查询",
     organize: "消息整理",
+    leaderboard: "推荐胜率榜",
     ingest: "作业中心",
   };
   return titles[tab];

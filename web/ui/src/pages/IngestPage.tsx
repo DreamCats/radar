@@ -8,6 +8,7 @@ import {
   startAnchorMessagesJob,
   startClassifyMessagesJob,
   startIngestWechatJob,
+  startRecommendationBacktestJob,
 } from "../api/radarApi";
 import { DateField, SelectField, TextField } from "../components/FormFields";
 import { JobRunCard } from "../components/JobRunCard";
@@ -182,6 +183,25 @@ export function IngestPage() {
         reused_existing: item.reused_existing,
       }));
     }
+    if (kind === "backtest") {
+      const items = await startRecommendationBacktestJob({
+        as_of: range.endDate,
+        window_days: backtestWindowDays(range.startDate, range.endDate),
+        start_time: window.start_time,
+        end_time: window.end_time,
+        windows: [1, 2, 3, 5],
+        source,
+        min_classification_confidence: 0.7,
+        benchmark_ts_code: "000300.SH",
+        force,
+      });
+      return items.map((item) => ({
+        kind,
+        source: sourceLabel(source),
+        run_id: item.run_id,
+        reused_existing: item.reused_existing,
+      }));
+    }
     const items = await startAggregateRefineJob({
       trade_date: tradeDate,
       source,
@@ -223,6 +243,16 @@ export function IngestPage() {
     }
   }
 
+  function selectJob(kind: JobTemplateKey) {
+    setSelectedJob(kind);
+    if (kind === "backtest" && selectedJob !== "backtest" && preset === "today") {
+      const nextRange = buildPresetRange("last30d");
+      setPreset("last30d");
+      setRange(nextRange);
+      setTradeDate(dateToTradeDate(nextRange.endDate));
+    }
+  }
+
   return (
     <section className="ingest-page job-center-page">
       <div className="ingest-header">
@@ -257,7 +287,7 @@ export function IngestPage() {
                   className={selectedJob === item.key ? "job-template active" : "job-template"}
                   key={item.key}
                   type="button"
-                  onClick={() => setSelectedJob(item.key)}
+                  onClick={() => selectJob(item.key)}
                 >
                   <Icon size={16} />
                   <span>
@@ -350,4 +380,13 @@ export function IngestPage() {
 
 function dateToTradeDate(value: string): string {
   return value.replace(/-/g, "");
+}
+
+function backtestWindowDays(startDate: string, endDate: string): number {
+  const start = new Date(`${startDate}T00:00:00`).getTime();
+  const end = new Date(`${endDate}T00:00:00`).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
+    return 30;
+  }
+  return Math.max(1, Math.round((end - start) / 86400000) + 1);
 }

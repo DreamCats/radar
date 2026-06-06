@@ -60,6 +60,7 @@ def test_env_overrides_wechat_base_url(config_dir: Path, monkeypatch):
 def test_env_overrides_tushare_token(config_dir: Path, monkeypatch):
     monkeypatch.setenv("RADAR_TUSHARE_TOKEN", "token-from-env")
     monkeypatch.setenv("RADAR_TUSHARE_API_URL", "https://example.invalid/tushare")
+    monkeypatch.setenv("RADAR_TUSHARE_REQUEST_DELAY_MS", "200")
     monkeypatch.setenv("RADAR_MARKET_DATABASE", "~/radar-market.sqlite3")
 
     config = load_config(config_dir)
@@ -67,6 +68,7 @@ def test_env_overrides_tushare_token(config_dir: Path, monkeypatch):
     assert config.market.provider == "tushare"
     assert config.market.secret_ref == "tushare_main"
     assert config.market.api_url == "https://example.invalid/tushare"
+    assert config.market.request_delay_ms == 200
     assert str(config.market_database_path).endswith("radar-market.sqlite3")
     assert "~" not in str(config.market_database_path)
     assert config.secrets.market["tushare_main"].token == "token-from-env"

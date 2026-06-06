@@ -11,6 +11,7 @@ class RuntimeTushareProvider:
     api_url: str
     token: str
     timeout: float
+    request_delay_ms: int
     database: Path
 
 

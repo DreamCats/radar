@@ -177,6 +177,100 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON aggregate_refine_results(trade_date, start_time, end_time, updated_at DESC);
         """,
     ),
+    (
+        "009_recommendation_backtest",
+        """
+        CREATE TABLE IF NOT EXISTS recommendation_events (
+            event_id                  TEXT PRIMARY KEY,
+            message_id                TEXT NOT NULL,
+            source                    TEXT NOT NULL,
+            source_candidate          TEXT NOT NULL,
+            group_name                TEXT,
+            category                  TEXT NOT NULL,
+            classification_confidence REAL NOT NULL,
+            ts_code                   TEXT NOT NULL,
+            stock_name                TEXT NOT NULL,
+            action                    TEXT NOT NULL,
+            message_time              TEXT NOT NULL,
+            event_date                TEXT NOT NULL,
+            extractor_version         TEXT NOT NULL,
+            anchor_confidence         REAL NOT NULL,
+            created_at                TEXT NOT NULL,
+            updated_at                TEXT NOT NULL,
+            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_recommendation_events_unique
+            ON recommendation_events(message_id, ts_code, action, extractor_version);
+        CREATE INDEX IF NOT EXISTS idx_recommendation_events_time
+            ON recommendation_events(message_time DESC, event_id);
+        CREATE INDEX IF NOT EXISTS idx_recommendation_events_source_stock
+            ON recommendation_events(source_candidate, ts_code, event_date);
+
+        CREATE TABLE IF NOT EXISTS recommendation_backtest_windows (
+            event_id                    TEXT NOT NULL,
+            window_days                 INTEGER NOT NULL,
+            benchmark_ts_code           TEXT NOT NULL,
+            base_trade_date             TEXT,
+            target_trade_date           TEXT,
+            base_close                  REAL,
+            target_close                REAL,
+            return_rate                 REAL,
+            win                         INTEGER,
+            benchmark_base_close        REAL,
+            benchmark_target_close      REAL,
+            benchmark_return_rate       REAL,
+            excess_return_rate          REAL,
+            status                      TEXT NOT NULL,
+            error_message               TEXT,
+            updated_at                  TEXT NOT NULL,
+            PRIMARY KEY (event_id, window_days, benchmark_ts_code),
+            FOREIGN KEY (event_id) REFERENCES recommendation_events(event_id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_recommendation_backtest_status
+            ON recommendation_backtest_windows(status, updated_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_recommendation_backtest_window
+            ON recommendation_backtest_windows(window_days, benchmark_ts_code, status);
+        """,
+    ),
+    (
+        "010_recommendation_identity_sector",
+        """
+        CREATE TABLE IF NOT EXISTS analysts (
+            analyst_id     TEXT PRIMARY KEY,
+            display_name   TEXT NOT NULL,
+            created_at     TEXT NOT NULL,
+            updated_at     TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS analyst_aliases (
+            alias_text     TEXT PRIMARY KEY,
+            alias_key      TEXT NOT NULL,
+            analyst_id     TEXT NOT NULL,
+            confidence     REAL NOT NULL,
+            method         TEXT NOT NULL,
+            created_at     TEXT NOT NULL,
+            updated_at     TEXT NOT NULL,
+            FOREIGN KEY (analyst_id) REFERENCES analysts(analyst_id) ON DELETE CASCADE
+        );
+
+        ALTER TABLE recommendation_events ADD COLUMN analyst_id TEXT;
+        ALTER TABLE recommendation_events ADD COLUMN analyst_display_name TEXT;
+        ALTER TABLE recommendation_events ADD COLUMN analyst_alias_key TEXT;
+        ALTER TABLE recommendation_events ADD COLUMN sector_anchor_id TEXT;
+        ALTER TABLE recommendation_events ADD COLUMN sector_anchor_type TEXT;
+        ALTER TABLE recommendation_events ADD COLUMN sector_name TEXT;
+        ALTER TABLE recommendation_events ADD COLUMN sector_confidence REAL;
+
+        CREATE INDEX IF NOT EXISTS idx_analyst_aliases_key
+            ON analyst_aliases(alias_key, analyst_id);
+        CREATE INDEX IF NOT EXISTS idx_recommendation_events_analyst_stock
+            ON recommendation_events(analyst_id, ts_code, event_date);
+        CREATE INDEX IF NOT EXISTS idx_recommendation_events_sector
+            ON recommendation_events(sector_anchor_type, sector_name, event_date);
+        """,
+    ),
 ]
 
 MARKET_MIGRATIONS: list[Migration] = [

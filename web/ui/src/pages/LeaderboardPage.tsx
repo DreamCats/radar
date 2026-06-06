@@ -1,0 +1,392 @@
+import { useEffect, useMemo, useState } from "react";
+import { Blocks, Building2, CalendarDays, CircleUserRound, RefreshCw, Search, Trophy, UsersRound } from "lucide-react";
+
+import { fetchRecommendationBacktestSummary } from "../api/radarApi";
+import { DateField, SelectField } from "../components/FormFields";
+import { PanelTitle } from "../components/PanelTitle";
+import { toIso } from "../lib/datetime";
+import { buildPresetRange, rangeLabel, RANGE_PRESETS, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
+import type { BacktestGroupBy, IngestSource, RecommendationBacktestSummary, RecommendationBacktestSummaryRow } from "../types";
+
+type Dimension = Extract<BacktestGroupBy, "analyst_sector" | "analyst_stock" | "analyst" | "sector" | "stock" | "source">;
+
+const DIMENSIONS: Array<{
+  key: Dimension;
+  label: string;
+  meta: string;
+  icon: typeof Trophy;
+}> = [
+  { key: "analyst_sector", label: "分析师+板块", meta: "看擅长方向", icon: Blocks },
+  { key: "analyst_stock", label: "分析师+股票", meta: "看具体标的", icon: Search },
+  { key: "analyst", label: "分析师", meta: "看个人稳定性", icon: CircleUserRound },
+  { key: "sector", label: "板块", meta: "看方向质量", icon: Building2 },
+  { key: "stock", label: "股票", meta: "看标的表现", icon: Trophy },
+  { key: "source", label: "来源", meta: "看信息源质量", icon: UsersRound },
+];
+
+const emptySummary: RecommendationBacktestSummary = {
+  start_time: "",
+  end_time: "",
+  group_by: "analyst_sector",
+  windows: [1, 2, 3, 5],
+  row_count: 0,
+  rows: [],
+};
+
+export function LeaderboardPage() {
+  const [range, setRange] = useState<LocalRange>(() => buildPresetRange("last30d"));
+  const [preset, setPreset] = useState<RangePreset>("last30d");
+  const [source, setSource] = useState<IngestSource>("all");
+  const [dimension, setDimension] = useState<Dimension>("analyst_sector");
+  const [minCount, setMinCount] = useState("3");
+  const [summary, setSummary] = useState<RecommendationBacktestSummary>(emptySummary);
+  const [overview, setOverview] = useState<RecommendationBacktestSummary>(emptySummary);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const startValue = toLocalIso(range.startDate, range.startTime);
+  const endValue = toLocalIso(range.endDate, range.endTime);
+  const canSubmit = Boolean(startValue && endValue) && startValue <= endValue;
+
+  async function load() {
+    if (!canSubmit) {
+      setError("请选择有效的开始和结束时间。");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const baseQuery = {
+        start_time: startValue,
+        end_time: endValue,
+        source,
+      };
+      const [nextSummary, nextOverview] = await Promise.all([
+        fetchRecommendationBacktestSummary({
+          ...baseQuery,
+          group_by: dimension,
+          min_count: Number(minCount),
+          limit: 50,
+        }),
+        fetchRecommendationBacktestSummary({
+          ...baseQuery,
+          group_by: "source",
+          min_count: 1,
+          limit: 200,
+        }),
+      ]);
+      setSummary(nextSummary);
+      setOverview(nextOverview);
+      setSelectedKey((current) => {
+        if (current && nextSummary.rows.some((row) => row.key === current)) {
+          return current;
+        }
+        return nextSummary.rows[0]?.key ?? null;
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "榜单加载失败");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+  }, [dimension, source, minCount, startValue, endValue]);
+
+  const selected = useMemo(
+    () => summary.rows.find((row) => row.key === selectedKey) ?? summary.rows[0] ?? null,
+    [summary.rows, selectedKey],
+  );
+  const metrics = useMemo(() => buildOverviewMetrics(overview), [overview]);
+  const activeDimension = DIMENSIONS.find((item) => item.key === dimension) ?? DIMENSIONS[0];
+
+  function applyPreset(value: RangePreset) {
+    setPreset(value);
+    setRange(buildPresetRange(value));
+  }
+
+  function updateDateTime(target: "start" | "end", value: string) {
+    const nextValue = toIso(value);
+    const [date, time = ""] = nextValue.split("T");
+    const dateKey = target === "start" ? "startDate" : "endDate";
+    const timeKey = target === "start" ? "startTime" : "endTime";
+    setPreset("custom");
+    setRange((current) => ({ ...current, [dateKey]: date ?? "", [timeKey]: time.slice(0, 5) }));
+  }
+
+  return (
+    <section className="leaderboard-page">
+      <div className="leaderboard-header">
+        <PanelTitle title="推荐胜率榜" meta="已成熟 T+N 窗口">
+          <button className="btn btn-sm" type="button" onClick={() => void load()} disabled={loading} title="刷新榜单">
+            <RefreshCw size={15} />
+            刷新
+          </button>
+        </PanelTitle>
+        <div className="leaderboard-window">
+          <CalendarDays size={15} />
+          {rangeLabel(range)}
+        </div>
+      </div>
+
+      <div className="range-presets leaderboard-presets" aria-label="榜单时间窗口">
+        {RANGE_PRESETS.filter(([value]) => value !== "today" && value !== "yesterday").map(([value, label]) => (
+          <button
+            className={preset === value ? "preset-button active" : "preset-button"}
+            key={value}
+            type="button"
+            onClick={() => applyPreset(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="leaderboard-toolbar">
+        <SelectField
+          label="来源"
+          value={source}
+          options={[
+            ["all", "全部"],
+            ["personal_message", "个人消息"],
+            ["group_message", "个人群"],
+          ]}
+          onChange={(value) => setSource(value as IngestSource)}
+        />
+        <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
+        <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
+        <SelectField
+          label="最小样本"
+          value={minCount}
+          options={[
+            ["1", "1 条"],
+            ["3", "3 条"],
+            ["5", "5 条"],
+            ["10", "10 条"],
+          ]}
+          onChange={setMinCount}
+        />
+      </div>
+
+      <div className="leaderboard-metrics">
+        <Metric label="推荐事件" value={metrics.eventCount} detail="按来源去重汇总" />
+        <Metric label="T+5 胜率" value={formatPercent(metrics.t5WinRate)} detail={`${metrics.t5SampleCount} 个成熟窗口`} />
+        <Metric label="T+5 平均收益" value={formatSignedPercent(metrics.t5AvgReturn)} detail="个股收益" tone={metrics.t5AvgReturn} />
+        <Metric label="T+5 平均超额" value={formatSignedPercent(metrics.t5AvgExcess)} detail="相对基准" tone={metrics.t5AvgExcess} />
+      </div>
+
+      <div className="leaderboard-dimensions" aria-label="榜单维度">
+        {DIMENSIONS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              className={dimension === item.key ? "leaderboard-dimension active" : "leaderboard-dimension"}
+              key={item.key}
+              type="button"
+              onClick={() => setDimension(item.key)}
+            >
+              <Icon size={15} />
+              <span>{item.label}</span>
+              <em>{item.meta}</em>
+            </button>
+          );
+        })}
+      </div>
+
+      {error && <p className="error-line">{error}</p>}
+
+      <div className="leaderboard-workspace">
+        <section className="content-panel leaderboard-list-panel">
+          <PanelTitle title={activeDimension.label} meta={loading ? "加载中" : `${summary.row_count} 组`} />
+          <div className="leaderboard-list">
+            {summary.rows.map((row, index) => (
+              <button
+                className={selected?.key === row.key ? "leaderboard-row active" : "leaderboard-row"}
+                key={row.key}
+                type="button"
+                onClick={() => setSelectedKey(row.key)}
+              >
+                <span className="leaderboard-rank">{index + 1}</span>
+                <span className="leaderboard-row-main">
+                  <strong>{rowTitle(row, dimension)}</strong>
+                  <em>{rowSubtitle(row, dimension)}</em>
+                </span>
+                <span className="leaderboard-row-side">
+                  <strong>{formatPercent(metric(row, "win_rate_t5"))}</strong>
+                  <em>{sampleLabel(row, 5)}</em>
+                </span>
+              </button>
+            ))}
+            {!loading && summary.rows.length === 0 && <p className="empty-line">暂无已成熟回测结果。先在作业页执行推荐回测补齐。</p>}
+          </div>
+        </section>
+
+        <section className="content-panel leaderboard-detail-panel">
+          <PanelTitle title={selected ? rowTitle(selected, dimension) : "画像详情"} meta={selected ? confidenceLabel(selected) : "未选择"} />
+          {selected ? (
+            <>
+              <div className="leaderboard-detail-tags">
+                {detailTags(selected).map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
+              </div>
+              <div className="leaderboard-window-grid">
+                {summary.windows.map((window) => (
+                  <WindowCard key={window} row={selected} window={window} />
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="empty-line">选择一个榜单项查看 T+N 表现。</p>
+          )}
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function Metric(props: { label: string; value: number | string; detail: string; tone?: number | null }) {
+  const toneClass = typeof props.tone === "number" ? (props.tone >= 0 ? " up" : " down") : "";
+  return (
+    <article className={`leaderboard-metric${toneClass}`}>
+      <span>{props.label}</span>
+      <strong>{props.value}</strong>
+      <em>{props.detail}</em>
+    </article>
+  );
+}
+
+function WindowCard(props: { row: RecommendationBacktestSummaryRow; window: number }) {
+  const sampleCount = metric(props.row, `sample_count_t${props.window}`);
+  const winRate = metric(props.row, `win_rate_t${props.window}`);
+  const avgReturn = metric(props.row, `avg_return_t${props.window}`);
+  const avgExcess = metric(props.row, `avg_excess_t${props.window}`);
+  return (
+    <article className="leaderboard-window-card">
+      <div>
+        <span>T+{props.window}</span>
+        <strong>{formatPercent(winRate)}</strong>
+      </div>
+      <p>{sampleCount} 个成熟窗口</p>
+      <dl>
+        <div>
+          <dt>平均收益</dt>
+          <dd className={toneClass(avgReturn)}>{formatSignedPercent(avgReturn)}</dd>
+        </div>
+        <div>
+          <dt>平均超额</dt>
+          <dd className={toneClass(avgExcess)}>{formatSignedPercent(avgExcess)}</dd>
+        </div>
+      </dl>
+    </article>
+  );
+}
+
+function buildOverviewMetrics(summary: RecommendationBacktestSummary) {
+  return {
+    eventCount: summary.rows.reduce((sum, row) => sum + row.event_count, 0),
+    t5SampleCount: sumMetric(summary.rows, "sample_count_t5"),
+    t5WinRate: weightedMetric(summary.rows, "win_rate_t5", "sample_count_t5"),
+    t5AvgReturn: weightedMetric(summary.rows, "avg_return_t5", "sample_count_t5"),
+    t5AvgExcess: weightedMetric(summary.rows, "avg_excess_t5", "sample_count_t5"),
+  };
+}
+
+function weightedMetric(rows: RecommendationBacktestSummaryRow[], metricKey: string, weightKey: string): number | null {
+  let total = 0;
+  let weightTotal = 0;
+  for (const row of rows) {
+    const value = metric(row, metricKey);
+    const weight = metric(row, weightKey) ?? 0;
+    if (value !== null && weight > 0) {
+      total += value * weight;
+      weightTotal += weight;
+    }
+  }
+  return weightTotal > 0 ? total / weightTotal : null;
+}
+
+function sumMetric(rows: RecommendationBacktestSummaryRow[], key: string): number {
+  return rows.reduce((sum, row) => sum + (metric(row, key) ?? 0), 0);
+}
+
+function metric(row: RecommendationBacktestSummaryRow, key: string): number | null {
+  const value = row.metrics[key];
+  return typeof value === "number" ? value : null;
+}
+
+function rowTitle(row: RecommendationBacktestSummaryRow, dimension: Dimension): string {
+  const analyst = row.analyst_display_name || row.source_candidate || "未识别分析师";
+  const stock = row.stock_name || row.ts_code || "未识别股票";
+  const sector = row.sector_name || "未归因板块";
+  if (dimension === "analyst_sector") {
+    return `${analyst} · ${sector}`;
+  }
+  if (dimension === "analyst_stock") {
+    return `${analyst} · ${stock}`;
+  }
+  if (dimension === "analyst") {
+    return analyst;
+  }
+  if (dimension === "sector") {
+    return sector;
+  }
+  if (dimension === "stock") {
+    return stock;
+  }
+  return row.source_candidate || "未知来源";
+}
+
+function rowSubtitle(row: RecommendationBacktestSummaryRow, dimension: Dimension): string {
+  const parts = detailTags(row);
+  if (dimension === "source") {
+    return `${row.event_count} 条推荐事件`;
+  }
+  return parts.length > 0 ? parts.join(" / ") : `${row.event_count} 条推荐事件`;
+}
+
+function detailTags(row: RecommendationBacktestSummaryRow): string[] {
+  return [
+    row.analyst_display_name ? `分析师 ${row.analyst_display_name}` : "",
+    row.stock_name || row.ts_code ? `股票 ${row.stock_name || row.ts_code}` : "",
+    row.sector_name ? `板块 ${row.sector_name}` : "",
+    row.source_candidate ? `来源 ${row.source_candidate}` : "",
+    `${row.event_count} 条推荐事件`,
+  ].filter(Boolean);
+}
+
+function sampleLabel(row: RecommendationBacktestSummaryRow, window: number): string {
+  return `${metric(row, `sample_count_t${window}`) ?? 0} 样本`;
+}
+
+function confidenceLabel(row: RecommendationBacktestSummaryRow): string {
+  const sampleCount = metric(row, "sample_count_t5") ?? 0;
+  if (sampleCount >= 10) {
+    return "样本较稳";
+  }
+  if (sampleCount >= 3) {
+    return "可参考";
+  }
+  return "样本偏少";
+}
+
+function formatPercent(value: number | null): string {
+  return value === null ? "-" : `${Math.round(value * 1000) / 10}%`;
+}
+
+function formatSignedPercent(value: number | null): string {
+  if (value === null) {
+    return "-";
+  }
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${Math.round(value * 10000) / 100}%`;
+}
+
+function toneClass(value: number | null): string {
+  if (value === null || value === 0) {
+    return "";
+  }
+  return value > 0 ? "up" : "down";
+}

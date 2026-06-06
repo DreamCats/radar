@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Clock3, LoaderCircle } from "lucide-react";
 
 import type { RunItem } from "../types";
 
-type JobRunKind = "ingest" | "classify" | "anchor" | "refine";
+type JobRunKind = "ingest" | "classify" | "anchor" | "refine" | "backtest";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -74,6 +74,9 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "classify" || kind === "anchor") {
       return chunkProgress(run);
     }
+    if (kind === "backtest") {
+      return backtestProgress(run);
+    }
     return refineProgress(run);
   }
   return 100;
@@ -109,6 +112,16 @@ function refineProgress(run?: RunItem): number {
   return boundedPercent(done, total);
 }
 
+function backtestProgress(run?: RunItem): number {
+  const metadata = run?.metadata ?? {};
+  const total = numberValue(metadata.event_count);
+  const done = numberValue(metadata.completed_event_count) || run?.raw_count || 0;
+  if (!total) {
+    return run?.raw_count ? 25 : 8;
+  }
+  return boundedPercent(done, total);
+}
+
 function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   if (kind === "ingest") {
     return ingestMetrics(run);
@@ -118,6 +131,9 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   }
   if (kind === "anchor") {
     return anchorMetrics(run);
+  }
+  if (kind === "backtest") {
+    return backtestMetrics(run);
   }
   return refineMetrics(run);
 }
@@ -193,6 +209,27 @@ function refineMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
+function backtestMetrics(run?: RunItem): string[] {
+  const metadata = run?.metadata ?? {};
+  const events = numberValue(metadata.event_count) || run?.raw_count || 0;
+  const inserted = numberValue(metadata.inserted_event_count);
+  const refreshed = numberValue(metadata.refreshed_count) || run?.stored_count || 0;
+  const skipped = numberValue(metadata.skipped_complete_count);
+  const pending = numberValue(metadata.pending_count);
+  const missing = numberValue(metadata.missing_price_count);
+  const failed = numberValue(metadata.failed_count);
+  return [
+    `推荐事件 ${events} 条`,
+    `新增事件 ${inserted} 条`,
+    `已补齐窗口 ${refreshed}`,
+    `已完成跳过 ${skipped}`,
+    `待成熟 ${pending}`,
+    `缺行情 ${missing}`,
+    `失败 ${failed}`,
+    durationText(run),
+  ].filter(Boolean);
+}
+
 function detailText(run?: RunItem): string {
   if (!run) {
     return "任务已提交，等待服务端返回运行状态。";
@@ -227,6 +264,9 @@ function kindTitle(kind: JobRunKind): string {
   }
   if (kind === "anchor") {
     return "Anchor";
+  }
+  if (kind === "backtest") {
+    return "推荐回测补齐";
   }
   return "聚合 refine";
 }

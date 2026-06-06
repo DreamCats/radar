@@ -6,6 +6,7 @@ import "./motion.css";
 import "./dashboard.css";
 import "./ingest.css";
 import "./job-center.css";
+import "./leaderboard.css";
 import "./messages.css";
 import "./organize.css";
 import "./organize-aggregate.css";

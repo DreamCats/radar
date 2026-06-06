@@ -1,4 +1,4 @@
-export type RangePreset = "today" | "yesterday" | "last24h" | "last7d" | "custom";
+export type RangePreset = "today" | "yesterday" | "last24h" | "last7d" | "last30d" | "custom";
 
 export type LocalRange = {
   startDate: string;
@@ -12,6 +12,7 @@ export const RANGE_PRESETS: Array<[RangePreset, string]> = [
   ["yesterday", "昨天"],
   ["last24h", "近 24 小时"],
   ["last7d", "近 7 天"],
+  ["last30d", "近 30 天"],
 ];
 
 export function buildPresetRange(preset: RangePreset): LocalRange {
@@ -25,6 +26,9 @@ export function buildPresetRange(preset: RangePreset): LocalRange {
   }
   if (preset === "last7d") {
     return buildRange(addDays(now, -7), now);
+  }
+  if (preset === "last30d") {
+    return buildRange(addDays(now, -30), now);
   }
   return buildRange(startOfDay(now), now);
 }

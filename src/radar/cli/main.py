@@ -7,6 +7,7 @@ import click
 from radar import __version__
 from radar.cli.aggregate import aggregate
 from radar.cli.anchor import anchor
+from radar.cli.backtest import backtest
 from radar.cli.classify import classify
 from radar.cli.dashboard import dashboard
 from radar.cli.ingest import ingest
@@ -42,6 +43,7 @@ def doctor() -> None:
 main.add_command(ingest)
 main.add_command(anchor)
 main.add_command(aggregate)
+main.add_command(backtest)
 main.add_command(classify)
 main.add_command(query_messages)
 main.add_command(test_commands)

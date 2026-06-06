@@ -203,11 +203,54 @@ export type AggregateRefineRequest = {
   max_concurrency: number;
 };
 
+export type RecommendationBacktestRequest = {
+  as_of: string;
+  window_days: number;
+  start_time: string;
+  end_time: string;
+  windows: number[];
+  source: IngestSource;
+  min_classification_confidence: number;
+  benchmark_ts_code: string;
+  force: boolean;
+};
+
 export type DerivedJobItem = {
-  job_type: "anchor" | "aggregate_refine";
+  job_type: "anchor" | "aggregate_refine" | "recommendation_backtest";
   run_id: string;
   reused_existing: boolean;
   status: "running";
+};
+
+export type BacktestGroupBy =
+  | "source"
+  | "source_stock"
+  | "stock"
+  | "analyst"
+  | "analyst_stock"
+  | "sector"
+  | "analyst_sector";
+
+export type RecommendationBacktestSummaryRow = {
+  key: string;
+  source_candidate?: string | null;
+  analyst_id?: string | null;
+  analyst_display_name?: string | null;
+  ts_code?: string | null;
+  stock_name?: string | null;
+  sector_anchor_type?: string | null;
+  sector_name?: string | null;
+  event_count: number;
+  metrics: Record<string, number>;
+};
+
+export type RecommendationBacktestSummary = {
+  start_time: string;
+  end_time: string;
+  group_by: BacktestGroupBy;
+  windows: number[];
+  row_count: number;
+  rows: RecommendationBacktestSummaryRow[];
 };
 
 export type RefinedThemeStock = {

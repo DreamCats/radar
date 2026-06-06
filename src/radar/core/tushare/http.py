@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import httpx
@@ -24,6 +25,7 @@ def post_tushare(
     if fields:
         payload["fields"] = ",".join(fields) if isinstance(fields, list) else fields
 
+    _respect_request_delay(provider)
     try:
         with httpx.Client(timeout=provider.timeout) as client:
             response = client.post(provider.api_url, json=payload)
@@ -50,3 +52,10 @@ def post_tushare(
 
 def _safe_url(url: str) -> str:
     return url.split("?", 1)[0]
+
+
+def _respect_request_delay(provider: RuntimeTushareProvider) -> None:
+    # Tushare 按分钟限频；所有真实请求统一在 HTTP 层节流。
+    if provider.request_delay_ms <= 0:
+        return
+    time.sleep(provider.request_delay_ms / 1000)

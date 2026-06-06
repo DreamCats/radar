@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -13,6 +13,12 @@ from radar.core.organize_aggregates import (
 )
 from radar.core.runs import RunRecord
 from radar.core.usecases.aggregation import RefineAggregateTopicsResult
+from radar.core.usecases.recommendation_backtest import (
+    DEFAULT_BENCHMARK_TS_CODE,
+    DEFAULT_BACKTEST_WINDOWS,
+    BacktestGroupBy,
+    RecommendationBacktestSummaryResult,
+)
 
 SourceKey = Literal["personal_message", "group_message"]
 JobSourceKey = Literal["all", "personal_message", "group_message"]
@@ -206,8 +212,20 @@ class AggregateRefineRequest(BaseModel):
     provider_names: list[str] | None = None
 
 
+class RecommendationBacktestRequest(BaseModel):
+    as_of: date
+    window_days: int = Field(default=30, ge=1, le=365)
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    windows: list[int] = Field(default_factory=lambda: list(DEFAULT_BACKTEST_WINDOWS))
+    source: JobSourceKey = "all"
+    min_classification_confidence: float = Field(default=0.7, ge=0, le=1)
+    benchmark_ts_code: str = DEFAULT_BENCHMARK_TS_CODE
+    force: bool = False
+
+
 class DerivedJobItem(BaseModel):
-    job_type: Literal["anchor", "aggregate_refine"]
+    job_type: Literal["anchor", "aggregate_refine", "recommendation_backtest"]
     run_id: str
     reused_existing: bool = False
     status: Literal["running"]
@@ -215,6 +233,10 @@ class DerivedJobItem(BaseModel):
 
 class DerivedJobResponse(BaseModel):
     items: list[DerivedJobItem]
+
+
+class RecommendationBacktestSummaryResponse(RecommendationBacktestSummaryResult):
+    pass
 
 
 class AggregateRefineResultListResponse(BaseModel):

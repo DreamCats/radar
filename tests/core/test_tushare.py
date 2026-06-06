@@ -20,6 +20,7 @@ def test_resolve_provider_uses_market_secret(tmp_path: Path):
 
     assert provider.api_url == "https://example.invalid/tushare"
     assert provider.token == "secret-token"
+    assert provider.request_delay_ms == 150
     assert provider.database == tmp_path / "market.sqlite3"
 
 
@@ -118,6 +119,37 @@ def test_http_post_timeout_message_includes_target(monkeypatch, tmp_path: Path):
 
     with pytest.raises(TushareHttpError, match="market.api_url"):
         post_tushare(_provider(tmp_path), "trade_cal", {})
+
+
+def test_http_post_applies_request_delay(monkeypatch, tmp_path: Path):
+    slept = []
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"code": 0, "data": {"fields": [], "items": []}}
+
+    class FakeClient:
+        def __init__(self, timeout):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def post(self, url, json):
+            return FakeResponse()
+
+    monkeypatch.setattr("radar.core.tushare.http.httpx.Client", FakeClient)
+    monkeypatch.setattr("radar.core.tushare.http.time.sleep", lambda seconds: slept.append(seconds))
+
+    post_tushare(_provider(tmp_path, request_delay_ms=150), "daily", {})
+
+    assert slept == [0.15]
 
 
 def test_kv_cache_key_includes_param_order_and_fields(tmp_path: Path):
@@ -280,10 +312,11 @@ def _config(tmp_path: Path) -> RadarConfig:
     )
 
 
-def _provider(tmp_path: Path) -> RuntimeTushareProvider:
+def _provider(tmp_path: Path, request_delay_ms: int = 0) -> RuntimeTushareProvider:
     return RuntimeTushareProvider(
         api_url="https://example.invalid/tushare",
         token="secret-token",
         timeout=12,
+        request_delay_ms=request_delay_ms,
         database=tmp_path / "market.sqlite3",
     )
