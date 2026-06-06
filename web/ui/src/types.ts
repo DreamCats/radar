@@ -396,3 +396,91 @@ export type OrganizeEvidenceQuery = Omit<OrganizeClassificationQuery, "evidence_
   cursor_id?: string;
   limit?: number;
 };
+
+export type StrategyAttentionLevel = "重点关注" | "继续验证" | "风险升高" | "样本不足" | "过度扩散";
+
+export type StrategyRelatedStock = {
+  stock_name: string;
+  ts_code: string;
+  event_count: number;
+  win_rate_t5?: number | null;
+  average_excess_return_t5?: number | null;
+  latest_message_time?: string | null;
+};
+
+export type StrategySourceSignal = {
+  name: string;
+  mention_count: number;
+  event_count: number;
+  win_rate_t5?: number | null;
+  average_excess_return_t5?: number | null;
+  latest_message_time?: string | null;
+};
+
+export type StrategyThemeBrief = {
+  theme_name: string;
+  confidence: number;
+  actionability_score: number;
+  catalysts: string[];
+  risk_notes: string[];
+};
+
+export type StrategyOpportunity = {
+  key: string;
+  name: string;
+  anchor_type: "stock" | "concept" | "industry" | "theme";
+  attention_level: StrategyAttentionLevel;
+  score: number;
+  reliability_score: number;
+  reason: string;
+  risk_summary: string;
+  recent_message_count: number;
+  previous_message_count: number;
+  acceleration: number;
+  sender_count: number;
+  group_count: number;
+  high_value_count: number;
+  high_value_ratio: number;
+  recommendation_count: number;
+  research_count: number;
+  industry_count: number;
+  catalyst_count: number;
+  risk_count: number;
+  catalyst_terms: string[];
+  risk_terms: string[];
+  t5_event_count: number;
+  win_rate_t5?: number | null;
+  average_excess_return_t5?: number | null;
+  latest_message_time: string;
+  related_stocks: StrategyRelatedStock[];
+  top_sources: StrategySourceSignal[];
+  matched_themes: StrategyThemeBrief[];
+};
+
+export type StrategyStockCandidate = {
+  stock_name: string;
+  ts_code: string;
+  event_count: number;
+  source_count: number;
+  sector_names: string[];
+  win_rate_t5?: number | null;
+  average_excess_return_t5?: number | null;
+  latest_message_time?: string | null;
+};
+
+export type StrategyDashboard = {
+  start_time: string;
+  end_time: string;
+  recent_start_time: string;
+  generated_at: string;
+  opportunity_count: number;
+  opportunities: StrategyOpportunity[];
+  source_quality: StrategySourceSignal[];
+  stock_candidates: StrategyStockCandidate[];
+};
+
+export type StrategyQuery = {
+  days?: number;
+  recent_days?: number;
+  limit?: number;
+};

@@ -19,6 +19,7 @@ from radar.core.usecases.recommendation_backtest import (
     BacktestGroupBy,
     RecommendationBacktestSummaryResult,
 )
+from radar.core.usecases.strategy import StrategyDashboard
 
 SourceKey = Literal["personal_message", "group_message"]
 JobSourceKey = Literal["all", "personal_message", "group_message"]
@@ -236,6 +237,10 @@ class DerivedJobResponse(BaseModel):
 
 
 class RecommendationBacktestSummaryResponse(RecommendationBacktestSummaryResult):
+    pass
+
+
+class StrategyDashboardResponse(StrategyDashboard):
     pass
 
 

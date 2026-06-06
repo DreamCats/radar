@@ -15,10 +15,11 @@
 
 按需阅读这些文件，不要凭空设计：
 
-- `docs/05-tech-stack.md`：技术栈和“共享数据核 + 双门面”架构。
-- `docs/01-data-source.md`：微信 API、原始字段、RawMessage 结构、去重要求。
-- `docs/07-data-volume-constraints.md`：单日 3000+ 消息、分页、虚拟滚动、FTS5 约束。
-- `docs/04-open-questions.md`：已决策和待决策范围。
+- `docs/archive/05-tech-stack.md`：技术栈和“共享数据核 + 双门面”架构。
+- `docs/archive/01-data-source.md`：微信 API、原始字段、RawMessage 结构、去重要求。
+- `docs/archive/07-data-volume-constraints.md`：单日 3000+ 消息、分页、虚拟滚动、FTS5 约束。
+- `docs/archive/04-open-questions.md`：已决策和待决策范围。
+- `docs/strategy/README.md`：机会信号策略的目标、问题、思路和后续策略讨论原则。
 - `DESIGN.md`：Web UI 视觉规范。
 - `demo/`：静态布局参考，不是业务实现。
 
@@ -129,7 +130,7 @@ web/ui/            React/Vite 前端，只调用 Web API
 
 ## 10. 常见改动路径
 
-- 改数据模型：先看 `docs/01-data-source.md`，再改 `src/radar/core/models.py`，同步 store/messages 和测试。
+- 改数据模型：先看 `docs/archive/01-data-source.md`，再改 `src/radar/core/models.py`，同步 store/messages 和测试。
 - 改拉取逻辑：先改 `src/radar/core/fetch.py`，CLI/Web 不应直接变化。
 - 改入库或索引：改 `src/radar/core/store.py`，说明迁移策略。
 - 改查询筛选：改 `src/radar/core/messages/query.py` 或 `src/radar/core/messages/conversations.py`，同时覆盖 CLI 输出和 Web API。
@@ -150,7 +151,7 @@ web/ui/            React/Vite 前端，只调用 Web API
 
 - 小改动优先跑最小相关验证；没有测试时至少运行 import/CLI smoke 或静态检查。
 - 涉及 SQLite schema、查询、分页、去重时，必须用小样本覆盖关键路径。
-- 涉及 Web 前端时，启动本地服务并做浏览器验证；列表页不得一次渲染全量数据。
+- 涉及 Web 前端时，默认不要启动本地服务或做浏览器验证；优先用类型检查、构建、lint 或局部单测验证。只有用户明确要求浏览器验证，或改动涉及高风险首屏布局/复杂交互且已先说明收益与耗时，才允许使用浏览器。
 - 不要声称测试通过，除非实际运行过对应命令。
 - 如果跳过测试/构建，在最终回复中明确说明原因。
 

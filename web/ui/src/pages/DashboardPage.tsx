@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import {
   fetchMessageOverview,
@@ -7,13 +7,23 @@ import {
   fetchOrganizeClassifications,
   fetchRecommendationBacktestSummary,
   fetchRuns,
+  fetchStrategyOpportunities,
 } from "../api/radarApi";
 import { ClassificationDistributionChart } from "../components/ClassificationDistributionChart";
 import { LeaderboardAlphaChart } from "../components/LeaderboardAlphaChart";
 import { AnchorHeatChart, ThemePriorityBubbleChart, TopGroupsChart, TrendChart } from "../components/OverviewCharts";
+import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
+import { StrategyTopSummary } from "../components/StrategyTopSummary";
 import { formatTime } from "../lib/datetime";
 import { buildPresetRange, toLocalIso } from "../lib/timeRange";
-import type { MessageOverview, OrganizeAggregatePage, OrganizeClassificationPage, RecommendationBacktestSummary, RunItem } from "../types";
+import type {
+  MessageOverview,
+  OrganizeAggregatePage,
+  OrganizeClassificationPage,
+  RecommendationBacktestSummary,
+  RunItem,
+  StrategyDashboard,
+} from "../types";
 
 const emptyClassificationPage: OrganizeClassificationPage = {
   summary: {
@@ -42,11 +52,12 @@ const emptyBacktestSummary: RecommendationBacktestSummary = {
   rows: [],
 };
 
-export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }) {
+export function DashboardPage({ onOpenStrategy }: { onOpenStrategy: () => void }) {
   const [overview, setOverview] = useState<MessageOverview | null>(null);
   const [classificationPage, setClassificationPage] = useState<OrganizeClassificationPage>(emptyClassificationPage);
   const [aggregatePage, setAggregatePage] = useState<OrganizeAggregatePage>(emptyAggregatePage);
   const [backtestSummary, setBacktestSummary] = useState<RecommendationBacktestSummary>(emptyBacktestSummary);
+  const [strategyData, setStrategyData] = useState<StrategyDashboard | null>(null);
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +67,7 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
     setError(null);
     try {
       const backtestRange = buildPresetRange("last30d");
-      const [overviewData, classificationData, aggregateData, backtestData, runItems] = await Promise.all([
+      const [overviewData, classificationData, aggregateData, backtestData, strategySummary, runItems] = await Promise.all([
         fetchMessageOverview({ days: 14, top_limit: 8, anchor_limit: 20 }),
         fetchOrganizeClassifications({ evidence_limit: 0, low_confidence_threshold: 0.75 }),
         fetchOrganizeAggregates({ evidence_limit: 0 }),
@@ -67,12 +78,14 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
           min_count: 3,
           limit: 200,
         }),
+        fetchStrategyOpportunities({ days: 30, recent_days: 7, limit: 3 }),
         fetchRuns(),
       ]);
       setOverview(overviewData);
       setClassificationPage(classificationData);
       setAggregatePage(aggregateData);
       setBacktestSummary(backtestData);
+      setStrategyData(strategySummary);
       setRuns(runItems);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
@@ -87,22 +100,29 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
 
   const summary = overview?.summary;
   const filteredTotal = runs.reduce((sum, run) => sum + run.filtered_count, 0);
+  const initialLoading = loading && !overview;
 
   return (
     <section className="dashboard-page">
       <div className="dashboard-actions">
-        <p>{summary?.latest_message_time ? `最新消息 ${formatTime(summary.latest_message_time)}` : "暂无消息数据"}</p>
+        <p>
+          {initialLoading
+            ? "正在加载总览数据"
+            : summary?.latest_message_time
+              ? `最新消息 ${formatTime(summary.latest_message_time)}`
+              : "暂无消息数据"}
+        </p>
         <div>
+          {loading && !initialLoading && <PageRefreshProgress label="正在刷新总览" />}
           <button className="btn btn-sm" type="button" onClick={() => void refresh()} disabled={loading} title="刷新总览">
             <RefreshCw size={15} />
             刷新
           </button>
-          <button className="btn btn-sm" type="button" onClick={onOpenMessages}>
-            <ArrowRight size={16} />
-            消息查询
-          </button>
         </div>
       </div>
+      {initialLoading && <PageLoadingState label="正在聚合总览、榜单和策略信号" variant="dashboard" />}
+      {!initialLoading && (
+        <>
       <div className="statbar metric-grid">
         <Metric label="总消息" value={summary?.total_count ?? 0} detail="全库" />
         <Metric label="个人群" value={summary?.group_message_count ?? 0} detail={`${summary?.group_count ?? 0} 个群`} />
@@ -111,6 +131,7 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
       </div>
       {error && <p className="error-line">{error}</p>}
       <div className="overview-chart-grid">
+        <StrategyTopSummary data={strategyData} onOpenStrategy={onOpenStrategy} />
         <LeaderboardAlphaChart rows={backtestSummary.rows} dimension={backtestSummary.group_by} />
         <ThemePriorityBubbleChart themes={aggregatePage.themes} />
         <AnchorHeatChart data={overview?.anchor_heat ?? []} />
@@ -121,6 +142,8 @@ export function DashboardPage({ onOpenMessages }: { onOpenMessages: () => void }
           totalCount={classificationPage.summary.total_count}
         />
       </div>
+        </>
+      )}
     </section>
   );
 }

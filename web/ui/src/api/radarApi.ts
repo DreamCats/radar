@@ -25,6 +25,8 @@ import type {
   RecommendationBacktestRequest,
   RecommendationBacktestSummary,
   RunItem,
+  StrategyDashboard,
+  StrategyQuery,
 } from "../types";
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
@@ -89,6 +91,10 @@ export async function fetchRecommendationBacktestSummary(query: {
   limit?: number;
 }): Promise<RecommendationBacktestSummary> {
   return getJson(`/api/recommendation/backtest/summary?${params(query)}`);
+}
+
+export async function fetchStrategyOpportunities(query: StrategyQuery = {}): Promise<StrategyDashboard> {
+  return getJson(`/api/strategy/opportunities?${params(query)}`);
 }
 
 export async function ingestWechat(request: IngestRequest): Promise<IngestResultItem[]> {

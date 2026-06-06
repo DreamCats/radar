@@ -27,6 +27,7 @@ from radar.core.usecases.recommendation_backtest import (
     summarize_recommendation_backtests,
 )
 from radar.core.usecases.smoke import SmokeResult, test_llm, test_market
+from radar.core.usecases.strategy import StrategyDashboard, build_strategy_dashboard
 
 __all__ = [
     "AnchorRangeResult",
@@ -39,9 +40,11 @@ __all__ = [
     "RecommendationBacktestRefreshResult",
     "RecommendationBacktestSummaryResult",
     "SmokeResult",
+    "StrategyDashboard",
     "aggregate_topics",
     "refine_aggregate_topics",
     "anchor_messages_range",
+    "build_strategy_dashboard",
     "classify_batch_with_llm",
     "classify_messages",
     "classify_messages_range",
