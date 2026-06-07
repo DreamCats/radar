@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 import time
 
-from radar.core.work_pool import run_work_pool
+from radar.core.work_pool import run_resource_work_pool, run_work_pool
 
 
 def test_run_work_pool_limits_concurrency():
@@ -87,3 +87,26 @@ def test_run_work_pool_reports_errors_and_continues():
     assert stats.failed_count == 1
     assert errors == ["failed"]
     assert sorted(results) == [1, 3]
+
+
+def test_run_resource_work_pool_round_robins_resources():
+    seen: list[tuple[int, str]] = []
+
+    def worker(index: int, item: int, provider: str) -> str:
+        seen.append((index, provider))
+        return f"{provider}:{item}"
+
+    results: list[str] = []
+    stats = run_resource_work_pool(
+        [10, 20, 30, 40],
+        resources=["p1", "p2"],
+        max_workers=2,
+        worker=worker,
+        on_result=lambda _index, _item, result: results.append(result),
+        on_error=lambda _index, _item, error: (_ for _ in ()).throw(error),
+    )
+
+    assert stats.actual_workers == 2
+    assert stats.completed_count == 4
+    assert sorted(seen) == [(0, "p1"), (1, "p2"), (2, "p1"), (3, "p2")]
+    assert sorted(results) == ["p1:10", "p1:30", "p2:20", "p2:40"]

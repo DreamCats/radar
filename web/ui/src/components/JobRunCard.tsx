@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Clock3, LoaderCircle } from "lucide-react";
 
 import type { RunItem } from "../types";
 
-type JobRunKind = "ingest" | "classify" | "anchor" | "refine" | "backtest" | "strategyBackfill";
+type JobRunKind = "ingest" | "classify" | "anchor" | "refine" | "backtest" | "strategyBackfill" | "sourceRadar";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -77,6 +77,9 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "backtest" || kind === "strategyBackfill") {
       return backtestProgress(run);
     }
+    if (kind === "sourceRadar") {
+      return sourceRadarProgress(run);
+    }
     return refineProgress(run);
   }
   return 100;
@@ -122,6 +125,16 @@ function backtestProgress(run?: RunItem): number {
   return boundedPercent(done, total);
 }
 
+function sourceRadarProgress(run?: RunItem): number {
+  const metadata = run?.metadata ?? {};
+  const total = numberValue(metadata.day_count);
+  const done = numberValue(metadata.completed_day_count);
+  if (!total) {
+    return numberValue(metadata.scanned_count) > 0 ? 25 : 8;
+  }
+  return boundedPercent(done, total);
+}
+
 function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   if (kind === "ingest") {
     return ingestMetrics(run);
@@ -137,6 +150,9 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   }
   if (kind === "strategyBackfill") {
     return strategyBackfillMetrics(run);
+  }
+  if (kind === "sourceRadar") {
+    return sourceRadarMetrics(run);
   }
   return refineMetrics(run);
 }
@@ -252,6 +268,28 @@ function strategyBackfillMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
+function sourceRadarMetrics(run?: RunItem): string[] {
+  const metadata = run?.metadata ?? {};
+  const days = numberValue(metadata.day_count);
+  const completedDays = numberValue(metadata.completed_day_count);
+  const scanned = numberValue(metadata.scanned_count) || run?.raw_count || 0;
+  const extracted = numberValue(metadata.extracted_count);
+  const inserted = numberValue(metadata.inserted_count) || run?.stored_count || 0;
+  const candidates = numberValue(metadata.scan_candidate_count);
+  const snapshots = numberValue(metadata.snapshot_count);
+  const failed = numberValue(metadata.failed_llm_batches) || run?.filtered_count || 0;
+  return [
+    days ? `天数 ${completedDays}/${days}` : "",
+    `扫描 ${scanned} 条`,
+    `抽取 ${extracted} 条`,
+    `写入 ${inserted} 条`,
+    `候选 ${candidates} 个`,
+    `快照 ${snapshots} 条`,
+    failed ? `失败批次 ${failed}` : "失败批次 0",
+    durationText(run),
+  ].filter(Boolean);
+}
+
 function detailText(run?: RunItem): string {
   if (!run) {
     return "任务已提交，等待服务端返回运行状态。";
@@ -292,6 +330,9 @@ function kindTitle(kind: JobRunKind): string {
   }
   if (kind === "strategyBackfill") {
     return "策略快照回填";
+  }
+  if (kind === "sourceRadar") {
+    return "源头雷达快照";
   }
   return "聚合 refine";
 }

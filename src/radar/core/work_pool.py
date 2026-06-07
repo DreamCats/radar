@@ -7,6 +7,7 @@ from typing import Generic, TypeVar
 
 T = TypeVar("T")
 R = TypeVar("R")
+U = TypeVar("U")
 
 
 @dataclass(frozen=True)
@@ -61,6 +62,32 @@ def run_work_pool(
         actual_workers=actual_workers,
         completed_count=completed_count,
         failed_count=failed_count,
+    )
+
+
+def run_resource_work_pool(
+    items: Sequence[T],
+    *,
+    resources: Sequence[U],
+    max_workers: int,
+    worker: Callable[[int, T, U], R],
+    on_result: Callable[[int, T, R], None],
+    on_error: Callable[[int, T, BaseException], None],
+) -> WorkPoolStats:
+    """限制并发执行任务，并按批次下标轮询分配外部资源。"""
+
+    if not resources:
+        raise ValueError("resources 不能为空")
+
+    def resource_worker(index: int, item: T) -> R:
+        return worker(index, item, resources[index % len(resources)])
+
+    return run_work_pool(
+        items,
+        max_workers=max_workers,
+        worker=resource_worker,
+        on_result=on_result,
+        on_error=on_error,
     )
 
 

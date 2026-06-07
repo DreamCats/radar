@@ -26,6 +26,7 @@ import type {
   RecommendationBacktestRequest,
   RecommendationBacktestSummary,
   RunItem,
+  SourceRadarJobRequest,
   StrategyDashboard,
   StrategySnapshotBackfillJobRequest,
   StrategySnapshotSaveRequest,
@@ -203,6 +204,19 @@ export async function saveStrategySnapshot(request: StrategySnapshotSaveRequest)
 
 export async function startStrategyBackfillJob(request: StrategySnapshotBackfillJobRequest): Promise<DerivedJobItem[]> {
   const response = await fetch(`${apiBase}/api/strategy/snapshots/backfill/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: DerivedJobItem[] };
+  return data.items;
+}
+
+export async function startSourceRadarJob(request: SourceRadarJobRequest): Promise<DerivedJobItem[]> {
+  const response = await fetch(`${apiBase}/api/source/radar/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

@@ -298,7 +298,7 @@ def test_strategy_snapshot_persists_and_backfills_returns(tmp_path: Path):
         migrate_market_db(market_conn)
         for offset, close in enumerate([10, 10.5, 11, 12], start=5):
             _insert_daily_close(market_conn, "600549.SH", f"2026060{offset}", close)
-            _insert_daily_close(market_conn, "000300.SH", f"2026060{offset}", 100 + offset)
+            _insert_daily_close(market_conn, "000300.SH", f"2026060{offset}", 100 + offset, api_name="index_daily")
     finally:
         market_conn.close()
 
@@ -452,12 +452,12 @@ def _insert_backtest_event(
     conn.commit()
 
 
-def _insert_daily_close(conn, ts_code: str, trade_date: str, close: float) -> None:
+def _insert_daily_close(conn, ts_code: str, trade_date: str, close: float, *, api_name: str = "daily") -> None:
     conn.execute(
         """
         INSERT INTO tushare_history (api_name, ts_code, date_key, data)
-        VALUES ('daily', ?, ?, ?)
+        VALUES (?, ?, ?, ?)
         """,
-        (ts_code, trade_date, json.dumps({"ts_code": ts_code, "trade_date": trade_date, "close": close})),
+        (api_name, ts_code, trade_date, json.dumps({"ts_code": ts_code, "trade_date": trade_date, "close": close})),
     )
     conn.commit()

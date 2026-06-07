@@ -1,4 +1,4 @@
-import { Anchor, Bot, ChartNoAxesCombined, Database, Search, Sparkles } from "lucide-react";
+import { Anchor, Bot, ChartNoAxesCombined, Database, ScanSearch, Search, Sparkles } from "lucide-react";
 
 import type { IngestSource, MessageCategory } from "../types";
 import type { JobTemplateKey } from "./jobRuns";
@@ -18,6 +18,7 @@ export const JOB_TEMPLATES = [
   { key: "refine", title: "聚合 Refine", meta: "LLM 聚合", icon: Sparkles },
   { key: "backtest", title: "推荐回测补齐", meta: "T+N 补齐", icon: ChartNoAxesCombined },
   { key: "strategyBackfill", title: "策略快照回填", meta: "已有快照 T+N", icon: Search },
+  { key: "sourceRadar", title: "源头雷达快照", meta: "抽取 + 扫描", icon: ScanSearch },
 ] satisfies Array<{ key: JobTemplateKey; title: string; meta: string; icon: typeof Database }>;
 
 export function configHints(kind: JobTemplateKey): string[] {
@@ -35,6 +36,9 @@ export function configHints(kind: JobTemplateKey): string[] {
   }
   if (kind === "strategyBackfill") {
     return ["默认近 30 天快照", "只回填已有快照", "回填 T+1/T+3/T+5/T+10", "未成熟下次继续补"];
+  }
+  if (kind === "sourceRadar") {
+    return ["按天切分窗口", "每天抽取最多 500 条", "LLM 并发 10", "保存 Top 20 快照"];
   }
   return ["候选 50", "单批 5", "LLM 并发 10", "命中缓存则跳过"];
 }

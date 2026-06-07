@@ -10,6 +10,7 @@ from radar.web.server.classify_jobs import mark_stale_classify_runs
 from radar.web.server.deps import get_config
 from radar.web.server.ingest_jobs import mark_stale_ingest_runs
 from radar.web.server.schemas import RunListResponse
+from radar.web.server.source_jobs import mark_stale_source_runs
 
 router = APIRouter(prefix="/api", tags=["runs"])
 
@@ -25,4 +26,5 @@ def runs(
     mark_stale_classify_runs(config)
     mark_stale_aggregate_runs(config)
     mark_stale_backtest_runs(config)
+    mark_stale_source_runs(config)
     return RunListResponse(items=list_runs(config.database_path, kind=kind, status=status, limit=limit))

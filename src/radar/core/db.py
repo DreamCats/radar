@@ -363,6 +363,66 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON view_cache(created_at DESC);
         """,
     ),
+    (
+        "013_source_radar",
+        """
+        CREATE TABLE IF NOT EXISTS source_structures (
+            structure_id       TEXT PRIMARY KEY,
+            message_id         TEXT NOT NULL,
+            source             TEXT NOT NULL,
+            sender             TEXT NOT NULL,
+            group_name         TEXT,
+            message_time       TEXT NOT NULL,
+            is_candidate       INTEGER NOT NULL,
+            anchor_span        TEXT NOT NULL DEFAULT '',
+            modifier_span      TEXT NOT NULL DEFAULT '',
+            novel_span         TEXT NOT NULL DEFAULT '',
+            relation_type      TEXT NOT NULL DEFAULT 'other',
+            relation_evidence  TEXT NOT NULL DEFAULT '',
+            ask_question       TEXT NOT NULL DEFAULT '',
+            confidence         REAL NOT NULL DEFAULT 0,
+            reject_reason      TEXT,
+            llm_provider       TEXT,
+            prompt_version     TEXT NOT NULL,
+            extractor_version  TEXT NOT NULL,
+            created_at         TEXT NOT NULL,
+            updated_at         TEXT NOT NULL,
+            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_source_structures_unique
+            ON source_structures(message_id, anchor_span, modifier_span, novel_span, relation_type, extractor_version);
+        CREATE INDEX IF NOT EXISTS idx_source_structures_time
+            ON source_structures(message_time DESC, structure_id);
+        CREATE INDEX IF NOT EXISTS idx_source_structures_candidate
+            ON source_structures(is_candidate, confidence DESC);
+
+        CREATE TABLE IF NOT EXISTS source_signal_snapshots (
+            snapshot_id       TEXT PRIMARY KEY,
+            signal_id         TEXT NOT NULL,
+            status            TEXT NOT NULL,
+            anchor_span       TEXT NOT NULL,
+            modifier_span     TEXT NOT NULL,
+            novel_span        TEXT NOT NULL,
+            relation_type     TEXT NOT NULL,
+            score             REAL NOT NULL,
+            novelty_strength  REAL NOT NULL,
+            earliness_score   REAL NOT NULL,
+            askability_score  REAL NOT NULL,
+            trade_score       REAL NOT NULL,
+            first_message_id  TEXT NOT NULL,
+            first_seen_time   TEXT NOT NULL,
+            as_of_time        TEXT NOT NULL,
+            payload_json      TEXT NOT NULL,
+            created_at        TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_source_signal_snapshots_asof
+            ON source_signal_snapshots(as_of_time DESC, status, score DESC);
+        CREATE INDEX IF NOT EXISTS idx_source_signal_snapshots_signal
+            ON source_signal_snapshots(signal_id, as_of_time DESC);
+        """,
+    ),
 ]
 
 MARKET_MIGRATIONS: list[Migration] = [
