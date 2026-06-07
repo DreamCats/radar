@@ -70,7 +70,7 @@ export function StrategyPage() {
   return (
     <section className="strategy-page">
       <div className="dashboard-actions">
-        <p>{initialLoading ? "正在加载机会信号策略" : data ? `策略窗口 ${formatTime(data.start_time)} - ${formatTime(data.end_time)}` : "暂无策略数据"}</p>
+        <p>{initialLoading ? "正在加载发酵确认策略" : data ? `策略窗口 ${formatTime(data.start_time)} - ${formatTime(data.end_time)}` : "暂无策略数据"}</p>
         <div>
           {loading && !initialLoading && <PageRefreshProgress label="正在刷新策略" />}
           <button className="btn btn-sm" type="button" onClick={() => void saveCurrentSnapshot()} disabled={savingSnapshot || loading}>
@@ -96,12 +96,12 @@ export function StrategyPage() {
       {error && <p className="error-line">{error}</p>}
       <div className="strategy-grid">
         <section className="panel strategy-main-panel">
-          <PanelTitle title="今日机会" meta="主题拐点 x 来源质量 x T+5 回测 x 催化/风险" />
+          <PanelTitle title="发酵确认" meta="主题拐点 x 来源质量 x T+5 回测 x 催化/风险" />
           <div className="strategy-opportunity-list">
             {opportunities.length ? (
               opportunities.map((item) => <OpportunityCard item={item} key={item.key} />)
             ) : (
-              <p className="empty-line">暂无机会信号。</p>
+              <p className="empty-line">暂无发酵确认信号。</p>
             )}
           </div>
         </section>

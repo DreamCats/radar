@@ -212,7 +212,7 @@ export function IngestPage() {
       });
       return items.map((item) => ({
         kind,
-        source: "机会信号",
+        source: "发酵确认",
         run_id: item.run_id,
         reused_existing: item.reused_existing,
       }));

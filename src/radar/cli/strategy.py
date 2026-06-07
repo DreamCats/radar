@@ -13,7 +13,7 @@ from radar.core.usecases.strategy.snapshots import (
 
 @click.group()
 def strategy() -> None:
-    """机会信号策略快照和验证。"""
+    """发酵确认策略快照和验证。"""
 
 
 @strategy.command("snapshot")
@@ -22,7 +22,7 @@ def strategy() -> None:
 @click.option("--limit", type=click.IntRange(1, 50), default=12, show_default=True)
 @click.pass_context
 def snapshot_command(ctx: click.Context, days: int, recent_days: int, limit: int) -> None:
-    """保存一次当前机会信号策略输出。"""
+    """保存一次当前发酵确认策略输出。"""
 
     result = save_strategy_snapshot(load_cli_config(ctx), days=days, recent_days=recent_days, limit=limit)
     click.echo(

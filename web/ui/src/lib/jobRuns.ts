@@ -69,7 +69,7 @@ export function sourceLabel(value: IngestSource): string {
 
 function sourceFromRun(run: RunItem): string {
   if (run.kind === "strategy_snapshot_backfill") {
-    return "机会信号";
+    return "发酵确认";
   }
   const source = textValue(run.metadata.source);
   if (source && !isSourceKey(source)) {
