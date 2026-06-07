@@ -155,6 +155,18 @@
   padding: 14px;
 }
 
+.lead-sample-card-button {
+  width: 100%;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lead-sample-card-button:hover {
+  border-color: var(--color-hairline-strong);
+  background: var(--color-surface-3);
+}
+
 .source-radar-card {
   display: grid;
   gap: 12px;

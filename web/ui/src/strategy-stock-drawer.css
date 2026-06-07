@@ -3,7 +3,9 @@
   inset: 0;
   z-index: 40;
   display: grid;
-  justify-items: end;
+  align-items: center;
+  justify-items: center;
+  padding: 22px;
 }
 
 .strategy-stock-drawer-scrim {
@@ -19,12 +21,13 @@
   z-index: 1;
   display: grid;
   width: min(920px, calc(100vw - 44px));
-  max-height: 100vh;
+  max-height: calc(100vh - 44px);
   grid-template-rows: auto auto minmax(0, 1fr);
   overflow: hidden;
-  border-left: 1px solid var(--color-hairline-strong);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-md);
   background: var(--color-surface-1);
-  box-shadow: -20px 0 48px rgb(0 0 0 / 0.34);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.46);
 }
 
 .strategy-stock-drawer-head {
@@ -79,6 +82,18 @@
   gap: 6px;
   border-bottom: 1px solid var(--color-hairline);
   padding: 10px 16px;
+}
+
+.strategy-stock-context-tag {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-signal-hot) 45%, var(--color-hairline));
+  border-radius: var(--radius-pill);
+  color: var(--color-signal-hot);
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .strategy-stock-drawer-body {
@@ -226,8 +241,14 @@
 }
 
 @media (max-width: 560px) {
+  .strategy-stock-drawer-shell {
+    padding: 0;
+  }
+
   .strategy-stock-drawer {
     width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
   }
 
   .strategy-stock-chart {

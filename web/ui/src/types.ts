@@ -470,6 +470,7 @@ export type {
   StrategyStockChart,
   StrategyStockCandidate,
   StrategyStockChartQuery,
+  StrategyStockDecisionBucket,
   StrategyStockLifecycleState,
   StrategyStockPricePosition,
   StrategyThemeBrief,

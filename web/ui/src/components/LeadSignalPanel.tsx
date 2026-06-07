@@ -4,13 +4,15 @@ import type { ReactNode } from "react";
 import { formatTime } from "../lib/datetime";
 import type { LeadSignalBucket, LeadSignalSample, LeadSignalSourceStat, LeadSignalSummary } from "../types";
 import { PanelTitle } from "./PanelTitle";
+import type { StrategyStockDrawerStock } from "./StrategyStockDrawer";
 
 export function LeadSignalPanel(props: {
   summary: LeadSignalSummary | null;
   selectedDate: string;
   onDateChange: (value: string) => void;
+  onStockOpen: (stock: StrategyStockDrawerStock) => void;
 }) {
-  const { summary, selectedDate, onDateChange } = props;
+  const { summary, selectedDate, onDateChange, onStockOpen } = props;
   const buckets = summary?.buckets ?? [];
   const samples = summary?.samples ?? [];
   const sources = summary?.source_stats ?? [];
@@ -52,7 +54,7 @@ export function LeadSignalPanel(props: {
           </div>
           <div className="strategy-opportunity-list">
             {samples.length ? (
-              samples.map((item) => <LeadSampleCard item={item} key={`${item.event_date}-${item.ts_code}`} />)
+              samples.map((item) => <LeadSampleCard item={item} key={`${item.event_date}-${item.ts_code}`} onStockOpen={onStockOpen} />)
             ) : (
               <p className="empty-line">暂无涨前候选。</p>
             )}
@@ -85,12 +87,12 @@ export function LeadSignalPanel(props: {
   );
 }
 
-function LeadSampleCard({ item }: { item: LeadSignalSample }) {
+function LeadSampleCard({ item, onStockOpen }: { item: LeadSignalSample; onStockOpen: (stock: StrategyStockDrawerStock) => void }) {
   const t1 = windowValue(item, 1);
   const t3 = windowValue(item, 3);
   const t5 = windowValue(item, 5);
   return (
-    <article className="strategy-opportunity-card">
+    <button className="strategy-opportunity-card lead-sample-card-button" type="button" onClick={() => onStockOpen(toDrawerStock(item))}>
       <div className="strategy-opportunity-head">
         <div>
           <span className="strategy-level strategy-level-重点关注">涨前信号</span>
@@ -129,7 +131,7 @@ function LeadSampleCard({ item }: { item: LeadSignalSample }) {
           </span>
         ))}
       </div>
-    </article>
+    </button>
   );
 }
 
@@ -186,6 +188,34 @@ function Signal(props: { label: string; value: string; icon: ReactNode; tone?: n
 
 function windowValue(item: LeadSignalSample, windowDays: number) {
   return item.windows.find((window) => window.window_days === windowDays);
+}
+
+function toDrawerStock(item: LeadSignalSample): StrategyStockDrawerStock {
+  const t1 = windowValue(item, 1);
+  const t3 = windowValue(item, 3);
+  const t5 = windowValue(item, 5);
+  return {
+    stock_name: item.stock_name,
+    ts_code: item.ts_code,
+    event_count: item.event_count,
+    source_count: item.source_names.length,
+    first_seen_time: item.first_message_time,
+    latest_message_time: item.first_message_time,
+    drawer_badge: "涨前验证",
+    evidence_title: "涨前验证证据",
+    drawer_metrics: [
+      { label: "T+1收益", value: t1?.return_rate },
+      { label: "T+3收益", value: t3?.return_rate },
+      { label: "T+5收益", value: t5?.return_rate },
+      { label: "T+5超额", value: t5?.excess_return_rate },
+    ],
+    evidence_lines: [
+      `${item.event_date} · T日 ${formatPctNumber(item.message_day_pct_chg)} · 收盘 ${formatPrice(item.base_close)}`,
+      item.source_names.length ? `来源 ${item.source_names.slice(0, 6).join(" / ")}` : "",
+      t1?.target_trade_date ? `T+1 ${t1.target_trade_date} · ${formatPercent(t1.return_rate, true)}` : "",
+      t5?.target_trade_date ? `T+5 ${t5.target_trade_date} · ${formatPercent(t5.return_rate, true)} · 超额 ${formatPercent(t5.excess_return_rate, true)}` : "",
+    ].filter((line): line is string => Boolean(line)),
+  };
 }
 
 function formatPercent(value?: number | null, signed = false): string {

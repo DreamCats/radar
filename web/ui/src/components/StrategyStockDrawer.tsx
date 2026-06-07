@@ -2,9 +2,45 @@ import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 
 import { fetchStrategyStockChart } from "../api/radarApi";
-import type { StrategyRelatedStock, StrategyStockCandidate, StrategyStockChart, StrategyStockCandle } from "../types";
+import type {
+  StrategyEventCredibility,
+  StrategyStockChart,
+  StrategyStockCandle,
+  StrategyStockDecisionBucket,
+  StrategyStockLifecycleState,
+  StrategyStockPricePosition,
+} from "../types";
 
-type StrategyStock = StrategyRelatedStock | StrategyStockCandidate;
+export type StrategyStockDrawerMetric = {
+  label: string;
+  value?: number | null;
+};
+
+export type StrategyStockDrawerStock = {
+  stock_name: string;
+  ts_code: string;
+  event_count?: number;
+  source_count?: number;
+  first_seen_time?: string | null;
+  latest_message_time?: string | null;
+  lifecycle_state?: StrategyStockLifecycleState | null;
+  lifecycle_reason?: string | null;
+  price_return_since_first_seen?: number | null;
+  recent_price_return_3d?: number | null;
+  drawdown_from_high_since_first_seen?: number | null;
+  price_position?: StrategyStockPricePosition | null;
+  average_excess_return_t5?: number | null;
+  realtime_score?: number | null;
+  event_credibility?: StrategyEventCredibility | null;
+  decision_bucket?: StrategyStockDecisionBucket | null;
+  decision_reason?: string | null;
+  drawer_badge?: string;
+  drawer_metrics?: StrategyStockDrawerMetric[];
+  evidence_title?: string;
+  evidence_lines?: string[];
+};
+
+type StrategyStock = StrategyStockDrawerStock;
 
 type Props = {
   stock: StrategyStock | null;
@@ -81,7 +117,8 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
         </header>
 
         <div className="strategy-stock-drawer-tags">
-          <span className={decisionClass(stock.decision_bucket)}>{stock.decision_bucket}</span>
+          {stock.drawer_badge && <span className="strategy-stock-context-tag">{stock.drawer_badge}</span>}
+          {stock.decision_bucket && <span className={decisionClass(stock.decision_bucket)}>{stock.decision_bucket}</span>}
           {stock.lifecycle_state && <span className={`strategy-stock-state strategy-stock-state-${stock.lifecycle_state}`}>{stock.lifecycle_state}</span>}
           {stock.price_position && <span className={`strategy-price-position strategy-price-position-${stock.price_position}`}>{stock.price_position}</span>}
           {stock.event_credibility && <span className={credibilityClass(stock.event_credibility.level)}>{stock.event_credibility.level}</span>}
@@ -96,17 +133,14 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
           {!loading && !error && candles.length > 0 && <CandlestickChart candles={candles} stock={stock} />}
 
           <div className="strategy-stock-decision-grid">
-            <DecisionMetric label="首现以来" value={stock.price_return_since_first_seen} />
-            <DecisionMetric label="近3日" value={stock.recent_price_return_3d} />
-            <DecisionMetric label="首现回撤" value={stock.drawdown_from_high_since_first_seen} />
-            <DecisionMetric label="T+5超额" value={stock.average_excess_return_t5} />
+            {drawerMetrics(stock).map((metric) => (
+              <DecisionMetric label={metric.label} value={metric.value} key={metric.label} />
+            ))}
           </div>
 
           <section className="strategy-stock-evidence-panel">
-            <strong>策略证据</strong>
-            <span>
-              {stock.source_count} 来源 · {stock.event_count} 事件 · 实时 {stock.realtime_score.toFixed(0)}
-            </span>
+            <strong>{stock.evidence_title ?? "策略证据"}</strong>
+            {evidenceSummary(stock) && <span>{evidenceSummary(stock)}</span>}
             {stock.event_credibility?.first_source_name && (
               <p>
                 首提 {stock.event_credibility.first_source_name}
@@ -115,6 +149,9 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
             )}
             {stock.decision_reason && <p>{stock.decision_reason}</p>}
             {stock.lifecycle_reason && <p>{stock.lifecycle_reason}</p>}
+            {stock.evidence_lines?.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
             {stock.event_credibility?.risks.slice(0, 2).map((risk) => (
               <p key={risk}>{risk}</p>
             ))}
@@ -181,10 +218,12 @@ function CandlestickChart({ candles, stock }: { candles: StrategyStockCandle[]; 
         ))}
         {markers.map((marker, index) => {
           const x = chart.xForIndex(marker.index);
+          const isRightEdge = x > chart.right - 132;
+          const labelX = isRightEdge ? x - 4 : x + 4;
           return (
             <g key={marker.label}>
               <line className="strategy-signal-marker-line" x1={x} x2={x} y1={chart.top} y2={chart.volumeBottom} />
-              <text className="strategy-signal-marker-label" x={x + 4} y={chart.top + 14 + index * 16}>
+              <text className="strategy-signal-marker-label" x={labelX} y={chart.top + 14 + index * 16} textAnchor={isRightEdge ? "end" : "start"}>
                 {marker.label}
               </text>
             </g>
@@ -280,10 +319,10 @@ function signalMarkers(candles: StrategyStockCandle[], stock: StrategyStock) {
   const firstSeen = dateKey(stock.first_seen_time);
   const latest = dateKey(stock.latest_message_time);
   if (firstSeen) {
-    markers.push({ label: "首现", index: nearestCandleIndex(candles, firstSeen) });
+    markers.push({ label: markerLabel("首现", stock.first_seen_time), index: nearestCandleIndex(candles, firstSeen) });
   }
   if (latest && latest !== firstSeen) {
-    markers.push({ label: "最近消息", index: nearestCandleIndex(candles, latest) });
+    markers.push({ label: markerLabel("最近", stock.latest_message_time), index: nearestCandleIndex(candles, latest) });
   }
   return markers;
 }
@@ -302,9 +341,47 @@ function DecisionMetric({ label, value }: { label: string; value?: number | null
   );
 }
 
+function drawerMetrics(stock: StrategyStock): StrategyStockDrawerMetric[] {
+  return stock.drawer_metrics?.length
+    ? stock.drawer_metrics
+    : [
+        { label: "首现以来", value: stock.price_return_since_first_seen },
+        { label: "近3日", value: stock.recent_price_return_3d },
+        { label: "首现回撤", value: stock.drawdown_from_high_since_first_seen },
+        { label: "T+5超额", value: stock.average_excess_return_t5 },
+      ];
+}
+
+function evidenceSummary(stock: StrategyStock): string {
+  return [
+    stock.source_count !== undefined ? `${stock.source_count} 来源` : "",
+    stock.event_count !== undefined ? `${stock.event_count} 事件` : "",
+    stock.realtime_score !== undefined && stock.realtime_score !== null ? `实时 ${stock.realtime_score.toFixed(0)}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 function dateKey(value?: string | null): string | null {
+  return dateParts(value)?.key ?? null;
+}
+
+function markerLabel(prefix: string, value?: string | null): string {
+  const label = dateParts(value)?.label;
+  return label ? `${prefix} ${label}` : prefix;
+}
+
+function dateParts(value?: string | null): { key: string; label: string } | null {
   if (!value) {
     return null;
+  }
+  const directMatch = value.match(/^(\d{4})[-/](\d{2})[-/](\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
+  if (directMatch) {
+    const [, , month, day, hour, minute] = directMatch;
+    return {
+      key: `${directMatch[1]}${month}${day}`,
+      label: hour && minute ? `${month}/${day} ${hour}:${minute}` : `${month}/${day}`,
+    };
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -313,7 +390,12 @@ function dateKey(value?: string | null): string | null {
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, "0");
   const day = `${date.getDate()}`.padStart(2, "0");
-  return `${year}${month}${day}`;
+  const hour = `${date.getHours()}`.padStart(2, "0");
+  const minute = `${date.getMinutes()}`.padStart(2, "0");
+  return {
+    key: `${year}${month}${day}`,
+    label: `${month}/${day} ${hour}:${minute}`,
+  };
 }
 
 function formatTradeDate(value: string): string {

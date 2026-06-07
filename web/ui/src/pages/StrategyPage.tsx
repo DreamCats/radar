@@ -19,7 +19,7 @@ import {
   SourceRow,
   groupStocksByDecision,
 } from "../components/StrategyFermentationCards";
-import { StrategyStockDrawer } from "../components/StrategyStockDrawer";
+import { StrategyStockDrawer, type StrategyStockDrawerStock } from "../components/StrategyStockDrawer";
 import { StrategyValidationPanel } from "../components/StrategyValidationPanel";
 import { formatTime } from "../lib/datetime";
 import type {
@@ -27,8 +27,6 @@ import type {
   SourceRadarValidationSummary,
   LeadSignalSummary,
   StrategyDashboard,
-  StrategyRelatedStock,
-  StrategyStockCandidate,
   StrategyValidationSummary,
 } from "../types";
 type StrategyMode = "source" | "fermentation" | "lead" | "validation";
@@ -45,7 +43,7 @@ export function StrategyPage() {
   const [leadSignals, setLeadSignals] = useState<LeadSignalSummary | null>(null);
   const [data, setData] = useState<StrategyDashboard | null>(null);
   const [validation, setValidation] = useState<StrategyValidationSummary | null>(null);
-  const [selectedStock, setSelectedStock] = useState<StrategyRelatedStock | StrategyStockCandidate | null>(null);
+  const [selectedStock, setSelectedStock] = useState<StrategyStockDrawerStock | null>(null);
   const [loading, setLoading] = useState(false);
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   const [snapshotMessage, setSnapshotMessage] = useState<string | null>(null);
@@ -210,7 +208,7 @@ export function StrategyPage() {
       {!initialLoading && activeMode === "lead" && (
         <>
           {error && <p className="error-line">{error}</p>}
-          <LeadSignalPanel summary={leadSignals} selectedDate={leadDate} onDateChange={setLeadDate} />
+          <LeadSignalPanel summary={leadSignals} selectedDate={leadDate} onDateChange={setLeadDate} onStockOpen={setSelectedStock} />
         </>
       )}
       {!initialLoading && activeMode === "validation" && (
