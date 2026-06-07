@@ -322,6 +322,47 @@ def test_strategy_snapshot_persists_and_backfills_returns(tmp_path: Path):
             """,
             (saved.snapshot_id,),
         ).fetchone()
+        conn.execute(
+            """
+            INSERT INTO strategy_snapshots (
+                snapshot_id, strategy_type, start_time, end_time, recent_start_time,
+                generated_at, created_at, opportunity_count, stock_count, payload_json
+            ) VALUES (
+                'other-snap', 'early_concept_radar', '2026-06-01T10:00:00', '2026-06-05T10:00:00',
+                '2026-06-04T10:00:00', '2026-06-05T10:00:00', '2026-06-05T10:00:00',
+                1, 1, '{}'
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO strategy_snapshot_stocks (
+                snapshot_id, ts_code, stock_name, rank, decision_bucket, decision_reason,
+                realtime_score, credibility_level, lifecycle_state, price_position,
+                first_seen_time, latest_message_time, event_count, source_count,
+                win_rate_t5, average_excess_return_t5, first_source_name, payload_json
+            ) VALUES (
+                'other-snap', '000001.SZ', '混入口径', 1, '混入口径', NULL,
+                99, '高可信', NULL, NULL, '2026-06-05T10:00:00', '2026-06-05T10:00:00',
+                1, 1, NULL, NULL, '混入来源', '{}'
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO strategy_snapshot_returns (
+                snapshot_id, ts_code, window_days, benchmark_ts_code, base_trade_date,
+                target_trade_date, base_close, target_close, return_rate,
+                benchmark_return_rate, excess_return_rate, max_drawdown_rate, status,
+                error_message, updated_at
+            ) VALUES (
+                'other-snap', '000001.SZ', 3, '000300.SH', '20260605',
+                '20260610', 10, 20, 1.0, 0.0, 1.0, 0.0, 'succeeded',
+                NULL, '2026-06-10T10:00:00'
+            )
+            """
+        )
+        conn.commit()
     finally:
         conn.close()
 
@@ -336,6 +377,8 @@ def test_strategy_snapshot_persists_and_backfills_returns(tmp_path: Path):
     assert summary.snapshot_count == 1
     assert summary.matured_stock_count == 1
     assert summary.by_decision_bucket[0].sample_count == 1
+    assert all(metric.label != "混入口径" for metric in summary.by_decision_bucket)
+    assert all(metric.label != "混入来源" for metric in summary.top_sources)
     assert summary.by_decision_bucket[0].average_excess_return is not None
 
     cached = save_cached_strategy_snapshot(config, days=30, recent_days=7, limit=5)

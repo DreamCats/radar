@@ -278,11 +278,13 @@ def summarize_strategy_validation_from_conn(
         SELECT COUNT(*) AS count
         FROM strategy_snapshot_stocks s
         JOIN strategy_snapshot_returns r ON r.snapshot_id = s.snapshot_id AND r.ts_code = s.ts_code
+        JOIN strategy_snapshots snap ON snap.snapshot_id = s.snapshot_id
         WHERE r.window_days = ?
           AND r.benchmark_ts_code = ?
           AND r.status = 'succeeded'
+          AND snap.strategy_type = ?
         """,
-        (window_days, benchmark_ts_code),
+        (window_days, benchmark_ts_code, STRATEGY_TYPE),
     ).fetchone()
     latest_text = snapshot_stats["latest_snapshot_time"] if snapshot_stats else None
     return StrategyValidationSummary(
@@ -317,7 +319,7 @@ def _metric_rows(
     limit: int | None = None,
 ) -> list[StrategyValidationMetric]:
     limit_sql = "LIMIT ?" if limit else ""
-    params: list[object] = [window_days, benchmark_ts_code]
+    params: list[object] = [window_days, benchmark_ts_code, STRATEGY_TYPE]
     if limit:
         params.append(limit)
     rows = conn.execute(
@@ -331,9 +333,11 @@ def _metric_rows(
             AVG(r.max_drawdown_rate) AS average_max_drawdown
         FROM strategy_snapshot_stocks s
         JOIN strategy_snapshot_returns r ON r.snapshot_id = s.snapshot_id AND r.ts_code = s.ts_code
+        JOIN strategy_snapshots snap ON snap.snapshot_id = s.snapshot_id
         WHERE r.window_days = ?
           AND r.benchmark_ts_code = ?
           AND r.status = 'succeeded'
+          AND snap.strategy_type = ?
         GROUP BY label
         ORDER BY average_excess_return DESC, sample_count DESC
         {limit_sql}

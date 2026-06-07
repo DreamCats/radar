@@ -86,7 +86,7 @@ def strategy_validation(
     return cached_model(
         config.database_path,
         key=cache_key(
-            "strategy.validation",
+            "strategy.validation.v2",
             {"window_days": window_days, "benchmark": benchmark, "source_limit": source_limit},
         ),
         dependency_key=strategy_validation_dependency_key(config),
