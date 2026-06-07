@@ -98,7 +98,7 @@ function LeadSampleCard({ item }: { item: LeadSignalSample }) {
           <h2>{item.stock_name}</h2>
         </div>
         <div className="strategy-score">
-          <strong>{formatPercent(t1?.return_rate, true)}</strong>
+          <strong className={returnToneClass(t1?.return_rate)}>{formatPercent(t1?.return_rate, true)}</strong>
           <span>T+1</span>
         </div>
       </div>
@@ -108,16 +108,16 @@ function LeadSampleCard({ item }: { item: LeadSignalSample }) {
       </p>
       <div className="strategy-signal-grid">
         <Signal label="首条" value={formatTime(item.first_message_time).slice(5, 16)} icon={<Clock3 size={15} />} />
-        <Signal label="T日涨幅" value={formatPctNumber(item.message_day_pct_chg)} icon={<Activity size={15} />} />
-        <Signal label="T+3" value={formatPercent(t3?.return_rate, true)} icon={<TrendingUp size={15} />} />
-        <Signal label="T+5" value={formatPercent(t5?.return_rate, true)} icon={<Gauge size={15} />} />
+        <Signal label="T日涨幅" value={formatPctNumber(item.message_day_pct_chg)} icon={<Activity size={15} />} tone={item.message_day_pct_chg} />
+        <Signal label="T+3" value={formatPercent(t3?.return_rate, true)} icon={<TrendingUp size={15} />} tone={t3?.return_rate} />
+        <Signal label="T+5" value={formatPercent(t5?.return_rate, true)} icon={<Gauge size={15} />} tone={t5?.return_rate} />
       </div>
       <div className="strategy-backtest-strip">
         {[t1, t3, t5].filter(Boolean).map((window) => (
           <div className="strategy-backtest-metric" key={window?.window_days}>
             <span>T+{window?.window_days}</span>
-            <strong>{formatPercent(window?.return_rate, true)}</strong>
-            <em>超额 {formatPercent(window?.excess_return_rate, true)}</em>
+            <strong className={returnToneClass(window?.return_rate)}>{formatPercent(window?.return_rate, true)}</strong>
+            <em className={returnToneClass(window?.excess_return_rate)}>超额 {formatPercent(window?.excess_return_rate, true)}</em>
           </div>
         ))}
       </div>
@@ -143,7 +143,7 @@ function LeadSourceRow({ item }: { item: LeadSignalSourceStat }) {
       <span>
         涨前 {item.pre_rise_event_count} · 强涨前 {item.strong_pre_rise_event_count} · 近涨停 {item.limit_like_event_count}
       </span>
-      <em>
+      <em className={returnToneClass(item.average_t1_excess_return)}>
         胜率 {formatPercent(item.pre_rise_rate)} · T+1 {formatPercent(item.average_t1_excess_return, true)}
       </em>
     </article>
@@ -156,7 +156,7 @@ function BucketRow({ item }: { item: LeadSignalBucket }) {
       <strong>{item.label}</strong>
       <span>T+{item.window_days}</span>
       <em>{item.event_count} 事件</em>
-      <b>{formatPercent(item.average_excess_return, true)}</b>
+      <b className={returnToneClass(item.average_excess_return)}>{formatPercent(item.average_excess_return, true)}</b>
       <small>上涨 {formatPercent(item.up_rate)}</small>
     </article>
   );
@@ -172,14 +172,14 @@ function Metric(props: { label: string; value: number | string; detail: string }
   );
 }
 
-function Signal(props: { label: string; value: string; icon: ReactNode }) {
+function Signal(props: { label: string; value: string; icon: ReactNode; tone?: number | null }) {
   return (
     <div className="strategy-signal">
       <span>
         {props.icon}
         {props.label}
       </span>
-      <strong>{props.value}</strong>
+      <strong className={props.tone !== undefined ? returnToneClass(props.tone) : ""}>{props.value}</strong>
     </div>
   );
 }
@@ -194,6 +194,13 @@ function formatPercent(value?: number | null, signed = false): string {
   }
   const text = `${(value * 100).toFixed(1)}%`;
   return signed && value > 0 ? `+${text}` : text;
+}
+
+function returnToneClass(value?: number | null): string {
+  if (value === undefined || value === null || value === 0) {
+    return "return-flat";
+  }
+  return value > 0 ? "return-up" : "return-down";
 }
 
 function formatPctNumber(value?: number | null): string {

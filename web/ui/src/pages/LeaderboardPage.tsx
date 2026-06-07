@@ -337,7 +337,7 @@ function isDimension(value: BacktestGroupBy): value is Dimension {
 }
 
 function Metric(props: { label: string; value: number | string; detail: string; tone?: number | null }) {
-  const toneClass = typeof props.tone === "number" ? (props.tone >= 0 ? " up" : " down") : "";
+  const toneClass = typeof props.tone === "number" && props.tone !== 0 ? (props.tone > 0 ? " up" : " down") : "";
   return (
     <article className={`leaderboard-metric${toneClass}`}>
       <span>{props.label}</span>

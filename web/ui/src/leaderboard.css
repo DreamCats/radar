@@ -82,11 +82,11 @@
 }
 
 .leaderboard-metric.up strong {
-  color: var(--color-market-up);
+  color: var(--color-price-up);
 }
 
 .leaderboard-metric.down strong {
-  color: var(--color-market-down);
+  color: var(--color-price-down);
 }
 
 .leaderboard-dimensions {
@@ -266,7 +266,7 @@
 }
 
 .leaderboard-row-side strong {
-  color: var(--color-market-up);
+  color: var(--color-ink);
   font-size: 16px;
   font-weight: 600;
 }
@@ -341,7 +341,7 @@
 }
 
 .leaderboard-window-card strong {
-  color: var(--color-market-up);
+  color: var(--color-ink);
   font-size: 24px;
   font-weight: 600;
   line-height: 1.15;
@@ -368,11 +368,11 @@
 }
 
 .leaderboard-window-card dd.up {
-  color: var(--color-market-up);
+  color: var(--color-price-up);
 }
 
 .leaderboard-window-card dd.down {
-  color: var(--color-market-down);
+  color: var(--color-price-down);
 }
 
 .leaderboard-loading-overlay {

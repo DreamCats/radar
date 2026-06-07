@@ -27,12 +27,16 @@ colors:
   brand-secure: "#7a7fad"
   semantic-success: "#27a644"
   semantic-overlay: "#000000"
-  # ── radar 扩展：金融涨跌语义色（借自 Binance trading-up/down）──
-  # 用法：仅作文字 / 箭头 / 数值色，绝不做按钮背景。A股语境下红涨绿跌可二选一映射。
-  market-up: "#0ecb81"        # 上涨 / 正向 / 看多（国际惯例绿涨）
-  market-down: "#f6465d"      # 下跌 / 负向 / 看空（国际惯例红跌）
-  market-up-soft: "#0ecb8126"   # 低透明度底纹（涨）
-  market-down-soft: "#f6465d26" # 低透明度底纹（跌）
+  # ── radar 扩展：金融涨跌语义色 ──
+  # market-* 保留给成功/风险等通用状态；price-* 用于 A 股行情和收益数值。
+  market-up: "#0ecb81"        # 正向状态 / 成功 / 健康
+  market-down: "#f6465d"      # 负向状态 / 失败 / 风险
+  market-up-soft: "#0ecb8126"
+  market-down-soft: "#f6465d26"
+  price-up: "#f6465d"         # A 股上涨 / 正收益
+  price-down: "#0ecb81"       # A 股下跌 / 负收益
+  price-up-soft: "#f6465d26"
+  price-down-soft: "#0ecb8126"
   signal-hot: "#fcd535"       # 高热度 / 强信号标记（克制使用，借自 Binance Yellow）
   signal-warn: "#df8e1d"      # 提醒 / 待确认
   signal-mute: "#62666d"      # 已读 / 低优先（= ink-tertiary）
@@ -569,10 +573,10 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - 暗色长时间阅读友好；薰衣草蓝不抢戏，让数据本身做主角。
 
 ### radar 的金融扩展（Linear 没有的部分）
-1. **涨跌语义色**（借自 Binance trading-up/down）：
-   - `market-up #0ecb81` / `market-down #f6465d`
-   - **铁律：只做文字 / 箭头 / 数值色，绝不做按钮背景**（沿用 Binance 的专业用法）。
-   - A 股语境若要「红涨绿跌」，整体对调 up/down 的映射即可，色值不变。
+1. **行情涨跌色**：
+   - A 股行情和收益数值使用 `price-up #f6465d` / `price-down #0ecb81`，即红涨绿跌。
+   - `market-up #0ecb81` / `market-down #f6465d` 保留给成功/失败、健康/风险等通用状态，避免“失败变绿”。
+   - **铁律：只做文字 / K 线 / 数值色，绝不做按钮背景**。
 2. **信号标记**：
    - `signal-hot #fcd535`（高热度 / 强信号，克制使用，借自 Binance Yellow）
    - `signal-warn` / `signal-mute` 用于待确认 / 已读降级。
@@ -584,7 +588,7 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 |---|---|
 | 消息流 / 数据表格 | canvas + surface 阶梯 + hairline 分隔，ink 文本 |
 | 选中群 / 当前赛道 | 薰衣草蓝 `primary` 点缀 + surface-2 底 |
-| 涨跌 / 多空数值 | `market-up` / `market-down`（仅文字/箭头）|
+| 涨跌 / 收益数值 | `price-up` / `price-down`（A 股红涨绿跌，仅文字/K线/箭头）|
 | 强信号 / 早期雷达命中 | `signal-hot` 小标记，克制 |
 | 已读 / 低优先消息 | `signal-mute` |
 

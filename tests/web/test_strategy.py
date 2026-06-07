@@ -10,6 +10,7 @@ from radar.core.config import RadarConfig
 from radar.core.models import MessageAnchor, MessageClassification, RawMessage
 from radar.core.runs import get_run
 from radar.core.store import connect, init_db, replace_message_anchors, upsert_message_classifications, upsert_messages
+from radar.core.tushare import history
 from radar.core.usecases.strategy import LeadSignalSummary
 from radar.core.usecases.strategy.snapshots import StrategySnapshotBackfillResult, StrategySnapshotSaveResult
 from radar.web.server.app import create_app
@@ -58,6 +59,44 @@ def test_strategy_validation_endpoint_returns_empty_summary(tmp_path: Path):
     assert data["snapshot_count"] == 0
     assert data["matured_stock_count"] == 0
     assert data["by_decision_bucket"] == []
+
+
+def test_strategy_stock_chart_endpoint_reads_local_market_history(tmp_path: Path):
+    config = _config(tmp_path)
+    daily = history.spec_for("daily")
+    assert daily is not None
+    history.put_rows(
+        config.market_database_path,
+        daily,
+        [
+            _daily("000001.SZ", "20240506", 10, 10.8, 9.8, 10.5, pct_chg=5.0),
+            _daily("000001.SZ", "20240507", 10.5, 11.2, 10.1, 11.0, pct_chg=4.76),
+            _daily("000001.SZ", "20240508", 11.0, 11.6, 10.7, 10.9, pct_chg=-0.91),
+            _daily("000002.SZ", "20240508", 8.0, 8.2, 7.9, 8.1, pct_chg=1.25),
+        ],
+    )
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/strategy/stocks/000001.SZ/chart", params={"days": 2})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["ts_code"] == "000001.SZ"
+    assert data["latest_trade_date"] == "20240508"
+    assert [item["trade_date"] for item in data["candles"]] == ["20240507", "20240508"]
+    assert data["candles"][0]["close"] == 11.0
+    assert data["candles"][1]["pct_chg"] == -0.91
+    assert data["missing_reason"] is None
+
+
+def test_strategy_stock_chart_endpoint_returns_empty_when_cache_missing(tmp_path: Path):
+    client = TestClient(create_app(_config(tmp_path)))
+    response = client.get("/api/strategy/stocks/000001.SZ/chart")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["candles"] == []
+    assert data["missing_reason"] == "本地 market.sqlite3 暂无该股票日线缓存"
 
 
 def test_lead_signals_endpoint_returns_summary(monkeypatch, tmp_path: Path):
@@ -266,3 +305,28 @@ def _anchor(message: RawMessage, name: str) -> MessageAnchor:
         created_at=now,
         updated_at=now,
     )
+
+
+def _daily(
+    ts_code: str,
+    trade_date: str,
+    open_: float,
+    high: float,
+    low: float,
+    close: float,
+    *,
+    pct_chg: float,
+) -> dict:
+    return {
+        "ts_code": ts_code,
+        "trade_date": trade_date,
+        "open": open_,
+        "high": high,
+        "low": low,
+        "close": close,
+        "pre_close": open_,
+        "change": close - open_,
+        "pct_chg": pct_chg,
+        "vol": 10000,
+        "amount": 120000,
+    }

@@ -21,6 +21,10 @@
   --color-market-down: #f6465d;
   --color-market-up-soft: #0ecb8126;
   --color-market-down-soft: #f6465d26;
+  --color-price-up: #f6465d;
+  --color-price-down: #0ecb81;
+  --color-price-up-soft: #f6465d26;
+  --color-price-down-soft: #0ecb8126;
   --color-signal-hot: #fcd535;
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -468,6 +472,18 @@ button:disabled {
 
 .empty-line {
   color: var(--color-ink-subtle);
+}
+
+.return-up {
+  color: var(--color-price-up) !important;
+}
+
+.return-down {
+  color: var(--color-price-down) !important;
+}
+
+.return-flat {
+  color: var(--color-ink-subtle) !important;
 }
 
 @media (max-width: 900px) {

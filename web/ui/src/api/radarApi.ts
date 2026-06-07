@@ -38,6 +38,8 @@ import type {
   StrategySnapshotSaveRequest,
   StrategySnapshotSaveResult,
   StrategyQuery,
+  StrategyStockChart,
+  StrategyStockChartQuery,
   StrategyValidationQuery,
   StrategyValidationSummary,
 } from "../types";
@@ -122,6 +124,10 @@ export async function fetchRecommendationBacktestSummary(query: {
 
 export async function fetchStrategyOpportunities(query: StrategyQuery = {}): Promise<StrategyDashboard> {
   return getJson(`/api/strategy/opportunities?${params(query)}`);
+}
+
+export async function fetchStrategyStockChart(tsCode: string, query: StrategyStockChartQuery = {}): Promise<StrategyStockChart> {
+  return getJson(`/api/strategy/stocks/${encodeURIComponent(tsCode)}/chart?${params(query)}`);
 }
 
 export async function fetchStrategyValidation(query: StrategyValidationQuery = {}): Promise<StrategyValidationSummary> {

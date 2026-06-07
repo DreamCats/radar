@@ -11,6 +11,7 @@ from radar.core.usecases.source.storage import list_latest_source_signal_snapsho
 from radar.core.usecases.source.validation import summarize_source_signal_validation
 from radar.core.usecases.strategy import (
     build_strategy_dashboard,
+    get_strategy_stock_chart,
     save_cached_strategy_snapshot,
     summarize_lead_signals,
     summarize_strategy_validation,
@@ -29,6 +30,7 @@ from radar.web.server.schemas import (
     SourceRadarSnapshotResponse,
     SourceRadarValidationResponse,
     StrategyDashboardResponse,
+    StrategyStockChartResponse,
     StrategySnapshotBackfillJobRequest,
     StrategySnapshotSaveRequest,
     StrategySnapshotSaveResponse,
@@ -59,6 +61,19 @@ def strategy_opportunities(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return result
+
+
+@router.get("/stocks/{ts_code}/chart", response_model=StrategyStockChartResponse)
+def strategy_stock_chart(
+    ts_code: str,
+    days: int = Query(default=120, ge=1, le=260),
+    config: RadarConfig = Depends(get_config),
+) -> StrategyStockChartResponse:
+    try:
+        result = get_strategy_stock_chart(config, ts_code=ts_code, days=days)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return StrategyStockChartResponse(**result.model_dump())
 
 
 @router.get("/validation", response_model=StrategyValidationResponse)

@@ -120,7 +120,7 @@ function ValidationTable(props: { title: string; rows: StrategyValidationMetric[
           <article className="strategy-validation-row" key={row.label}>
             <span>{row.label}</span>
             <em>{row.sample_count} 样本</em>
-            <b>{formatPercent(row.average_excess_return, true)}</b>
+            <b className={returnToneClass(row.average_excess_return)}>{formatPercent(row.average_excess_return, true)}</b>
             {!props.compact && <small>胜率 {formatPercent(row.win_rate)} · 回撤 {formatPercent(row.average_max_drawdown, true)}</small>}
           </article>
         ))
@@ -141,4 +141,11 @@ function formatPercent(value?: number | null, signed = false): string {
   }
   const text = `${(value * 100).toFixed(1)}%`;
   return signed && value > 0 ? `+${text}` : text;
+}
+
+function returnToneClass(value?: number | null): string {
+  if (value === undefined || value === null || value === 0) {
+    return "return-flat";
+  }
+  return value > 0 ? "return-up" : "return-down";
 }

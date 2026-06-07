@@ -19,9 +19,9 @@ type LeaderboardChartPoint = {
 const COLORS = {
   grid: "var(--color-hairline)",
   text: "var(--color-ink-subtle)",
-  up: "var(--color-market-up)",
+  up: "var(--color-price-up)",
   mixed: "var(--color-primary-hover)",
-  down: "var(--color-market-down)",
+  down: "var(--color-price-down)",
 };
 
 export function LeaderboardAlphaChart(props: { rows: RecommendationBacktestSummaryRow[]; dimension: BacktestGroupBy }) {

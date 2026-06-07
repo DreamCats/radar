@@ -46,7 +46,9 @@ function SummaryCard({ item }: { item: StrategyOpportunity }) {
           <TrendingUp size={13} />
           {item.acceleration.toFixed(1)}x
         </span>
-        <span>{formatPercent(item.opportunity_backtest.average_excess_return_t5, true)}</span>
+        <span className={returnToneClass(item.opportunity_backtest.average_excess_return_t5)}>
+          {formatPercent(item.opportunity_backtest.average_excess_return_t5, true)}
+        </span>
         <span>
           {item.opportunity_backtest.matured_event_count}/{item.opportunity_backtest.event_count || item.recent_message_count}成熟
         </span>
@@ -65,4 +67,11 @@ function formatPercent(value?: number | null, signed = false): string {
   }
   const text = `${(value * 100).toFixed(1)}%`;
   return signed && value > 0 ? `+${text}` : text;
+}
+
+function returnToneClass(value?: number | null): string {
+  if (value === undefined || value === null || value === 0) {
+    return "return-flat";
+  }
+  return value > 0 ? "return-up" : "return-down";
 }

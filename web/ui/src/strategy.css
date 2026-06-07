@@ -355,6 +355,26 @@
   padding: 8px;
 }
 
+.strategy-stock-button,
+.strategy-stock-row-button {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.strategy-stock-button:hover,
+.strategy-stock-row-button:hover {
+  border-color: var(--color-hairline-strong);
+  background: var(--color-surface-3);
+}
+
+.strategy-stock-button:focus-visible,
+.strategy-stock-row-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-market-up) 55%, transparent);
+  outline-offset: 2px;
+}
+
 .strategy-stock-pill div {
   display: flex;
   flex-wrap: wrap;
@@ -753,6 +773,7 @@
   .strategy-signal-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
 }
 
 @media (max-width: 560px) {
@@ -779,4 +800,5 @@
   .strategy-score {
     place-items: start;
   }
+
 }

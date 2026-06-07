@@ -14,6 +14,11 @@ from radar.core.usecases.strategy.models import (
 from radar.core.usecases.strategy.lead_signals import summarize_lead_signals
 from radar.core.usecases.strategy.signals import build_strategy_dashboard, build_strategy_dashboard_from_conn
 from radar.core.usecases.strategy.snapshot_cache import save_cached_strategy_snapshot
+from radar.core.usecases.strategy.stock_chart import (
+    StrategyStockCandle,
+    StrategyStockChart,
+    get_strategy_stock_chart,
+)
 from radar.core.usecases.strategy.snapshots import (
     StrategySnapshotBackfillResult,
     StrategySnapshotSaveResult,
@@ -33,6 +38,8 @@ __all__ = [
     "StrategyOpportunity",
     "StrategyRelatedStock",
     "StrategySourceSignal",
+    "StrategyStockCandle",
+    "StrategyStockChart",
     "StrategyStockCandidate",
     "StrategyThemeBrief",
     "StrategySnapshotBackfillResult",
@@ -41,6 +48,7 @@ __all__ = [
     "backfill_strategy_snapshot_returns",
     "build_strategy_dashboard",
     "build_strategy_dashboard_from_conn",
+    "get_strategy_stock_chart",
     "save_cached_strategy_snapshot",
     "save_strategy_snapshot",
     "summarize_lead_signals",

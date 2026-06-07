@@ -124,6 +124,26 @@ export type StrategyStockCandidate = {
   decision_reason?: string | null;
 };
 
+export type StrategyStockCandle = {
+  trade_date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  pre_close?: number | null;
+  change?: number | null;
+  pct_chg?: number | null;
+  vol?: number | null;
+  amount?: number | null;
+};
+
+export type StrategyStockChart = {
+  ts_code: string;
+  candles: StrategyStockCandle[];
+  latest_trade_date?: string | null;
+  missing_reason?: string | null;
+};
+
 export type StrategyDashboard = {
   start_time: string;
   end_time: string;
@@ -235,6 +255,10 @@ export type StrategyQuery = {
   days?: number;
   recent_days?: number;
   limit?: number;
+};
+
+export type StrategyStockChartQuery = {
+  days?: number;
 };
 
 export type StrategyValidationQuery = {
