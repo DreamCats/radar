@@ -166,3 +166,90 @@ export type StrategyValidationQuery = {
   benchmark?: string;
   source_limit?: number;
 };
+
+export type SourceRadarSignalStatus = "source_seed" | "spreading_watch" | "mapped" | "old_theme";
+
+export type SourceRadarSignal = {
+  snapshot_id: string;
+  signal_id: string;
+  status: SourceRadarSignalStatus;
+  anchor_span: string;
+  modifier_span: string;
+  novel_span: string;
+  relation_type: "A化B" | "prefix-anchor" | "modifier-anchor" | "anchor-extension" | "other";
+  score: number;
+  novelty_strength: number;
+  earliness_score: number;
+  askability_score: number;
+  trade_score: number;
+  first_message_id: string;
+  first_seen_time: string;
+  first_sender: string;
+  first_group_name?: string | null;
+  first_snippet: string;
+  prior_anchor_mentions: number;
+  prior_modifier_mentions: number;
+  prior_exact_mentions: number;
+  prior_combo_mentions: number;
+  asof_mentions: number;
+  asof_groups: number;
+  asof_senders: number;
+  followup_groups: number;
+  followup_senders: number;
+  mapped_stocks: string[];
+  ask_question: string;
+  evidence: string[];
+  as_of_time: string;
+  created_at: string;
+};
+
+export type SourceRadarSnapshot = {
+  as_of_time?: string | null;
+  latest_created_at?: string | null;
+  item_count: number;
+  available_as_of_times: string[];
+  items: SourceRadarSignal[];
+};
+
+export type SourceRadarQuery = {
+  limit?: number;
+  as_of_time?: string;
+};
+
+export type SourceRadarValidationMetric = {
+  label: string;
+  sample_count: number;
+  rate?: number | null;
+  average_days?: number | null;
+};
+
+export type SourceRadarValidationRow = {
+  signal_id: string;
+  title: string;
+  first_as_of_time: string;
+  latest_as_of_time: string;
+  first_status: SourceRadarSignalStatus;
+  latest_status: SourceRadarSignalStatus;
+  score: number;
+  spread_days?: number | null;
+  mapped_days?: number | null;
+  mapped_stocks: string[];
+  evidence: string[];
+};
+
+export type SourceRadarValidationSummary = {
+  window_days: number;
+  snapshot_count: number;
+  signal_count: number;
+  spreading_count: number;
+  mapped_count: number;
+  stale_count: number;
+  latest_snapshot_time?: string | null;
+  by_first_status: SourceRadarValidationMetric[];
+  top_signals: SourceRadarValidationRow[];
+};
+
+export type SourceRadarValidationQuery = {
+  window_days?: number;
+  limit?: number;
+};

@@ -20,6 +20,7 @@ from radar.core.usecases.recommendation_backtest import (
     BacktestGroupBy,
     RecommendationBacktestSummaryResult,
 )
+from radar.core.usecases.source.models import SourceSignalSnapshotPage, SourceSignalValidationSummary
 from radar.core.usecases.strategy import StrategyDashboard, StrategySnapshotSaveResult, StrategyValidationSummary
 
 SourceKey = Literal["personal_message", "group_message"]
@@ -249,7 +250,7 @@ class SourceRadarJobRequest(BaseModel):
     end_time: datetime
     force: bool = False
     per_day_limit: int = Field(default=500, ge=1, le=5000)
-    batch_size: int = Field(default=8, ge=1, le=30)
+    batch_size: int = Field(default=24, ge=1, le=30)
     max_concurrency: int = Field(default=10, ge=1, le=32)
     lookback_days: int = Field(default=60, ge=7, le=180)
     scan_limit: int = Field(default=20, ge=1, le=100)
@@ -281,6 +282,14 @@ class StrategySnapshotSaveResponse(StrategySnapshotSaveResult):
 
 
 class StrategyValidationResponse(StrategyValidationSummary):
+    pass
+
+
+class SourceRadarSnapshotResponse(SourceSignalSnapshotPage):
+    pass
+
+
+class SourceRadarValidationResponse(SourceSignalValidationSummary):
     pass
 
 

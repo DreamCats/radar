@@ -97,7 +97,7 @@ function pageTitle(tab: TabKey): string {
     messages: "消息查询",
     organize: "消息整理",
     leaderboard: "推荐胜率榜",
-    strategy: "发酵确认策略",
+    strategy: "策略信号",
     ingest: "作业中心",
   };
   return titles[tab];

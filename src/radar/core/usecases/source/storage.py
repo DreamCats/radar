@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import sqlite3
+import json
 from datetime import datetime
 
-from radar.core.usecases.source.models import SourceStructure
+from radar.core.usecases.source.models import SourceSignalCandidate, SourceSignalSnapshotItem, SourceSignalSnapshotPage, SourceStructure
 
 
 def upsert_source_structures(conn: sqlite3.Connection, structures: list[SourceStructure]) -> int:
@@ -82,6 +83,70 @@ def list_source_structures(
     return [_structure_from_row(row) for row in rows]
 
 
+def list_latest_source_signal_snapshots(
+    conn: sqlite3.Connection,
+    *,
+    as_of_time: datetime | None = None,
+    limit: int = 20,
+) -> SourceSignalSnapshotPage:
+    params: list[object] = []
+    if as_of_time is None:
+        asof_filter = "as_of_time = (SELECT MAX(as_of_time) FROM source_signal_snapshots)"
+    else:
+        asof_filter = "as_of_time = (SELECT MAX(as_of_time) FROM source_signal_snapshots WHERE as_of_time <= ?)"
+        params.append(as_of_time.isoformat())
+    params.append(limit)
+    rows = conn.execute(
+        f"""
+        WITH ranked AS (
+            SELECT *,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY signal_id
+                       ORDER BY created_at DESC, snapshot_id DESC
+                   ) AS rn
+            FROM source_signal_snapshots
+            WHERE {asof_filter}
+        )
+        SELECT *
+        FROM ranked
+        WHERE rn = 1
+        ORDER BY
+            CASE status
+                WHEN 'spreading_watch' THEN 0
+                WHEN 'mapped' THEN 1
+                WHEN 'source_seed' THEN 2
+                ELSE 9
+            END,
+            score DESC,
+            first_seen_time ASC
+        LIMIT ?
+        """,
+        params,
+    ).fetchall()
+    items = [_snapshot_from_row(row) for row in rows]
+    return SourceSignalSnapshotPage(
+        as_of_time=items[0].as_of_time if items else None,
+        latest_created_at=max((item.created_at for item in items), default=None),
+        item_count=len(items),
+        available_as_of_times=list_source_signal_snapshot_times(conn),
+        items=items,
+    )
+
+
+def list_source_signal_snapshot_times(conn: sqlite3.Connection, *, limit: int = 60) -> list[datetime]:
+    rows = conn.execute(
+        """
+        SELECT as_of_time
+        FROM source_signal_snapshots
+        GROUP BY as_of_time
+        ORDER BY as_of_time DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    return [datetime.fromisoformat(str(row["as_of_time"])) for row in rows]
+
+
 def _structure_from_row(row: sqlite3.Row) -> SourceStructure:
     return SourceStructure(
         structure_id=str(row["structure_id"]),
@@ -104,4 +169,15 @@ def _structure_from_row(row: sqlite3.Row) -> SourceStructure:
         extractor_version=str(row["extractor_version"]),
         created_at=datetime.fromisoformat(str(row["created_at"])),
         updated_at=datetime.fromisoformat(str(row["updated_at"])),
+    )
+
+
+def _snapshot_from_row(row: sqlite3.Row) -> SourceSignalSnapshotItem:
+    payload = json.loads(str(row["payload_json"]))
+    candidate = SourceSignalCandidate.model_validate(payload)
+    return SourceSignalSnapshotItem(
+        **candidate.model_dump(),
+        snapshot_id=str(row["snapshot_id"]),
+        as_of_time=datetime.fromisoformat(str(row["as_of_time"])),
+        created_at=datetime.fromisoformat(str(row["created_at"])),
     )

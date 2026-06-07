@@ -128,6 +128,15 @@ def strategy_validation_dependency_key(config: RadarConfig) -> str:
     return _hash_parts(parts)
 
 
+def source_radar_dependency_key(config: RadarConfig) -> str:
+    with connect(config.database_path) as conn:
+        migrate_message_db(conn)
+        parts = {
+            "source_signal_snapshots": _table_signature(conn, "source_signal_snapshots", "created_at"),
+        }
+    return _hash_parts(parts)
+
+
 def cleanup_cache(database: Path, *, keep: int = 500) -> int:
     with connect(database) as conn:
         migrate_message_db(conn)

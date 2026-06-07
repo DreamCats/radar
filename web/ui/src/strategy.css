@@ -10,20 +10,129 @@
   align-items: start;
 }
 
+.strategy-mode-tabs {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 4px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+  padding: 4px;
+}
+
+.strategy-mode-tabs button {
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-muted);
+  background: transparent;
+  padding: 7px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.strategy-mode-tabs button.active {
+  color: var(--color-ink);
+  background: var(--color-surface-3);
+}
+
+.strategy-validation-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 10px 12px 0;
+}
+
+.strategy-validation-tabs button {
+  border: 1px solid var(--color-hairline);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--color-ink-muted);
+  background: var(--color-surface-1);
+  padding: 7px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.strategy-validation-tabs button.active {
+  color: var(--color-ink);
+  background: var(--color-surface-3);
+  border-color: var(--color-hairline-strong);
+}
+
 .strategy-main-panel,
-.strategy-summary-panel {
+.strategy-summary-panel,
+.source-radar-panel {
   min-width: 0;
 }
 
 .strategy-opportunity-list,
+.source-radar-list,
 .strategy-side-stack,
 .strategy-compact-list {
   display: grid;
   gap: 10px;
 }
 
-.strategy-opportunity-list {
+.strategy-opportunity-list,
+.source-radar-list {
   padding: 12px;
+}
+
+.source-radar-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 10px 12px 0;
+}
+
+.source-radar-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-hairline);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--color-ink-muted);
+  background: var(--color-surface-1);
+  padding: 7px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.source-radar-tabs button.active {
+  color: var(--color-ink);
+  background: var(--color-surface-3);
+  border-color: var(--color-hairline-strong);
+}
+
+.source-radar-tabs strong {
+  color: var(--color-ink-subtle);
+  font-size: 11px;
+}
+
+.source-radar-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 10px 12px 0;
+}
+
+.source-radar-toolbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-ink-muted);
+  font-size: 12px;
+}
+
+.source-radar-toolbar select {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  background: var(--color-surface-1);
+  padding: 6px 8px;
 }
 
 .strategy-side-stack {
@@ -31,6 +140,7 @@
 }
 
 .strategy-opportunity-card,
+.source-radar-card,
 .strategy-summary-card,
 .strategy-compact-row {
   border: 1px solid var(--color-hairline);
@@ -44,7 +154,14 @@
   padding: 14px;
 }
 
+.source-radar-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
 .strategy-opportunity-head,
+.source-radar-head,
 .strategy-summary-card-head {
   display: flex;
   align-items: start;
@@ -52,17 +169,20 @@
   gap: 12px;
 }
 
-.strategy-opportunity-head > div:first-child {
+.strategy-opportunity-head > div:first-child,
+.source-radar-head > div:first-child {
   display: grid;
   gap: 7px;
   min-width: 0;
 }
 
-.strategy-opportunity-head h2 {
+.strategy-opportunity-head h2,
+.source-radar-head h2 {
   overflow-wrap: anywhere;
 }
 
-.strategy-level {
+.strategy-level,
+.source-radar-status {
   width: fit-content;
   border: 1px solid var(--color-hairline-strong);
   border-radius: var(--radius-pill);
@@ -88,6 +208,23 @@
 .strategy-level-过度扩散 {
   border-color: color-mix(in srgb, var(--color-signal-hot) 55%, var(--color-hairline));
   color: var(--color-signal-hot);
+}
+
+.source-radar-status-source_seed {
+  border-color: color-mix(in srgb, var(--color-market-up) 48%, var(--color-hairline));
+  background: var(--color-market-up-soft);
+  color: var(--color-market-up);
+}
+
+.source-radar-status-spreading_watch,
+.source-radar-status-mapped {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 45%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+
+.source-radar-status-old_theme {
+  border-color: color-mix(in srgb, var(--color-ink-tertiary) 45%, var(--color-hairline));
+  color: var(--color-ink-tertiary);
 }
 
 .strategy-score {
@@ -244,6 +381,34 @@
 .strategy-stock-pill small {
   overflow-wrap: anywhere;
   font-size: 11px;
+}
+
+.source-radar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.source-radar-meta span {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  color: var(--color-ink-subtle);
+  background: var(--color-surface-1);
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.source-radar-evidence {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 16px;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.source-radar-evidence li {
+  overflow-wrap: anywhere;
 }
 
 .strategy-stock-state,
@@ -483,6 +648,14 @@
 }
 
 @media (max-width: 560px) {
+  .strategy-mode-tabs {
+    width: 100%;
+  }
+
+  .strategy-mode-tabs button {
+    flex: 1 1 0;
+  }
+
   .strategy-signal-grid,
   .strategy-backtest-strip,
   .strategy-compact-row {

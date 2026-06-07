@@ -5,7 +5,7 @@ from datetime import datetime, time, timedelta
 from threading import Lock
 
 from radar.core.config import RadarConfig
-from radar.core.runs import fail_run, fail_stale_runs, finish_run, get_running_run, start_run, update_run_progress
+from radar.core.runs import fail_run, fail_stale_runs, finish_run, get_running_run, is_run_running, start_run, update_run_progress
 from radar.core.usecases.source import extract_source_structures, scan_source_signals
 from radar.web.server.schemas import DerivedJobItem, SourceRadarJobRequest
 
@@ -47,11 +47,15 @@ def _run_source_radar_job(config: RadarConfig, request: SourceRadarJobRequest, r
     try:
         days = _day_windows(request.start_time, request.end_time)
         totals["day_count"] = len(days)
-        update_run_progress(config.database_path, run_id, metadata=_metadata(request) | totals | {"stage": "准备源头雷达快照"})
+        if not update_run_progress(config.database_path, run_id, metadata=_metadata(request) | totals | {"stage": "准备源头雷达快照"}):
+            return
 
         for index, (day_start, day_end) in enumerate(days, start=1):
+            if not is_run_running(config.database_path, run_id):
+                return
             stage_prefix = f"{day_start.date().isoformat()} ({index}/{len(days)})"
-            update_run_progress(config.database_path, run_id, metadata=totals | {"stage": f"{stage_prefix} 抽取结构"})
+            if not update_run_progress(config.database_path, run_id, metadata=totals | {"stage": f"{stage_prefix} 抽取结构"}):
+                return
             extract = extract_source_structures(
                 config,
                 start_time=day_start,
@@ -68,7 +72,10 @@ def _run_source_radar_job(config: RadarConfig, request: SourceRadarJobRequest, r
             totals["inserted_count"] += extract.inserted_count
             totals["failed_llm_batches"] += extract.failed_llm_batches
 
-            update_run_progress(config.database_path, run_id, metadata=totals | {"stage": f"{stage_prefix} 扫描快照"})
+            if not is_run_running(config.database_path, run_id):
+                return
+            if not update_run_progress(config.database_path, run_id, metadata=totals | {"stage": f"{stage_prefix} 扫描快照"}):
+                return
             scan = scan_source_signals(
                 config,
                 start_time=day_start,
@@ -81,14 +88,15 @@ def _run_source_radar_job(config: RadarConfig, request: SourceRadarJobRequest, r
             totals["scan_candidate_count"] += scan.candidate_count
             totals["snapshot_count"] += len(scan.candidates)
             totals["completed_day_count"] += 1
-            update_run_progress(
+            if not update_run_progress(
                 config.database_path,
                 run_id,
                 raw_count=totals["scanned_count"],
                 stored_count=totals["inserted_count"],
                 filtered_count=totals["failed_llm_batches"],
                 metadata=totals | {"stage": f"{stage_prefix} 完成"},
-            )
+            ):
+                return
 
         finish_run(
             config.database_path,

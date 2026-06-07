@@ -71,3 +71,50 @@ class SourceSignalResult(BaseModel):
     scanned_count: int
     candidate_count: int
     candidates: list[SourceSignalCandidate] = Field(default_factory=list)
+
+
+class SourceSignalSnapshotItem(SourceSignalCandidate):
+    snapshot_id: str
+    as_of_time: datetime
+    created_at: datetime
+
+
+class SourceSignalSnapshotPage(BaseModel):
+    as_of_time: datetime | None = None
+    latest_created_at: datetime | None = None
+    item_count: int
+    available_as_of_times: list[datetime] = Field(default_factory=list)
+    items: list[SourceSignalSnapshotItem] = Field(default_factory=list)
+
+
+class SourceSignalValidationMetric(BaseModel):
+    label: str
+    sample_count: int = 0
+    rate: float | None = None
+    average_days: float | None = None
+
+
+class SourceSignalValidationRow(BaseModel):
+    signal_id: str
+    title: str
+    first_as_of_time: datetime
+    latest_as_of_time: datetime
+    first_status: SourceSignalStatus
+    latest_status: SourceSignalStatus
+    score: float
+    spread_days: float | None = None
+    mapped_days: float | None = None
+    mapped_stocks: list[str] = Field(default_factory=list)
+    evidence: list[str] = Field(default_factory=list)
+
+
+class SourceSignalValidationSummary(BaseModel):
+    window_days: int
+    snapshot_count: int = 0
+    signal_count: int = 0
+    spreading_count: int = 0
+    mapped_count: int = 0
+    stale_count: int = 0
+    latest_snapshot_time: datetime | None = None
+    by_first_status: list[SourceSignalValidationMetric] = Field(default_factory=list)
+    top_signals: list[SourceSignalValidationRow] = Field(default_factory=list)

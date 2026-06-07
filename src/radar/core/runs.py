@@ -72,7 +72,7 @@ def finish_run(
                 filtered_count = ?,
                 error_message = NULL,
                 metadata_json = ?
-            WHERE run_id = ?
+            WHERE run_id = ? AND status = 'running'
             """,
             (
                 datetime.now().isoformat(),
@@ -84,6 +84,32 @@ def finish_run(
                 run_id,
             ),
         )
+
+
+def cancel_run(database: Path, run_id: str, *, reason: str = "用户终止任务") -> RunRecord | None:
+    """把运行中的任务标记为失败；实际 worker 会在下一次进度检查时停止。"""
+
+    now = datetime.now().isoformat()
+    with _connect(database) as conn:
+        row = conn.execute("SELECT metadata_json FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+        if row is None:
+            return None
+        metadata = json.loads(row["metadata_json"] or "{}")
+        metadata["cancel_requested_at"] = now
+        metadata["cancel_reason"] = reason
+        conn.execute(
+            """
+            UPDATE runs
+            SET finished_at = ?,
+                status = 'failed',
+                error_message = ?,
+                metadata_json = ?
+            WHERE run_id = ? AND status = 'running'
+            """,
+            (now, reason, _metadata_json(metadata), run_id),
+        )
+        updated = conn.execute("SELECT * FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+    return _row_to_run(updated) if updated is not None else None
 
 
 def update_run_progress(
@@ -166,6 +192,12 @@ def get_running_run(database: Path, *, kind: str, target: str) -> RunRecord | No
     if row is None:
         return None
     return _row_to_run(row)
+
+
+def is_run_running(database: Path, run_id: str) -> bool:
+    with _connect(database) as conn:
+        row = conn.execute("SELECT 1 FROM runs WHERE run_id = ? AND status = 'running'", (run_id,)).fetchone()
+    return row is not None
 
 
 def fail_stale_runs(database: Path, *, older_than: datetime, kind: str | None = None) -> int:

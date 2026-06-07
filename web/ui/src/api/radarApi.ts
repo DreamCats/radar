@@ -26,7 +26,11 @@ import type {
   RecommendationBacktestRequest,
   RecommendationBacktestSummary,
   RunItem,
+  SourceRadarQuery,
   SourceRadarJobRequest,
+  SourceRadarSnapshot,
+  SourceRadarValidationQuery,
+  SourceRadarValidationSummary,
   StrategyDashboard,
   StrategySnapshotBackfillJobRequest,
   StrategySnapshotSaveRequest,
@@ -88,6 +92,16 @@ export async function fetchRuns(query: { kind?: string; status?: RunItem["status
   return data.items;
 }
 
+export async function cancelRun(runId: string): Promise<RunItem> {
+  const response = await fetch(`${apiBase}/api/runs/${runId}/cancel`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  return (await response.json()) as RunItem;
+}
+
 export async function fetchAggregateRefineResults(): Promise<AggregateRefineResult[]> {
   const data = await getJson<{ items: AggregateRefineResult[] }>("/api/aggregate/refine/results?limit=5");
   return data.items;
@@ -110,6 +124,14 @@ export async function fetchStrategyOpportunities(query: StrategyQuery = {}): Pro
 
 export async function fetchStrategyValidation(query: StrategyValidationQuery = {}): Promise<StrategyValidationSummary> {
   return getJson(`/api/strategy/validation?${params(query)}`);
+}
+
+export async function fetchSourceRadarSnapshot(query: SourceRadarQuery = {}): Promise<SourceRadarSnapshot> {
+  return getJson(`/api/strategy/source-radar?${params(query)}`);
+}
+
+export async function fetchSourceRadarValidation(query: SourceRadarValidationQuery = {}): Promise<SourceRadarValidationSummary> {
+  return getJson(`/api/strategy/source-radar/validation?${params(query)}`);
 }
 
 export async function ingestWechat(request: IngestRequest): Promise<IngestResultItem[]> {

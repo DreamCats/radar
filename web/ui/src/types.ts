@@ -443,6 +443,14 @@ export type OrganizeEvidenceQuery = Omit<OrganizeClassificationQuery, "evidence_
 };
 
 export type {
+  SourceRadarQuery,
+  SourceRadarSignal,
+  SourceRadarSignalStatus,
+  SourceRadarSnapshot,
+  SourceRadarValidationMetric,
+  SourceRadarValidationQuery,
+  SourceRadarValidationRow,
+  SourceRadarValidationSummary,
   StrategyAttentionLevel,
   StrategyBacktestMetric,
   StrategyDashboard,

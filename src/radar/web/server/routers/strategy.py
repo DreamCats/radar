@@ -1,13 +1,21 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from radar.core.config import RadarConfig
+from radar.core.db import migrate_message_db
+from radar.core.store import connect
+from radar.core.usecases.source.storage import list_latest_source_signal_snapshots
+from radar.core.usecases.source.validation import summarize_source_signal_validation
 from radar.core.usecases.strategy import build_strategy_dashboard, save_cached_strategy_snapshot, summarize_strategy_validation
-from radar.core.view_cache import cached_model, cache_key, strategy_dependency_key, strategy_validation_dependency_key
+from radar.core.view_cache import cached_model, cache_key, source_radar_dependency_key, strategy_dependency_key, strategy_validation_dependency_key
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     DerivedJobResponse,
+    SourceRadarSnapshotResponse,
+    SourceRadarValidationResponse,
     StrategyDashboardResponse,
     StrategySnapshotBackfillJobRequest,
     StrategySnapshotSaveRequest,
@@ -67,6 +75,38 @@ def strategy_validation(
     )
 
 
+@router.get("/source-radar/validation", response_model=SourceRadarValidationResponse)
+def source_radar_validation(
+    window_days: int = Query(default=5, ge=1, le=30),
+    limit: int = Query(default=12, ge=1, le=50),
+    config: RadarConfig = Depends(get_config),
+) -> SourceRadarValidationResponse:
+    return cached_model(
+        config.database_path,
+        key=cache_key("strategy.source_radar.validation.v1", {"window_days": window_days, "limit": limit}),
+        dependency_key=source_radar_dependency_key(config),
+        model_type=SourceRadarValidationResponse,
+        compute=lambda: SourceRadarValidationResponse(
+            **summarize_source_signal_validation(config, window_days=window_days, limit=limit).model_dump()
+        ),
+    )
+
+
+@router.get("/source-radar", response_model=SourceRadarSnapshotResponse)
+def strategy_source_radar(
+    limit: int = Query(default=20, ge=1, le=100),
+    as_of_time: datetime | None = Query(default=None),
+    config: RadarConfig = Depends(get_config),
+) -> SourceRadarSnapshotResponse:
+    return cached_model(
+        config.database_path,
+        key=cache_key("strategy.source_radar.v2", {"limit": limit, "as_of_time": as_of_time.isoformat() if as_of_time else None}),
+        dependency_key=source_radar_dependency_key(config),
+        model_type=SourceRadarSnapshotResponse,
+        compute=lambda: _source_radar_snapshot(config, limit=limit, as_of_time=as_of_time),
+    )
+
+
 @router.post("/snapshots", response_model=StrategySnapshotSaveResponse)
 def save_strategy_snapshot(
     request: StrategySnapshotSaveRequest,
@@ -90,3 +130,15 @@ def start_strategy_backfill_job(
     if request.start_time and request.end_time and request.end_time <= request.start_time:
         raise HTTPException(status_code=400, detail="end_time 必须晚于 start_time")
     return DerivedJobResponse(items=[submit_strategy_backfill_job(config, request)])
+
+
+def _source_radar_snapshot(
+    config: RadarConfig,
+    *,
+    limit: int,
+    as_of_time: datetime | None,
+) -> SourceRadarSnapshotResponse:
+    with connect(config.database_path) as conn:
+        migrate_message_db(conn)
+        result = list_latest_source_signal_snapshots(conn, as_of_time=as_of_time, limit=limit)
+    return SourceRadarSnapshotResponse(**result.model_dump())

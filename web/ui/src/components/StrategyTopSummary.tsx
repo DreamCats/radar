@@ -10,7 +10,7 @@ export function StrategyTopSummary(props: { data: StrategyDashboard | null; onOp
     <section className="panel strategy-summary-panel">
       <PanelTitle
         title="发酵确认 Top3"
-        meta={props.data ? `${formatTime(props.data.recent_start_time)} 起 · 发酵确认策略` : "等待策略数据"}
+        meta={props.data ? `${formatTime(props.data.recent_start_time)} 起 · 策略信号` : "等待策略数据"}
       >
         {props.onOpenStrategy && (
           <button className="btn btn-sm" type="button" onClick={props.onOpenStrategy}>

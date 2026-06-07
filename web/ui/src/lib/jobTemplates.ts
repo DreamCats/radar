@@ -38,7 +38,7 @@ export function configHints(kind: JobTemplateKey): string[] {
     return ["默认近 30 天快照", "只回填已有快照", "回填 T+1/T+3/T+5/T+10", "未成熟下次继续补"];
   }
   if (kind === "sourceRadar") {
-    return ["按天切分窗口", "每天抽取最多 500 条", "LLM 并发 10", "保存 Top 20 快照"];
+    return ["按天切分窗口", "只排除明显噪声", "每天最多 500 条", "单批 24", "保存 Top 20 快照"];
   }
   return ["候选 50", "单批 5", "LLM 并发 10", "命中缓存则跳过"];
 }

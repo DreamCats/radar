@@ -19,10 +19,16 @@ from radar.core.work_pool import run_resource_work_pool
 SOURCE_EXTRACT_TASK = "source_extract"
 SOURCE_EXTRACT_PROMPT_VERSION = "source-extract-v1"
 SOURCE_EXTRACTOR_VERSION = "source-structure-v1"
-SOURCE_EXTRACT_BATCH_SIZE = 8
+SOURCE_EXTRACT_BATCH_SIZE = 24
 SOURCE_EXTRACT_MAX_CONCURRENCY = 10
-MAX_SOURCE_CONTENT_CHARS = 900
+MAX_SOURCE_CONTENT_CHARS = 600
 SOURCE_EXTRACT_CATEGORIES = ("research", "event", "industry")
+SOURCE_REPLAY_LIMIT = 500
+
+SOURCE_NOISE_TERMS = (
+    "会议", "纪要", "电话会", "报名", "直播", "路演", "回放", "纪要合集", "日报", "早报", "复盘",
+    "收评", "午评", "公告摘要", "财报摘要",
+)
 
 SourceExtractBatchFn = Callable[[RadarConfig, list[RawMessage], str | None], list[SourceStructure]]
 
@@ -43,7 +49,7 @@ def extract_source_structures(
     *,
     start_time: datetime,
     end_time: datetime,
-    limit: int = 500,
+    limit: int = SOURCE_REPLAY_LIMIT,
     force: bool = False,
     batch_size: int = SOURCE_EXTRACT_BATCH_SIZE,
     max_concurrency: int = SOURCE_EXTRACT_MAX_CONCURRENCY,
@@ -170,7 +176,7 @@ def _list_extract_candidates(conn, *, start_time: datetime, end_time: datetime, 
     force_clause = "" if force else "AND ss.structure_id IS NULL"
     rows = conn.execute(
         f"""
-        SELECT m.*
+        SELECT m.*, c.category AS classification_category
         FROM messages m
         JOIN message_classifications c ON c.message_id = m.message_id
         LEFT JOIN source_structures ss
@@ -182,23 +188,44 @@ def _list_extract_candidates(conn, *, start_time: datetime, end_time: datetime, 
           AND c.status != 'ignored'
           {force_clause}
         ORDER BY m.message_time ASC, m.message_id ASC
-        LIMIT ?
         """,
-        (SOURCE_EXTRACTOR_VERSION, start_time.isoformat(), end_time.isoformat(), *SOURCE_EXTRACT_CATEGORIES, limit),
+        (SOURCE_EXTRACTOR_VERSION, start_time.isoformat(), end_time.isoformat(), *SOURCE_EXTRACT_CATEGORIES),
     ).fetchall()
-    return [
-        RawMessage(
-            message_id=str(row["message_id"]),
-            source=str(row["source"]),  # type: ignore[arg-type]
-            sender=str(row["sender"]),
-            message_time=datetime.fromisoformat(str(row["message_time"])),
-            raw_content=str(row["raw_content"]),
-            group_name=str(row["group_name"]) if row["group_name"] else None,
-            fetch_time=datetime.fromisoformat(str(row["fetch_time"])),
-            fetch_window=str(row["fetch_window"]),
-        )
-        for row in rows
-    ]
+    ranked = []
+    for row in rows:
+        message = _message_from_row(row)
+        score = _source_candidate_score(message.raw_content, str(row["classification_category"] or ""))
+        if score > 0:
+            ranked.append((score, message.message_time, message.message_id, message))
+    ranked.sort(key=lambda item: (-item[0], item[1], item[2]))
+    return [item[3] for item in ranked[:limit]]
+
+
+def _message_from_row(row) -> RawMessage:
+    return RawMessage(
+        message_id=str(row["message_id"]),
+        source=str(row["source"]),  # type: ignore[arg-type]
+        sender=str(row["sender"]),
+        message_time=datetime.fromisoformat(str(row["message_time"])),
+        raw_content=str(row["raw_content"]),
+        group_name=str(row["group_name"]) if row["group_name"] else None,
+        fetch_time=datetime.fromisoformat(str(row["fetch_time"])),
+        fetch_window=str(row["fetch_window"]),
+    )
+
+
+def _source_candidate_score(content: str, category: str) -> float:
+    text = content[:1200]
+    if any(term in text for term in SOURCE_NOISE_TERMS):
+        return 0.0
+    score = 1.0
+    if category == "event":
+        score += 1.2
+    elif category == "industry":
+        score += 0.8
+    elif category == "research":
+        score += 0.2
+    return score
 
 
 def _prompt_messages(batch: list[RawMessage]) -> list[dict[str, str]]:

@@ -1,22 +1,39 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Gauge, RefreshCw, Save, ShieldAlert, TrendingUp, Users } from "lucide-react";
 
-import { fetchStrategyOpportunities, fetchStrategyValidation, saveStrategySnapshot } from "../api/radarApi";
+import {
+  fetchSourceRadarSnapshot,
+  fetchSourceRadarValidation,
+  fetchStrategyOpportunities,
+  fetchStrategyValidation,
+  saveStrategySnapshot,
+} from "../api/radarApi";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
+import { SourceRadarPanel } from "../components/SourceRadarPanel";
+import { StrategyValidationPanel } from "../components/StrategyValidationPanel";
 import { formatTime } from "../lib/datetime";
 import type {
+  SourceRadarSnapshot,
+  SourceRadarValidationSummary,
   StrategyDashboard,
   StrategyOpportunity,
   StrategyRelatedStock,
   StrategySourceSignal,
   StrategyStockCandidate,
-  StrategyValidationMetric,
   StrategyValidationSummary,
 } from "../types";
+type StrategyMode = "source" | "fermentation" | "validation";
+type ValidationMode = "fermentation" | "source";
 
 export function StrategyPage() {
+  const sourceAsOfReadyRef = useRef(false);
+  const [activeMode, setActiveMode] = useState<StrategyMode>("source");
+  const [activeValidationMode, setActiveValidationMode] = useState<ValidationMode>("source");
+  const [sourceAsOfTime, setSourceAsOfTime] = useState("");
+  const [sourceRadar, setSourceRadar] = useState<SourceRadarSnapshot | null>(null);
+  const [sourceValidation, setSourceValidation] = useState<SourceRadarValidationSummary | null>(null);
   const [data, setData] = useState<StrategyDashboard | null>(null);
   const [validation, setValidation] = useState<StrategyValidationSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,16 +41,22 @@ export function StrategyPage() {
   const [snapshotMessage, setSnapshotMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function refresh() {
+  async function refresh(mode: StrategyMode = activeMode) {
     setLoading(true);
     setError(null);
     try {
-      const [nextData, nextValidation] = await Promise.all([
-        fetchStrategyOpportunities({ days: 30, recent_days: 7, limit: 12 }),
-        fetchStrategyValidation({ window_days: 5, source_limit: 8 }),
-      ]);
-      setData(nextData);
-      setValidation(nextValidation);
+      if (mode === "source") {
+        setSourceRadar(await fetchSourceRadarSnapshot({ limit: 20, as_of_time: sourceAsOfTime || undefined }));
+      } else if (mode === "validation") {
+        const [strategyResult, sourceResult] = await Promise.all([
+          fetchStrategyValidation({ window_days: 5, source_limit: 8 }),
+          fetchSourceRadarValidation({ window_days: 5, limit: 12 }),
+        ]);
+        setValidation(strategyResult);
+        setSourceValidation(sourceResult);
+      } else {
+        setData(await fetchStrategyOpportunities({ days: 30, recent_days: 7, limit: 12 }));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
     } finally {
@@ -42,8 +65,24 @@ export function StrategyPage() {
   }
 
   useEffect(() => {
-    void refresh();
-  }, []);
+    if (activeMode === "source" && !sourceRadar) {
+      void refresh("source");
+    } else if (activeMode === "fermentation" && !data) {
+      void refresh("fermentation");
+    } else if (activeMode === "validation" && (!validation || !sourceValidation)) {
+      void refresh("validation");
+    }
+  }, [activeMode]);
+
+  useEffect(() => {
+    if (!sourceAsOfReadyRef.current) {
+      sourceAsOfReadyRef.current = true;
+      return;
+    }
+    if (activeMode === "source") {
+      void refresh("source");
+    }
+  }, [sourceAsOfTime]);
 
   async function saveCurrentSnapshot() {
     setSavingSnapshot(true);
@@ -65,26 +104,40 @@ export function StrategyPage() {
   const riskCount = opportunities.filter((item) => item.attention_level === "风险升高").length;
   const stockGroups = groupStocksByDecision(data?.stock_candidates ?? []);
   const actionableStockCount = stockGroups[0].items.length;
-  const initialLoading = loading && !data;
+  const activeDataLoaded = activeMode === "source" ? sourceRadar : activeMode === "validation" ? validation || sourceValidation : data;
+  const initialLoading = loading && !activeDataLoaded;
 
   return (
     <section className="strategy-page">
       <div className="dashboard-actions">
-        <p>{initialLoading ? "正在加载发酵确认策略" : data ? `策略窗口 ${formatTime(data.start_time)} - ${formatTime(data.end_time)}` : "暂无策略数据"}</p>
+        <p>{strategyHeaderText(activeMode, initialLoading, sourceRadar, data, validation)}</p>
         <div>
           {loading && !initialLoading && <PageRefreshProgress label="正在刷新策略" />}
-          <button className="btn btn-sm" type="button" onClick={() => void saveCurrentSnapshot()} disabled={savingSnapshot || loading}>
-            <Save size={15} />
-            {savingSnapshot ? "保存中" : "保存当前快照"}
-          </button>
-          <button className="btn btn-sm" type="button" onClick={() => void refresh()} disabled={loading}>
+          {activeMode === "fermentation" && (
+            <button className="btn btn-sm" type="button" onClick={() => void saveCurrentSnapshot()} disabled={savingSnapshot || loading}>
+              <Save size={15} />
+              {savingSnapshot ? "保存中" : "保存当前快照"}
+            </button>
+          )}
+          <button className="btn btn-sm" type="button" onClick={() => void refresh(activeMode)} disabled={loading}>
             <RefreshCw size={15} />
             刷新
           </button>
         </div>
       </div>
-      {initialLoading && <PageLoadingState label="正在计算机会、来源质量和股票池" variant="strategy" />}
-      {!initialLoading && (
+      <div className="strategy-mode-tabs" role="tablist" aria-label="策略模式">
+        <ModeTab active={activeMode === "source"} label="源头雷达" onClick={() => setActiveMode("source")} />
+        <ModeTab active={activeMode === "fermentation"} label="发酵确认" onClick={() => setActiveMode("fermentation")} />
+        <ModeTab active={activeMode === "validation"} label="策略验证" onClick={() => setActiveMode("validation")} />
+      </div>
+      {initialLoading && <PageLoadingState label={loadingLabel(activeMode)} variant="strategy" />}
+      {!initialLoading && activeMode === "source" && (
+        <>
+          {error && <p className="error-line">{error}</p>}
+          <SourceRadarPanel snapshot={sourceRadar} selectedAsOfTime={sourceAsOfTime} onAsOfTimeChange={setSourceAsOfTime} />
+        </>
+      )}
+      {!initialLoading && activeMode === "fermentation" && (
         <>
       <div className="statbar metric-grid">
         <Metric label="机会候选" value={data?.opportunity_count ?? 0} detail="近 30 天派生信号" />
@@ -106,7 +159,6 @@ export function StrategyPage() {
           </div>
         </section>
         <aside className="strategy-side-stack">
-          <StrategyValidationPanel summary={validation} />
           <section className="panel">
             <PanelTitle title="来源质量" meta="T+5 超额 · 近 30 天" />
             <div className="strategy-compact-list">
@@ -127,63 +179,56 @@ export function StrategyPage() {
       </div>
         </>
       )}
-    </section>
-  );
-}
-
-function StrategyValidationPanel({ summary }: { summary: StrategyValidationSummary | null }) {
-  const bucketRows = summary?.by_decision_bucket ?? [];
-  const sourceRows = summary?.top_sources ?? [];
-  return (
-    <section className="panel strategy-validation-panel">
-      <PanelTitle
-        title="策略验证"
-        meta={summary ? `T+${summary.window_days} 超额 · ${summary.matured_stock_count} 个成熟样本` : "等待快照回填"}
-      />
-      {summary && summary.matured_stock_count > 0 ? (
-        <div className="strategy-validation-body">
-          <div className="strategy-validation-kpis">
-            <ValidationKpi label="快照" value={summary.snapshot_count} />
-            <ValidationKpi label="成熟样本" value={summary.matured_stock_count} />
-            <ValidationKpi label="最新快照" value={summary.latest_snapshot_time ? formatTime(summary.latest_snapshot_time).slice(5, 16) : "-"} />
-          </div>
-          <ValidationTable title="分层表现" rows={bucketRows} />
-          <ValidationTable title="首提来源 Top" rows={sourceRows.slice(0, 5)} compact />
-        </div>
-      ) : (
-        <p className="strategy-validation-empty">暂无已回填快照。先在策略页保存当前快照，再到作业页回填已有快照。</p>
+      {!initialLoading && activeMode === "validation" && (
+        <>
+          {error && <p className="error-line">{error}</p>}
+          <StrategyValidationPanel
+            summary={validation}
+            sourceSummary={sourceValidation}
+            activeMode={activeValidationMode}
+            onModeChange={setActiveValidationMode}
+          />
+        </>
       )}
     </section>
   );
 }
 
-function ValidationKpi(props: { label: string; value: number | string }) {
+function ModeTab(props: { active: boolean; label: string; onClick: () => void }) {
   return (
-    <div className="strategy-validation-kpi">
-      <span>{props.label}</span>
-      <strong>{props.value}</strong>
-    </div>
+    <button className={props.active ? "active" : ""} type="button" role="tab" aria-selected={props.active} onClick={props.onClick}>
+      {props.label}
+    </button>
   );
 }
 
-function ValidationTable(props: { title: string; rows: StrategyValidationMetric[]; compact?: boolean }) {
-  return (
-    <div className="strategy-validation-table">
-      <strong>{props.title}</strong>
-      {props.rows.length ? (
-        props.rows.map((row) => (
-          <article className="strategy-validation-row" key={row.label}>
-            <span>{row.label}</span>
-            <em>{row.sample_count} 样本</em>
-            <b>{formatPercent(row.average_excess_return, true)}</b>
-            {!props.compact && <small>胜率 {formatPercent(row.win_rate)} · 回撤 {formatPercent(row.average_max_drawdown, true)}</small>}
-          </article>
-        ))
-      ) : (
-        <p className="strategy-validation-empty">暂无样本</p>
-      )}
-    </div>
-  );
+function strategyHeaderText(
+  mode: StrategyMode,
+  loading: boolean,
+  sourceRadar: SourceRadarSnapshot | null,
+  data: StrategyDashboard | null,
+  validation: StrategyValidationSummary | null,
+): string {
+  if (loading) {
+    return loadingLabel(mode);
+  }
+  if (mode === "source") {
+    return sourceRadar?.as_of_time ? `源头快照 ${formatTime(sourceRadar.as_of_time)} · 早期概念雷达` : "暂无源头雷达快照";
+  }
+  if (mode === "validation") {
+    return validation ? `策略验证工作台 · T+${validation.window_days} · 发酵确认 ${validation.matured_stock_count} 个成熟样本` : "暂无策略验证数据";
+  }
+  return data ? `策略信号窗口 ${formatTime(data.start_time)} - ${formatTime(data.end_time)}` : "暂无策略信号数据";
+}
+
+function loadingLabel(mode: StrategyMode): string {
+  if (mode === "source") {
+    return "正在加载源头雷达快照";
+  }
+  if (mode === "validation") {
+    return "正在加载策略验证";
+  }
+  return "正在加载策略信号";
 }
 
 function OpportunityCard({ item }: { item: StrategyOpportunity }) {

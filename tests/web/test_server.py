@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from threading import Event
@@ -951,6 +952,61 @@ def test_recommendation_backtest_summary_endpoint_returns_rows(monkeypatch, tmp_
     assert calls[0]["limit"] == 10
 
 
+def test_strategy_source_radar_endpoint_returns_latest_snapshot(tmp_path):
+    config = _config(tmp_path)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        _insert_source_signal_snapshot(conn, "old", "2026-06-05T15:00:00", "旧概念", 55)
+        _insert_source_signal_snapshot(conn, "new", "2026-06-07T15:00:00", "AI服务器MLCC", 88)
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/strategy/source-radar", params={"limit": 10})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["as_of_time"] == "2026-06-07T15:00:00"
+    assert data["item_count"] == 1
+    assert data["available_as_of_times"] == ["2026-06-07T15:00:00", "2026-06-05T15:00:00"]
+    assert data["items"][0]["anchor_span"] == "AI服务器MLCC"
+    assert data["items"][0]["score"] == 88
+
+
+def test_strategy_source_radar_validation_endpoint_tracks_signal_evolution(tmp_path):
+    config = _config(tmp_path)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        _insert_source_signal_snapshot(conn, "ai-mlcc", "2026-06-01T15:00:00", "AI服务器MLCC", 70)
+        _insert_source_signal_snapshot(
+            conn,
+            "ai-mlcc",
+            "2026-06-03T15:00:00",
+            "AI服务器MLCC",
+            91,
+            status="mapped",
+            mapped_stocks=["风华高科"],
+            followup_senders=3,
+        )
+        _insert_source_signal_snapshot(conn, "cold", "2026-06-01T15:00:00", "冷门概念", 60)
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/strategy/source-radar/validation", params={"window_days": 5, "limit": 10})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["snapshot_count"] == 2
+    assert data["signal_count"] == 2
+    assert data["spreading_count"] == 1
+    assert data["mapped_count"] == 1
+    assert data["top_signals"][0]["title"] == "早期AI服务器MLCC"
+    assert data["top_signals"][0]["mapped_stocks"] == ["风华高科"]
+
+
 def _config(tmp_path, **overrides) -> RadarConfig:
     return RadarConfig(
         storage={
@@ -959,6 +1015,78 @@ def _config(tmp_path, **overrides) -> RadarConfig:
         },
         **overrides,
     )
+
+
+def _insert_source_signal_snapshot(
+    conn,
+    signal_id: str,
+    as_of_time: str,
+    anchor: str,
+    score: int,
+    *,
+    status: str = "source_seed",
+    mapped_stocks: list[str] | None = None,
+    followup_senders: int = 0,
+) -> None:
+    payload = {
+        "signal_id": signal_id,
+        "status": status,
+        "anchor_span": anchor,
+        "modifier_span": "早期",
+        "novel_span": anchor,
+        "relation_type": "modifier-anchor",
+        "score": score,
+        "novelty_strength": 0.9,
+        "earliness_score": 0.8,
+        "askability_score": 0.7,
+        "trade_score": 0.6,
+        "first_message_id": f"m-{signal_id}",
+        "first_seen_time": as_of_time,
+        "first_sender": "分析师A",
+        "first_group_name": "科技群",
+        "first_snippet": "早期概念讨论",
+        "prior_anchor_mentions": 0,
+        "prior_modifier_mentions": 0,
+        "prior_exact_mentions": 0,
+        "prior_combo_mentions": 0,
+        "asof_mentions": 1,
+        "asof_groups": 1,
+        "asof_senders": 1,
+        "followup_groups": 0,
+        "followup_senders": followup_senders,
+        "mapped_stocks": mapped_stocks or [],
+        "ask_question": "是否出现新需求？",
+        "evidence": ["历史精确 0 次"],
+    }
+    conn.execute(
+        """
+        INSERT INTO source_signal_snapshots (
+            snapshot_id, signal_id, status, anchor_span, modifier_span, novel_span,
+            relation_type, score, novelty_strength, earliness_score, askability_score,
+            trade_score, first_message_id, first_seen_time, as_of_time, payload_json, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            f"snap-{signal_id}-{as_of_time}",
+            signal_id,
+            status,
+            anchor,
+            "早期",
+            anchor,
+            "modifier-anchor",
+            score,
+            0.9,
+            0.8,
+            0.7,
+            0.6,
+            f"m-{signal_id}",
+            as_of_time,
+            as_of_time,
+            json.dumps(payload, ensure_ascii=False),
+            as_of_time,
+        ),
+    )
+    conn.commit()
 
 
 def _message(

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Play, RotateCcw } from "lucide-react";
+import { CalendarDays, Play, Square } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import {
+  cancelRun,
   fetchRuns,
   startAggregateRefineJob,
   startAnchorMessagesJob,
@@ -42,15 +43,20 @@ export function IngestPage() {
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [canceling, setCanceling] = useState(false);
 
   const startValue = toLocalIso(range.startDate, range.startTime);
   const endValue = toLocalIso(range.endDate, range.endTime);
   const validWindow = Boolean(startValue && endValue) && startValue <= endValue;
   const canSubmit = validWindow;
   const selectedTemplate = JOB_TEMPLATES.find((item) => item.key === selectedJob) ?? JOB_TEMPLATES[0];
-  const rows = trackedJobs.map((job) => ({ job, run: runs.find((run) => run.run_id === job.run_id) }));
-  const active = submitting || rows.some(({ run }) => !run || run.status === "running");
-  const runningCount = rows.filter(({ run }) => !run || run.status === "running").length;
+  const rows = trackedJobs
+    .map((job) => ({ job, run: runs.find((run) => run.run_id === job.run_id) }))
+    .filter((row): row is { job: TrackedJob; run: RunItem } => row.run !== undefined);
+  const runningRows = rows.filter(({ run }) => run.status === "running");
+  const hasRunning = runningRows.length > 0;
+  const active = submitting || canceling || hasRunning;
+  const runningCount = runningRows.length;
   const finishedCount = rows.length - runningCount;
   const jobMotion = panelMotionState(shouldReduceMotion);
   const configGridClass = [
@@ -80,7 +86,7 @@ export function IngestPage() {
         }
         setRuns(items);
         const tracked = items.filter((item) => runIds.has(item.run_id));
-        const hasRunning = tracked.length < runIds.size || tracked.some((item) => item.status === "running");
+        const hasRunning = tracked.some((item) => item.status === "running");
         if (hasRunning) {
           timer = window.setTimeout(refresh, 4000);
         }
@@ -108,12 +114,14 @@ export function IngestPage() {
         fetchRuns(),
         fetchRuns({ status: "running", limit: 50 }),
       ]);
-      setRuns(mergeRuns(runItems, runningItems));
+      const mergedRuns = mergeRuns(runItems, runningItems);
+      setRuns(mergedRuns);
       const restoredRunningJobs = runningItems.map((item) => trackedJobFromRun(item)).filter((item): item is TrackedJob => item !== null);
       const restoredRecentJobs = runItems.map((item) => trackedJobFromRun(item, false)).filter((item): item is TrackedJob => item !== null);
       const restoredJobs = mergeTrackedJobs(restoredRunningJobs, restoredRecentJobs);
       if (restoredJobs.length > 0) {
-        setTrackedJobs((current) => mergeTrackedJobs(restoredJobs, current));
+        const knownRunIds = new Set(mergedRuns.map((item) => item.run_id));
+        setTrackedJobs((current) => mergeTrackedJobs(restoredJobs, current.filter((item) => knownRunIds.has(item.run_id))));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载作业数据失败");
@@ -134,6 +142,30 @@ export function IngestPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function cancelRunningJobs() {
+    if (runningRows.length === 0) {
+      return;
+    }
+    setCanceling(true);
+    setError(null);
+    try {
+      await Promise.all(runningRows.map(({ run }) => cancelRun(run.run_id)));
+      await refreshRunsAndResults();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "终止作业失败");
+    } finally {
+      setCanceling(false);
+    }
+  }
+
+  function handlePrimaryAction() {
+    if (hasRunning) {
+      void cancelRunningJobs();
+      return;
+    }
+    void submitSelectedJob();
   }
 
   async function startJob(kind: JobTemplateKey, window: { start_time: string; end_time: string }): Promise<TrackedJob[]> {
@@ -231,7 +263,7 @@ export function IngestPage() {
         end_time: window.end_time,
         force,
         per_day_limit: 500,
-        batch_size: 8,
+        batch_size: 24,
         max_concurrency: 10,
         lookback_days: 60,
         scan_limit: 20,
@@ -371,9 +403,14 @@ export function IngestPage() {
                     <span>{forceLabel(selectedJob)}</span>
                   </label>
                 )}
-                <button className="primary-button ingest-submit" type="button" disabled={active || !canSubmit} onClick={submitSelectedJob}>
-                  {active ? <RotateCcw size={16} /> : <Play size={16} />}
-                  {submitting ? "提交中" : active ? "运行中" : "开始执行"}
+                <button
+                  className="primary-button ingest-submit"
+                  type="button"
+                  disabled={submitting || canceling || (!hasRunning && !canSubmit)}
+                  onClick={handlePrimaryAction}
+                >
+                  {hasRunning ? <Square size={16} /> : <Play size={16} />}
+                  {canceling ? "终止中" : submitting ? "提交中" : hasRunning ? "终止任务" : "开始执行"}
                 </button>
               </div>
               {!validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}

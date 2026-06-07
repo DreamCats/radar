@@ -16,7 +16,7 @@ def source() -> None:
 @click.option("--end", "end_text", required=True, help="结束时间。")
 @click.option("--limit", type=click.IntRange(1, 10000), default=500, show_default=True)
 @click.option("--force", is_flag=True, help="重新抽取已处理消息。")
-@click.option("--batch-size", type=click.IntRange(1, 30), default=8, show_default=True)
+@click.option("--batch-size", type=click.IntRange(1, 30), default=24, show_default=True)
 @click.option("--max-concurrency", type=click.IntRange(1, 32), default=10, show_default=True)
 @click.option("--provider", "provider_name", help="指定单个 LLM provider。")
 @click.option("--provider-pool", "provider_pool", multiple=True, help="可重复传入多个 provider；默认使用全部已配置 provider。")
