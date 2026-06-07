@@ -443,6 +443,12 @@ export type OrganizeEvidenceQuery = Omit<OrganizeClassificationQuery, "evidence_
 };
 
 export type {
+  LeadSignalBucket,
+  LeadSignalQuery,
+  LeadSignalSample,
+  LeadSignalSourceStat,
+  LeadSignalSummary,
+  LeadSignalWindow,
   SourceRadarQuery,
   SourceRadarSignal,
   SourceRadarSignalStatus,

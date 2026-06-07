@@ -10,6 +10,7 @@ from radar.core.config import RadarConfig
 from radar.core.models import MessageAnchor, MessageClassification, RawMessage
 from radar.core.runs import get_run
 from radar.core.store import connect, init_db, replace_message_anchors, upsert_message_classifications, upsert_messages
+from radar.core.usecases.strategy import LeadSignalSummary
 from radar.core.usecases.strategy.snapshots import StrategySnapshotBackfillResult, StrategySnapshotSaveResult
 from radar.web.server.app import create_app
 
@@ -57,6 +58,76 @@ def test_strategy_validation_endpoint_returns_empty_summary(tmp_path: Path):
     assert data["snapshot_count"] == 0
     assert data["matured_stock_count"] == 0
     assert data["by_decision_bucket"] == []
+
+
+def test_lead_signals_endpoint_returns_summary(monkeypatch, tmp_path: Path):
+    config = _config(tmp_path)
+    calls: list[dict] = []
+
+    def fake_summary(
+        config,
+        *,
+        as_of_date,
+        days,
+        limit,
+        source_limit,
+        benchmark_ts_code,
+        message_day_max_pct,
+        strong_return_pct,
+        limit_like_pct,
+    ):
+        calls.append(
+            {
+                "as_of_date": as_of_date,
+                "days": days,
+                "limit": limit,
+                "source_limit": source_limit,
+                "benchmark_ts_code": benchmark_ts_code,
+                "message_day_max_pct": message_day_max_pct,
+                "strong_return_pct": strong_return_pct,
+                "limit_like_pct": limit_like_pct,
+            }
+        )
+        now = datetime.fromisoformat("2026-06-07T12:00:00")
+        return LeadSignalSummary(
+            start_time=now,
+            end_time=now,
+            generated_at=now,
+            as_of_date=as_of_date or "2026-06-07",
+            validation_days=days,
+            benchmark_ts_code=benchmark_ts_code,
+            message_day_max_pct=message_day_max_pct,
+            strong_return_pct=strong_return_pct,
+            limit_like_pct=limit_like_pct,
+            event_count=3,
+            stock_day_count=2,
+            pre_rise_stock_day_count=1,
+        )
+
+    monkeypatch.setattr("radar.web.server.routers.strategy.summarize_lead_signals", fake_summary)
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/strategy/lead-signals",
+        params={"as_of_date": "2026-06-06", "days": 20, "limit": 5, "source_limit": 3, "message_day_max_pct": 1.5},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["event_count"] == 3
+    assert data["pre_rise_stock_day_count"] == 1
+    assert calls == [
+        {
+            "as_of_date": "2026-06-06",
+            "days": 20,
+            "limit": 5,
+            "source_limit": 3,
+            "benchmark_ts_code": "000300.SH",
+            "message_day_max_pct": 1.5,
+            "strong_return_pct": 3.0,
+            "limit_like_pct": 9.5,
+        }
+    ]
 
 
 def test_strategy_snapshot_save_endpoint_uses_cache(monkeypatch, tmp_path: Path):

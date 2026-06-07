@@ -69,7 +69,8 @@
 .strategy-opportunity-list,
 .source-radar-list,
 .strategy-side-stack,
-.strategy-compact-list {
+.strategy-compact-list,
+.lead-bucket-list {
   display: grid;
   gap: 10px;
 }
@@ -575,6 +576,113 @@
   gap: 6px;
 }
 
+.lead-source-row {
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.lead-source-row > span {
+  overflow-wrap: anywhere;
+}
+
+.lead-date-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 10px 12px 0;
+}
+
+.lead-date-toolbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-ink-muted);
+  font-size: 12px;
+}
+
+.lead-date-toolbar input {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  background: var(--color-surface-1);
+  padding: 6px 8px;
+}
+
+.lead-date-toolbar > span {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.strategy-lead-label {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  color: var(--color-ink-muted);
+  padding: 3px 7px;
+  font-size: 11px;
+}
+
+.strategy-lead-label-强涨前命中,
+.strategy-lead-label-涨前命中 {
+  border-color: color-mix(in srgb, var(--color-market-up) 45%, var(--color-hairline));
+  color: var(--color-market-up);
+}
+
+.strategy-lead-label-涨前待验证 {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 35%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+
+.strategy-lead-label-追高观察,
+.strategy-lead-label-涨前未命中 {
+  border-color: color-mix(in srgb, var(--color-market-down) 35%, var(--color-hairline));
+  color: var(--color-market-down);
+}
+
+.lead-bucket-list {
+  padding: 10px;
+}
+
+.lead-bucket-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.lead-bucket-row strong {
+  overflow: hidden;
+  color: var(--color-ink-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lead-bucket-row span,
+.lead-bucket-row em,
+.lead-bucket-row small {
+  color: var(--color-ink-subtle);
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.lead-bucket-row b {
+  color: var(--color-market-up);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .strategy-summary-panel {
   grid-column: span 2;
 }
@@ -658,8 +766,14 @@
 
   .strategy-signal-grid,
   .strategy-backtest-strip,
-  .strategy-compact-row {
+  .strategy-compact-row,
+  .lead-bucket-row,
+  .lead-date-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .lead-date-toolbar {
+    align-items: stretch;
   }
 
   .strategy-score {

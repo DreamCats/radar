@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Gauge, RefreshCw, Save, ShieldAlert, TrendingUp, Users } from "lucide-react";
 
 import {
+  fetchLeadSignals,
   fetchSourceRadarSnapshot,
   fetchSourceRadarValidation,
   fetchStrategyOpportunities,
@@ -11,12 +12,14 @@ import {
 } from "../api/radarApi";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
+import { LeadSignalPanel } from "../components/LeadSignalPanel";
 import { SourceRadarPanel } from "../components/SourceRadarPanel";
 import { StrategyValidationPanel } from "../components/StrategyValidationPanel";
 import { formatTime } from "../lib/datetime";
 import type {
   SourceRadarSnapshot,
   SourceRadarValidationSummary,
+  LeadSignalSummary,
   StrategyDashboard,
   StrategyOpportunity,
   StrategyRelatedStock,
@@ -24,7 +27,7 @@ import type {
   StrategyStockCandidate,
   StrategyValidationSummary,
 } from "../types";
-type StrategyMode = "source" | "fermentation" | "validation";
+type StrategyMode = "source" | "fermentation" | "lead" | "validation";
 type ValidationMode = "fermentation" | "source";
 
 export function StrategyPage() {
@@ -34,6 +37,8 @@ export function StrategyPage() {
   const [sourceAsOfTime, setSourceAsOfTime] = useState("");
   const [sourceRadar, setSourceRadar] = useState<SourceRadarSnapshot | null>(null);
   const [sourceValidation, setSourceValidation] = useState<SourceRadarValidationSummary | null>(null);
+  const [leadDate, setLeadDate] = useState(todayDate());
+  const [leadSignals, setLeadSignals] = useState<LeadSignalSummary | null>(null);
   const [data, setData] = useState<StrategyDashboard | null>(null);
   const [validation, setValidation] = useState<StrategyValidationSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,6 +52,8 @@ export function StrategyPage() {
     try {
       if (mode === "source") {
         setSourceRadar(await fetchSourceRadarSnapshot({ limit: 20, as_of_time: sourceAsOfTime || undefined }));
+      } else if (mode === "lead") {
+        setLeadSignals(await fetchLeadSignals({ as_of_date: leadDate, days: 30, limit: 20, source_limit: 12 }));
       } else if (mode === "validation") {
         const [strategyResult, sourceResult] = await Promise.all([
           fetchStrategyValidation({ window_days: 5, source_limit: 8 }),
@@ -67,6 +74,8 @@ export function StrategyPage() {
   useEffect(() => {
     if (activeMode === "source" && !sourceRadar) {
       void refresh("source");
+    } else if (activeMode === "lead" && !leadSignals) {
+      void refresh("lead");
     } else if (activeMode === "fermentation" && !data) {
       void refresh("fermentation");
     } else if (activeMode === "validation" && (!validation || !sourceValidation)) {
@@ -83,6 +92,12 @@ export function StrategyPage() {
       void refresh("source");
     }
   }, [sourceAsOfTime]);
+
+  useEffect(() => {
+    if (activeMode === "lead") {
+      void refresh("lead");
+    }
+  }, [leadDate]);
 
   async function saveCurrentSnapshot() {
     setSavingSnapshot(true);
@@ -104,13 +119,20 @@ export function StrategyPage() {
   const riskCount = opportunities.filter((item) => item.attention_level === "风险升高").length;
   const stockGroups = groupStocksByDecision(data?.stock_candidates ?? []);
   const actionableStockCount = stockGroups[0].items.length;
-  const activeDataLoaded = activeMode === "source" ? sourceRadar : activeMode === "validation" ? validation || sourceValidation : data;
+  const activeDataLoaded =
+    activeMode === "source"
+      ? sourceRadar
+      : activeMode === "lead"
+        ? leadSignals
+        : activeMode === "validation"
+          ? validation || sourceValidation
+          : data;
   const initialLoading = loading && !activeDataLoaded;
 
   return (
     <section className="strategy-page">
       <div className="dashboard-actions">
-        <p>{strategyHeaderText(activeMode, initialLoading, sourceRadar, data, validation)}</p>
+        <p>{strategyHeaderText(activeMode, initialLoading, sourceRadar, data, validation, leadSignals)}</p>
         <div>
           {loading && !initialLoading && <PageRefreshProgress label="正在刷新策略" />}
           {activeMode === "fermentation" && (
@@ -128,6 +150,7 @@ export function StrategyPage() {
       <div className="strategy-mode-tabs" role="tablist" aria-label="策略模式">
         <ModeTab active={activeMode === "source"} label="源头雷达" onClick={() => setActiveMode("source")} />
         <ModeTab active={activeMode === "fermentation"} label="发酵确认" onClick={() => setActiveMode("fermentation")} />
+        <ModeTab active={activeMode === "lead"} label="涨前验证" onClick={() => setActiveMode("lead")} />
         <ModeTab active={activeMode === "validation"} label="策略验证" onClick={() => setActiveMode("validation")} />
       </div>
       {initialLoading && <PageLoadingState label={loadingLabel(activeMode)} variant="strategy" />}
@@ -179,6 +202,12 @@ export function StrategyPage() {
       </div>
         </>
       )}
+      {!initialLoading && activeMode === "lead" && (
+        <>
+          {error && <p className="error-line">{error}</p>}
+          <LeadSignalPanel summary={leadSignals} selectedDate={leadDate} onDateChange={setLeadDate} />
+        </>
+      )}
       {!initialLoading && activeMode === "validation" && (
         <>
           {error && <p className="error-line">{error}</p>}
@@ -208,6 +237,7 @@ function strategyHeaderText(
   sourceRadar: SourceRadarSnapshot | null,
   data: StrategyDashboard | null,
   validation: StrategyValidationSummary | null,
+  leadSignals?: LeadSignalSummary | null,
 ): string {
   if (loading) {
     return loadingLabel(mode);
@@ -217,6 +247,11 @@ function strategyHeaderText(
   }
   if (mode === "validation") {
     return validation ? `策略验证工作台 · T+${validation.window_days} · 发酵确认 ${validation.matured_stock_count} 个成熟样本` : "暂无策略验证数据";
+  }
+  if (mode === "lead") {
+    return leadSignals
+      ? `涨前验证 · ${leadSignals.pre_rise_stock_day_count} 个涨前股票日 · ${leadSignals.limit_like_stock_day_count} 个近涨停股票日`
+      : "暂无涨前验证数据";
   }
   return data ? `策略信号窗口 ${formatTime(data.start_time)} - ${formatTime(data.end_time)}` : "暂无策略信号数据";
 }
@@ -228,7 +263,18 @@ function loadingLabel(mode: StrategyMode): string {
   if (mode === "validation") {
     return "正在加载策略验证";
   }
+  if (mode === "lead") {
+    return "正在加载涨前验证";
+  }
   return "正在加载策略信号";
+}
+
+function todayDate(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function OpportunityCard({ item }: { item: StrategyOpportunity }) {

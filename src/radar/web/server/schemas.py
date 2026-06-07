@@ -21,7 +21,12 @@ from radar.core.usecases.recommendation_backtest import (
     RecommendationBacktestSummaryResult,
 )
 from radar.core.usecases.source.models import SourceSignalSnapshotPage, SourceSignalValidationSummary
-from radar.core.usecases.strategy import StrategyDashboard, StrategySnapshotSaveResult, StrategyValidationSummary
+from radar.core.usecases.strategy import (
+    LeadSignalSummary,
+    StrategyDashboard,
+    StrategySnapshotSaveResult,
+    StrategyValidationSummary,
+)
 
 SourceKey = Literal["personal_message", "group_message"]
 JobSourceKey = Literal["all", "personal_message", "group_message"]
@@ -282,6 +287,10 @@ class StrategySnapshotSaveResponse(StrategySnapshotSaveResult):
 
 
 class StrategyValidationResponse(StrategyValidationSummary):
+    pass
+
+
+class LeadSignalResponse(LeadSignalSummary):
     pass
 
 

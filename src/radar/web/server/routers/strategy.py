@@ -9,11 +9,23 @@ from radar.core.db import migrate_message_db
 from radar.core.store import connect
 from radar.core.usecases.source.storage import list_latest_source_signal_snapshots
 from radar.core.usecases.source.validation import summarize_source_signal_validation
-from radar.core.usecases.strategy import build_strategy_dashboard, save_cached_strategy_snapshot, summarize_strategy_validation
-from radar.core.view_cache import cached_model, cache_key, source_radar_dependency_key, strategy_dependency_key, strategy_validation_dependency_key
+from radar.core.usecases.strategy import (
+    build_strategy_dashboard,
+    save_cached_strategy_snapshot,
+    summarize_lead_signals,
+    summarize_strategy_validation,
+)
+from radar.core.view_cache import (
+    cached_model,
+    cache_key,
+    source_radar_dependency_key,
+    strategy_dependency_key,
+    strategy_validation_dependency_key,
+)
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     DerivedJobResponse,
+    LeadSignalResponse,
     SourceRadarSnapshotResponse,
     SourceRadarValidationResponse,
     StrategyDashboardResponse,
@@ -75,6 +87,54 @@ def strategy_validation(
     )
 
 
+@router.get("/lead-signals", response_model=LeadSignalResponse)
+def strategy_lead_signals(
+    as_of_date: str | None = Query(default=None),
+    days: int = Query(default=30, ge=1, le=180),
+    limit: int = Query(default=20, ge=1, le=100),
+    source_limit: int = Query(default=12, ge=1, le=50),
+    benchmark: str = Query(default="000300.SH"),
+    message_day_max_pct: float = Query(default=2.0, ge=-30, le=30),
+    strong_return_pct: float = Query(default=3.0, ge=-30, le=30),
+    limit_like_pct: float = Query(default=9.5, ge=0, le=30),
+    config: RadarConfig = Depends(get_config),
+) -> LeadSignalResponse:
+    try:
+        return cached_model(
+            config.database_path,
+            key=cache_key(
+                "strategy.lead_signals.v1",
+                {
+                    "days": days,
+                    "as_of_date": as_of_date,
+                    "limit": limit,
+                    "source_limit": source_limit,
+                    "benchmark": benchmark,
+                    "message_day_max_pct": message_day_max_pct,
+                    "strong_return_pct": strong_return_pct,
+                    "limit_like_pct": limit_like_pct,
+                },
+            ),
+            dependency_key=strategy_dependency_key(config),
+            model_type=LeadSignalResponse,
+            compute=lambda: LeadSignalResponse(
+                **summarize_lead_signals(
+                    config,
+                    as_of_date=as_of_date,
+                    days=days,
+                    limit=limit,
+                    source_limit=source_limit,
+                    benchmark_ts_code=benchmark,
+                    message_day_max_pct=message_day_max_pct,
+                    strong_return_pct=strong_return_pct,
+                    limit_like_pct=limit_like_pct,
+                ).model_dump()
+            ),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @router.get("/source-radar/validation", response_model=SourceRadarValidationResponse)
 def source_radar_validation(
     window_days: int = Query(default=5, ge=1, le=30),
@@ -100,7 +160,10 @@ def strategy_source_radar(
 ) -> SourceRadarSnapshotResponse:
     return cached_model(
         config.database_path,
-        key=cache_key("strategy.source_radar.v2", {"limit": limit, "as_of_time": as_of_time.isoformat() if as_of_time else None}),
+        key=cache_key(
+            "strategy.source_radar.v2",
+            {"limit": limit, "as_of_time": as_of_time.isoformat() if as_of_time else None},
+        ),
         dependency_key=source_radar_dependency_key(config),
         model_type=SourceRadarSnapshotResponse,
         compute=lambda: _source_radar_snapshot(config, limit=limit, as_of_time=as_of_time),

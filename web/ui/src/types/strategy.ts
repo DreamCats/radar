@@ -155,6 +155,82 @@ export type StrategyValidationSummary = {
   top_sources: StrategyValidationMetric[];
 };
 
+export type LeadSignalWindow = {
+  window_days: number;
+  target_trade_date?: string | null;
+  target_close?: number | null;
+  return_rate?: number | null;
+  excess_return_rate?: number | null;
+};
+
+export type LeadSignalBucket = {
+  label: string;
+  window_days: number;
+  event_count: number;
+  average_return?: number | null;
+  average_excess_return?: number | null;
+  up_rate?: number | null;
+};
+
+export type LeadSignalSourceStat = {
+  source_name: string;
+  event_count: number;
+  non_hot_event_count: number;
+  pre_rise_event_count: number;
+  strong_pre_rise_event_count: number;
+  limit_like_event_count: number;
+  pre_rise_rate?: number | null;
+  average_t1_return?: number | null;
+  average_t1_excess_return?: number | null;
+  latest_message_time?: string | null;
+};
+
+export type LeadSignalSample = {
+  event_date: string;
+  signal_label: string;
+  stock_name: string;
+  ts_code: string;
+  message_day_pct_chg?: number | null;
+  base_trade_date?: string | null;
+  base_close?: number | null;
+  first_message_time: string;
+  event_count: number;
+  source_names: string[];
+  windows: LeadSignalWindow[];
+};
+
+export type LeadSignalSummary = {
+  start_time: string;
+  end_time: string;
+  generated_at: string;
+  as_of_date: string;
+  available_dates: string[];
+  validation_days: number;
+  benchmark_ts_code: string;
+  message_day_max_pct: number;
+  strong_return_pct: number;
+  limit_like_pct: number;
+  day_event_count: number;
+  day_stock_day_count: number;
+  day_non_hot_event_count: number;
+  day_non_hot_stock_day_count: number;
+  day_limit_like_event_count: number;
+  day_limit_like_stock_day_count: number;
+  event_count: number;
+  stock_day_count: number;
+  non_hot_event_count: number;
+  non_hot_stock_day_count: number;
+  pre_rise_event_count: number;
+  pre_rise_stock_day_count: number;
+  strong_pre_rise_event_count: number;
+  strong_pre_rise_stock_day_count: number;
+  limit_like_event_count: number;
+  limit_like_stock_day_count: number;
+  buckets: LeadSignalBucket[];
+  source_stats: LeadSignalSourceStat[];
+  samples: LeadSignalSample[];
+};
+
 export type StrategyQuery = {
   days?: number;
   recent_days?: number;
@@ -165,6 +241,17 @@ export type StrategyValidationQuery = {
   window_days?: number;
   benchmark?: string;
   source_limit?: number;
+};
+
+export type LeadSignalQuery = {
+  as_of_date?: string;
+  days?: number;
+  limit?: number;
+  source_limit?: number;
+  benchmark?: string;
+  message_day_max_pct?: number;
+  strong_return_pct?: number;
+  limit_like_pct?: number;
 };
 
 export type SourceRadarSignalStatus = "source_seed" | "spreading_watch" | "mapped" | "old_theme";
