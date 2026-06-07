@@ -53,6 +53,11 @@ export function IngestPage() {
   const runningCount = rows.filter(({ run }) => !run || run.status === "running").length;
   const finishedCount = rows.length - runningCount;
   const jobMotion = panelMotionState(shouldReduceMotion);
+  const configGridClass = [
+    "job-config-grid",
+    selectedJob === "strategyBackfill" ? "minimal" : "",
+    selectedJob === "sourceRadar" ? "source-radar" : "",
+  ].filter(Boolean).join(" ");
 
   useEffect(() => {
     void refreshRunsAndResults();
@@ -104,7 +109,9 @@ export function IngestPage() {
         fetchRuns({ status: "running", limit: 50 }),
       ]);
       setRuns(mergeRuns(runItems, runningItems));
-      const restoredJobs = runningItems.map(trackedJobFromRun).filter((item): item is TrackedJob => item !== null);
+      const restoredRunningJobs = runningItems.map((item) => trackedJobFromRun(item)).filter((item): item is TrackedJob => item !== null);
+      const restoredRecentJobs = runItems.map((item) => trackedJobFromRun(item, false)).filter((item): item is TrackedJob => item !== null);
+      const restoredJobs = mergeTrackedJobs(restoredRunningJobs, restoredRecentJobs);
       if (restoredJobs.length > 0) {
         setTrackedJobs((current) => mergeTrackedJobs(restoredJobs, current));
       }
@@ -279,7 +286,7 @@ export function IngestPage() {
 
   function selectJob(kind: JobTemplateKey) {
     setSelectedJob(kind);
-    const needsHistoryWindow = kind === "backtest" || kind === "strategyBackfill";
+    const needsHistoryWindow = kind === "backtest" || kind === "strategyBackfill" || kind === "sourceRadar";
     if (needsHistoryWindow && selectedJob !== kind && preset === "today") {
       const nextRange = buildPresetRange("last30d");
       setPreset("last30d");
@@ -325,12 +332,13 @@ export function IngestPage() {
                   onClick={() => selectJob(item.key)}
                 >
                   <Icon size={16} />
-                  <span>
-                    <strong>{item.title}</strong>
-                    <small>{item.meta}</small>
-                  </span>
-                </button>
-              );
+                    <span>
+                      <strong>{item.title}</strong>
+                      <small>{item.meta}</small>
+                      <small>{item.serves}</small>
+                    </span>
+                  </button>
+                );
             })}
           </div>
         </aside>
@@ -346,9 +354,9 @@ export function IngestPage() {
               transition={jobMotion.transition}
             >
               <div className="ingest-card-head">
-                <PanelTitle title={selectedTemplate.title} meta={selectedTemplate.meta} />
+                <PanelTitle title={selectedTemplate.title} meta={`${selectedTemplate.meta} · ${selectedTemplate.serves}`} />
               </div>
-              <div className="job-config-grid">
+              <div className={configGridClass}>
                 {selectedJob !== "strategyBackfill" && selectedJob !== "sourceRadar" && (
                   <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
                 )}
@@ -380,7 +388,7 @@ export function IngestPage() {
         </section>
 
         <aside className="content-panel job-queue-panel">
-          <PanelTitle title="运行队列" meta={`${runningCount} 运行中`} />
+          <PanelTitle title="运行历史" meta={`${runningCount} 运行中`} />
           <div className="job-queue-summary">
             <span>{finishedCount} 已结束</span>
             <button className="btn btn-sm" type="button" onClick={() => void refreshRunsAndResults()}>
@@ -388,9 +396,9 @@ export function IngestPage() {
             </button>
           </div>
           <div className="job-list compact">
-            {rows.length === 0 && <p className="empty-line">暂无跟踪作业。</p>}
+            {rows.length === 0 && <p className="empty-line">暂无历史作业。</p>}
             <AnimatePresence initial={false}>
-              {rows.slice(0, 5).map(({ job, run }) => (
+              {rows.slice(0, 8).map(({ job, run }) => (
                 <motion.div
                   animate={jobMotion.animate}
                   exit={jobMotion.exit}

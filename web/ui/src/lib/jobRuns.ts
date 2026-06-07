@@ -25,7 +25,7 @@ const SOURCE_LABELS: Record<IngestSource, string> = {
   group_message: "个人群",
 };
 
-export function trackedJobFromRun(run: RunItem): TrackedJob | null {
+export function trackedJobFromRun(run: RunItem, reusedExisting = true): TrackedJob | null {
   const kind = RUN_KIND_TO_JOB[run.kind];
   if (!kind) {
     return null;
@@ -34,7 +34,7 @@ export function trackedJobFromRun(run: RunItem): TrackedJob | null {
     kind,
     source: sourceFromRun(run),
     run_id: run.run_id,
-    reused_existing: true,
+    reused_existing: reusedExisting,
   };
 }
 
@@ -83,11 +83,19 @@ function sourceFromRun(run: RunItem): string {
   if (isSourceKey(sourceKey)) {
     return sourceLabel(sourceKey);
   }
+  const targetSource = sourceKeyFromTarget(run.target);
+  if (isSourceKey(targetSource)) {
+    return sourceLabel(targetSource);
+  }
   return run.target;
 }
 
 function isSourceKey(value: string): value is IngestSource {
   return value === "all" || value === "personal_message" || value === "group_message";
+}
+
+function sourceKeyFromTarget(target: string): string {
+  return target.split(/[:|]/, 1)[0] ?? "";
 }
 
 function textValue(value: unknown): string {
