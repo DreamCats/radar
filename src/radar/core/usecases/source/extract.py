@@ -1,17 +1,24 @@
 from __future__ import annotations
 
 import hashlib
+import time
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
-
-from pydantic import BaseModel, Field
 
 from radar.core.config import RadarConfig
 from radar.core.llm import chat_json_list, resolve_provider
 from radar.core.models import RawMessage
 from radar.core.runs import fail_run, finish_run, start_run
 from radar.core.store import connect, init_db
+from radar.core.usecases.source.metrics import (
+    SourceExtractBatchError,
+    SourceExtractBatchMetric,
+    SourceExtractResult,
+    TimedBatchResult,
+    provider_for_batch,
+    provider_stats,
+)
 from radar.core.usecases.source.models import SourceRelationType, SourceStructure
 from radar.core.usecases.source.storage import upsert_source_structures
 from radar.core.work_pool import run_resource_work_pool
@@ -31,17 +38,6 @@ SOURCE_NOISE_TERMS = (
 )
 
 SourceExtractBatchFn = Callable[[RadarConfig, list[RawMessage], str | None], list[SourceStructure]]
-
-
-class SourceExtractResult(BaseModel):
-    run_id: str
-    scanned_count: int = 0
-    extracted_count: int = 0
-    inserted_count: int = 0
-    llm_count: int = 0
-    failed_llm_batches: int = 0
-    max_concurrency: int = 0
-    provider_pool: list[str | None] = Field(default_factory=list)
 
 
 def extract_source_structures(
@@ -85,7 +81,7 @@ def extract_source_structures(
     try:
         init_db(conn)
         messages = _list_extract_candidates(conn, start_time=start_time, end_time=end_time, limit=limit, force=force)
-        extracted, inserted, llm_count, failed_batches, actual_concurrency = _extract_with_llm(
+        extracted, inserted, llm_count, failed_batches, actual_concurrency, batch_metrics = _extract_with_llm(
             conn,
             config,
             messages,
@@ -103,6 +99,9 @@ def extract_source_structures(
             failed_llm_batches=failed_batches,
             max_concurrency=actual_concurrency,
             provider_pool=provider_pool,
+            llm_batch_metrics=batch_metrics,
+            failed_llm_batch_details=[item for item in batch_metrics if item.status == "failed"],
+            provider_stats=provider_stats(batch_metrics),
         )
         finish_run(config.database_path, run_id, raw_count=len(messages), stored_count=inserted, metadata=metadata | result.model_dump())
         return result
@@ -137,27 +136,62 @@ def _extract_with_llm(
     max_concurrency: int,
     provider_pool: list[str | None],
     llm_batch_extractor: SourceExtractBatchFn,
-) -> tuple[list[SourceStructure], int, int, int, int]:
+) -> tuple[list[SourceStructure], int, int, int, int, list[SourceExtractBatchMetric]]:
     batches = _batches(messages, batch_size)
     if not batches:
-        return [], 0, 0, 0, 0
+        return [], 0, 0, 0, 0, []
     extracted: list[SourceStructure] = []
     inserted_count = 0
     llm_count = 0
     failed_batches = 0
+    batch_metrics: list[SourceExtractBatchMetric] = []
 
-    def worker(_index: int, batch: list[RawMessage], provider: str | None) -> list[SourceStructure]:
-        return llm_batch_extractor(config, batch, provider)
+    def worker(_index: int, batch: list[RawMessage], provider: str | None) -> TimedBatchResult:
+        started = time.monotonic()
+        try:
+            result = llm_batch_extractor(config, batch, provider)
+        except BaseException as exc:
+            elapsed_ms = int((time.monotonic() - started) * 1000)
+            raise SourceExtractBatchError(provider=provider, elapsed_ms=elapsed_ms, original=exc) from exc
+        return TimedBatchResult(items=result, elapsed_ms=int((time.monotonic() - started) * 1000))
 
-    def on_result(_index: int, _batch: list[RawMessage], result: list[SourceStructure]) -> None:
+    def on_result(index: int, batch: list[RawMessage], result: TimedBatchResult) -> None:
         nonlocal inserted_count, llm_count
-        extracted.extend(result)
-        inserted_count += upsert_source_structures(conn, result)
-        llm_count += len(result)
+        extracted.extend(result.items)
+        inserted_count += upsert_source_structures(conn, result.items)
+        llm_count += len(result.items)
+        batch_metrics.append(
+            SourceExtractBatchMetric(
+                batch_index=index,
+                provider=provider_for_batch(provider_pool, index),
+                message_count=len(batch),
+                result_count=len(result.items),
+                elapsed_ms=result.elapsed_ms,
+                status="succeeded",
+            )
+        )
 
-    def on_error(_index: int, _batch: list[RawMessage], _error: BaseException) -> None:
+    def on_error(index: int, batch: list[RawMessage], error: BaseException) -> None:
         nonlocal failed_batches
         failed_batches += 1
+        provider = provider_for_batch(provider_pool, index)
+        elapsed_ms = 0
+        original = error
+        if isinstance(error, SourceExtractBatchError):
+            provider = error.provider
+            elapsed_ms = error.elapsed_ms
+            original = error.original
+        batch_metrics.append(
+            SourceExtractBatchMetric(
+                batch_index=index,
+                provider=provider,
+                message_count=len(batch),
+                elapsed_ms=elapsed_ms,
+                status="failed",
+                error_type=type(original).__name__,
+                error_message=str(original)[:300],
+            )
+        )
 
     stats = run_resource_work_pool(
         batches,
@@ -169,7 +203,8 @@ def _extract_with_llm(
     )
     if failed_batches == len(batches):
         raise RuntimeError("源头结构抽取全部批次失败")
-    return extracted, inserted_count, llm_count, failed_batches, stats.actual_workers
+    batch_metrics.sort(key=lambda item: item.batch_index)
+    return extracted, inserted_count, llm_count, failed_batches, stats.actual_workers, batch_metrics
 
 
 def _list_extract_candidates(conn, *, start_time: datetime, end_time: datetime, limit: int, force: bool) -> list[RawMessage]:

@@ -50,9 +50,12 @@ export function IngestPage() {
   const validWindow = Boolean(startValue && endValue) && startValue <= endValue;
   const canSubmit = validWindow;
   const selectedTemplate = JOB_TEMPLATES.find((item) => item.key === selectedJob) ?? JOB_TEMPLATES[0];
-  const rows = trackedJobs
-    .map((job) => ({ job, run: runs.find((run) => run.run_id === job.run_id) }))
-    .filter((row): row is { job: TrackedJob; run: RunItem } => row.run !== undefined);
+  const rows = runs
+    .map((run) => {
+      const job = trackedJobs.find((item) => item.run_id === run.run_id) ?? trackedJobFromRun(run, false);
+      return job ? { job, run } : null;
+    })
+    .filter((row): row is { job: TrackedJob; run: RunItem } => row !== null);
   const runningRows = rows.filter(({ run }) => run.status === "running");
   const hasRunning = runningRows.length > 0;
   const active = submitting || canceling || hasRunning;
@@ -66,35 +69,13 @@ export function IngestPage() {
   ].filter(Boolean).join(" ");
 
   useEffect(() => {
-    void refreshRunsAndResults();
-  }, []);
-
-  useEffect(() => {
-    if (trackedJobs.length === 0) {
-      return undefined;
-    }
-
     let cancelled = false;
     let timer: number | undefined;
-    const runIds = new Set(trackedJobs.map((job) => job.run_id));
 
     async function refresh() {
-      try {
-        const items = await fetchRuns();
-        if (cancelled) {
-          return;
-        }
-        setRuns(items);
-        const tracked = items.filter((item) => runIds.has(item.run_id));
-        const hasRunning = tracked.some((item) => item.status === "running");
-        if (hasRunning) {
-          timer = window.setTimeout(refresh, 4000);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "刷新运行状态失败");
-          timer = window.setTimeout(refresh, 4000);
-        }
+      await refreshRunsAndResults();
+      if (!cancelled) {
+        timer = window.setTimeout(refresh, 4000);
       }
     }
 
@@ -105,13 +86,13 @@ export function IngestPage() {
         window.clearTimeout(timer);
       }
     };
-  }, [trackedJobs]);
+  }, []);
 
   async function refreshRunsAndResults() {
     setError(null);
     try {
       const [runItems, runningItems] = await Promise.all([
-        fetchRuns(),
+        fetchRuns({ limit: 200 }),
         fetchRuns({ status: "running", limit: 50 }),
       ]);
       const mergedRuns = mergeRuns(runItems, runningItems);

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -49,6 +50,52 @@ def test_source_extract_uses_provider_pool_and_persists_structures(tmp_path: Pat
     assert result.inserted_count == 2
     with connect(config.database_path) as conn:
         assert conn.execute("SELECT COUNT(*) AS c FROM source_structures").fetchone()["c"] == 2
+
+
+def test_source_extract_records_failed_provider_metrics(tmp_path: Path):
+    config = _config(tmp_path)
+    messages = [
+        _message("m1", "2026-06-01T09:00:00", "AI电源成为新方向"),
+        _message("m2", "2026-06-01T09:10:00", "PCB 国产替代出现新变化"),
+        _message("m3", "2026-06-01T09:20:00", "机器人零部件有突破"),
+    ]
+    _seed_messages(config, messages)
+
+    def fake_extractor(_config, batch: list[RawMessage], provider_name: str | None):
+        if provider_name == "p2":
+            raise RuntimeError("provider timeout")
+        return [
+            _structure(
+                batch[0],
+                anchor="AI",
+                modifier="电源",
+                novel="AI电源",
+                provider=provider_name,
+            )
+        ]
+
+    result = extract_source_structures(
+        config,
+        start_time=datetime.fromisoformat("2026-06-01T00:00:00"),
+        end_time=datetime.fromisoformat("2026-06-02T00:00:00"),
+        batch_size=1,
+        max_concurrency=3,
+        provider_names=["p1", "p2", "p3"],
+        llm_batch_extractor=fake_extractor,
+    )
+
+    assert result.failed_llm_batches == 1
+    assert result.failed_llm_batch_details[0].provider == "p2"
+    assert result.failed_llm_batch_details[0].error_type == "RuntimeError"
+    assert "provider timeout" in str(result.failed_llm_batch_details[0].error_message)
+    assert {item.provider for item in result.provider_stats} == {"p1", "p2", "p3"}
+    with connect(config.database_path) as conn:
+        row = conn.execute(
+            "SELECT metadata_json FROM runs WHERE kind = 'source_extract' ORDER BY started_at DESC LIMIT 1"
+        ).fetchone()
+    metadata = json.loads(str(row["metadata_json"]))
+    assert metadata["failed_llm_batch_details"][0]["provider"] == "p2"
+    assert metadata["provider_stats"][0]["failed_count"] == 1
 
 
 def test_source_scan_detects_seed_spreading_and_mapping(tmp_path: Path):
