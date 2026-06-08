@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sqlite3
 from datetime import date, datetime, time, timedelta
-from typing import Any
 
 from radar.core.config import RadarConfig
 from radar.core.models import MessageSource
@@ -118,6 +117,7 @@ def refresh_recommendation_backtests(
             min_classification_confidence=min_classification_confidence,
             extractor_version=extractor_version,
         )
+        conn.commit()
         if not events:
             events = list_recommendation_events(conn, start_time=start_time, end_time=end_time, source=source)
 
@@ -207,8 +207,8 @@ def _refresh_windows(
             else:
                 stats["failed_count"] += 1
 
+        conn.commit()
         if index % _PROGRESS_EVERY == 0 or index == len(events):
-            conn.commit()
             update_run_progress(
                 config.database_path,
                 run_id,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from datetime import datetime, timedelta
 
 from radar.core.runs import (
@@ -111,3 +112,25 @@ def test_get_running_run_and_fail_stale_runs(tmp_path):
     assert record is not None
     assert record.status == "failed"
     assert get_running_run(db, kind="wechat_ingest_range", target="group_message:day") is None
+
+
+def test_fail_stale_runs_skips_when_database_locked(monkeypatch, tmp_path):
+    db = tmp_path / "radar.sqlite3"
+    run_id = start_run(db, kind="wechat_ingest_range", target="group_message:day")
+    monkeypatch.setattr("radar.core.runs._SQLITE_TIMEOUT_SECONDS", 0.01)
+    monkeypatch.setattr("radar.core.runs._SQLITE_BUSY_TIMEOUT_MS", 10)
+
+    locker = sqlite3.connect(db, timeout=0.01)
+    try:
+        locker.execute("BEGIN EXCLUSIVE")
+
+        stale_count = fail_stale_runs(db, older_than=datetime.now() + timedelta(seconds=1), kind="wechat_ingest_range")
+
+        assert stale_count == 0
+    finally:
+        locker.rollback()
+        locker.close()
+
+    record = get_run(db, run_id)
+    assert record is not None
+    assert record.status == "running"

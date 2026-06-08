@@ -12,6 +12,8 @@ from pydantic import BaseModel, Field
 from radar.core.db import migrate_message_db
 
 RunStatus = Literal["running", "succeeded", "skipped", "failed"]
+_SQLITE_TIMEOUT_SECONDS = 15.0
+_SQLITE_BUSY_TIMEOUT_MS = 15_000
 
 
 class RunRecord(BaseModel):
@@ -221,9 +223,14 @@ def fail_stale_runs(database: Path, *, older_than: datetime, kind: str | None = 
         sql.append("AND kind = ?")
         params.append(kind)
 
-    with _connect(database) as conn:
-        cursor = conn.execute(" ".join(sql), params)
-        return cursor.rowcount
+    try:
+        with _connect(database) as conn:
+            cursor = conn.execute(" ".join(sql), params)
+            return cursor.rowcount
+    except sqlite3.OperationalError as exc:
+        if _is_database_locked(exc):
+            return 0
+        raise
 
 
 def list_runs(
@@ -259,10 +266,16 @@ def list_runs(
 
 def _connect(database: Path) -> sqlite3.Connection:
     database.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(database, timeout=_SQLITE_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
+    conn.execute(f"PRAGMA busy_timeout = {_SQLITE_BUSY_TIMEOUT_MS}")
     migrate_message_db(conn)
     return conn
+
+
+def _is_database_locked(error: sqlite3.OperationalError) -> bool:
+    message = str(error).lower()
+    return "database is locked" in message or "database table is locked" in message
 
 
 def _metadata_json(metadata: dict[str, Any] | None) -> str:
