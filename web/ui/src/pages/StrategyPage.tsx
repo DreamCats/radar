@@ -106,6 +106,8 @@ export function StrategyPage() {
   const focusCount = opportunities.filter((item) => item.attention_level === "重点关注").length;
   const riskCount = opportunities.filter((item) => item.attention_level === "风险升高").length;
   const stockGroups = groupStocksByDecision(data?.stock_candidates ?? []);
+  const actionableStockGroup = stockGroups[0];
+  const secondaryStockGroups = stockGroups.slice(1);
   const actionableStockCount = stockGroups[0].items.length;
   const activeDataLoaded =
     activeMode === "source"
@@ -146,43 +148,51 @@ export function StrategyPage() {
       )}
       {!initialLoading && activeMode === "fermentation" && (
         <>
-      <div className="statbar metric-grid">
-        <Metric label="机会候选" value={data?.opportunity_count ?? 0} detail="近 30 天派生信号" />
-        <Metric label="重点关注" value={focusCount} detail="高分且可靠性足够" />
-        <Metric label="今日可看" value={actionableStockCount} detail="未过热的股票信号" />
-        <Metric label="风险升高" value={riskCount} detail="反证或风险词偏高" />
-      </div>
-      {error && <p className="error-line">{error}</p>}
-      <div className="strategy-grid">
-        <section className="panel strategy-main-panel">
-          <PanelTitle title="发酵确认" meta="主题拐点 x 来源质量 x T+5 回测 x 催化/风险" />
-          <div className="strategy-opportunity-list">
-            {opportunities.length ? (
-              opportunities.map((item) => <OpportunityCard item={item} key={item.key} onStockOpen={setSelectedStock} />)
-            ) : (
-              <p className="empty-line">暂无发酵确认信号。</p>
-            )}
+          <div className="statbar metric-grid">
+            <Metric label="机会候选" value={data?.opportunity_count ?? 0} detail="近 30 天派生信号" />
+            <Metric label="重点关注" value={focusCount} detail="高分且可靠性足够" />
+            <Metric label="今日可看" value={actionableStockCount} detail="未过热的股票信号" />
+            <Metric label="风险升高" value={riskCount} detail="反证或风险词偏高" />
           </div>
-        </section>
-        <aside className="strategy-side-stack">
-          <section className="panel">
-            <PanelTitle title="来源质量" meta="T+5 超额 · 近 30 天" />
-            <div className="strategy-compact-list">
-              {(data?.source_quality ?? []).map((item) => (
-                <SourceRow item={item} key={item.name} />
-              ))}
+          {error && <p className="error-line">{error}</p>}
+          <div className="strategy-fermentation-stack">
+            <section className="panel strategy-focus-stocks-panel">
+              <PanelTitle title="今日可关注股票" meta="发酵中/初现，位置未过热 · 非买入建议" />
+              <div className="strategy-stock-groups strategy-stock-groups-featured">
+                <DecisionStockGroup group={actionableStockGroup} onStockOpen={setSelectedStock} />
+              </div>
+            </section>
+
+            <section className="panel strategy-main-panel">
+              <PanelTitle title="发酵主题" meta="主题拐点 x 来源质量 x T+5 回测 x 催化/风险" />
+              <div className="strategy-opportunity-list">
+                {opportunities.length ? (
+                  opportunities.map((item) => <OpportunityCard item={item} key={item.key} onStockOpen={setSelectedStock} />)
+                ) : (
+                  <p className="empty-line">暂无发酵确认信号。</p>
+                )}
+              </div>
+            </section>
+
+            <div className="strategy-grid strategy-support-grid">
+              <section className="panel">
+                <PanelTitle title="来源质量" meta="T+5 超额 · 近 30 天" />
+                <div className="strategy-compact-list">
+                  {(data?.source_quality ?? []).map((item) => (
+                    <SourceRow item={item} key={item.name} />
+                  ))}
+                </div>
+              </section>
+              <section className="panel">
+                <PanelTitle title="观察与复盘股票" meta="等待确认 / 已兑现复盘" />
+                <div className="strategy-stock-groups">
+                  {secondaryStockGroups.map((group) => (
+                    <DecisionStockGroup group={group} key={group.bucket} onStockOpen={setSelectedStock} />
+                  ))}
+                </div>
+              </section>
             </div>
-          </section>
-          <section className="panel">
-            <PanelTitle title="决策股票池" meta="按可操作性分层 · 非买入建议" />
-            <div className="strategy-stock-groups">
-              {stockGroups.map((group) => (
-                <DecisionStockGroup group={group} key={group.bucket} onStockOpen={setSelectedStock} />
-              ))}
-            </div>
-          </section>
-        </aside>
-      </div>
+          </div>
         </>
       )}
       {!initialLoading && activeMode === "lead" && (

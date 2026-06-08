@@ -10,6 +10,15 @@
   align-items: start;
 }
 
+.strategy-fermentation-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.strategy-support-grid {
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+}
+
 .strategy-mode-tabs {
   display: inline-flex;
   width: fit-content;
@@ -533,6 +542,10 @@
 }
 
 .strategy-stock-groups { display: grid; gap: 10px; padding: 10px; }
+
+.strategy-stock-groups-featured .strategy-compact-list {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
 
 .strategy-stock-group { display: grid; gap: 6px; }
 
