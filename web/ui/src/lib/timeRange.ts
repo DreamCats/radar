@@ -1,4 +1,4 @@
-export type RangePreset = "today" | "yesterday" | "last24h" | "last7d" | "last30d" | "custom";
+export type RangePreset = "yesterdayClose" | "today" | "yesterday" | "last24h" | "last7d" | "last30d" | "custom";
 
 export type LocalRange = {
   startDate: string;
@@ -15,8 +15,15 @@ export const RANGE_PRESETS: Array<[RangePreset, string]> = [
   ["last30d", "近 30 天"],
 ];
 
+export function buildYesterdayCloseRange(now = new Date()): LocalRange {
+  return buildRange(yesterdayClose(now), now);
+}
+
 export function buildPresetRange(preset: RangePreset): LocalRange {
   const now = new Date();
+  if (preset === "yesterdayClose") {
+    return buildYesterdayCloseRange(now);
+  }
   if (preset === "yesterday") {
     const day = addDays(startOfDay(now), -1);
     return buildRange(day, endOfDay(day));
@@ -66,6 +73,12 @@ function addDays(date: Date, days: number): Date {
 
 function addHours(date: Date, hours: number): Date {
   return new Date(date.getTime() + hours * 60 * 60 * 1000);
+}
+
+function yesterdayClose(now: Date): Date {
+  const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 0);
+  close.setDate(close.getDate() - 1);
+  return close;
 }
 
 function formatDate(date: Date): string {

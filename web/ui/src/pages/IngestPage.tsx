@@ -28,16 +28,26 @@ import {
   type TrackedJob,
 } from "../lib/jobRuns";
 import { panelMotionState } from "../lib/motion";
-import { buildPresetRange, rangeLabel, RANGE_PRESETS, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
+import {
+  buildPresetRange,
+  buildYesterdayCloseRange,
+  rangeLabel,
+  RANGE_PRESETS,
+  toLocalIso,
+  type LocalRange,
+  type RangePreset,
+} from "../lib/timeRange";
 import type { IngestSource, RunItem } from "../types";
 
+const INGEST_RANGE_PRESETS: Array<[RangePreset, string]> = [["yesterdayClose", "昨日 15:00"], ...RANGE_PRESETS];
+
 export function IngestPage() {
-  const initialRange = useMemo(() => buildPresetRange("today"), []);
+  const initialRange = useMemo(() => buildPresetRange("yesterdayClose"), []);
   const shouldReduceMotion = useReducedMotion();
   const [selectedJob, setSelectedJob] = useState<JobTemplateKey>("ingest");
   const [source, setSource] = useState<IngestSource>("all");
   const [range, setRange] = useState<LocalRange>(initialRange);
-  const [preset, setPreset] = useState<RangePreset>("today");
+  const [preset, setPreset] = useState<RangePreset>("yesterdayClose");
   const [tradeDate, setTradeDate] = useState(() => dateToTradeDate(initialRange.endDate));
   const [force, setForce] = useState(false);
   const [trackedJobs, setTrackedJobs] = useState<TrackedJob[]>([]);
@@ -63,6 +73,7 @@ export function IngestPage() {
   const runningCount = runningRows.length;
   const finishedCount = rows.length - runningCount;
   const jobMotion = panelMotionState(shouldReduceMotion);
+  const rangePresets = selectedJob === "ingest" ? INGEST_RANGE_PRESETS : RANGE_PRESETS;
   const configGridClass = [
     "job-config-grid",
     selectedJob === "strategyBackfill" ? "minimal" : "",
@@ -314,7 +325,15 @@ export function IngestPage() {
   function selectJob(kind: JobTemplateKey) {
     setSelectedJob(kind);
     const needsHistoryWindow = kind === "backtest" || kind === "strategyBackfill" || kind === "sourceRadar";
-    if (needsHistoryWindow && selectedJob !== kind && preset === "today") {
+    const wasHistoryWindow = selectedJob === "backtest" || selectedJob === "strategyBackfill" || selectedJob === "sourceRadar";
+    if (kind === "ingest" && wasHistoryWindow && preset === "last30d") {
+      const nextRange = buildYesterdayCloseRange();
+      setPreset("yesterdayClose");
+      setRange(nextRange);
+      setTradeDate(dateToTradeDate(nextRange.endDate));
+      return;
+    }
+    if (needsHistoryWindow && selectedJob !== kind && (preset === "today" || preset === "yesterdayClose")) {
       const nextRange = buildPresetRange("last30d");
       setPreset("last30d");
       setRange(nextRange);
@@ -333,7 +352,7 @@ export function IngestPage() {
       </div>
 
       <div className="range-presets" aria-label="快捷时间窗口">
-        {RANGE_PRESETS.map(([value, label]) => (
+        {rangePresets.map(([value, label]) => (
           <button
             className={preset === value ? "preset-button active" : "preset-button"}
             key={value}
