@@ -133,7 +133,7 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             trade_date        TEXT NOT NULL,
             created_at        TEXT NOT NULL,
             updated_at        TEXT NOT NULL,
-            PRIMARY KEY (message_id, anchor_id, extractor_version),
+            PRIMARY KEY (message_id, anchor_id, extractor_version, trade_date),
             FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
         );
 
@@ -149,7 +149,7 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             anchor_count      INTEGER NOT NULL,
             created_at        TEXT NOT NULL,
             updated_at        TEXT NOT NULL,
-            PRIMARY KEY (message_id, extractor_version),
+            PRIMARY KEY (message_id, extractor_version, trade_date),
             FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
         );
 
@@ -421,6 +421,69 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON source_signal_snapshots(as_of_time DESC, status, score DESC);
         CREATE INDEX IF NOT EXISTS idx_source_signal_snapshots_signal
             ON source_signal_snapshots(signal_id, as_of_time DESC);
+        """,
+    ),
+    (
+        "014_anchor_status_trade_date_key",
+        """
+        DROP INDEX IF EXISTS idx_message_anchors_anchor;
+        DROP INDEX IF EXISTS idx_message_anchors_message;
+        DROP INDEX IF EXISTS idx_message_anchor_status_version;
+
+        CREATE TABLE message_anchors_v014 (
+            message_id        TEXT NOT NULL,
+            anchor_id         TEXT NOT NULL,
+            anchor_type       TEXT NOT NULL,
+            name              TEXT NOT NULL,
+            confidence        REAL NOT NULL,
+            evidence_json     TEXT NOT NULL DEFAULT '[]',
+            extractor_version TEXT NOT NULL,
+            trade_date        TEXT NOT NULL,
+            created_at        TEXT NOT NULL,
+            updated_at        TEXT NOT NULL,
+            PRIMARY KEY (message_id, anchor_id, extractor_version, trade_date),
+            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
+        );
+
+        INSERT OR IGNORE INTO message_anchors_v014 (
+            message_id, anchor_id, anchor_type, name, confidence, evidence_json,
+            extractor_version, trade_date, created_at, updated_at
+        )
+        SELECT
+            message_id, anchor_id, anchor_type, name, confidence, evidence_json,
+            extractor_version, trade_date, created_at, updated_at
+        FROM message_anchors;
+
+        DROP TABLE message_anchors;
+        ALTER TABLE message_anchors_v014 RENAME TO message_anchors;
+
+        CREATE INDEX IF NOT EXISTS idx_message_anchors_anchor
+            ON message_anchors(anchor_type, name, trade_date);
+        CREATE INDEX IF NOT EXISTS idx_message_anchors_message
+            ON message_anchors(message_id, extractor_version);
+
+        CREATE TABLE message_anchor_status_v014 (
+            message_id        TEXT NOT NULL,
+            extractor_version TEXT NOT NULL,
+            trade_date        TEXT NOT NULL,
+            anchor_count      INTEGER NOT NULL,
+            created_at        TEXT NOT NULL,
+            updated_at        TEXT NOT NULL,
+            PRIMARY KEY (message_id, extractor_version, trade_date),
+            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
+        );
+
+        INSERT OR IGNORE INTO message_anchor_status_v014 (
+            message_id, extractor_version, trade_date, anchor_count, created_at, updated_at
+        )
+        SELECT message_id, extractor_version, trade_date, anchor_count, created_at, updated_at
+        FROM message_anchor_status;
+
+        DROP TABLE message_anchor_status;
+        ALTER TABLE message_anchor_status_v014 RENAME TO message_anchor_status;
+
+        CREATE INDEX IF NOT EXISTS idx_message_anchor_status_version
+            ON message_anchor_status(extractor_version, trade_date);
         """,
     ),
 ]

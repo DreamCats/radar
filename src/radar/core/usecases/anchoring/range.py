@@ -157,6 +157,7 @@ def anchor_messages_range(
             while True:
                 messages = list_messages_for_anchoring(
                     conn,
+                    trade_date=trade_date,
                     source=source,
                     categories=category_values,
                     min_classification_confidence=min_classification_confidence,

@@ -179,6 +179,7 @@ def list_messages_for_classification(
 def list_messages_for_anchoring(
     conn: sqlite3.Connection,
     *,
+    trade_date: str,
     source: MessageSource | None = None,
     category: MessageCategory | None = None,
     categories: list[MessageCategory] | None = None,
@@ -218,10 +219,12 @@ def list_messages_for_anchoring(
         joins.append(
             """
             LEFT JOIN message_anchor_status mas
-              ON mas.message_id = m.message_id AND mas.extractor_version = ?
+              ON mas.message_id = m.message_id
+             AND mas.extractor_version = ?
+             AND mas.trade_date = ?
             """
         )
-        join_params.append(extractor_version)
+        join_params.extend([extractor_version, trade_date])
         where.append("mas.message_id IS NULL")
     if source:
         where.append("m.source = ?")
@@ -262,11 +265,11 @@ def replace_message_anchors(
 
     now = datetime.now().isoformat()
     placeholders = ", ".join("?" for _ in message_ids)
-    delete_params = [*message_ids, extractor_version]
+    delete_params = [*message_ids, extractor_version, trade_date]
     conn.execute(
         f"""
         DELETE FROM message_anchors
-        WHERE message_id IN ({placeholders}) AND extractor_version = ?
+        WHERE message_id IN ({placeholders}) AND extractor_version = ? AND trade_date = ?
         """,
         delete_params,
     )
@@ -302,7 +305,7 @@ def replace_message_anchors(
         INSERT INTO message_anchor_status (
             message_id, extractor_version, trade_date, anchor_count, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(message_id, extractor_version) DO UPDATE SET
+        ON CONFLICT(message_id, extractor_version, trade_date) DO UPDATE SET
             trade_date = excluded.trade_date,
             anchor_count = excluded.anchor_count,
             updated_at = excluded.updated_at

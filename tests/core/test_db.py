@@ -46,6 +46,7 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "011_strategy_snapshots",
             "012_view_cache",
             "013_source_radar",
+            "014_anchor_status_trade_date_key",
         }
     finally:
         conn.close()
@@ -77,7 +78,7 @@ def test_migrations_are_idempotent(tmp_path):
         migrate_message_db(conn)
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 13
+        assert count == 14
     finally:
         conn.close()
 

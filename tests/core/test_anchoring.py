@@ -58,14 +58,14 @@ def test_anchor_messages_range_extracts_and_skips_processed_messages(tmp_path: P
         ).fetchall()
         statuses = conn.execute(
             """
-            SELECT message_id, anchor_count
+            SELECT message_id, trade_date, anchor_count
             FROM message_anchor_status
             ORDER BY message_id
             """
         ).fetchall()
     assert ("m1", "stock", "寒武纪") in anchors
     assert ("m1", "concept", "算力") in anchors
-    assert statuses == [("m1", result.anchor_count), ("m2", 0)]
+    assert statuses == [("m1", "20260604", result.anchor_count), ("m2", "20260604", 0)]
 
     skipped = anchor_messages_range(
         config,
@@ -77,6 +77,44 @@ def test_anchor_messages_range_extracts_and_skips_processed_messages(tmp_path: P
 
     assert skipped.scanned_count == 0
     assert skipped.anchor_count == 0
+
+
+def test_anchor_messages_range_reprocesses_for_different_trade_date(tmp_path: Path):
+    config = _config(tmp_path)
+    _seed_market(config, trade_date="20260604")
+    _seed_market(config, trade_date="20260605")
+    _seed_messages(
+        config,
+        [_message("m1", "2026-06-04T10:00:00", "寒武纪今天继续强，算力这条线还在发酵")],
+    )
+    _seed_classifications(config, [_classification("m1", "research")])
+
+    first = anchor_messages_range(
+        config,
+        trade_date="20260604",
+        category="research",
+        start_time=datetime.fromisoformat("2026-06-04T00:00:00"),
+        end_time=datetime.fromisoformat("2026-06-05T00:00:00"),
+    )
+    second = anchor_messages_range(
+        config,
+        trade_date="20260605",
+        category="research",
+        start_time=datetime.fromisoformat("2026-06-04T00:00:00"),
+        end_time=datetime.fromisoformat("2026-06-05T00:00:00"),
+    )
+
+    assert first.scanned_count == 1
+    assert second.scanned_count == 1
+    with sqlite3.connect(tmp_path / "radar.sqlite3") as conn:
+        status_dates = conn.execute(
+            """
+            SELECT trade_date, anchor_count
+            FROM message_anchor_status
+            ORDER BY trade_date
+            """
+        ).fetchall()
+    assert status_dates == [("20260604", first.anchor_count), ("20260605", second.anchor_count)]
 
 
 def test_extract_message_anchors_accepts_reference_segmenter(tmp_path: Path):
@@ -202,17 +240,17 @@ def test_anchor_messages_range_excludes_event_when_requested(tmp_path: Path):
     assert result.scanned_count == 0
 
 
-def _seed_market(config: RadarConfig) -> None:
+def _seed_market(config: RadarConfig, *, trade_date: str = "20260604") -> None:
     def fake_call(_config, api_name, _params, _fields):
         rows = {
             "dc_concept": [
-                {"theme_code": "000001.DC", "trade_date": "20260604", "name": "算力", "hot": 900},
-                {"theme_code": "000002.DC", "trade_date": "20260604", "name": "AI芯片", "hot": 800},
+                {"theme_code": "000001.DC", "trade_date": trade_date, "name": "算力", "hot": 900},
+                {"theme_code": "000002.DC", "trade_date": trade_date, "name": "AI芯片", "hot": 800},
             ],
             "dc_concept_cons": [
                 {
                     "ts_code": "688256.SH",
-                    "trade_date": "20260604",
+                    "trade_date": trade_date,
                     "name": "寒武纪",
                     "theme_code": "000001.DC",
                     "industry_code": "BK001",
@@ -224,7 +262,7 @@ def _seed_market(config: RadarConfig) -> None:
         }
         return rows.get(api_name, [])
 
-    refresh_market_anchors(config, trade_date="20260604", tushare_call=fake_call)
+    refresh_market_anchors(config, trade_date=trade_date, tushare_call=fake_call)
 
 
 def _seed_messages(config: RadarConfig, messages: list[RawMessage]) -> None:
