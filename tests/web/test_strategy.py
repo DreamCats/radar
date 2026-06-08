@@ -206,6 +206,68 @@ def test_lead_signals_endpoint_returns_summary(monkeypatch, tmp_path: Path):
     ]
 
 
+def test_lead_signals_endpoint_refreshes_day_daily_quotes_after_close(monkeypatch, tmp_path: Path):
+    config = _config(tmp_path)
+    message = _message("lead-m1", "2026-06-08T07:05:00", "三环集团 推荐")
+    with connect(config.database_path) as conn:
+        init_db(conn)
+        upsert_messages(conn, [message])
+        now = "2026-06-08T12:00:00"
+        conn.execute(
+            """
+            INSERT INTO recommendation_events (
+                event_id, message_id, source, source_candidate, group_name,
+                category, classification_confidence, ts_code, stock_name, action,
+                message_time, event_date, extractor_version, anchor_confidence,
+                created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "lead-e1",
+                message.message_id,
+                "个人群",
+                "刘静娴",
+                "策略测试群",
+                "recommendation",
+                0.9,
+                "300408.SZ",
+                "三环集团",
+                "bullish",
+                message.message_time.isoformat(),
+                "20260608",
+                "test",
+                0.9,
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+
+    monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: date(2026, 6, 8))
+    monkeypatch.setattr("radar.core.tushare.history._now_time", lambda: time(17, 33))
+    calls: list[dict] = []
+
+    def fake_call(config_arg, api_name, params, **kwargs):
+        calls.append({"api_name": api_name, "params": params, "kwargs": kwargs})
+        return [_daily("300408.SZ", "20260608", 134.8, 136.2, 121.8, 122.92, pct_chg=-8.8)]
+
+    monkeypatch.setattr("radar.core.usecases.strategy.lead_signal_quotes.tushare_client.call", fake_call)
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/strategy/lead-signals", params={"as_of_date": "2026-06-08", "limit": 5})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert calls == [
+        {"api_name": "daily", "params": {"trade_date": "20260608"}, "kwargs": {"use_cache": True}},
+    ]
+    assert data["day_non_hot_stock_day_count"] == 1
+    assert data["samples"][0]["ts_code"] == "300408.SZ"
+    assert data["samples"][0]["message_day_pct_chg"] == -8.8
+    assert data["samples"][0]["base_close"] == 122.92
+
+
 def test_strategy_snapshot_save_endpoint_uses_cache(monkeypatch, tmp_path: Path):
     config = _config(tmp_path)
     calls: list[dict] = []

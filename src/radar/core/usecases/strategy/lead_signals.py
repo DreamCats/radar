@@ -9,6 +9,7 @@ from radar.core.config import RadarConfig
 from radar.core.db import migrate_market_db, migrate_message_db
 from radar.core.store import connect
 from radar.core.usecases.recommendation_backtest import DEFAULT_BENCHMARK_TS_CODE
+from radar.core.usecases.strategy.lead_signal_quotes import ensure_lead_signal_daily_quotes
 from radar.core.usecases.strategy.models import (
     LeadSignalBucket,
     LeadSignalSample,
@@ -67,6 +68,8 @@ def summarize_lead_signals(
         raise ValueError("strong_return_pct 必须在 -30 到 30 之间")
     if limit_like_pct < 0 or limit_like_pct > 30:
         raise ValueError("limit_like_pct 必须在 0 到 30 之间")
+
+    ensure_lead_signal_daily_quotes(config, as_of_date=as_of_date)
 
     with connect(config.market_database_path) as market_conn:
         migrate_market_db(market_conn)

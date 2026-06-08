@@ -11,6 +11,7 @@ from radar.core.usecases.source.storage import list_latest_source_signal_snapsho
 from radar.core.usecases.source.validation import summarize_source_signal_validation
 from radar.core.usecases.strategy import (
     build_strategy_dashboard,
+    ensure_lead_signal_daily_quotes,
     get_strategy_stock_chart,
     save_cached_strategy_snapshot,
     summarize_lead_signals,
@@ -115,6 +116,7 @@ def strategy_lead_signals(
     config: RadarConfig = Depends(get_config),
 ) -> LeadSignalResponse:
     try:
+        ensure_lead_signal_daily_quotes(config, as_of_date=as_of_date)
         return cached_model(
             config.database_path,
             key=cache_key(
