@@ -3,13 +3,31 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import cast
+from typing import Any, cast
 
 from radar.core.config import RadarConfig
-from radar.core.llm.anthropic_client import chat_anthropic
-from radar.core.llm.openai_client import chat_openai
 
 ChatMessage = dict[str, str]
+
+
+@dataclass(frozen=True)
+class LlmToolSpec:
+    name: str
+    description: str
+    input_schema: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class LlmToolCall:
+    call_id: str
+    name: str
+    arguments: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class LlmChatResponse:
+    content: str
+    tool_calls: list[LlmToolCall]
 
 
 class LlmConfigError(RuntimeError):
@@ -29,7 +47,7 @@ class RuntimeLlmProvider:
     headers: dict[str, str]
 
 
-ChatImpl = Callable[
+ChatResponseImpl = Callable[
     [
         RuntimeLlmProvider,
         list[ChatMessage],
@@ -37,8 +55,9 @@ ChatImpl = Callable[
         float | None,
         int | None,
         bool,
+        list[LlmToolSpec] | None,
     ],
-    str,
+    LlmChatResponse,
 ]
 
 
@@ -95,8 +114,42 @@ def chat(
 ) -> str:
     """发送 LLM 聊天请求；业务层负责控制 prompt 和成本。"""
 
+    return chat_response(
+        config,
+        messages,
+        provider_name=provider_name,
+        task=task,
+        model=model,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        disable_thinking=disable_thinking,
+    ).content
+
+
+def chat_response(
+    config: RadarConfig,
+    messages: list[ChatMessage],
+    *,
+    provider_name: str | None = None,
+    task: str | None = None,
+    model: str | None = None,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    disable_thinking: bool = False,
+    tools: list[LlmToolSpec] | None = None,
+) -> LlmChatResponse:
+    """发送 LLM 聊天请求，返回文本和模型请求的 tool calls。"""
+
     _, provider = resolve_provider(config, provider_name=provider_name, task=task)
-    return _chat_impl(provider)(provider, messages, model, temperature, max_tokens, disable_thinking)
+    return _chat_response_impl(provider)(
+        provider,
+        messages,
+        model,
+        temperature,
+        max_tokens,
+        disable_thinking,
+        tools,
+    )
 
 
 def chat_json(
@@ -165,10 +218,14 @@ def chat_json_list(
     return []
 
 
-def _chat_impl(provider: RuntimeLlmProvider) -> ChatImpl:
+def _chat_response_impl(provider: RuntimeLlmProvider) -> ChatResponseImpl:
     if provider.protocol == "anthropic":
-        return chat_anthropic
-    return chat_openai
+        from radar.core.llm.anthropic_client import chat_anthropic_response
+
+        return chat_anthropic_response
+    from radar.core.llm.openai_client import chat_openai_response
+
+    return chat_openai_response
 
 
 def _strip_json_fence(raw: str) -> str:

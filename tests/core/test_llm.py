@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from radar.core.config import RadarConfig, RadarSecrets
-from radar.core.llm import RuntimeLlmProvider, chat, chat_json, resolve_provider
+from radar.core.llm import LlmToolSpec, RuntimeLlmProvider, chat, chat_json, resolve_provider
 from radar.core.llm.anthropic_client import chat_anthropic
+from radar.core.llm.anthropic_client import chat_anthropic_response
 from radar.core.llm.openai_client import chat_openai
+from radar.core.llm.openai_client import chat_openai_response
 
 
 def test_resolve_provider_uses_task_routing_and_secret():
@@ -21,11 +23,13 @@ def test_chat_dispatches_openai_provider(monkeypatch):
     config = _config()
     calls = []
 
-    def fake_chat_openai(provider, messages, model, temperature, max_tokens, disable_thinking):
-        calls.append((provider, messages, model, temperature, max_tokens, disable_thinking))
-        return f"{provider.name}:{messages[0]['content']}"
+    def fake_chat_openai_response(provider, messages, model, temperature, max_tokens, disable_thinking, tools):
+        calls.append((provider, messages, model, temperature, max_tokens, disable_thinking, tools))
+        from radar.core.llm import LlmChatResponse
 
-    monkeypatch.setattr("radar.core.llm.client.chat_openai", fake_chat_openai)
+        return LlmChatResponse(content=f"{provider.name}:{messages[0]['content']}", tool_calls=[])
+
+    monkeypatch.setattr("radar.core.llm.openai_client.chat_openai_response", fake_chat_openai_response)
 
     reply = chat(config, [{"role": "user", "content": "ping"}], provider_name="openai_main")
 
@@ -163,6 +167,109 @@ def test_chat_can_disable_anthropic_thinking(monkeypatch):
     assert captured["json"]["thinking"] == {"type": "disabled"}
 
 
+def test_openai_client_parses_tool_calls(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "choices": [
+                    {
+                        "message": {
+                            "content": None,
+                            "tool_calls": [
+                                {
+                                    "id": "call-1",
+                                    "function": {
+                                        "name": "search_messages",
+                                        "arguments": '{"query":"AI"}',
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                ]
+            }
+
+    class FakeClient:
+        def __init__(self, timeout):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def post(self, url, headers, json):
+            captured.update({"json": json})
+            return FakeResponse()
+
+    monkeypatch.setattr("radar.core.llm.openai_client.httpx.Client", FakeClient)
+
+    response = chat_openai_response(
+        _provider("openai", "https://llm.example/v1"),
+        [{"role": "user", "content": "hello"}],
+        tools=[_tool_spec()],
+    )
+
+    assert captured["json"]["tools"][0]["function"]["name"] == "search_messages"
+    assert response.content == ""
+    assert response.tool_calls[0].name == "search_messages"
+    assert response.tool_calls[0].arguments == {"query": "AI"}
+
+
+def test_anthropic_client_parses_tool_use(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "content": [
+                    {"type": "text", "text": "我先查一下"},
+                    {
+                        "type": "tool_use",
+                        "id": "toolu-1",
+                        "name": "search_messages",
+                        "input": {"query": "AI"},
+                    },
+                ]
+            }
+
+    class FakeClient:
+        def __init__(self, timeout):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def post(self, url, headers, json):
+            captured.update({"json": json})
+            return FakeResponse()
+
+    monkeypatch.setattr("radar.core.llm.anthropic_client.httpx.Client", FakeClient)
+
+    response = chat_anthropic_response(
+        _provider("anthropic", "https://api.anthropic.com"),
+        [{"role": "user", "content": "hello"}],
+        tools=[_tool_spec()],
+    )
+
+    assert captured["json"]["tools"][0]["name"] == "search_messages"
+    assert response.content == "我先查一下"
+    assert response.tool_calls[0].call_id == "toolu-1"
+    assert response.tool_calls[0].arguments == {"query": "AI"}
+
+
 def _config() -> RadarConfig:
     return RadarConfig(
         llm={
@@ -210,4 +317,16 @@ def _provider(
         max_tokens=None,
         temperature=None,
         headers={},
+    )
+
+
+def _tool_spec() -> LlmToolSpec:
+    return LlmToolSpec(
+        name="search_messages",
+        description="搜索本地消息",
+        input_schema={
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+            "required": ["query"],
+        },
     )

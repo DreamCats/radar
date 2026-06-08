@@ -28,6 +28,12 @@ class MessagePage(BaseModel):
     next_cursor_id: str | None = None
 
 
+class MessageContext(BaseModel):
+    target: RawMessage
+    before: list[RawMessage]
+    after: list[RawMessage]
+
+
 class MessageGroupSummary(BaseModel):
     """消息里的会话名聚合结果，先复用 group_name 字段给前端候选。"""
 
@@ -43,6 +49,69 @@ def list_messages(conn: sqlite3.Connection, filters: MessageFilters) -> MessageP
     if not filters.keyword:
         return _list_messages_by_time(conn, filters)
     return _list_messages_with_keyword(conn, filters)
+
+
+def get_message_context(
+    conn: sqlite3.Connection,
+    *,
+    message_id: str,
+    radius: int = 5,
+    same_conversation: bool = True,
+) -> MessageContext | None:
+    """按 message_id 取前后文；默认限制在同一群或同一联系人内。"""
+
+    if radius < 0 or radius > 20:
+        raise ValueError("radius 必须在 0 到 20 之间")
+    target_row = conn.execute("SELECT * FROM messages WHERE message_id = ?", (message_id,)).fetchone()
+    if target_row is None:
+        return None
+
+    where, params = _context_conditions(target_row, same_conversation=same_conversation)
+    before_rows = conn.execute(
+        f"""
+        SELECT *
+        FROM messages
+        WHERE {" AND ".join(where)}
+          AND (message_time, message_id) < (?, ?)
+        ORDER BY message_time DESC, message_id DESC
+        LIMIT ?
+        """,
+        [*params, target_row["message_time"], target_row["message_id"], radius],
+    ).fetchall()
+    after_rows = conn.execute(
+        f"""
+        SELECT *
+        FROM messages
+        WHERE {" AND ".join(where)}
+          AND (message_time, message_id) > (?, ?)
+        ORDER BY message_time ASC, message_id ASC
+        LIMIT ?
+        """,
+        [*params, target_row["message_time"], target_row["message_id"], radius],
+    ).fetchall()
+
+    return MessageContext(
+        target=_row_to_message(target_row),
+        before=[_row_to_message(row) for row in reversed(before_rows)],
+        after=[_row_to_message(row) for row in after_rows],
+    )
+
+
+def _context_conditions(row: sqlite3.Row, *, same_conversation: bool) -> tuple[list[str], list[object]]:
+    where = ["message_id <> ?"]
+    params: list[object] = [row["message_id"]]
+    if not same_conversation:
+        return where, params
+
+    where.append("source = ?")
+    params.append(row["source"])
+    if row["source"] == "个人群":
+        where.append("COALESCE(group_name, '') = ?")
+        params.append(row["group_name"] or "")
+    else:
+        where.append("sender = ?")
+        params.append(row["sender"])
+    return where, params
 
 
 def _list_messages_by_time(conn: sqlite3.Connection, filters: MessageFilters) -> MessagePage:

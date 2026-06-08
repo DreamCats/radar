@@ -17,9 +17,11 @@ from radar.core.messages.overview import (
     get_message_overview,
 )
 from radar.core.messages.query import (
+    MessageContext,
     MessageFilters,
     MessageGroupSummary,
     MessagePage,
+    get_message_context,
     list_message_groups,
     list_messages,
 )
@@ -29,6 +31,7 @@ __all__ = [
     "ConversationPage",
     "ConversationSummary",
     "MessageFilters",
+    "MessageContext",
     "MessageGroupSummary",
     "MessageAnchorHeat",
     "MessageOverview",
@@ -38,6 +41,7 @@ __all__ = [
     "MessageOverviewSource",
     "MessageOverviewSummary",
     "MessagePage",
+    "get_message_context",
     "get_message_overview",
     "list_conversations",
     "list_message_groups",

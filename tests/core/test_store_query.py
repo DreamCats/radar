@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from radar.core.models import RawMessage
-from radar.core.messages import MessageFilters, get_message_overview, list_message_groups, list_messages
+from radar.core.messages import MessageFilters, get_message_context, get_message_overview, list_message_groups, list_messages
 from radar.core.store import (
     fetch_window_covered,
     fetch_window_exists,
@@ -70,6 +70,26 @@ def test_list_message_groups(sqlite_conn):
     groups = list_message_groups(sqlite_conn, source="个人群", limit=10)
 
     assert [(item.group_name, item.message_count) for item in groups] == [("东财策略", 2), ("最强科技", 1)]
+
+
+def test_get_message_context_defaults_to_same_conversation(sqlite_conn):
+    init_db(sqlite_conn)
+    upsert_messages(
+        sqlite_conn,
+        [
+            _message("m1", "2026-06-04T09:00:00", "东财策略", "前文"),
+            _message("m2", "2026-06-04T09:01:00", "其他群", "不应混入"),
+            _message("m3", "2026-06-04T09:02:00", "东财策略", "目标"),
+            _message("m4", "2026-06-04T09:03:00", "东财策略", "后文"),
+        ],
+    )
+
+    context = get_message_context(sqlite_conn, message_id="m3", radius=2)
+
+    assert context is not None
+    assert context.target.message_id == "m3"
+    assert [item.message_id for item in context.before] == ["m1"]
+    assert [item.message_id for item in context.after] == ["m4"]
 
 
 def test_message_overview_aggregates_without_loading_messages(sqlite_conn):
