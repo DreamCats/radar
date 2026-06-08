@@ -10,6 +10,7 @@ import {
   startClassifyMessagesJob,
   startIngestWechatJob,
   startRecommendationBacktestJob,
+  saveStrategySnapshot,
   startSourceRadarJob,
   startStrategyBackfillJob,
 } from "../api/radarApi";
@@ -117,11 +118,24 @@ export function IngestPage() {
       const end_time = endValue;
       const newJobs = await startJob(selectedJob, { start_time, end_time });
       setTrackedJobs((current) => mergeTrackedJobs(newJobs, current));
+      const snapshotError = selectedJob === "backtest" ? await saveFermentationSnapshot() : null;
       await refreshRunsAndResults();
+      if (snapshotError) {
+        setError(`回测任务已提交，但自动保存发酵确认快照失败：${snapshotError}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "作业提交失败");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function saveFermentationSnapshot(): Promise<string | null> {
+    try {
+      await saveStrategySnapshot({ days: 30, recent_days: 7, limit: 12, force: false });
+      return null;
+    } catch (err) {
+      return err instanceof Error ? err.message : "未知错误";
     }
   }
 

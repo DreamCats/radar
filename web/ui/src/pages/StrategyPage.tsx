@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { RefreshCw, Save } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import {
   fetchLeadSignals,
@@ -7,7 +7,6 @@ import {
   fetchSourceRadarValidation,
   fetchStrategyOpportunities,
   fetchStrategyValidation,
-  saveStrategySnapshot,
 } from "../api/radarApi";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
@@ -32,9 +31,12 @@ import type {
 type StrategyMode = "source" | "fermentation" | "lead" | "validation";
 type ValidationMode = "fermentation" | "source";
 
+const SHOW_SOURCE_RADAR_ENTRY = false;
+const SHOW_STRATEGY_VALIDATION_ENTRY = false;
+
 export function StrategyPage() {
   const sourceAsOfReadyRef = useRef(false);
-  const [activeMode, setActiveMode] = useState<StrategyMode>("source");
+  const [activeMode, setActiveMode] = useState<StrategyMode>("fermentation");
   const [activeValidationMode, setActiveValidationMode] = useState<ValidationMode>("source");
   const [sourceAsOfTime, setSourceAsOfTime] = useState("");
   const [sourceRadar, setSourceRadar] = useState<SourceRadarSnapshot | null>(null);
@@ -45,8 +47,6 @@ export function StrategyPage() {
   const [validation, setValidation] = useState<StrategyValidationSummary | null>(null);
   const [selectedStock, setSelectedStock] = useState<StrategyStockDrawerStock | null>(null);
   const [loading, setLoading] = useState(false);
-  const [savingSnapshot, setSavingSnapshot] = useState(false);
-  const [snapshotMessage, setSnapshotMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function refresh(mode: StrategyMode = activeMode) {
@@ -102,21 +102,6 @@ export function StrategyPage() {
     }
   }, [leadDate]);
 
-  async function saveCurrentSnapshot() {
-    setSavingSnapshot(true);
-    setSnapshotMessage(null);
-    setError(null);
-    try {
-      const result = await saveStrategySnapshot({ days: 30, recent_days: 7, limit: 12, force: false });
-      setSnapshotMessage(result.reused_existing ? `已复用快照 ${result.snapshot_id.slice(0, 8)}` : `已保存快照 ${result.snapshot_id.slice(0, 8)}`);
-      setValidation(await fetchStrategyValidation({ window_days: 5, source_limit: 8 }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "保存快照失败");
-    } finally {
-      setSavingSnapshot(false);
-    }
-  }
-
   const opportunities = data?.opportunities ?? [];
   const focusCount = opportunities.filter((item) => item.attention_level === "重点关注").length;
   const riskCount = opportunities.filter((item) => item.attention_level === "风险升高").length;
@@ -138,12 +123,6 @@ export function StrategyPage() {
         <p>{strategyHeaderText(activeMode, initialLoading, sourceRadar, data, validation, leadSignals)}</p>
         <div>
           {loading && !initialLoading && <PageRefreshProgress label="正在刷新策略" />}
-          {activeMode === "fermentation" && (
-            <button className="btn btn-sm" type="button" onClick={() => void saveCurrentSnapshot()} disabled={savingSnapshot || loading}>
-              <Save size={15} />
-              {savingSnapshot ? "保存中" : "保存当前快照"}
-            </button>
-          )}
           <button className="btn btn-sm" type="button" onClick={() => void refresh(activeMode)} disabled={loading}>
             <RefreshCw size={15} />
             刷新
@@ -151,10 +130,12 @@ export function StrategyPage() {
         </div>
       </div>
       <div className="strategy-mode-tabs" role="tablist" aria-label="策略模式">
-        <ModeTab active={activeMode === "source"} label="源头雷达" onClick={() => setActiveMode("source")} />
+        {SHOW_SOURCE_RADAR_ENTRY && <ModeTab active={activeMode === "source"} label="源头雷达" onClick={() => setActiveMode("source")} />}
         <ModeTab active={activeMode === "fermentation"} label="发酵确认" onClick={() => setActiveMode("fermentation")} />
         <ModeTab active={activeMode === "lead"} label="涨前验证" onClick={() => setActiveMode("lead")} />
-        <ModeTab active={activeMode === "validation"} label="策略验证" onClick={() => setActiveMode("validation")} />
+        {SHOW_STRATEGY_VALIDATION_ENTRY && (
+          <ModeTab active={activeMode === "validation"} label="策略验证" onClick={() => setActiveMode("validation")} />
+        )}
       </div>
       {initialLoading && <PageLoadingState label={loadingLabel(activeMode)} variant="strategy" />}
       {!initialLoading && activeMode === "source" && (
@@ -171,7 +152,6 @@ export function StrategyPage() {
         <Metric label="今日可看" value={actionableStockCount} detail="未过热的股票信号" />
         <Metric label="风险升高" value={riskCount} detail="反证或风险词偏高" />
       </div>
-      {snapshotMessage && <p className="success-line">{snapshotMessage}</p>}
       {error && <p className="error-line">{error}</p>}
       <div className="strategy-grid">
         <section className="panel strategy-main-panel">
