@@ -205,6 +205,7 @@ function anchorMetrics(run?: RunItem): string[] {
   const chunkCount = numberValue(metadata.chunk_count);
   const completedChunks = numberValue(metadata.completed_chunk_count);
   return [
+    anchorTradeDateText(metadata),
     chunkCount ? `分片 ${completedChunks}/${chunkCount}` : "",
     `扫描 ${scanned} 条`,
     `命中消息 ${anchored} 条`,
@@ -220,6 +221,7 @@ function refineMetrics(run?: RunItem): string[] {
   const batches = numberValue(metadata.llm_batch_count);
   const failed = run?.filtered_count || numberValue(metadata.failed_llm_batches);
   return [
+    anchorTradeDateText(metadata),
     `候选 ${candidates} 个`,
     `主题 ${themes} 个`,
     batches ? `批次 ${batches}` : "",
@@ -297,9 +299,12 @@ function detailText(run?: RunItem): string {
   if (run.status === "failed") {
     return run.error_message ? `失败原因：${run.error_message}` : "任务失败。";
   }
-  const start = textValue(run.metadata.start_time);
-  const end = textValue(run.metadata.end_time);
-  return start && end ? `时间窗口：${start} - ${end}` : `目标：${run.target}`;
+  const metadata = run.metadata;
+  const start = textValue(metadata.start_time);
+  const end = textValue(metadata.end_time);
+  const base = start && end ? `时间窗口：${start} - ${end}` : `目标：${run.target}`;
+  const anchorReason = textValue(metadata.market_anchor_skipped_reason);
+  return anchorReason ? `${base}；${anchorReason}` : base;
 }
 
 function statusText(kind: JobRunKind, status: RunItem["status"] | "running"): string {
@@ -362,6 +367,12 @@ function distributionText(value: unknown): string {
     .slice(0, 3)
     .map(([category, count]) => `${category} ${count}`);
   return parts.length ? `类别 ${parts.join(" / ")}` : "";
+}
+
+function anchorTradeDateText(metadata: Record<string, unknown>): string {
+  const requested = textValue(metadata.requested_trade_date);
+  const actual = textValue(metadata.trade_date);
+  return requested && actual && requested !== actual ? `词库 ${actual}` : "";
 }
 
 function boundedPercent(done: number, total: number): number {

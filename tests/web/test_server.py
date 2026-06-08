@@ -957,6 +957,7 @@ def test_aggregate_refine_jobs_endpoint_starts_job(monkeypatch, tmp_path):
         started.set()
         release.wait(timeout=2)
 
+    monkeypatch.setattr("radar.web.server.aggregate_jobs.ensure_market_anchors", lambda *args, **kwargs: None)
     monkeypatch.setattr("radar.web.server.aggregate_jobs.refine_aggregate_topics", fake_refine)
 
     client = TestClient(create_app(config))
@@ -987,6 +988,59 @@ def test_aggregate_refine_jobs_endpoint_starts_job(monkeypatch, tmp_path):
     assert calls[0]["source"] is None
     assert calls[0]["provider_names"] == ["p1", "p2"]
     assert calls[0]["run_id"] == first["run_id"]
+
+
+def test_aggregate_refine_jobs_endpoint_uses_resolved_trade_date(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    calls: list[dict] = []
+    started = Event()
+    release = Event()
+
+    def fake_refine(
+        config,
+        *,
+        trade_date,
+        source,
+        categories,
+        min_classification_confidence,
+        start_time,
+        end_time,
+        min_messages,
+        candidate_limit,
+        evidence_limit,
+        batch_size,
+        max_concurrency,
+        provider_name,
+        provider_names,
+        force,
+        run_id,
+    ):
+        calls.append({"trade_date": trade_date, "source": source, "run_id": run_id})
+        started.set()
+        release.wait(timeout=2)
+
+    monkeypatch.setattr(
+        "radar.web.server.aggregate_jobs.ensure_market_anchors",
+        lambda *args, **kwargs: SimpleNamespace(trade_date="20260605", refreshed=False, anchor_count=3020),
+    )
+    monkeypatch.setattr("radar.web.server.aggregate_jobs.refine_aggregate_topics", fake_refine)
+
+    client = TestClient(create_app(config))
+    response = client.post(
+        "/api/aggregate/refine/jobs",
+        json={
+            "trade_date": "20260608",
+            "source": "all",
+            "start_time": "2026-06-07T15:00:00",
+            "end_time": "2026-06-08T23:05:00",
+        },
+    )
+
+    assert response.status_code == 200
+    run_id = response.json()["items"][0]["run_id"]
+    assert started.wait(timeout=1)
+    release.set()
+    assert calls == [{"trade_date": "20260605", "source": None, "run_id": run_id}]
 
 
 def test_aggregate_refine_results_endpoint_returns_recent_results(tmp_path):

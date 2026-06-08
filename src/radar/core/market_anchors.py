@@ -108,6 +108,14 @@ def ensure_market_anchors(
         tushare_call=tushare_call,
     )
     anchor_count, member_count = _stored_counts(config, trade_date)
+    if use_cache and anchor_count < min_anchor_count:
+        refreshed = refresh_market_anchors(
+            config,
+            trade_date=trade_date,
+            use_cache=False,
+            tushare_call=tushare_call,
+        )
+        anchor_count, member_count = _stored_counts(config, trade_date)
     if anchor_count < min_anchor_count:
         fallback_trade_date = _latest_stored_anchor_trade_date(
             config,

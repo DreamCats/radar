@@ -174,6 +174,37 @@ def test_ensure_market_anchors_falls_back_when_open_date_has_empty_dictionary(tm
     assert result.skipped_reason == "20260608 anchor 词库不足，使用最近已有交易日 20260605 的 anchor 词库"
 
 
+def test_ensure_market_anchors_retries_without_cache_before_fallback(monkeypatch, tmp_path: Path):
+    config = _config(tmp_path)
+    original_refresh = refresh_market_anchors
+    refresh_cache_flags: list[bool] = []
+
+    def fake_call(config, api_name, params, fields):
+        if api_name == "trade_cal":
+            return [{"cal_date": "20260608", "is_open": 1}]
+        raise AssertionError("刷新由 fake_refresh 接管")
+
+    def fake_refresh(config, *, trade_date, use_cache=True, tushare_call=None):
+        refresh_cache_flags.append(use_cache)
+        if use_cache:
+            return original_refresh(config, trade_date=trade_date, tushare_call=lambda *_: [])
+        return original_refresh(config, trade_date=trade_date, tushare_call=lambda *_: _rows("dc_concept"))
+
+    monkeypatch.setattr("radar.core.market_anchors.refresh_market_anchors", fake_refresh)
+
+    result = ensure_market_anchors(
+        config,
+        trade_date="20260608",
+        min_anchor_count=1,
+        tushare_call=fake_call,
+    )
+
+    assert result.trade_date == "20260608"
+    assert result.anchor_count == 1
+    assert result.refreshed is True
+    assert refresh_cache_flags == [True, False]
+
+
 def test_refresh_market_anchors_preserves_failed_source_rows(tmp_path: Path):
     config = _config(tmp_path)
     refresh_market_anchors(config, trade_date="20260604", tushare_call=lambda _config, api, _params, _fields: _rows(api))
