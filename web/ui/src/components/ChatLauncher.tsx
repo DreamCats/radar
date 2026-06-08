@@ -48,6 +48,7 @@ export function ChatLauncher(props: ChatLauncherProps) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const idleTimerRef = useRef<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const visibleContext = props.context.filter((item) => item.value !== undefined && item.value !== null && `${item.value}`.trim() !== "");
 
@@ -74,8 +75,17 @@ export function ChatLauncher(props: ChatLauncherProps) {
   useEffect(() => {
     return () => {
       abortControllerRef.current?.abort();
+      clearIdleTimer();
     };
   }, []);
+
+  function clearIdleTimer() {
+    if (idleTimerRef.current === null) {
+      return;
+    }
+    window.clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = null;
+  }
 
   async function submitTurn() {
     const content = draft.trim();
@@ -88,9 +98,22 @@ export function ChatLauncher(props: ChatLauncherProps) {
     const userDraftId = `user-local-${Date.now()}`;
     const assistantDraftId = `assistant-stream-${Date.now()}`;
     const selectedModelOption = modelOptions.find((item) => item.provider_name === selectedProviderName) ?? null;
-    let hasAssistantDraft = true;
+    let assistantRoundClosed = false;
     const controller = new AbortController();
     abortControllerRef.current = controller;
+    const scheduleIdleStatus = (status = "仍在处理") => {
+      clearIdleTimer();
+      idleTimerRef.current = window.setTimeout(() => {
+        setMessages((current) =>
+          current.map((message) =>
+            message.message_id === assistantDraftId && message.metadata.streaming
+              ? { ...message, metadata: { ...message.metadata, status } }
+              : message,
+          ),
+        );
+        idleTimerRef.current = null;
+      }, 1000);
+    };
     setMessages((current) => [
       ...current,
       {
@@ -113,6 +136,7 @@ export function ChatLauncher(props: ChatLauncherProps) {
         metadata: { streaming: true },
       },
     ]);
+    scheduleIdleStatus("正在准备");
     try {
       await streamChatTurn(
         {
@@ -149,30 +173,27 @@ export function ChatLauncher(props: ChatLauncherProps) {
             if (!event.content) {
               return;
             }
+            clearIdleTimer();
             setMessages((current) => {
-              if (!hasAssistantDraft) {
-                hasAssistantDraft = true;
-                return [
-                  ...current,
-                  {
-                    message_id: assistantDraftId,
-                    role: "assistant",
-                    content: event.content,
-                    created_at: new Date().toISOString(),
-                    metadata: { streaming: true },
-                  },
-                ];
-              }
               return current.map((message) =>
-                message.message_id === assistantDraftId ? { ...message, content: `${message.content}${event.content}` } : message,
+                message.message_id === assistantDraftId
+                  ? {
+                      ...message,
+                      content: `${message.content}${assistantRoundClosed && message.content.trim() ? "\n\n" : ""}${event.content}`,
+                      metadata: { ...message.metadata, status: "正在生成回答", streaming: true },
+                    }
+                  : message,
               );
             });
+            assistantRoundClosed = false;
+            scheduleIdleStatus("仍在处理");
             return;
           }
           if (event.type === "assistant_reasoning_delta") {
             if (!event.content) {
               return;
             }
+            clearIdleTimer();
             setMessages((current) =>
               current.map((message) =>
                 message.message_id === assistantDraftId
@@ -188,10 +209,12 @@ export function ChatLauncher(props: ChatLauncherProps) {
                   : message,
               ),
             );
+            scheduleIdleStatus("正在推理");
             return;
           }
           if (event.type === "assistant_message") {
             const message = event.message;
+            clearIdleTimer();
             if (!message.content.trim()) {
               setMessages((current) =>
                 current.map((item) =>
@@ -200,19 +223,19 @@ export function ChatLauncher(props: ChatLauncherProps) {
                     : item,
                 ),
               );
+              scheduleIdleStatus("正在查询本地数据");
               return;
             }
             setMessages((current) => {
-              if (hasAssistantDraft) {
-                hasAssistantDraft = false;
-                return current.map((item) => (item.message_id === assistantDraftId ? mergeAssistantMetadata(item, message) : item));
-              }
-              return [...current, message];
+              return current.map((item) => (item.message_id === assistantDraftId ? mergeAssistantMetadata(item, message) : item));
             });
+            assistantRoundClosed = true;
+            scheduleIdleStatus("正在继续处理");
             return;
           }
           if (event.type === "tool_message") {
             const toolName = typeof event.message.metadata.tool_name === "string" ? event.message.metadata.tool_name : "工具";
+            clearIdleTimer();
             setMessages((current) =>
               current.map((message) =>
                 message.message_id === assistantDraftId
@@ -220,6 +243,7 @@ export function ChatLauncher(props: ChatLauncherProps) {
                   : message,
               ),
             );
+            scheduleIdleStatus("正在整理结果");
             return;
           }
           if (event.type === "agent_event") {
@@ -227,10 +251,22 @@ export function ChatLauncher(props: ChatLauncherProps) {
             const payload = typeof event.event.payload === "object" && event.event.payload ? event.event.payload : {};
             const toolName = "tool_name" in payload && typeof payload.tool_name === "string" ? payload.tool_name : "";
             const toolCallId = "tool_call_id" in payload && typeof payload.tool_call_id === "string" ? payload.tool_call_id : toolName;
+            if (eventType === "turn_completed") {
+              clearIdleTimer();
+              setMessages((current) =>
+                current.map((message) =>
+                  message.message_id === assistantDraftId
+                    ? { ...message, metadata: { ...message.metadata, status: "已处理", streaming: false } }
+                    : message,
+                ),
+              );
+              return;
+            }
             const status = statusForAgentEvent(eventType, toolName);
             if (!status) {
               return;
             }
+            clearIdleTimer();
             setMessages((current) =>
               current.map((message) =>
                 message.message_id === assistantDraftId
@@ -246,6 +282,9 @@ export function ChatLauncher(props: ChatLauncherProps) {
                   : message,
               ),
             );
+            if (eventType === "turn_started") {
+              scheduleIdleStatus("正在准备查询");
+            }
           }
         },
         { signal: controller.signal },
@@ -266,6 +305,7 @@ export function ChatLauncher(props: ChatLauncherProps) {
           ),
       );
     } finally {
+      clearIdleTimer();
       abortControllerRef.current = null;
       setSending(false);
       void refreshSessions();

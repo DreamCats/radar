@@ -37,14 +37,21 @@ export function formatToolName(toolName: string): string {
 }
 
 export function mergeAssistantMetadata(draft: ChatMessageItem, message: ChatMessageItem): ChatMessageItem {
+  const displayContent =
+    draft.content.trim() && !message.content.startsWith(draft.content) && draft.content !== message.content
+      ? draft.content
+      : message.content;
   return {
     ...message,
+    message_id: draft.message_id,
+    content: displayContent,
     metadata: {
       ...message.metadata,
+      server_message_id: message.message_id,
       reasoning: draft.metadata.reasoning,
       tool_activities: draft.metadata.tool_activities,
-      status: "已处理",
-      streaming: false,
+      status: "正在处理",
+      streaming: true,
     },
   };
 }
