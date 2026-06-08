@@ -113,6 +113,13 @@ chat:
     paths:
       - skills
     max_active: 3
+  shell:
+    enabled: true
+    shell_path: /bin/zsh
+    # shell 工具会用 zsh -lic 执行命令，默认加载用户 .zshrc 环境。
+    default_cwd: ~/Work/radar
+    timeout_seconds: 30
+    max_output_chars: 12000
 ```
 
 `market.api_url` 可以填 Tushare 直连地址，也可以填远端代理地址；兼容旧配置名 `market.tushare_api_url`。
@@ -128,9 +135,12 @@ triggers:
 tools:
   - radar_resolve_stock
   - radar_get_stock_price_history
+  - radar_run_shell
 ---
 如果用户没有提供股票名，先追问具体标的。
 ```
+
+内置 shell 工具名是 `radar_run_shell`。它会在本机执行命令，并默认通过 `zsh -lic` 注入 `.zshrc` 里的环境变量；如果某个 skill 配了 `tools` 白名单，需要显式加入 `radar_run_shell` 才能调用。
 
 ```yaml
 # ~/.config/radar/secrets.yaml

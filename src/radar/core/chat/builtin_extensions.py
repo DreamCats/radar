@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from radar.core.chat.extensions import ExtensionContext
+from radar.core.chat.shell_tool import build_shell_tool
 from radar.core.chat.tools import ChatTool
 from radar.core.config import RadarConfig
 from radar.core.messages import (
@@ -44,6 +45,8 @@ class RadarBuiltinExtension:
             self._backtest_summary_tool(),
         ):
             context.register_tool(tool)
+        if self.config.chat.shell.enabled:
+            context.register_tool(build_shell_tool(self.config))
 
     def _search_messages_tool(self) -> ChatTool:
         return ChatTool(

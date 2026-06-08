@@ -30,6 +30,10 @@ chat:
     paths:
       - skills
     max_active: 2
+  shell:
+    default_cwd: ~/Work/radar
+    timeout_seconds: 10
+    max_output_chars: 2000
 """,
         encoding="utf-8",
     )
@@ -54,6 +58,10 @@ wechat:
     assert config.filters.group_blacklist_patterns == ["小学", "寝室"]
     assert config.chat_skill_paths == [config_dir / "skills"]
     assert config.chat.skills.max_active == 2
+    assert str(config.chat.shell.default_cwd).endswith("Work/radar")
+    assert "~" not in str(config.chat.shell.default_cwd)
+    assert config.chat.shell.timeout_seconds == 10
+    assert config.chat.shell.max_output_chars == 2000
 
 
 def test_env_overrides_wechat_base_url(config_dir: Path, monkeypatch):

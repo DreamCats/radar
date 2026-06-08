@@ -75,8 +75,23 @@ class ChatSkillsConfig(BaseModel):
         return self
 
 
+class ChatShellConfig(BaseModel):
+    enabled: bool = True
+    shell_path: str = "/bin/zsh"
+    default_cwd: Path | None = None
+    timeout_seconds: int = Field(default=30, ge=1, le=300)
+    max_output_chars: int = Field(default=12000, ge=1000, le=100000)
+
+    @model_validator(mode="after")
+    def normalize_paths(self) -> "ChatShellConfig":
+        if self.default_cwd is not None:
+            self.default_cwd = self.default_cwd.expanduser()
+        return self
+
+
 class ChatConfig(BaseModel):
     skills: ChatSkillsConfig = Field(default_factory=ChatSkillsConfig)
+    shell: ChatShellConfig = Field(default_factory=ChatShellConfig)
 
 
 class LlmProviderSecret(BaseModel):
