@@ -18,6 +18,20 @@ from radar.core.models import RawMessage
 from radar.core.store import connect, init_db, upsert_messages
 
 
+class CountingSearchExtension:
+    name = "search"
+
+    def register(self, context: ExtensionContext) -> None:
+        context.register_tool(
+            ChatTool(
+                name="search_messages",
+                description="搜索本地消息",
+                input_schema={"type": "object"},
+                handler=lambda args: {"round": args["round"]},
+            )
+        )
+
+
 def test_chat_session_store_appends_events_and_messages(tmp_path):
     store = ChatSessionStore(tmp_path / "chat")
     session = store.create_session(title="测试对话", metadata={"source": "unit"})
@@ -252,6 +266,77 @@ def test_chat_agent_executes_extension_tool_and_continues(tmp_path, monkeypatch)
     assert "search_messages" in {tool.name for tool in calls[0]["tools"]}
     assert "tool_execution_started" in [event.type for event in events]
     assert "tool_execution_completed" in [event.type for event in events]
+
+
+def test_chat_agent_allows_unlimited_tool_rounds_by_default(tmp_path, monkeypatch):
+    config = RadarConfig(config_dir=tmp_path)
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+    calls = []
+
+    def fake_chat_response(config, messages, **kwargs):
+        calls.append(messages)
+        if len(calls) <= 7:
+            return LlmChatResponse(
+                content="",
+                tool_calls=[
+                    LlmToolCall(
+                        call_id=f"call-{len(calls)}",
+                        name="search_messages",
+                        arguments={"round": len(calls)},
+                    )
+                ],
+            )
+        return LlmChatResponse(content="完成", tool_calls=[])
+
+    monkeypatch.setattr("radar.core.chat.agent.chat_response", fake_chat_response)
+
+    result = ChatAgent(config, store=store, extensions=[CountingSearchExtension()], enable_builtin_tools=False).run_turn(
+        session.session_id,
+        "连续查",
+    )
+
+    assert result.assistant_message.content == "完成"
+    assert len(result.tool_messages) == 7
+    assert len(calls) == 8
+
+
+def test_chat_agent_stream_allows_unlimited_tool_rounds_by_default(tmp_path, monkeypatch):
+    config = RadarConfig(config_dir=tmp_path)
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+    calls = []
+
+    def fake_stream_chat_response(config, messages, **kwargs):
+        calls.append(messages)
+        if len(calls) <= 7:
+            yield LlmChatDone(
+                response=LlmChatResponse(
+                    content="",
+                    tool_calls=[
+                        LlmToolCall(
+                            call_id=f"call-{len(calls)}",
+                            name="search_messages",
+                            arguments={"round": len(calls)},
+                        )
+                    ],
+                )
+            )
+            return
+        yield LlmChatDone(response=LlmChatResponse(content="完成", tool_calls=[]))
+
+    monkeypatch.setattr("radar.core.chat.agent.stream_chat_response", fake_stream_chat_response)
+
+    events = list(
+        ChatAgent(config, store=store, extensions=[CountingSearchExtension()], enable_builtin_tools=False).stream_turn(
+            session.session_id,
+            "连续查",
+        )
+    )
+
+    assert [event.message.content for event in events if event.type == "assistant_message"][-1] == "完成"
+    assert len([event for event in events if event.type == "tool_message"]) == 7
+    assert len(calls) == 8
 
 
 def test_tool_registry_keeps_read_only_contract():

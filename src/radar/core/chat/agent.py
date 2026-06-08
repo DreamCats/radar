@@ -86,7 +86,7 @@ class ChatAgent:
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
-        max_tool_rounds: int = 4,
+        max_tool_rounds: int | None = None,
     ) -> ChatTurnResult:
         if not content.strip():
             raise ValueError("用户输入不能为空")
@@ -118,7 +118,10 @@ class ChatAgent:
 
         tool_messages: list[ChatMessage] = []
         try:
-            for _round in range(max_tool_rounds + 1):
+            tool_round = 0
+            while True:
+                if max_tool_rounds is not None and tool_round > max_tool_rounds:
+                    raise RuntimeError(f"工具调用超过最大轮数: {max_tool_rounds}")
                 response = self._request_llm(
                     session_id,
                     content_overrides={user_message.message_id: llm_content} if llm_content else None,
@@ -174,7 +177,7 @@ class ChatAgent:
                         },
                     )
                     events.append(completed)
-            raise RuntimeError(f"工具调用超过最大轮数: {max_tool_rounds}")
+                tool_round += 1
         except Exception as error:
             failed = self._append_event(
                 session_id,
@@ -198,7 +201,7 @@ class ChatAgent:
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
-        max_tool_rounds: int = 4,
+        max_tool_rounds: int | None = None,
     ) -> Iterator[ChatTurnStreamEvent]:
         if not content.strip():
             raise ValueError("用户输入不能为空")
@@ -230,7 +233,10 @@ class ChatAgent:
 
         tool_messages: list[ChatMessage] = []
         try:
-            for _round in range(max_tool_rounds + 1):
+            tool_round = 0
+            while True:
+                if max_tool_rounds is not None and tool_round > max_tool_rounds:
+                    raise RuntimeError(f"工具调用超过最大轮数: {max_tool_rounds}")
                 response: LlmChatResponse | None = None
                 for stream_event in self._request_llm_stream(
                     session_id,
@@ -291,7 +297,7 @@ class ChatAgent:
                         },
                     )
                     yield ChatTurnStreamEvent(type="event", event=completed)
-            raise RuntimeError(f"工具调用超过最大轮数: {max_tool_rounds}")
+                tool_round += 1
         except Exception as error:
             failed = self._append_event(
                 session_id,
