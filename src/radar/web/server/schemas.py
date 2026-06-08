@@ -364,6 +364,7 @@ class ChatModelOptionResponse(BaseModel):
     label: str
     protocol: Literal["openai", "anthropic"]
     model: str
+    context_window_tokens: int = 256_000
     is_default: bool = False
     thinking_enabled: bool = True
 

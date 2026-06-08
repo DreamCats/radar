@@ -33,6 +33,7 @@ def chat_model_options(config: RadarConfig = Depends(get_config)) -> ChatModelOp
             label=_provider_label(name, provider.model, is_default=name == default_provider_name),
             protocol=provider.protocol,
             model=provider.model,
+            context_window_tokens=provider.context_window_tokens,
             is_default=name == default_provider_name,
         )
         for name, provider in config.llm.providers.items()

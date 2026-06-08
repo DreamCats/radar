@@ -52,6 +52,7 @@ class LlmProviderConfig(BaseModel):
     protocol: Literal["openai", "anthropic"]
     secret_ref: str
     model: str
+    context_window_tokens: int = Field(default=256_000, ge=1)
     timeout: float = 120.0
     max_tokens: int | None = None
     temperature: float | None = None

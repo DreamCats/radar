@@ -155,6 +155,7 @@ export type ChatModelOption = {
   label: string;
   protocol: "openai" | "anthropic";
   model: string;
+  context_window_tokens: number;
   is_default: boolean;
   thinking_enabled: boolean;
 };

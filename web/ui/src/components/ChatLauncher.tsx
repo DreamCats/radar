@@ -518,6 +518,9 @@ export function ChatLauncher(props: ChatLauncherProps) {
                 draft={draft}
                 modelOptions={modelOptions}
                 selectedProviderName={selectedProviderName}
+                messages={messages}
+                contextItems={visibleContext}
+                evidence={props.evidence}
                 sending={sending}
                 onDraftChange={setDraft}
                 onProviderChange={setSelectedProviderName}
