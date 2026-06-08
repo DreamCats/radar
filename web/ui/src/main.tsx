@@ -19,6 +19,7 @@ import "./organize.css";
 import "./organize-aggregate.css";
 import "./organize-responsive.css";
 import "./strategy.css";
+import "./strategy-stock-chart.css";
 import "./strategy-stock-drawer.css";
 import "./strategy-validation.css";
 import "./wechat.css";

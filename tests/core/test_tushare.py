@@ -163,8 +163,9 @@ def test_kv_cache_key_includes_param_order_and_fields(tmp_path: Path):
     assert cache.get(db, "stock_basic", {"a": 1, "b": 2}, fields="ts_code", ttl=0) is None
 
 
-def test_history_skips_today_and_queries_desc(monkeypatch, tmp_path: Path):
+def test_history_skips_today_before_close_and_queries_desc(monkeypatch, tmp_path: Path):
     monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: dt.date(2026, 6, 4))
+    monkeypatch.setattr("radar.core.tushare.history._now_time", lambda: dt.time(14, 59))
     spec = history.SPECS["daily"]
 
     stored = history.put_rows(
@@ -182,8 +183,28 @@ def test_history_skips_today_and_queries_desc(monkeypatch, tmp_path: Path):
     assert [row["trade_date"] for row in rows] == ["20260603", "20260602"]
 
 
-def test_history_missing_segments_clamps_today(monkeypatch, tmp_path: Path):
+def test_history_stores_today_after_close(monkeypatch, tmp_path: Path):
     monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: dt.date(2026, 6, 4))
+    monkeypatch.setattr("radar.core.tushare.history._now_time", lambda: dt.time(15, 31))
+    spec = history.SPECS["daily"]
+
+    stored = history.put_rows(
+        tmp_path / "radar.sqlite3",
+        spec,
+        [
+            {"ts_code": "600519.SH", "trade_date": "20260604", "close": 3},
+            {"ts_code": "600519.SH", "trade_date": "20260605", "close": 4},
+        ],
+    )
+
+    rows = history.query(tmp_path / "radar.sqlite3", spec, "600519.SH", "20260604", "20260605")
+    assert stored == 1
+    assert [row["trade_date"] for row in rows] == ["20260604"]
+
+
+def test_history_missing_segments_clamps_today_before_close(monkeypatch, tmp_path: Path):
+    monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: dt.date(2026, 6, 4))
+    monkeypatch.setattr("radar.core.tushare.history._now_time", lambda: dt.time(14, 59))
 
     assert history.missing_segments(
         tmp_path / "radar.sqlite3",
@@ -192,6 +213,19 @@ def test_history_missing_segments_clamps_today(monkeypatch, tmp_path: Path):
         "20260604",
         "20260604",
     ) == []
+
+
+def test_history_missing_segments_allows_today_after_close(monkeypatch, tmp_path: Path):
+    monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: dt.date(2026, 6, 4))
+    monkeypatch.setattr("radar.core.tushare.history._now_time", lambda: dt.time(15, 31))
+
+    assert history.missing_segments(
+        tmp_path / "radar.sqlite3",
+        history.SPECS["daily"],
+        "600519.SH",
+        "20260604",
+        "20260604",
+    ) == [("20260604", "20260604")]
 
 
 def test_call_uses_kv_cache_for_static_api(monkeypatch, tmp_path: Path):
@@ -213,6 +247,7 @@ def test_call_uses_kv_cache_for_static_api(monkeypatch, tmp_path: Path):
 
 def test_call_uses_history_cache_for_daily(monkeypatch, tmp_path: Path):
     monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: dt.date(2026, 6, 4))
+    monkeypatch.setattr("radar.core.tushare.history._now_time", lambda: dt.time(14, 59))
     config = _config(tmp_path)
     calls = []
 

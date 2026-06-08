@@ -103,6 +103,8 @@ def _today_rows(
     fields: str | list[str] | None,
 ) -> list[dict[str, Any]]:
     today = history.today_key(spec.date_kind)
+    if today <= history.cacheable_end_key(spec.date_kind):
+        return []
     if end is not None and end < today:
         return []
     if start is not None and start > today:

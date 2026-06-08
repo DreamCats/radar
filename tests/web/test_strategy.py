@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime, time
 from pathlib import Path
 from threading import Event
 
@@ -61,8 +61,9 @@ def test_strategy_validation_endpoint_returns_empty_summary(tmp_path: Path):
     assert data["by_decision_bucket"] == []
 
 
-def test_strategy_stock_chart_endpoint_reads_local_market_history(tmp_path: Path):
+def test_strategy_stock_chart_endpoint_reads_local_market_history(monkeypatch, tmp_path: Path):
     config = _config(tmp_path)
+    monkeypatch.setattr("radar.core.usecases.strategy.stock_chart._refresh_recent_daily_cache", lambda *args, **kwargs: None)
     daily = history.spec_for("daily")
     assert daily is not None
     history.put_rows(
@@ -89,7 +90,8 @@ def test_strategy_stock_chart_endpoint_reads_local_market_history(tmp_path: Path
     assert data["missing_reason"] is None
 
 
-def test_strategy_stock_chart_endpoint_returns_empty_when_cache_missing(tmp_path: Path):
+def test_strategy_stock_chart_endpoint_returns_empty_when_cache_missing(monkeypatch, tmp_path: Path):
+    monkeypatch.setattr("radar.core.usecases.strategy.stock_chart._refresh_recent_daily_cache", lambda *args, **kwargs: None)
     client = TestClient(create_app(_config(tmp_path)))
     response = client.get("/api/strategy/stocks/000001.SZ/chart")
 
@@ -97,6 +99,41 @@ def test_strategy_stock_chart_endpoint_returns_empty_when_cache_missing(tmp_path
     data = response.json()
     assert data["candles"] == []
     assert data["missing_reason"] == "本地 market.sqlite3 暂无该股票日线缓存"
+
+
+def test_strategy_stock_chart_endpoint_refreshes_latest_daily_after_close(monkeypatch, tmp_path: Path):
+    config = _config(tmp_path)
+    daily = history.spec_for("daily")
+    assert daily is not None
+    history.put_rows(
+        config.market_database_path,
+        daily,
+        [_daily("300024.SZ", "20260605", 14.91, 16.15, 14.24, 15.57, pct_chg=3.39)],
+    )
+    monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: date(2026, 6, 8))
+    monkeypatch.setattr("radar.core.tushare.history._now_time", lambda: time(17, 33))
+
+    calls: list[dict] = []
+
+    def fake_call(config_arg, api_name, params, **kwargs):
+        calls.append(params)
+        history.put_rows(
+            config_arg.market_database_path,
+            daily,
+            [_daily("300024.SZ", "20260608", 15.12, 16.10, 15.03, 15.90, pct_chg=2.12)],
+        )
+        return []
+
+    monkeypatch.setattr("radar.core.usecases.strategy.stock_chart.tushare_client.call", fake_call)
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/strategy/stocks/300024.SZ/chart", params={"days": 5})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert calls == [{"ts_code": "300024.SZ", "start_date": "20260606", "end_date": "20260608"}]
+    assert data["latest_trade_date"] == "20260608"
+    assert [item["trade_date"] for item in data["candles"]] == ["20260605", "20260608"]
 
 
 def test_lead_signals_endpoint_returns_summary(monkeypatch, tmp_path: Path):

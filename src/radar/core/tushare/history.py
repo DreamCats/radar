@@ -10,6 +10,8 @@ from radar.core.db import migrate_market_db
 from radar.core.tushare.models import HistorySpec
 
 
+POST_CLOSE_CACHE_TIME = dt.time(15, 30)
+
 SPECS: dict[str, HistorySpec] = {
     # 第一版只纳入低风险的一维时间序列；多维接口先走 KV，避免行缓存主键覆盖。
     "daily": HistorySpec("daily", "trade_date", "day"),
@@ -110,6 +112,15 @@ def today_key(kind: str) -> str:
     raise ValueError(f"unknown date_kind: {kind}")
 
 
+def cacheable_end_key(kind: str) -> str:
+    """返回可写入历史缓存的最新周期；A 股日线收盘后允许缓存今天。"""
+
+    today = today_key(kind)
+    if kind == "day":
+        return today if _now_time() >= POST_CLOSE_CACHE_TIME else prev_key(kind, today)
+    return prev_key(kind, today)
+
+
 def prev_key(kind: str, key: str) -> str:
     if kind == "day":
         value = dt.datetime.strptime(key, "%Y%m%d").date() - dt.timedelta(days=1)
@@ -134,13 +145,13 @@ def put_rows(
     *,
     ts_code_override: str | None = None,
 ) -> int:
-    """按行缓存历史数据；当日及未来数据不入库，避免盘中快照污染历史。"""
+    """按行缓存历史数据；日线收盘前不缓存今天，避免盘中快照污染历史。"""
 
-    cutoff = today_key(spec.date_kind)
+    max_cache_key = cacheable_end_key(spec.date_kind)
     records: list[tuple[str, str, str, str]] = []
     for row in rows:
         date_key = row.get(spec.date_field)
-        if date_key is None or str(date_key) >= cutoff:
+        if date_key is None or str(date_key) > max_cache_key:
             continue
         ts_code = "" if spec.ts_code_field is None else str(row.get(spec.ts_code_field) or "")
         records.append(
@@ -194,8 +205,8 @@ def missing_segments(
     start: str | None,
     end: str | None,
 ) -> list[tuple[str | None, str | None]]:
-    cutoff_today = today_key(spec.date_kind)
-    end_clamped = prev_key(spec.date_kind, cutoff_today) if end is None or end >= cutoff_today else end
+    max_cache_key = cacheable_end_key(spec.date_kind)
+    end_clamped = max_cache_key if end is None or end > max_cache_key else end
     if start is not None and end_clamped is not None and start > end_clamped:
         return []
 
@@ -256,6 +267,10 @@ def _next_key(kind: str, key: str) -> str:
 
 def _today_date() -> dt.date:
     return dt.date.today()
+
+
+def _now_time() -> dt.time:
+    return dt.datetime.now().time()
 
 
 def _connect(database: Path) -> sqlite3.Connection:

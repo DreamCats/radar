@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import datetime as dt
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 from radar.core.config import RadarConfig
+from radar.core.tushare import client as tushare_client
 from radar.core.tushare import history
+from radar.core.tushare.exceptions import TushareError
 
 
 class StrategyStockCandle(BaseModel):
@@ -42,6 +45,7 @@ def get_strategy_stock_chart(
     if spec is None:
         raise ValueError("daily 行情缓存规格不存在")
 
+    _refresh_recent_daily_cache(config, code, days=days)
     raw_rows = history.query(config.market_database_path, spec, code, start=None, end=None)
     candles = [_candle(row) for row in raw_rows]
     candles = [item for item in candles if item is not None]
@@ -54,6 +58,38 @@ def get_strategy_stock_chart(
         latest_trade_date=limited[-1].trade_date if limited else None,
         missing_reason=None if limited else "本地 market.sqlite3 暂无该股票日线缓存",
     )
+
+
+def _refresh_recent_daily_cache(config: RadarConfig, ts_code: str, *, days: int) -> None:
+    spec = history.spec_for("daily")
+    if spec is None:
+        return
+    latest_cache_key = history.cacheable_end_key(spec.date_kind)
+    raw_rows = history.query(config.market_database_path, spec, ts_code, start=None, end=None)
+    latest_local = max((str(row.get("trade_date") or "") for row in raw_rows), default="")
+    if latest_local >= latest_cache_key:
+        return
+
+    start = _next_day(latest_local) if latest_local else _lookback_start(days)
+    try:
+        tushare_client.call(
+            config,
+            "daily",
+            {"ts_code": ts_code, "start_date": start, "end_date": latest_cache_key},
+            use_cache=True,
+        )
+    except TushareError:
+        # K 线抽屉优先展示已有本地缓存；Tushare 未配置或临时失败不应打断页面。
+        return
+
+
+def _next_day(value: str) -> str:
+    return (dt.datetime.strptime(value, "%Y%m%d").date() + dt.timedelta(days=1)).strftime("%Y%m%d")
+
+
+def _lookback_start(days: int) -> str:
+    lookback_days = max(days * 2, 180)
+    return (dt.date.today() - dt.timedelta(days=lookback_days)).strftime("%Y%m%d")
 
 
 def _candle(row: dict[str, Any]) -> StrategyStockCandle | None:
