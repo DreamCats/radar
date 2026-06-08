@@ -124,23 +124,19 @@ chat:
 
 `market.api_url` 可以填 Tushare 直连地址，也可以填远端代理地址；兼容旧配置名 `market.tushare_api_url`。
 
-Chat skills 默认从 `~/.config/radar/skills/*/SKILL.md` 读取，用于给 chat 注入本轮提示词和工具白名单。全局 `~/.agents/skills` 不会默认加载，如需复用必须显式加入 `chat.skills.paths`。
+Chat skills 默认从 `~/.config/radar/skills/*/SKILL.md` 读取。每轮只把 `name + description` 作为轻量目录注入 prompt；需要完整说明时，模型会调用 `radar_load_skill` 读取对应 `SKILL.md` 正文。全局 `~/.agents/skills` 不会默认加载，如需复用必须显式加入 `chat.skills.paths`。
 
 ```markdown
 ---
 name: market_research
 description: 股票行情研究
-triggers:
-  - 行情
-tools:
-  - radar_resolve_stock
-  - radar_get_stock_price_history
-  - radar_run_shell
 ---
 如果用户没有提供股票名，先追问具体标的。
 ```
 
-内置 shell 工具名是 `radar_run_shell`。它会在本机执行命令，并默认通过 `zsh -lic` 注入 `.zshrc` 里的环境变量；如果某个 skill 配了 `tools` 白名单，需要显式加入 `radar_run_shell` 才能调用。
+如果 skill 目录下还有 `references/` 或其他辅助文档，`radar_load_skill` 会返回可读文件清单；模型需要细节时再用 `radar_read_skill_reference` 按相对路径读取，避免一次性把长文档塞进上下文。
+
+内置 shell 工具名是 `radar_run_shell`。它会在本机执行命令，并默认通过 `zsh -lic` 注入 `.zshrc` 里的环境变量，供需要本地 CLI 的 skill 使用。
 
 ```yaml
 # ~/.config/radar/secrets.yaml

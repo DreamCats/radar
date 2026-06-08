@@ -9,6 +9,7 @@ from radar.core.chat.builtin_extensions import RadarBuiltinExtension
 from radar.core.chat.extensions import ChatExtension, build_tool_registry
 from radar.core.chat.events import ChatEvent, ChatEventType, ChatMessage, new_id, now_iso
 from radar.core.chat.prompts import DEFAULT_CHAT_SYSTEM_PROMPT
+from radar.core.chat.skill_tools import build_skill_tools
 from radar.core.chat.skills import ChatSkillLibrary, ChatSkillSelection
 from radar.core.chat.store import ChatSessionStore
 from radar.core.chat.tools import ToolRegistry
@@ -58,12 +59,13 @@ class ChatAgent:
     ):
         self.config = config
         self.store = store or ChatSessionStore.from_config(config)
-        base_tools = tools.list() if tools else None
+        self.skills = ChatSkillLibrary.from_config(config)
+        base_tools = tools.list() if tools else []
+        base_tools.extend(build_skill_tools(self.skills))
         all_extensions = list(extensions or [])
         if enable_builtin_tools:
             all_extensions.append(RadarBuiltinExtension(config))
         self.tools = build_tool_registry(tools=base_tools, extensions=all_extensions)
-        self.skills = ChatSkillLibrary.from_config(config)
 
     def create_session(
         self,
@@ -92,7 +94,7 @@ class ChatAgent:
         events: list[ChatEvent] = []
         llm_metadata = self._llm_metadata(provider_name=provider_name, model=model)
         skill_selection = self._select_skills(llm_content or content)
-        allowed_tool_names = skill_selection.allowed_tool_names
+        allowed_tool_names = None
         enabled_tools = self._enabled_tool_names(allowed_tool_names)
         user_message = ChatMessage(
             message_id=new_id(),
@@ -203,7 +205,7 @@ class ChatAgent:
 
         llm_metadata = self._llm_metadata(provider_name=provider_name, model=model)
         skill_selection = self._select_skills(llm_content or content)
-        allowed_tool_names = skill_selection.allowed_tool_names
+        allowed_tool_names = None
         enabled_tools = self._enabled_tool_names(allowed_tool_names)
         user_message = ChatMessage(
             message_id=new_id(),
@@ -320,7 +322,7 @@ class ChatAgent:
             self._build_llm_messages(
                 session_id,
                 system_prompt,
-                skill_prompt=skill_selection.render_prompt(),
+                skill_prompt=self.skills.render_catalog_prompt(),
                 content_overrides=content_overrides,
             ),
             provider_name=provider_name,
@@ -350,7 +352,7 @@ class ChatAgent:
             self._build_llm_messages(
                 session_id,
                 system_prompt,
-                skill_prompt=skill_selection.render_prompt(),
+                skill_prompt=self.skills.render_catalog_prompt(),
                 content_overrides=content_overrides,
             ),
             provider_name=provider_name,

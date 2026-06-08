@@ -14,20 +14,11 @@ class ChatSkill:
     name: str
     description: str
     instructions: str
-    triggers: tuple[str, ...]
-    tool_names: tuple[str, ...]
-    always_on: bool
     source_path: Path
 
-    def render_prompt(self) -> str:
-        parts = [f"Skill: {self.name}"]
-        if self.description:
-            parts.append(f"Description: {self.description}")
-        if self.instructions:
-            parts.append(f"Instructions:\n{self.instructions}")
-        if self.tool_names:
-            parts.append(f"Allowed tools: {', '.join(self.tool_names)}")
-        return "\n".join(parts)
+    @property
+    def root_dir(self) -> Path:
+        return self.source_path.parent
 
 
 @dataclass(frozen=True)
@@ -37,17 +28,6 @@ class ChatSkillSelection:
     @property
     def names(self) -> list[str]:
         return [skill.name for skill in self.skills]
-
-    @property
-    def allowed_tool_names(self) -> set[str] | None:
-        names = {tool_name for skill in self.skills for tool_name in skill.tool_names}
-        return names or None
-
-    def render_prompt(self) -> str:
-        if not self.skills:
-            return ""
-        rendered = "\n\n".join(skill.render_prompt() for skill in self.skills)
-        return f"本轮启用的 skills：\n\n{rendered}"
 
 
 class ChatSkillLibrary:
@@ -63,17 +43,27 @@ class ChatSkillLibrary:
     def list(self) -> list[ChatSkill]:
         return list(self._skills)
 
-    def select(self, text: str, *, max_active: int) -> ChatSkillSelection:
-        if max_active <= 0:
-            return ChatSkillSelection(())
-        normalized_text = text.casefold()
-        selected: list[ChatSkill] = []
+    def get(self, name: str) -> ChatSkill | None:
+        normalized_name = name.casefold()
         for skill in self._skills:
-            if skill.always_on or _matches_triggers(normalized_text, skill.triggers):
-                selected.append(skill)
-            if len(selected) >= max_active:
-                break
-        return ChatSkillSelection(tuple(selected))
+            if skill.name.casefold() == normalized_name:
+                return skill
+        return None
+
+    def select(self, text: str, *, max_active: int) -> ChatSkillSelection:
+        return ChatSkillSelection(())
+
+    def render_catalog_prompt(self) -> str:
+        if not self._skills:
+            return ""
+        lines = [
+            "可用 skills 目录：",
+            "这些只是轻量目录。需要某个 skill 的完整说明时，先调用 radar_load_skill；如果该 skill 暴露 references，再按需调用 radar_read_skill_reference 读取具体相对路径。",
+        ]
+        for skill in self._skills:
+            description = f": {skill.description}" if skill.description else ""
+            lines.append(f"- {skill.name}{description}")
+        return "\n".join(lines)
 
 
 def load_chat_skills(paths: list[Path]) -> list[ChatSkill]:
@@ -100,9 +90,6 @@ def parse_chat_skill(path: Path) -> ChatSkill:
         name=name,
         description=_optional_str(metadata.get("description")) or "",
         instructions=_optional_str(metadata.get("system_prompt")) or body.strip(),
-        triggers=tuple(_str_list(metadata.get("triggers") or metadata.get("keywords") or metadata.get("trigger"))),
-        tool_names=tuple(_str_list(metadata.get("tools") or metadata.get("tool_names"))),
-        always_on=bool(metadata.get("always_on", False)),
         source_path=path,
     )
 
@@ -124,20 +111,6 @@ def _read_skill_markdown(path: Path) -> tuple[dict[str, Any], str]:
     if not isinstance(raw_metadata, dict):
         raise ValueError(f"skill frontmatter 必须是 mapping: {path}")
     return raw_metadata, text[end + 5 :]
-
-
-def _matches_triggers(text: str, triggers: tuple[str, ...]) -> bool:
-    return any(trigger.casefold() in text for trigger in triggers if trigger)
-
-
-def _str_list(value: Any) -> list[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return [value]
-    if isinstance(value, list):
-        return [item for item in (_optional_str(item) for item in value) if item]
-    return []
 
 
 def _optional_str(value: Any) -> str | None:

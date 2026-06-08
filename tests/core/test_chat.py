@@ -74,7 +74,7 @@ def test_chat_session_store_reads_unicode_line_separator(tmp_path):
 
 
 def test_chat_agent_passes_file_backed_context_to_llm(tmp_path, monkeypatch):
-    config = RadarConfig()
+    config = RadarConfig(config_dir=tmp_path)
     store = ChatSessionStore(tmp_path / "chat")
     session = store.create_session()
     seen = {}
@@ -131,7 +131,7 @@ def test_chat_agent_records_resolved_llm_metadata(tmp_path, monkeypatch):
 
 
 def test_chat_agent_can_send_context_to_llm_without_persisting_it(tmp_path, monkeypatch):
-    config = RadarConfig()
+    config = RadarConfig(config_dir=tmp_path)
     store = ChatSessionStore(tmp_path / "chat")
     session = store.create_session()
     seen = {}
@@ -150,7 +150,7 @@ def test_chat_agent_can_send_context_to_llm_without_persisting_it(tmp_path, monk
 
 
 def test_chat_agent_uses_default_system_prompt(tmp_path, monkeypatch):
-    config = RadarConfig()
+    config = RadarConfig(config_dir=tmp_path)
     store = ChatSessionStore(tmp_path / "chat")
     session = store.create_session()
     seen = {}
@@ -249,7 +249,7 @@ def test_chat_agent_executes_extension_tool_and_continues(tmp_path, monkeypatch)
     assert messages[2].metadata["tool_name"] == "search_messages"
     assert messages[2].content == '{"items":["命中:AI"]}'
     assert "工具 search_messages 返回" in calls[1]["messages"][-1]["content"]
-    assert calls[0]["tools"][0].name == "search_messages"
+    assert "search_messages" in {tool.name for tool in calls[0]["tools"]}
     assert "tool_execution_started" in [event.type for event in events]
     assert "tool_execution_completed" in [event.type for event in events]
 
