@@ -105,9 +105,32 @@ market:
   api_url: http://api.tushare.pro
   timeout: 30
   database: ~/.config/radar/data/market.sqlite3
+
+chat:
+  skills:
+    enabled: true
+    # 默认就是 ~/.config/radar/skills；只有显式配置时才会扫描其他目录。
+    paths:
+      - skills
+    max_active: 3
 ```
 
 `market.api_url` 可以填 Tushare 直连地址，也可以填远端代理地址；兼容旧配置名 `market.tushare_api_url`。
+
+Chat skills 默认从 `~/.config/radar/skills/*/SKILL.md` 读取，用于给 chat 注入本轮提示词和工具白名单。全局 `~/.agents/skills` 不会默认加载，如需复用必须显式加入 `chat.skills.paths`。
+
+```markdown
+---
+name: market_research
+description: 股票行情研究
+triggers:
+  - 行情
+tools:
+  - radar_resolve_stock
+  - radar_get_stock_price_history
+---
+如果用户没有提供股票名，先追问具体标的。
+```
 
 ```yaml
 # ~/.config/radar/secrets.yaml

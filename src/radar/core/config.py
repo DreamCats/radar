@@ -64,6 +64,21 @@ class LlmConfig(BaseModel):
     task_routing: dict[str, str] = Field(default_factory=dict)
 
 
+class ChatSkillsConfig(BaseModel):
+    enabled: bool = True
+    paths: list[Path] = Field(default_factory=list)
+    max_active: int = Field(default=3, ge=0)
+
+    @model_validator(mode="after")
+    def normalize_paths(self) -> "ChatSkillsConfig":
+        self.paths = [path.expanduser() for path in self.paths]
+        return self
+
+
+class ChatConfig(BaseModel):
+    skills: ChatSkillsConfig = Field(default_factory=ChatSkillsConfig)
+
+
 class LlmProviderSecret(BaseModel):
     base_url: str
     api_key: str
@@ -128,6 +143,7 @@ class RadarConfig(BaseModel):
     storage: StorageConfig = Field(default_factory=StorageConfig)
     wechat: WechatConfig = Field(default_factory=WechatConfig)
     llm: LlmConfig = Field(default_factory=LlmConfig)
+    chat: ChatConfig = Field(default_factory=ChatConfig)
     market: MarketConfig = Field(default_factory=MarketConfig)
     features: FeatureFlags = Field(default_factory=FeatureFlags)
     filters: FiltersConfig = Field(default_factory=FiltersConfig)
@@ -144,6 +160,11 @@ class RadarConfig(BaseModel):
     @property
     def market_database_path(self) -> Path:
         return self.market.database or self.storage.data_dir / "market.sqlite3"
+
+    @property
+    def chat_skill_paths(self) -> list[Path]:
+        paths = self.chat.skills.paths or [self.config_dir / "skills"]
+        return [path if path.is_absolute() else self.config_dir / path for path in paths]
 
     @property
     def wechat_base_url(self) -> str | None:

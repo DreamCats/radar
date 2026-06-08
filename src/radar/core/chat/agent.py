@@ -9,6 +9,7 @@ from radar.core.chat.builtin_extensions import RadarBuiltinExtension
 from radar.core.chat.extensions import ChatExtension, build_tool_registry
 from radar.core.chat.events import ChatEvent, ChatEventType, ChatMessage, new_id, now_iso
 from radar.core.chat.prompts import DEFAULT_CHAT_SYSTEM_PROMPT
+from radar.core.chat.skills import ChatSkillLibrary, ChatSkillSelection
 from radar.core.chat.store import ChatSessionStore
 from radar.core.chat.tools import ToolRegistry
 from radar.core.config import RadarConfig
@@ -62,6 +63,7 @@ class ChatAgent:
         if enable_builtin_tools:
             all_extensions.append(RadarBuiltinExtension(config))
         self.tools = build_tool_registry(tools=base_tools, extensions=all_extensions)
+        self.skills = ChatSkillLibrary.from_config(config)
 
     def create_session(
         self,
@@ -89,12 +91,15 @@ class ChatAgent:
 
         events: list[ChatEvent] = []
         llm_metadata = self._llm_metadata(provider_name=provider_name, model=model)
+        skill_selection = self._select_skills(llm_content or content)
+        allowed_tool_names = skill_selection.allowed_tool_names
+        enabled_tools = self._enabled_tool_names(allowed_tool_names)
         user_message = ChatMessage(
             message_id=new_id(),
             role="user",
             content=content,
             created_at=now_iso(),
-            metadata={"llm": llm_metadata},
+            metadata={"llm": llm_metadata, "skills": skill_selection.names},
         )
         self.store.append_message(session_id, user_message)
 
@@ -103,7 +108,8 @@ class ChatAgent:
             "turn_started",
             {
                 "user_message_id": user_message.message_id,
-                "enabled_tools": [tool.name for tool in self.tools.list(read_only=True)],
+                "active_skills": skill_selection.names,
+                "enabled_tools": enabled_tools,
             },
         )
         events.append(turn_started)
@@ -115,6 +121,8 @@ class ChatAgent:
                     session_id,
                     content_overrides={user_message.message_id: llm_content} if llm_content else None,
                     system_prompt=system_prompt,
+                    skill_selection=skill_selection,
+                    allowed_tool_names=allowed_tool_names,
                     provider_name=provider_name,
                     model=model,
                     temperature=temperature,
@@ -151,7 +159,7 @@ class ChatAgent:
                         },
                     )
                     events.append(started)
-                    tool_message = self._execute_tool_call(session_id, tool_call)
+                    tool_message = self._execute_tool_call(session_id, tool_call, allowed_tool_names=allowed_tool_names)
                     tool_messages.append(tool_message)
                     completed = self._append_event(
                         session_id,
@@ -194,12 +202,15 @@ class ChatAgent:
             raise ValueError("用户输入不能为空")
 
         llm_metadata = self._llm_metadata(provider_name=provider_name, model=model)
+        skill_selection = self._select_skills(llm_content or content)
+        allowed_tool_names = skill_selection.allowed_tool_names
+        enabled_tools = self._enabled_tool_names(allowed_tool_names)
         user_message = ChatMessage(
             message_id=new_id(),
             role="user",
             content=content,
             created_at=now_iso(),
-            metadata={"llm": llm_metadata},
+            metadata={"llm": llm_metadata, "skills": skill_selection.names},
         )
         self.store.append_message(session_id, user_message)
         yield ChatTurnStreamEvent(type="user_message", message=user_message)
@@ -209,7 +220,8 @@ class ChatAgent:
             "turn_started",
             {
                 "user_message_id": user_message.message_id,
-                "enabled_tools": [tool.name for tool in self.tools.list(read_only=True)],
+                "active_skills": skill_selection.names,
+                "enabled_tools": enabled_tools,
             },
         )
         yield ChatTurnStreamEvent(type="event", event=turn_started)
@@ -222,6 +234,8 @@ class ChatAgent:
                     session_id,
                     content_overrides={user_message.message_id: llm_content} if llm_content else None,
                     system_prompt=system_prompt,
+                    skill_selection=skill_selection,
+                    allowed_tool_names=allowed_tool_names,
                     provider_name=provider_name,
                     model=model,
                     temperature=temperature,
@@ -261,7 +275,7 @@ class ChatAgent:
                         },
                     )
                     yield ChatTurnStreamEvent(type="event", event=started)
-                    tool_message = self._execute_tool_call(session_id, tool_call)
+                    tool_message = self._execute_tool_call(session_id, tool_call, allowed_tool_names=allowed_tool_names)
                     tool_messages.append(tool_message)
                     yield ChatTurnStreamEvent(type="tool_message", message=tool_message)
                     completed = self._append_event(
@@ -294,6 +308,8 @@ class ChatAgent:
         *,
         content_overrides: dict[str, str] | None = None,
         system_prompt: str | None,
+        skill_selection: ChatSkillSelection,
+        allowed_tool_names: set[str] | None,
         provider_name: str | None,
         model: str | None,
         temperature: float | None,
@@ -301,13 +317,18 @@ class ChatAgent:
     ) -> LlmChatResponse:
         return chat_response(
             self.config,
-            self._build_llm_messages(session_id, system_prompt, content_overrides=content_overrides),
+            self._build_llm_messages(
+                session_id,
+                system_prompt,
+                skill_prompt=skill_selection.render_prompt(),
+                content_overrides=content_overrides,
+            ),
             provider_name=provider_name,
             task="chat",
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
-            tools=self.tools.to_llm_specs(read_only=True),
+            tools=self._llm_tool_specs(allowed_tool_names),
             enable_thinking=True,
         )
 
@@ -317,6 +338,8 @@ class ChatAgent:
         *,
         content_overrides: dict[str, str] | None = None,
         system_prompt: str | None,
+        skill_selection: ChatSkillSelection,
+        allowed_tool_names: set[str] | None,
         provider_name: str | None,
         model: str | None,
         temperature: float | None,
@@ -324,13 +347,18 @@ class ChatAgent:
     ):
         yield from stream_chat_response(
             self.config,
-            self._build_llm_messages(session_id, system_prompt, content_overrides=content_overrides),
+            self._build_llm_messages(
+                session_id,
+                system_prompt,
+                skill_prompt=skill_selection.render_prompt(),
+                content_overrides=content_overrides,
+            ),
             provider_name=provider_name,
             task="chat",
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
-            tools=self.tools.to_llm_specs(read_only=True),
+            tools=self._llm_tool_specs(allowed_tool_names),
             enable_thinking=True,
         )
 
@@ -369,12 +397,21 @@ class ChatAgent:
             metadata["model"] = model
         return metadata
 
-    def _execute_tool_call(self, session_id: str, tool_call: LlmToolCall) -> ChatMessage:
+    def _execute_tool_call(
+        self,
+        session_id: str,
+        tool_call: LlmToolCall,
+        *,
+        allowed_tool_names: set[str] | None,
+    ) -> ChatMessage:
         tool = self.tools.get(tool_call.name)
         is_error = False
         if tool is None:
             is_error = True
             result = {"error": f"未知工具: {tool_call.name}"}
+        elif allowed_tool_names is not None and tool_call.name not in allowed_tool_names:
+            is_error = True
+            result = {"error": f"工具未被当前 skill 开放: {tool_call.name}"}
         elif not tool.read_only:
             is_error = True
             result = {"error": f"工具未开放给 LLM: {tool_call.name}"}
@@ -404,10 +441,13 @@ class ChatAgent:
         session_id: str,
         system_prompt: str | None,
         *,
+        skill_prompt: str = "",
         content_overrides: dict[str, str] | None = None,
     ) -> list[dict[str, str]]:
         messages: list[dict[str, str]] = []
         resolved_system_prompt = system_prompt or DEFAULT_CHAT_SYSTEM_PROMPT
+        if skill_prompt:
+            resolved_system_prompt = f"{resolved_system_prompt}\n\n{skill_prompt}" if resolved_system_prompt else skill_prompt
         if resolved_system_prompt:
             messages.append({"role": "system", "content": resolved_system_prompt})
         for message in self.store.load_messages(session_id):
@@ -419,6 +459,19 @@ class ChatAgent:
                 tool_name = message.metadata.get("tool_name", "unknown")
                 messages.append({"role": "user", "content": f"工具 {tool_name} 返回：{message.content}"})
         return messages
+
+    def _select_skills(self, text: str) -> ChatSkillSelection:
+        return self.skills.select(text, max_active=self.config.chat.skills.max_active)
+
+    def _enabled_tool_names(self, allowed_tool_names: set[str] | None) -> list[str]:
+        return [tool.name for tool in self.tools.list(read_only=True) if allowed_tool_names is None or tool.name in allowed_tool_names]
+
+    def _llm_tool_specs(self, allowed_tool_names: set[str] | None):
+        return [
+            tool.to_llm_spec()
+            for tool in self.tools.list(read_only=True)
+            if allowed_tool_names is None or tool.name in allowed_tool_names
+        ]
 
     def _append_event(self, session_id: str, event_type: ChatEventType, payload: dict[str, Any]) -> ChatEvent:
         event = ChatEvent(
