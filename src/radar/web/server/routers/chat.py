@@ -67,6 +67,17 @@ def chat_session_detail(session_id: str, config: RadarConfig = Depends(get_confi
     )
 
 
+@router.delete("/chat/sessions/{session_id}", status_code=204)
+def delete_chat_session(session_id: str, config: RadarConfig = Depends(get_config)) -> None:
+    store = ChatSessionStore.from_config(config)
+    try:
+        store.delete_session(session_id)
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
 @router.post("/chat/turn", response_model=ChatTurnResponse)
 def chat_turn(
     request: ChatTurnRequest,

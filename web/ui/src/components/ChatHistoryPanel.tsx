@@ -1,17 +1,61 @@
-import { Plus } from "lucide-react";
+import { Copy, FileText, Plus, Trash2 } from "lucide-react";
+import type { MouseEvent } from "react";
+import { useEffect, useState } from "react";
 
 import type { ChatSessionItem } from "../types";
+
+type SessionMenuState = {
+  confirmDelete: boolean;
+  session: ChatSessionItem;
+  x: number;
+  y: number;
+};
 
 type ChatHistoryPanelProps = {
   activeSessionId: string | null;
   loading: boolean;
   sessions: ChatSessionItem[];
+  onCopySessionContent: (sessionId: string) => void;
+  onCopySessionId: (sessionId: string) => void;
+  onCopySessionTitle: (session: ChatSessionItem) => void;
+  onDeleteSession: (sessionId: string) => void;
   onNewSession: () => void;
   onRefresh: () => void;
   onRestore: (sessionId: string) => void;
 };
 
 export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
+  const [menu, setMenu] = useState<SessionMenuState | null>(null);
+
+  useEffect(() => {
+    if (!menu) {
+      return;
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenu(null);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menu]);
+
+  function openMenu(event: MouseEvent<HTMLButtonElement>, session: ChatSessionItem) {
+    event.preventDefault();
+    event.stopPropagation();
+    setMenu({
+      confirmDelete: false,
+      session,
+      x: Math.min(event.clientX, window.innerWidth - 220),
+      y: Math.min(event.clientY, window.innerHeight - 210),
+    });
+  }
+
+  function runMenuAction(action: () => void) {
+    setMenu(null);
+    action();
+  }
+
   return (
     <aside className="chat-history-panel" aria-label="历史对话">
       <div className="chat-history-head">
@@ -33,6 +77,7 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
             key={session.session_id}
             type="button"
             onClick={() => props.onRestore(session.session_id)}
+            onContextMenu={(event) => openMenu(event, session)}
           >
             <strong>{session.title || "未命名对话"}</strong>
             <span>{session.preview || "暂无内容"}</span>
@@ -42,6 +87,45 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
           </button>
         ))}
       </div>
+      {menu ? (
+        <>
+          <button className="chat-session-menu-scrim" type="button" aria-label="关闭 session 菜单" onClick={() => setMenu(null)} />
+          <div className="chat-session-menu" style={{ left: menu.x, top: menu.y }}>
+            {!menu.confirmDelete ? (
+              <>
+                <button type="button" onClick={() => runMenuAction(() => props.onCopySessionId(menu.session.session_id))}>
+                  <Copy size={14} />
+                  复制 session id
+                </button>
+                <button type="button" onClick={() => runMenuAction(() => props.onCopySessionTitle(menu.session))}>
+                  <Copy size={14} />
+                  复制名称
+                </button>
+                <button type="button" onClick={() => runMenuAction(() => props.onCopySessionContent(menu.session.session_id))}>
+                  <FileText size={14} />
+                  复制内容
+                </button>
+                <button className="danger" type="button" onClick={() => setMenu({ ...menu, confirmDelete: true })}>
+                  <Trash2 size={14} />
+                  删除 session
+                </button>
+              </>
+            ) : (
+              <div className="chat-session-menu-confirm">
+                <span>确认删除？</span>
+                <div>
+                  <button type="button" onClick={() => setMenu({ ...menu, confirmDelete: false })}>
+                    取消
+                  </button>
+                  <button className="danger" type="button" onClick={() => runMenuAction(() => props.onDeleteSession(menu.session.session_id))}>
+                    删除
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
     </aside>
   );
 }

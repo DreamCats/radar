@@ -46,6 +46,16 @@ def test_chat_session_store_lists_sessions(tmp_path):
     assert [item.session_id for item in sessions] == [session.session_id]
 
 
+def test_chat_session_store_deletes_session_directory(tmp_path):
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session(title="待删除")
+
+    store.delete_session(session.session_id)
+
+    assert not store.session_dir(session.session_id).exists()
+    assert store.list_sessions() == []
+
+
 def test_chat_session_store_reads_unicode_line_separator(tmp_path):
     store = ChatSessionStore(tmp_path / "chat")
     session = store.create_session()

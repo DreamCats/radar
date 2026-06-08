@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -108,6 +109,12 @@ class ChatSessionStore:
             if isinstance(raw, dict):
                 messages.append(ChatMessage.model_validate(raw))
         return messages
+
+    def delete_session(self, session_id: str) -> None:
+        session_dir = self.session_dir(session_id)
+        if not session_dir.exists():
+            raise FileNotFoundError(f"chat session 不存在: {session_id}")
+        shutil.rmtree(session_dir)
 
     def session_dir(self, session_id: str) -> Path:
         if "/" in session_id or "\\" in session_id:

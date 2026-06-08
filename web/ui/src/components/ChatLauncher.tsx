@@ -1,7 +1,9 @@
 import { History, MessageCircle, Plus, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { fetchChatModelOptions, fetchChatSession, fetchChatSessions, streamChatTurn } from "../api/radarApi";
+import { deleteChatSession, fetchChatModelOptions, fetchChatSession, fetchChatSessions, streamChatTurn } from "../api/radarApi";
+import { formatChatTranscript } from "../lib/chatTranscript";
+import { copyText } from "../lib/clipboard";
 import type { ChatMessageItem, ChatModelOption, ChatSessionItem } from "../types";
 import {
   formatToolName,
@@ -9,13 +11,12 @@ import {
   clearActiveSessionId,
   readActiveSessionId,
   statusForAgentEvent,
-  toolActivities,
   updateToolActivities,
   writeActiveSessionId,
 } from "./chatHelpers";
 import { ChatComposer } from "./ChatComposer";
 import { ChatHistoryPanel } from "./ChatHistoryPanel";
-import { MarkdownContent } from "./MarkdownContent";
+import { ChatMessageList } from "./ChatMessageList";
 
 export type ChatContextItem = {
   label: string;
@@ -331,6 +332,50 @@ export function ChatLauncher(props: ChatLauncherProps) {
     setHistoryOpen(false);
   }
 
+  async function copySessionId(nextSessionId: string) {
+    try {
+      await copyText(nextSessionId);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "复制失败");
+    }
+  }
+
+  async function copySessionTitle(session: ChatSessionItem) {
+    try {
+      await copyText(session.title?.trim() || "未命名对话");
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "复制失败");
+    }
+  }
+
+  async function copySessionContent(nextSessionId: string) {
+    try {
+      const data = await fetchChatSession(nextSessionId);
+      await copyText(formatChatTranscript(data));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "复制内容失败");
+    }
+  }
+
+  async function removeSession(nextSessionId: string) {
+    try {
+      if (nextSessionId === sessionId) abortControllerRef.current?.abort();
+      await deleteChatSession(nextSessionId);
+      if (nextSessionId === sessionId) {
+        clearActiveSessionId();
+        setSessionId(null);
+        setMessages([]);
+      }
+      await refreshSessions();
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "删除对话失败");
+    }
+  }
+
   return (
     <>
       <button className={props.buttonClassName ?? "btn btn-sm"} type="button" onClick={() => setOpen(true)}>
@@ -383,7 +428,6 @@ export function ChatLauncher(props: ChatLauncherProps) {
                 </button>
               </div>
             </header>
-
             <div className={historyOpen ? "chat-launcher-body with-history" : "chat-launcher-body"}>
               {historyOpen ? (
                 <ChatHistoryPanel
@@ -391,12 +435,16 @@ export function ChatLauncher(props: ChatLauncherProps) {
                   loading={loadingSessions}
                   sessions={sessions}
                   onNewSession={startNewSession}
+                  onCopySessionContent={(nextSessionId) => void copySessionContent(nextSessionId)}
+                  onCopySessionId={(nextSessionId) => void copySessionId(nextSessionId)}
+                  onCopySessionTitle={(session) => void copySessionTitle(session)}
+                  onDeleteSession={(nextSessionId) => void removeSession(nextSessionId)}
                   onRefresh={() => void refreshSessions()}
                   onRestore={(nextSessionId) => void restoreSession(nextSessionId)}
                 />
               ) : null}
               <div className="chat-main-panel">
-              <div className="chat-launcher-reference">
+                <div className="chat-launcher-reference">
                 <details>
                   <summary>
                     <span>上下文</span>
@@ -411,7 +459,6 @@ export function ChatLauncher(props: ChatLauncherProps) {
                     ))}
                   </div>
                 </details>
-
                 {props.evidence && props.evidence.length > 0 && (
                   <details>
                     <summary>
@@ -425,60 +472,9 @@ export function ChatLauncher(props: ChatLauncherProps) {
                     </ul>
                   </details>
                 )}
-              </div>
-
-              <div className="chat-message-list">
-                <AnimatePresence initial={false}>
-                  {messages.map((message) => {
-                    const status = typeof message.metadata.status === "string" ? message.metadata.status : "";
-                    const reasoning = typeof message.metadata.reasoning === "string" ? message.metadata.reasoning : "";
-                    const activities = toolActivities(message.metadata.tool_activities);
-                    return (
-                    <motion.article
-                      className={`chat-message chat-message-${message.role}`}
-                      key={message.message_id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.16 }}
-                    >
-                      {message.role === "assistant" && status ? <div className="chat-agent-status">{status}</div> : null}
-                      {message.role === "assistant" && (reasoning || activities.length > 0) ? (
-                        <details className="chat-reasoning" open={Boolean(message.metadata.streaming)}>
-                          <summary>推理过程</summary>
-                          {reasoning ? <MarkdownContent content={reasoning} /> : null}
-                          {activities.length > 0 ? (
-                            <ul className="chat-tool-activity-list">
-                              {activities.map((activity) => (
-                                <li className={`chat-tool-activity-${activity.status}`} key={activity.key}>
-                                  {activity.label}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : null}
-                        </details>
-                      ) : null}
-                      {message.content ? (
-                        <>
-                          <MarkdownContent content={message.content} />
-                          {message.metadata.streaming ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
-                        </>
-                      ) : (
-                        <div className="chat-typing" aria-label="生成中">
-                          <span>正在整理</span>
-                          <em />
-                          <em />
-                          <em />
-                        </div>
-                      )}
-                    </motion.article>
-                    );
-                  })}
-                </AnimatePresence>
-                <div ref={messagesEndRef} />
-              </div>
-
-              <ChatComposer
+                </div>
+                <ChatMessageList messages={messages} endRef={messagesEndRef} />
+                <ChatComposer
                 draft={draft}
                 modelOptions={modelOptions}
                 selectedProviderName={selectedProviderName}
@@ -487,7 +483,7 @@ export function ChatLauncher(props: ChatLauncherProps) {
                 onProviderChange={setSelectedProviderName}
                 onStop={stopStreaming}
                 onSubmit={() => void submitTurn()}
-              />
+                />
                 {error && <p className="chat-error">{error}</p>}
               </div>
             </div>

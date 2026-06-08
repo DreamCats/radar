@@ -86,97 +86,6 @@
   min-height: 0;
 }
 
-.chat-history-panel {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 10px;
-  min-height: 0;
-  border-right: 1px solid var(--color-hairline);
-  padding-right: 12px;
-}
-
-.chat-history-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.chat-history-head strong {
-  color: var(--color-ink);
-  font-size: 13px;
-}
-
-.chat-history-refresh {
-  border: 0;
-  background: transparent;
-  color: var(--color-ink-subtle);
-  cursor: pointer;
-  font-size: 12px;
-  padding: 3px 0;
-}
-
-.chat-history-new,
-.chat-history-item {
-  width: 100%;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-2);
-  color: var(--color-ink-muted);
-  cursor: pointer;
-  text-align: left;
-}
-
-.chat-history-new {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  justify-content: center;
-  padding: 8px 10px;
-  font-size: 13px;
-}
-
-.chat-history-list {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  min-height: 0;
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.chat-history-item {
-  display: grid;
-  gap: 5px;
-  padding: 9px;
-}
-
-.chat-history-item:hover,
-.chat-history-item.active {
-  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-hairline));
-  background: var(--color-surface-3);
-}
-
-.chat-history-item strong,
-.chat-history-item span,
-.chat-history-item em {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.chat-history-item strong {
-  color: var(--color-ink);
-  font-size: 13px;
-}
-
-.chat-history-item span,
-.chat-history-item em {
-  color: var(--color-ink-subtle);
-  font-size: 12px;
-  font-style: normal;
-}
-
 .chat-launcher-reference {
   display: flex;
   flex-wrap: wrap;
@@ -412,14 +321,6 @@
 
   .chat-launcher-body.with-history {
     grid-template-columns: 1fr;
-  }
-
-  .chat-history-panel {
-    max-height: 220px;
-    border-right: 0;
-    border-bottom: 1px solid var(--color-hairline);
-    padding-right: 0;
-    padding-bottom: 12px;
   }
 
   .chat-context-grid,

@@ -96,6 +96,15 @@ export async function fetchChatSession(sessionId: string): Promise<ChatSessionDe
   return getJson(`/api/chat/sessions/${encodeURIComponent(sessionId)}`);
 }
 
+export async function deleteChatSession(sessionId: string): Promise<void> {
+  const response = await fetch(`${apiBase}/api/chat/sessions/${encodeURIComponent(sessionId)}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+}
+
 export async function fetchChatModelOptions(): Promise<ChatModelOptions> {
   return getJson("/api/chat/model-options");
 }
