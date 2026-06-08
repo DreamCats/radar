@@ -74,6 +74,27 @@ def test_aggregate_topics_groups_topic_anchors_with_related_stocks(tmp_path: Pat
     assert [item.message_id for item in topic.evidence] == ["m2", "m1"]
 
 
+def test_aggregate_topics_excludes_event_when_requested(tmp_path: Path):
+    config = RadarConfig(storage={"data_dir": tmp_path, "database": tmp_path / "radar.sqlite3"})
+    _seed_messages(config, [_message("m1", "2026-06-04T10:00:00", "会议也提到玻璃基板")])
+    _seed_classifications(config, [_classification("m1", "event", 0.95)])
+    _seed_anchors(config, {"m1": [_anchor("m1", "topic:glass", "concept", "玻璃基板", 0.95)]})
+
+    result = aggregate_topics(
+        config,
+        trade_date="20260604",
+        extractor_version="test-anchor",
+        start_time=datetime.fromisoformat("2026-06-04T00:00:00"),
+        end_time=datetime.fromisoformat("2026-06-05T00:00:00"),
+        categories=["event"],
+        min_messages=1,
+    )
+
+    assert result.categories == []
+    assert result.topic_count == 0
+    assert result.scoped_message_count == 0
+
+
 def test_aggregate_topics_binds_stocks_within_same_segment(tmp_path: Path):
     config = RadarConfig(storage={"data_dir": tmp_path, "database": tmp_path / "radar.sqlite3"})
     content = "玻璃基板：沃格光电继续发酵。\nPCB：世运电路有更新。"

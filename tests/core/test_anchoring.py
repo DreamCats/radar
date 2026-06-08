@@ -181,6 +181,27 @@ def test_anchor_messages_range_defaults_to_investment_categories(tmp_path: Path)
     assert result.scanned_count == 1
 
 
+def test_anchor_messages_range_excludes_event_when_requested(tmp_path: Path):
+    config = _config(tmp_path)
+    _seed_market(config)
+    _seed_messages(
+        config,
+        [_message("m1", "2026-06-04T10:00:00", "会议提到算力")],
+    )
+    _seed_classifications(config, [_classification("m1", "event")])
+
+    result = anchor_messages_range(
+        config,
+        trade_date="20260604",
+        categories=["event"],
+        start_time=datetime.fromisoformat("2026-06-04T00:00:00"),
+        end_time=datetime.fromisoformat("2026-06-05T00:00:00"),
+    )
+
+    assert result.categories == []
+    assert result.scanned_count == 0
+
+
 def _seed_market(config: RadarConfig) -> None:
     def fake_call(_config, api_name, _params, _fields):
         rows = {

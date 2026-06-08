@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from radar.core.models import ClassificationRetryMode, MessageCategory, MessageSource, RawMessage
 from radar.core.dashboard import DashboardSummaryPayload
@@ -206,6 +206,12 @@ class AnchorMessagesRequest(BaseModel):
     min_classification_confidence: float = Field(default=0.7, ge=0, le=1)
     max_anchors: int = Field(default=7, ge=1, le=20)
 
+    @field_validator("categories")
+    @classmethod
+    def _reject_event_category(cls, value: list[MessageCategory]) -> list[MessageCategory]:
+        _ensure_no_event_category(value)
+        return value
+
 
 class AggregateRefineRequest(BaseModel):
     trade_date: str
@@ -222,6 +228,17 @@ class AggregateRefineRequest(BaseModel):
     max_concurrency: int = Field(default=10, ge=1, le=16)
     provider_name: str | None = None
     provider_names: list[str] | None = None
+
+    @field_validator("categories")
+    @classmethod
+    def _reject_event_category(cls, value: list[MessageCategory]) -> list[MessageCategory]:
+        _ensure_no_event_category(value)
+        return value
+
+
+def _ensure_no_event_category(value: list[MessageCategory]) -> None:
+    if "event" in value:
+        raise ValueError("会议活动(event)不参与衍生离线任务输入")
 
 
 class RecommendationBacktestRequest(BaseModel):

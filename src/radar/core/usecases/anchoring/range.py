@@ -10,6 +10,7 @@ from radar.core.config import RadarConfig
 from radar.core.models import MessageAnchor, MessageAnchorType, MessageCategory, MessageSource
 from radar.core.runs import fail_run, finish_run, start_run, update_run_progress
 from radar.core.store import connect, init_db, list_messages_for_anchoring, replace_message_anchors
+from radar.core.usecases.categories import DERIVED_INPUT_CATEGORIES, normalize_derived_input_categories
 from radar.core.usecases.anchoring.dictionary import load_anchor_dictionary
 from radar.core.usecases.anchoring.extractor import (
     ANCHOR_EXTRACTOR_VERSION,
@@ -18,7 +19,7 @@ from radar.core.usecases.anchoring.extractor import (
 )
 from radar.core.usecases.time_windows import time_chunks
 
-DEFAULT_ANCHOR_CATEGORIES: list[MessageCategory] = ["research", "recommendation", "industry"]
+DEFAULT_ANCHOR_CATEGORIES: list[MessageCategory] = DERIVED_INPUT_CATEGORIES.copy()
 
 
 class AnchorRangeResult(BaseModel):
@@ -70,6 +71,37 @@ def anchor_messages_range(
         min_classification_confidence,
     )
     category_values = _normalize_categories(category, categories)
+    if not category_values:
+        if run_id is None:
+            run_id = start_run(
+                config.database_path,
+                kind="message_anchor_range",
+                target=_run_target(source, category_values, start_time, end_time),
+                metadata={
+                    "source": source,
+                    "categories": category_values,
+                    "trade_date": trade_date,
+                    "start_time": start_time.isoformat(),
+                    "end_time": end_time.isoformat(),
+                    "skipped_reason": "event_category_excluded",
+                },
+            )
+        result = AnchorRangeResult(
+            run_id=run_id,
+            source=source,
+            categories=category_values,
+            min_classification_confidence=min_classification_confidence,
+            trade_date=trade_date,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        finish_run(
+            config.database_path,
+            run_id,
+            status="skipped",
+            metadata={"skipped_reason": "event_category_excluded", **result.model_dump()},
+        )
+        return result
     dictionary = load_anchor_dictionary(config, trade_date=trade_date)
     if dictionary.anchor_count == 0:
         raise ValueError(f"未找到 {trade_date} 的 anchor 词库，请先刷新 market anchors")
@@ -279,12 +311,7 @@ def _normalize_categories(
     category: MessageCategory | None,
     categories: list[MessageCategory] | None,
 ) -> list[MessageCategory]:
-    values = list(categories or [])
-    if category:
-        values.append(category)
-    if not values:
-        values = DEFAULT_ANCHOR_CATEGORIES
-    return list(dict.fromkeys(values))
+    return normalize_derived_input_categories(categories, category=category)
 
 
 def _run_target(

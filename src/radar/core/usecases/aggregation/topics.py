@@ -11,6 +11,7 @@ from radar.core.algorithms.text_segments import segment_for_position, split_text
 from radar.core.config import RadarConfig
 from radar.core.models import MessageCategory, MessageSource
 from radar.core.store import connect, init_db
+from radar.core.usecases.categories import normalize_derived_input_categories
 from radar.core.usecases.aggregation.models import (
     AggregateTopic,
     AggregateTopicEvidence,
@@ -18,7 +19,7 @@ from radar.core.usecases.aggregation.models import (
     RelatedStock,
 )
 from radar.core.usecases.aggregation.scoring import TopicScoreCandidate, topic_score
-from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION, DEFAULT_ANCHOR_CATEGORIES
+from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION
 
 _RowData = dict[str, Any]
 _AGGREGATION_SEGMENT_CHARS = 180
@@ -48,7 +49,20 @@ def aggregate_topics(
         limit,
         evidence_limit,
     )
-    category_values = list(dict.fromkeys(categories or DEFAULT_ANCHOR_CATEGORIES))
+    category_values = normalize_derived_input_categories(categories)
+    if not category_values:
+        return AggregateTopicsResult(
+            trade_date=trade_date,
+            extractor_version=extractor_version,
+            start_time=start_time,
+            end_time=end_time,
+            categories=category_values,
+            min_classification_confidence=min_classification_confidence,
+            scoped_message_count=0,
+            anchored_message_count=0,
+            topic_count=0,
+            topics=[],
+        )
     conn = connect(config.database_path)
     try:
         init_db(conn)

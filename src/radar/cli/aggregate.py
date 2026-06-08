@@ -19,7 +19,7 @@ _SOURCE_MAP: dict[str, MessageSource | None] = {
     "personal_message": "个人消息",
     "group_message": "个人群",
 }
-_CATEGORY_CHOICES = ["research", "recommendation", "event", "industry", "tool_ad", "chat", "unknown"]
+_CATEGORY_CHOICES = ["research", "recommendation", "industry", "tool_ad", "chat", "unknown"]
 
 
 @click.group()

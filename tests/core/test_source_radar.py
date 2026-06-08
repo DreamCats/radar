@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from radar.core.config import RadarConfig
-from radar.core.models import MessageClassification, RawMessage
+from radar.core.models import MessageCategory, MessageClassification, RawMessage
 from radar.core.store import connect, init_db, upsert_message_classifications, upsert_messages
 from radar.core.usecases.source import SourceStructure, extract_source_structures, scan_source_signals
 from radar.core.usecases.source.storage import upsert_source_structures
@@ -50,6 +50,42 @@ def test_source_extract_uses_provider_pool_and_persists_structures(tmp_path: Pat
     assert result.inserted_count == 2
     with connect(config.database_path) as conn:
         assert conn.execute("SELECT COUNT(*) AS c FROM source_structures").fetchone()["c"] == 2
+
+
+def test_source_extract_excludes_event_messages(tmp_path: Path):
+    config = _config(tmp_path)
+    messages = [
+        _message("research", "2026-06-01T09:00:00", "AI电源成为新方向"),
+        _message("event", "2026-06-01T09:10:00", "GPU与CPU深度协同出现新变化"),
+    ]
+    _seed_messages(config, messages)
+    with connect(config.database_path) as conn:
+        upsert_message_classifications(conn, [_classification_with_category(messages[1], "event")])
+    seen: list[str] = []
+
+    def fake_extractor(_config, batch: list[RawMessage], provider_name: str | None):
+        seen.extend(message.message_id for message in batch)
+        return [
+            _structure(
+                message,
+                anchor="AI",
+                modifier="电源",
+                novel="AI电源",
+                provider=provider_name,
+            )
+            for message in batch
+        ]
+
+    result = extract_source_structures(
+        config,
+        start_time=datetime.fromisoformat("2026-06-01T00:00:00"),
+        end_time=datetime.fromisoformat("2026-06-02T00:00:00"),
+        provider_names=["test"],
+        llm_batch_extractor=fake_extractor,
+    )
+
+    assert seen == ["research"]
+    assert result.scanned_count == 1
 
 
 def test_source_extract_records_failed_provider_metrics(tmp_path: Path):
@@ -214,10 +250,14 @@ def _message(
 
 
 def _classification(message: RawMessage) -> MessageClassification:
+    return _classification_with_category(message, "research")
+
+
+def _classification_with_category(message: RawMessage, category: MessageCategory) -> MessageClassification:
     now = datetime.fromisoformat("2026-06-01T12:30:00")
     return MessageClassification(
         message_id=message.message_id,
-        category="research",
+        category=category,
         confidence=0.9,
         reason="源头雷达测试",
         status="auto",

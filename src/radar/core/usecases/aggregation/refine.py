@@ -14,6 +14,7 @@ from radar.core.llm import resolve_provider
 from radar.core.models import MessageCategory, MessageSource
 from radar.core.runs import fail_run, finish_run, start_run
 from radar.core.store import connect, init_db
+from radar.core.usecases.categories import normalize_derived_input_categories
 from radar.core.usecases.aggregation.models import (
     AggregateTopic,
     RefineAggregateTopicsResult,
@@ -24,7 +25,7 @@ from radar.core.usecases.aggregation.prompts import REFINE_PROMPT_VERSION
 from radar.core.usecases.aggregation.refine_llm import refine_batch_with_llm
 from radar.core.usecases.aggregation.storage import load_refine_result, store_refine_result
 from radar.core.usecases.aggregation.topics import aggregate_topics
-from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION, DEFAULT_ANCHOR_CATEGORIES
+from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION
 from radar.core.work_pool import run_work_pool
 
 REFINE_TASK = "aggregate_refine"
@@ -60,7 +61,7 @@ def refine_aggregate_topics(
     """对本地聚合候选做 LLM refinement；使用输入 hash 支持增量跳过。"""
 
     _validate_refine_inputs(candidate_limit, evidence_limit, batch_size, max_concurrency)
-    category_values = list(dict.fromkeys(categories or DEFAULT_ANCHOR_CATEGORIES))
+    category_values = normalize_derived_input_categories(categories)
     local_result = aggregate_topics(
         config,
         trade_date=trade_date,
