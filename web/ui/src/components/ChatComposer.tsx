@@ -26,6 +26,7 @@ export function ChatComposer({
 }: ChatComposerProps) {
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const modelMenuRef = useRef<HTMLDivElement | null>(null);
+  const isComposingRef = useRef(false);
   const selectedOption = modelOptions.find((item) => item.provider_name === selectedProviderName) ?? modelOptions[0];
   const modelLabel = labelForModelOption(selectedOption);
 
@@ -47,9 +48,19 @@ export function ChatComposer({
       <textarea
         value={draft}
         onChange={(event) => onDraftChange(event.target.value)}
+        onCompositionStart={() => {
+          isComposingRef.current = true;
+        }}
+        onCompositionEnd={() => {
+          isComposingRef.current = false;
+        }}
         rows={3}
         placeholder="输入你的问题..."
         onKeyDown={(event) => {
+          const nativeEvent = event.nativeEvent as KeyboardEvent;
+          if (isComposingRef.current || nativeEvent.isComposing || nativeEvent.keyCode === 229) {
+            return;
+          }
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
             if (sending) {
