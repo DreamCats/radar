@@ -8,6 +8,7 @@ from radar.core.chat.builtin_extensions import RadarBuiltinExtension
 from radar.core.config import RadarConfig
 from radar.core.chat.extensions import ChatExtension, build_tool_registry
 from radar.core.chat.events import ChatEvent, ChatEventType, ChatMessage, new_id, now_iso
+from radar.core.chat.prompts import DEFAULT_CHAT_SYSTEM_PROMPT
 from radar.core.chat.store import ChatSessionStore
 from radar.core.chat.tools import ToolRegistry
 from radar.core.llm import LlmChatResponse, LlmToolCall, chat_response
@@ -219,8 +220,9 @@ class ChatAgent:
 
     def _build_llm_messages(self, session_id: str, system_prompt: str | None) -> list[dict[str, str]]:
         messages: list[dict[str, str]] = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
+        resolved_system_prompt = system_prompt or DEFAULT_CHAT_SYSTEM_PROMPT
+        if resolved_system_prompt:
+            messages.append({"role": "system", "content": resolved_system_prompt})
         for message in self.store.load_messages(session_id):
             if message.role in {"system", "user", "assistant"}:
                 if message.content:

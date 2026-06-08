@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from radar.core.chat import ChatAgent, ChatMessage, ChatSessionStore, ChatTool, ExtensionContext, ToolRegistry
+from radar.core.chat import (
+    DEFAULT_CHAT_SYSTEM_PROMPT,
+    ChatAgent,
+    ChatMessage,
+    ChatSessionStore,
+    ChatTool,
+    ExtensionContext,
+    ToolRegistry,
+)
 from radar.core.chat.events import new_id, now_iso
 from radar.core.config import RadarConfig
 from radar.core.llm import LlmChatResponse, LlmToolCall
@@ -58,6 +66,24 @@ def test_chat_agent_passes_file_backed_context_to_llm(tmp_path, monkeypatch):
     assert seen["kwargs"]["task"] == "chat"
     assert seen["kwargs"]["provider_name"] == "openai_main"
     assert seen["kwargs"]["tools"]
+
+
+def test_chat_agent_uses_default_system_prompt(tmp_path, monkeypatch):
+    config = RadarConfig()
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+    seen = {}
+
+    def fake_chat_response(config, messages, **kwargs):
+        seen["messages"] = messages
+        return LlmChatResponse(content="收到", tool_calls=[])
+
+    monkeypatch.setattr("radar.core.chat.agent.chat_response", fake_chat_response)
+
+    ChatAgent(config, store=store).run_turn(session.session_id, "今天有什么机会？")
+
+    assert seen["messages"][0] == {"role": "system", "content": DEFAULT_CHAT_SYSTEM_PROMPT}
+    assert seen["messages"][1] == {"role": "user", "content": "今天有什么机会？"}
 
 
 def test_chat_agent_executes_extension_tool_and_continues(tmp_path, monkeypatch):
