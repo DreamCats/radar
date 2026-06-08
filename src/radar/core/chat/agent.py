@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from typing import Any
 
 from radar.core.chat.builtin_extensions import RadarBuiltinExtension
-from radar.core.config import RadarConfig
 from radar.core.chat.extensions import ChatExtension, build_tool_registry
 from radar.core.chat.events import ChatEvent, ChatEventType, ChatMessage, new_id, now_iso
 from radar.core.chat.prompts import DEFAULT_CHAT_SYSTEM_PROMPT
 from radar.core.chat.store import ChatSessionStore
 from radar.core.chat.tools import ToolRegistry
-from radar.core.llm import LlmChatResponse, LlmToolCall, chat_response
+from radar.core.config import RadarConfig
+from radar.core.llm import LlmChatDone, LlmChatResponse, LlmReasoningDelta, LlmToolCall, chat_response, stream_chat_response
 
 
 @dataclass(frozen=True)
@@ -21,6 +22,14 @@ class ChatTurnResult:
     assistant_message: ChatMessage
     tool_messages: list[ChatMessage]
     events: list[ChatEvent]
+
+
+@dataclass(frozen=True)
+class ChatTurnStreamEvent:
+    type: str
+    message: ChatMessage | None = None
+    content: str | None = None
+    event: ChatEvent | None = None
 
 
 class ChatAgent:
@@ -59,6 +68,7 @@ class ChatAgent:
         session_id: str,
         content: str,
         *,
+        llm_content: str | None = None,
         system_prompt: str | None = None,
         provider_name: str | None = None,
         model: str | None = None,
@@ -93,6 +103,7 @@ class ChatAgent:
             for _round in range(max_tool_rounds + 1):
                 response = self._request_llm(
                     session_id,
+                    content_overrides={user_message.message_id: llm_content} if llm_content else None,
                     system_prompt=system_prompt,
                     provider_name=provider_name,
                     model=model,
@@ -156,10 +167,120 @@ class ChatAgent:
             events.append(failed)
             raise
 
+    def stream_turn(
+        self,
+        session_id: str,
+        content: str,
+        *,
+        llm_content: str | None = None,
+        system_prompt: str | None = None,
+        provider_name: str | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        max_tool_rounds: int = 4,
+    ) -> Iterator[ChatTurnStreamEvent]:
+        if not content.strip():
+            raise ValueError("用户输入不能为空")
+
+        user_message = ChatMessage(
+            message_id=new_id(),
+            role="user",
+            content=content,
+            created_at=now_iso(),
+        )
+        self.store.append_message(session_id, user_message)
+        yield ChatTurnStreamEvent(type="user_message", message=user_message)
+
+        turn_started = self._append_event(
+            session_id,
+            "turn_started",
+            {
+                "user_message_id": user_message.message_id,
+                "enabled_tools": [tool.name for tool in self.tools.list(read_only=True)],
+            },
+        )
+        yield ChatTurnStreamEvent(type="event", event=turn_started)
+
+        tool_messages: list[ChatMessage] = []
+        try:
+            for _round in range(max_tool_rounds + 1):
+                response: LlmChatResponse | None = None
+                for stream_event in self._request_llm_stream(
+                    session_id,
+                    content_overrides={user_message.message_id: llm_content} if llm_content else None,
+                    system_prompt=system_prompt,
+                    provider_name=provider_name,
+                    model=model,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                ):
+                    if isinstance(stream_event, LlmChatDone):
+                        response = stream_event.response
+                    elif isinstance(stream_event, LlmReasoningDelta):
+                        yield ChatTurnStreamEvent(type="assistant_reasoning_delta", content=stream_event.content)
+                    elif stream_event.content:
+                        yield ChatTurnStreamEvent(type="assistant_delta", content=stream_event.content)
+                if response is None:
+                    response = LlmChatResponse(content="", tool_calls=[])
+
+                assistant_message = self._append_assistant_message(session_id, response)
+                yield ChatTurnStreamEvent(type="assistant_message", message=assistant_message)
+                if not response.tool_calls:
+                    completed = self._append_event(
+                        session_id,
+                        "turn_completed",
+                        {
+                            "user_message_id": user_message.message_id,
+                            "assistant_message_id": assistant_message.message_id,
+                            "tool_count": len(tool_messages),
+                        },
+                    )
+                    yield ChatTurnStreamEvent(type="event", event=completed)
+                    return
+
+                for tool_call in response.tool_calls:
+                    started = self._append_event(
+                        session_id,
+                        "tool_execution_started",
+                        {
+                            "tool_call_id": tool_call.call_id,
+                            "tool_name": tool_call.name,
+                        },
+                    )
+                    yield ChatTurnStreamEvent(type="event", event=started)
+                    tool_message = self._execute_tool_call(session_id, tool_call)
+                    tool_messages.append(tool_message)
+                    yield ChatTurnStreamEvent(type="tool_message", message=tool_message)
+                    completed = self._append_event(
+                        session_id,
+                        "tool_execution_completed",
+                        {
+                            "tool_call_id": tool_call.call_id,
+                            "tool_name": tool_call.name,
+                            "tool_message_id": tool_message.message_id,
+                            "is_error": bool(tool_message.metadata.get("is_error")),
+                        },
+                    )
+                    yield ChatTurnStreamEvent(type="event", event=completed)
+            raise RuntimeError(f"工具调用超过最大轮数: {max_tool_rounds}")
+        except Exception as error:
+            failed = self._append_event(
+                session_id,
+                "turn_failed",
+                {
+                    "user_message_id": user_message.message_id,
+                    "error": str(error)[:1000],
+                },
+            )
+            yield ChatTurnStreamEvent(type="event", event=failed)
+            raise
+
     def _request_llm(
         self,
         session_id: str,
         *,
+        content_overrides: dict[str, str] | None = None,
         system_prompt: str | None,
         provider_name: str | None,
         model: str | None,
@@ -168,13 +289,37 @@ class ChatAgent:
     ) -> LlmChatResponse:
         return chat_response(
             self.config,
-            self._build_llm_messages(session_id, system_prompt),
+            self._build_llm_messages(session_id, system_prompt, content_overrides=content_overrides),
             provider_name=provider_name,
             task="chat",
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
             tools=self.tools.to_llm_specs(read_only=True),
+            enable_thinking=True,
+        )
+
+    def _request_llm_stream(
+        self,
+        session_id: str,
+        *,
+        content_overrides: dict[str, str] | None = None,
+        system_prompt: str | None,
+        provider_name: str | None,
+        model: str | None,
+        temperature: float | None,
+        max_tokens: int | None,
+    ):
+        yield from stream_chat_response(
+            self.config,
+            self._build_llm_messages(session_id, system_prompt, content_overrides=content_overrides),
+            provider_name=provider_name,
+            task="chat",
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            tools=self.tools.to_llm_specs(read_only=True),
+            enable_thinking=True,
         )
 
     def _append_assistant_message(self, session_id: str, response: LlmChatResponse) -> ChatMessage:
@@ -218,15 +363,22 @@ class ChatAgent:
         self.store.append_message(session_id, tool_message)
         return tool_message
 
-    def _build_llm_messages(self, session_id: str, system_prompt: str | None) -> list[dict[str, str]]:
+    def _build_llm_messages(
+        self,
+        session_id: str,
+        system_prompt: str | None,
+        *,
+        content_overrides: dict[str, str] | None = None,
+    ) -> list[dict[str, str]]:
         messages: list[dict[str, str]] = []
         resolved_system_prompt = system_prompt or DEFAULT_CHAT_SYSTEM_PROMPT
         if resolved_system_prompt:
             messages.append({"role": "system", "content": resolved_system_prompt})
         for message in self.store.load_messages(session_id):
             if message.role in {"system", "user", "assistant"}:
-                if message.content:
-                    messages.append({"role": message.role, "content": message.content})
+                content = content_overrides.get(message.message_id, message.content) if content_overrides else message.content
+                if content:
+                    messages.append({"role": message.role, "content": content})
             elif message.role == "tool":
                 tool_name = message.metadata.get("tool_name", "unknown")
                 messages.append({"role": "user", "content": f"工具 {tool_name} 返回：{message.content}"})

@@ -4,6 +4,7 @@ import { App } from "./App";
 import "./styles.css";
 import "./motion.css";
 import "./chat.css";
+import "./chat-markdown.css";
 import "./dashboard.css";
 import "./ingest.css";
 import "./job-center.css";

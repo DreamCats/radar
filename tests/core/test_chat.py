@@ -13,7 +13,7 @@ from radar.core.chat import (
 )
 from radar.core.chat.events import new_id, now_iso
 from radar.core.config import RadarConfig
-from radar.core.llm import LlmChatResponse, LlmToolCall
+from radar.core.llm import LlmChatDelta, LlmChatDone, LlmChatResponse, LlmReasoningDelta, LlmToolCall
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db, upsert_messages
 
@@ -35,6 +35,15 @@ def test_chat_session_store_appends_events_and_messages(tmp_path):
     assert messages[0].content == "你好"
     assert [event.type for event in events] == ["session_created", "message_appended"]
     assert (tmp_path / "chat" / "sessions" / session.session_id / "events.jsonl").exists()
+
+
+def test_chat_session_store_lists_sessions(tmp_path):
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session(title="测试对话")
+
+    sessions = store.list_sessions()
+
+    assert [item.session_id for item in sessions] == [session.session_id]
 
 
 def test_chat_session_store_reads_unicode_line_separator(tmp_path):
@@ -85,6 +94,25 @@ def test_chat_agent_passes_file_backed_context_to_llm(tmp_path, monkeypatch):
     assert seen["kwargs"]["tools"]
 
 
+def test_chat_agent_can_send_context_to_llm_without_persisting_it(tmp_path, monkeypatch):
+    config = RadarConfig()
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+    seen = {}
+
+    def fake_chat_response(config, messages, **kwargs):
+        seen["messages"] = messages
+        return LlmChatResponse(content="收到", tool_calls=[])
+
+    monkeypatch.setattr("radar.core.chat.agent.chat_response", fake_chat_response)
+
+    ChatAgent(config, store=store).run_turn(session.session_id, "你好", llm_content="你好\n\n页面上下文：\n{}")
+
+    messages = store.load_messages(session.session_id)
+    assert messages[0].content == "你好"
+    assert seen["messages"][1] == {"role": "user", "content": "你好\n\n页面上下文：\n{}"}
+
+
 def test_chat_agent_uses_default_system_prompt(tmp_path, monkeypatch):
     config = RadarConfig()
     store = ChatSessionStore(tmp_path / "chat")
@@ -101,6 +129,37 @@ def test_chat_agent_uses_default_system_prompt(tmp_path, monkeypatch):
 
     assert seen["messages"][0] == {"role": "system", "content": DEFAULT_CHAT_SYSTEM_PROMPT}
     assert seen["messages"][1] == {"role": "user", "content": "今天有什么机会？"}
+
+
+def test_chat_agent_streams_and_persists_final_message(tmp_path, monkeypatch):
+    config = RadarConfig()
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+
+    def fake_stream_chat_response(config, messages, **kwargs):
+        assert kwargs["enable_thinking"] is True
+        assert messages[1] == {"role": "user", "content": "这个信号怎么看？\n\n页面上下文：\n{}"}
+        yield LlmReasoningDelta(content="需要先看上下文。")
+        yield LlmChatDelta(content="先")
+        yield LlmChatDelta(content="看")
+        yield LlmChatDone(response=LlmChatResponse(content="先看", tool_calls=[]))
+
+    monkeypatch.setattr("radar.core.chat.agent.stream_chat_response", fake_stream_chat_response)
+
+    events = list(
+        ChatAgent(config, store=store).stream_turn(
+            session.session_id,
+            "这个信号怎么看？",
+            llm_content="这个信号怎么看？\n\n页面上下文：\n{}",
+        )
+    )
+    messages = store.load_messages(session.session_id)
+
+    assert [event.content for event in events if event.type == "assistant_reasoning_delta"] == ["需要先看上下文。"]
+    assert [event.content for event in events if event.type == "assistant_delta"] == ["先", "看"]
+    assert [message.role for message in messages] == ["user", "assistant"]
+    assert messages[0].content == "这个信号怎么看？"
+    assert messages[-1].content == "先看"
 
 
 def test_chat_agent_executes_extension_tool_and_continues(tmp_path, monkeypatch):

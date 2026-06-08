@@ -2,8 +2,12 @@
 
 from radar.core.llm.client import (
     ChatMessage,
+    LlmChatDelta,
+    LlmChatDone,
     LlmChatResponse,
+    LlmChatStreamEvent,
     LlmConfigError,
+    LlmReasoningDelta,
     LlmToolCall,
     LlmToolSpec,
     RuntimeLlmProvider,
@@ -12,12 +16,17 @@ from radar.core.llm.client import (
     chat_json_list,
     chat_response,
     resolve_provider,
+    stream_chat_response,
 )
 
 __all__ = [
     "ChatMessage",
+    "LlmChatDelta",
+    "LlmChatDone",
     "LlmChatResponse",
+    "LlmChatStreamEvent",
     "LlmConfigError",
+    "LlmReasoningDelta",
     "LlmToolCall",
     "LlmToolSpec",
     "RuntimeLlmProvider",
@@ -26,4 +35,5 @@ __all__ = [
     "chat_json_list",
     "chat_response",
     "resolve_provider",
+    "stream_chat_response",
 ]

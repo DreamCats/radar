@@ -58,10 +58,11 @@ class ChatSessionStore:
         return ChatSession.model_validate_json(path.read_text(encoding="utf-8"))
 
     def list_sessions(self) -> list[ChatSession]:
-        if not self.root.exists():
+        sessions_dir = self.root / "sessions"
+        if not sessions_dir.exists():
             return []
         sessions: list[ChatSession] = []
-        for path in sorted(self.root.iterdir(), reverse=True):
+        for path in sorted(sessions_dir.iterdir(), reverse=True):
             session_file = path / "session.json"
             if session_file.exists():
                 sessions.append(ChatSession.model_validate_json(session_file.read_text(encoding="utf-8")))

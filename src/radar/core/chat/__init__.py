@@ -1,6 +1,6 @@
 """File-backed AI chat primitives used by CLI and future Web surfaces."""
 
-from radar.core.chat.agent import ChatAgent, ChatTurnResult
+from radar.core.chat.agent import ChatAgent, ChatTurnResult, ChatTurnStreamEvent
 from radar.core.chat.builtin_extensions import RadarBuiltinExtension
 from radar.core.chat.events import ChatEvent, ChatEventType, ChatMessage, ChatRole, ChatSession
 from radar.core.chat.extensions import ChatExtension, ExtensionContext, build_tool_registry
@@ -21,6 +21,7 @@ __all__ = [
     "ChatSessionStore",
     "ChatTool",
     "ChatTurnResult",
+    "ChatTurnStreamEvent",
     "ExtensionContext",
     "ToolRegistry",
     "build_tool_registry",

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -28,6 +28,24 @@ class LlmToolCall:
 class LlmChatResponse:
     content: str
     tool_calls: list[LlmToolCall]
+
+
+@dataclass(frozen=True)
+class LlmChatDelta:
+    content: str
+
+
+@dataclass(frozen=True)
+class LlmReasoningDelta:
+    content: str
+
+
+@dataclass(frozen=True)
+class LlmChatDone:
+    response: LlmChatResponse
+
+
+LlmChatStreamEvent = LlmChatDelta | LlmReasoningDelta | LlmChatDone
 
 
 class LlmConfigError(RuntimeError):
@@ -58,6 +76,21 @@ ChatResponseImpl = Callable[
         list[LlmToolSpec] | None,
     ],
     LlmChatResponse,
+]
+
+
+ChatStreamResponseImpl = Callable[
+    [
+        RuntimeLlmProvider,
+        list[ChatMessage],
+        str | None,
+        float | None,
+        int | None,
+        bool,
+        list[LlmToolSpec] | None,
+        bool,
+    ],
+    Iterator[LlmChatStreamEvent],
 ]
 
 
@@ -137,11 +170,43 @@ def chat_response(
     max_tokens: int | None = None,
     disable_thinking: bool = False,
     tools: list[LlmToolSpec] | None = None,
+    enable_thinking: bool = False,
 ) -> LlmChatResponse:
     """发送 LLM 聊天请求，返回文本和模型请求的 tool calls。"""
 
     _, provider = resolve_provider(config, provider_name=provider_name, task=task)
-    return _chat_response_impl(provider)(
+    impl = _chat_response_impl(provider)
+    if enable_thinking:
+        return impl(
+            provider,
+            messages,
+            model,
+            temperature,
+            max_tokens,
+            disable_thinking,
+            tools,
+            enable_thinking=True,
+        )
+    return impl(provider, messages, model, temperature, max_tokens, disable_thinking, tools)
+
+
+def stream_chat_response(
+    config: RadarConfig,
+    messages: list[ChatMessage],
+    *,
+    provider_name: str | None = None,
+    task: str | None = None,
+    model: str | None = None,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    disable_thinking: bool = False,
+    tools: list[LlmToolSpec] | None = None,
+    enable_thinking: bool = False,
+) -> Iterator[LlmChatStreamEvent]:
+    """流式发送 LLM 聊天请求；最终以 LlmChatDone 返回完整响应。"""
+
+    _, provider = resolve_provider(config, provider_name=provider_name, task=task)
+    yield from _chat_stream_response_impl(provider)(
         provider,
         messages,
         model,
@@ -149,6 +214,7 @@ def chat_response(
         max_tokens,
         disable_thinking,
         tools,
+        enable_thinking,
     )
 
 
@@ -226,6 +292,16 @@ def _chat_response_impl(provider: RuntimeLlmProvider) -> ChatResponseImpl:
     from radar.core.llm.openai_client import chat_openai_response
 
     return chat_openai_response
+
+
+def _chat_stream_response_impl(provider: RuntimeLlmProvider) -> ChatStreamResponseImpl:
+    if provider.protocol == "anthropic":
+        from radar.core.llm.anthropic_client import stream_chat_anthropic_response
+
+        return stream_chat_anthropic_response
+    from radar.core.llm.openai_client import stream_chat_openai_response
+
+    return stream_chat_openai_response
 
 
 def _strip_json_fence(raw: str) -> str:

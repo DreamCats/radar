@@ -322,6 +322,25 @@ class ChatMessageResponse(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class ChatSessionResponse(BaseModel):
+    session_id: str
+    created_at: str
+    updated_at: str
+    title: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    message_count: int = 0
+    preview: str = ""
+
+
+class ChatSessionListResponse(BaseModel):
+    items: list[ChatSessionResponse]
+
+
+class ChatSessionDetailResponse(BaseModel):
+    session: ChatSessionResponse
+    messages: list[ChatMessageResponse]
+
+
 class ChatTurnResponse(BaseModel):
     session_id: str
     user_message: ChatMessageResponse

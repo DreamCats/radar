@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 import httpx
@@ -8,7 +9,7 @@ import httpx
 if TYPE_CHECKING:
     from radar.core.llm.client import ChatMessage, LlmToolSpec, RuntimeLlmProvider
 
-from radar.core.llm.client import LlmChatResponse, LlmToolCall
+from radar.core.llm.client import LlmChatDelta, LlmChatDone, LlmChatResponse, LlmChatStreamEvent, LlmReasoningDelta, LlmToolCall
 
 
 def chat_openai(
@@ -39,10 +40,11 @@ def chat_openai_response(
     max_tokens: int | None = None,
     disable_thinking: bool = False,
     tools: list["LlmToolSpec"] | None = None,
+    enable_thinking: bool = False,
 ) -> LlmChatResponse:
     """OpenAI Chat Completions 响应，包含文本和 tool calls。"""
 
-    _ = disable_thinking
+    _ = disable_thinking, enable_thinking
     payload = _payload(provider, messages, model, temperature, max_tokens, tools)
 
     with httpx.Client(timeout=provider.timeout) as client:
@@ -62,6 +64,58 @@ def chat_openai_response(
     return LlmChatResponse(
         content=content if isinstance(content, str) else "",
         tool_calls=_parse_tool_calls(message),
+    )
+
+
+def stream_chat_openai_response(
+    provider: "RuntimeLlmProvider",
+    messages: list["ChatMessage"],
+    model: str | None = None,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    disable_thinking: bool = False,
+    tools: list["LlmToolSpec"] | None = None,
+    enable_thinking: bool = False,
+) -> Iterator[LlmChatStreamEvent]:
+    """OpenAI Chat Completions SSE，边返回文本边聚合最终 tool calls。"""
+
+    _ = disable_thinking, enable_thinking
+    payload = _payload(provider, messages, model, temperature, max_tokens, tools)
+    payload["stream"] = True
+    content_parts: list[str] = []
+    tool_call_parts: dict[int, dict[str, str]] = {}
+
+    with httpx.Client(timeout=provider.timeout) as client:
+        with client.stream(
+            "POST",
+            _chat_completions_url(provider.base_url),
+            headers={**_headers(provider), "Accept": "text/event-stream"},
+            json=payload,
+        ) as response:
+            response.raise_for_status()
+            for line in response.iter_lines():
+                chunk = _parse_stream_line(line)
+                if chunk is None:
+                    continue
+                if chunk == "[DONE]":
+                    break
+                delta = _first_delta(chunk)
+                if delta is None:
+                    continue
+                reasoning = delta.get("reasoning_content") or delta.get("reasoning")
+                if isinstance(reasoning, str) and reasoning:
+                    yield LlmReasoningDelta(content=reasoning)
+                content = delta.get("content")
+                if isinstance(content, str) and content:
+                    content_parts.append(content)
+                    yield LlmChatDelta(content=content)
+                _collect_tool_call_deltas(tool_call_parts, delta)
+
+    yield LlmChatDone(
+        LlmChatResponse(
+            content="".join(content_parts),
+            tool_calls=_parse_stream_tool_calls(tool_call_parts),
+        )
     )
 
 
@@ -93,6 +147,74 @@ def _payload(
             for tool in tools
         ]
     return payload
+
+
+def _parse_stream_line(line: str) -> object | None:
+    text = line.strip()
+    if not text or text.startswith(":"):
+        return None
+    if not text.startswith("data:"):
+        return None
+    data = text.removeprefix("data:").strip()
+    if data == "[DONE]":
+        return data
+    try:
+        return json.loads(data)
+    except json.JSONDecodeError:
+        return None
+
+
+def _first_delta(data: object) -> dict | None:
+    choices = data.get("choices") if isinstance(data, dict) else None
+    if not choices or not isinstance(choices, list):
+        return None
+    first = choices[0]
+    if not isinstance(first, dict):
+        return None
+    delta = first.get("delta")
+    return delta if isinstance(delta, dict) else None
+
+
+def _collect_tool_call_deltas(tool_call_parts: dict[int, dict[str, str]], delta: dict) -> None:
+    raw_calls = delta.get("tool_calls")
+    if not isinstance(raw_calls, list):
+        return
+    for raw_call in raw_calls:
+        if not isinstance(raw_call, dict):
+            continue
+        index = raw_call.get("index")
+        if not isinstance(index, int):
+            index = len(tool_call_parts)
+        part = tool_call_parts.setdefault(index, {"id": "", "name": "", "arguments": ""})
+        call_id = raw_call.get("id")
+        if isinstance(call_id, str) and call_id:
+            part["id"] = call_id
+        function = raw_call.get("function")
+        if not isinstance(function, dict):
+            continue
+        name = function.get("name")
+        if isinstance(name, str) and name:
+            part["name"] += name
+        arguments = function.get("arguments")
+        if isinstance(arguments, str):
+            part["arguments"] += arguments
+
+
+def _parse_stream_tool_calls(tool_call_parts: dict[int, dict[str, str]]) -> list[LlmToolCall]:
+    calls: list[LlmToolCall] = []
+    for index in sorted(tool_call_parts):
+        part = tool_call_parts[index]
+        name = part.get("name", "")
+        if not name:
+            continue
+        calls.append(
+            LlmToolCall(
+                call_id=part.get("id") or name,
+                name=name,
+                arguments=_parse_arguments(part.get("arguments", "")),
+            )
+        )
+    return calls
 
 
 def _first_message(data: object) -> dict | None:

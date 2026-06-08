@@ -4,6 +4,10 @@ import type {
   AggregateRefineRequest,
   AggregateRefineResult,
   AnchorRequest,
+  ChatMessageItem,
+  ChatSessionDetail,
+  ChatSessionList,
+  ChatStreamEvent,
   ChatTurnRequest,
   ChatTurnResponse,
   DashboardSummary,
@@ -81,6 +85,92 @@ export async function sendChatTurn(request: ChatTurnRequest): Promise<ChatTurnRe
     throw new Error(await errorText(response));
   }
   return (await response.json()) as ChatTurnResponse;
+}
+
+export async function fetchChatSessions(limit = 50): Promise<ChatSessionList> {
+  return getJson(`/api/chat/sessions?${params({ limit })}`);
+}
+
+export async function fetchChatSession(sessionId: string): Promise<ChatSessionDetail> {
+  return getJson(`/api/chat/sessions/${encodeURIComponent(sessionId)}`);
+}
+
+export async function streamChatTurn(
+  request: ChatTurnRequest,
+  onEvent: (event: ChatStreamEvent) => void,
+  options: { signal?: AbortSignal } = {},
+): Promise<void> {
+  const response = await fetch(`${apiBase}/api/chat/turn/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+    signal: options.signal,
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  if (!response.body) {
+    throw new Error("浏览器不支持流式响应");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+    const events = buffer.split("\n\n");
+    buffer = events.pop() ?? "";
+    for (const rawEvent of events) {
+      const event = parseChatStreamEvent(rawEvent);
+      if (event.type === "error") {
+        throw new Error(event.message);
+      }
+      onEvent(event);
+    }
+    if (done) {
+      break;
+    }
+  }
+  if (buffer.trim()) {
+    const event = parseChatStreamEvent(buffer);
+    if (event.type === "error") {
+      throw new Error(event.message);
+    }
+    onEvent(event);
+  }
+}
+
+function parseChatStreamEvent(rawEvent: string): ChatStreamEvent {
+  const eventName = rawEvent
+    .split("\n")
+    .find((line) => line.startsWith("event:"))
+    ?.slice("event:".length)
+    .trim();
+  const dataText = rawEvent
+    .split("\n")
+    .filter((line) => line.startsWith("data:"))
+    .map((line) => line.slice("data:".length).trimStart())
+    .join("\n");
+  const data = dataText ? (JSON.parse(dataText) as Record<string, unknown>) : {};
+  switch (eventName) {
+    case "session":
+      return { type: "session", session_id: String(data.session_id ?? "") };
+    case "user_message":
+    case "assistant_message":
+    case "tool_message":
+      return { type: eventName, message: data.message as ChatMessageItem };
+    case "assistant_delta":
+      return { type: "assistant_delta", content: String(data.content ?? "") };
+    case "assistant_reasoning_delta":
+      return { type: "assistant_reasoning_delta", content: String(data.content ?? "") };
+    case "agent_event":
+      return { type: "agent_event", event: (data.event as Record<string, unknown>) ?? {} };
+    case "error":
+      return { type: "error", message: String(data.message ?? "发送失败"), status_code: Number(data.status_code) || undefined };
+    default:
+      return { type: "agent_event", event: data };
+  }
 }
 
 export async function fetchOrganizeClassifications(

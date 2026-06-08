@@ -118,9 +118,10 @@ def test_chat_turn_endpoint_creates_session_with_context(tmp_path, monkeypatch):
             captured["metadata"] = metadata
             return SimpleNamespace(session_id="session-1")
 
-        def run_turn(self, session_id, content):
+        def run_turn(self, session_id, content, **kwargs):
             captured["session_id"] = session_id
             captured["content"] = content
+            captured["llm_content"] = kwargs.get("llm_content")
             return SimpleNamespace(
                 session_id=session_id,
                 user_message=ChatMessage(
@@ -157,8 +158,146 @@ def test_chat_turn_endpoint_creates_session_with_context(tmp_path, monkeypatch):
     assert captured["title"] == "PCB"
     assert captured["metadata"] == {"surface": "源头雷达"}
     assert captured["session_id"] == "session-1"
-    assert "这个信号怎么看？" in str(captured["content"])
-    assert '"surface":"源头雷达"' in str(captured["content"])
+    assert captured["content"] == "这个信号怎么看？"
+    assert "这个信号怎么看？" in str(captured["llm_content"])
+    assert '"surface":"源头雷达"' in str(captured["llm_content"])
+
+
+def test_chat_turn_stream_endpoint_returns_sse(tmp_path, monkeypatch):
+    from radar.core.chat.events import ChatMessage
+
+    captured: dict[str, object] = {}
+
+    class FakeChatAgent:
+        def __init__(self, config):
+            self.config = config
+
+        def create_session(self, *, title=None, metadata=None):
+            captured["title"] = title
+            captured["metadata"] = metadata
+            return SimpleNamespace(session_id="session-stream-1")
+
+        def stream_turn(self, session_id, content, **kwargs):
+            captured["session_id"] = session_id
+            captured["content"] = content
+            captured["llm_content"] = kwargs.get("llm_content")
+            yield SimpleNamespace(
+                type="user_message",
+                message=ChatMessage(
+                    message_id="user-1",
+                    role="user",
+                    content=content,
+                    created_at="2026-06-08T10:00:00",
+                ),
+                content=None,
+                event=None,
+            )
+            yield SimpleNamespace(type="assistant_delta", message=None, content="先看", event=None)
+            yield SimpleNamespace(
+                type="assistant_message",
+                message=ChatMessage(
+                    message_id="assistant-1",
+                    role="assistant",
+                    content="先看来源质量。",
+                    created_at="2026-06-08T10:00:01",
+                ),
+                content=None,
+                event=None,
+            )
+
+    monkeypatch.setattr("radar.web.server.routers.chat.ChatAgent", FakeChatAgent)
+    client = TestClient(create_app(_config(tmp_path)))
+    response = client.post(
+        "/api/chat/turn/stream",
+        json={
+            "title": "PCB",
+            "content": "这个信号怎么看？",
+            "context": {"surface": "源头雷达", "entity_id": "sig-1"},
+            "metadata": {"surface": "源头雷达"},
+        },
+    )
+
+    assert response.status_code == 200
+    assert "event: session" in response.text
+    assert "event: assistant_delta" in response.text
+    assert '"content":"先看"' in response.text
+    assert captured["session_id"] == "session-stream-1"
+    assert captured["content"] == "这个信号怎么看？"
+    assert '"surface":"源头雷达"' in str(captured["llm_content"])
+
+
+def test_chat_sessions_endpoint_lists_file_backed_sessions(tmp_path):
+    from radar.core.chat import ChatMessage, ChatSessionStore
+    from radar.core.chat.events import new_id
+
+    config = _config(tmp_path)
+    store = ChatSessionStore.from_config(config)
+    session = store.create_session(title="总览简报", metadata={"surface": "总览"})
+    store.append_message(
+        session.session_id,
+        ChatMessage(
+            message_id=new_id(),
+            role="user",
+            content="今天有什么机会？",
+            created_at="2026-06-08T10:00:00",
+        ),
+    )
+    store.append_message(
+        session.session_id,
+        ChatMessage(
+            message_id=new_id(),
+            role="assistant",
+            content="先看半导体和 MLCC。",
+            created_at="2026-06-08T10:00:01",
+        ),
+    )
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/chat/sessions")
+
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["session_id"] == session.session_id
+    assert item["title"] == "总览简报"
+    assert item["metadata"] == {"surface": "总览"}
+    assert item["message_count"] == 2
+    assert item["preview"] == "先看半导体和 MLCC。"
+
+
+def test_chat_session_detail_endpoint_restores_messages(tmp_path):
+    from radar.core.chat import ChatMessage, ChatSessionStore
+    from radar.core.chat.events import new_id
+
+    config = _config(tmp_path)
+    store = ChatSessionStore.from_config(config)
+    session = store.create_session(title="策略机会")
+    store.append_message(
+        session.session_id,
+        ChatMessage(
+            message_id=new_id(),
+            role="user",
+            content='查风华高科\n\n页面上下文：\n{"surface":"策略"}',
+            created_at="2026-06-08T10:00:00",
+        ),
+    )
+    store.append_message(
+        session.session_id,
+        ChatMessage(
+            message_id=new_id(),
+            role="tool",
+            content='{"summary":"工具结果"}',
+            created_at="2026-06-08T10:00:01",
+        ),
+    )
+
+    client = TestClient(create_app(config))
+    response = client.get(f"/api/chat/sessions/{session.session_id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["session"]["session_id"] == session.session_id
+    assert data["session"]["preview"] == "查风华高科"
+    assert [message["content"] for message in data["messages"]] == ["查风华高科"]
 
 
 def test_organize_classifications_endpoint_returns_clusters(tmp_path):

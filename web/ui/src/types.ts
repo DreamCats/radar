@@ -130,6 +130,35 @@ export type ChatTurnResponse = {
   tool_messages: ChatMessageItem[];
 };
 
+export type ChatSessionItem = {
+  session_id: string;
+  created_at: string;
+  updated_at: string;
+  title?: string | null;
+  metadata: Record<string, unknown>;
+  message_count: number;
+  preview: string;
+};
+
+export type ChatSessionList = {
+  items: ChatSessionItem[];
+};
+
+export type ChatSessionDetail = {
+  session: ChatSessionItem;
+  messages: ChatMessageItem[];
+};
+
+export type ChatStreamEvent =
+  | { type: "session"; session_id: string }
+  | { type: "user_message"; message: ChatMessageItem }
+  | { type: "assistant_reasoning_delta"; content: string }
+  | { type: "assistant_delta"; content: string }
+  | { type: "assistant_message"; message: ChatMessageItem }
+  | { type: "tool_message"; message: ChatMessageItem }
+  | { type: "agent_event"; event: Record<string, unknown> }
+  | { type: "error"; message: string; status_code?: number };
+
 export type MessageQuery = {
   source?: string;
   group_name?: string;
