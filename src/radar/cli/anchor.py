@@ -5,6 +5,7 @@ from typing import cast
 import click
 
 from radar.cli.context import load_cli_config, parse_datetime
+from radar.core.market_anchors import ensure_market_anchors
 from radar.core.models import MessageCategory, MessageSource
 from radar.core.usecases import AnchorRangeResult, anchor_messages_range
 from radar.core.usecases.anchoring import DEFAULT_ANCHOR_CATEGORIES
@@ -67,9 +68,14 @@ def anchor_messages_command(
     if end_time <= start_time:
         raise click.ClickException("--end 必须晚于 --start")
 
+    config = load_cli_config(ctx)
+    anchors = ensure_market_anchors(config, trade_date=trade_date, min_anchor_count=100)
+    if anchors.trade_date != trade_date:
+        click.echo(f"market/anchors: {anchors.skipped_reason or f'使用 {anchors.trade_date} 的 anchor 词库'}")
+
     result = anchor_messages_range(
-        load_cli_config(ctx),
-        trade_date=trade_date,
+        config,
+        trade_date=anchors.trade_date,
         source=_SOURCE_MAP[source_key],
         categories=[cast(MessageCategory, item) for item in categories] or DEFAULT_ANCHOR_CATEGORIES,
         min_classification_confidence=min_classification_confidence,

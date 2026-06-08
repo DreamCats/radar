@@ -87,6 +87,93 @@ def test_ensure_market_anchors_skips_existing_dictionary(tmp_path: Path):
     assert calls == 0
 
 
+def test_ensure_market_anchors_uses_previous_open_trade_date(tmp_path: Path):
+    config = _config(tmp_path)
+    refresh_market_anchors(config, trade_date="20260605", tushare_call=lambda *_: _rows("dc_concept"))
+
+    calls: list[str] = []
+
+    def fake_call(config, api_name, params, fields):
+        calls.append(api_name)
+        if api_name == "trade_cal":
+            return [
+                {"cal_date": "20260605", "is_open": 1},
+                {"cal_date": "20260606", "is_open": 0},
+            ]
+        raise AssertionError("不应刷新非交易日词库")
+
+    result = ensure_market_anchors(
+        config,
+        trade_date="20260606",
+        min_anchor_count=1,
+        tushare_call=fake_call,
+    )
+
+    assert result.trade_date == "20260605"
+    assert result.requested_trade_date == "20260606"
+    assert result.refreshed is False
+    assert result.anchor_count == 1
+    assert result.skipped_reason == "20260606 非交易日，使用最近交易日 20260605 的 anchor 词库"
+    assert calls == ["trade_cal"]
+
+
+def test_ensure_market_anchors_keeps_open_trade_date(tmp_path: Path):
+    config = _config(tmp_path)
+    calls: list[str] = []
+
+    def fake_call(config, api_name, params, fields):
+        calls.append(api_name)
+        if api_name == "trade_cal":
+            return [{"cal_date": "20260608", "is_open": 1}]
+        return _rows(api_name)
+
+    result = ensure_market_anchors(
+        config,
+        trade_date="20260608",
+        min_anchor_count=1,
+        tushare_call=fake_call,
+    )
+
+    assert result.trade_date == "20260608"
+    assert result.requested_trade_date == "20260608"
+    assert result.refreshed is True
+    assert result.anchor_count == 7
+    assert calls == [
+        "trade_cal",
+        "dc_concept",
+        "dc_concept_cons",
+        "kpl_list",
+        "kpl_concept_cons",
+        "tdx_index",
+    ]
+
+
+def test_ensure_market_anchors_falls_back_when_open_date_has_empty_dictionary(tmp_path: Path):
+    config = _config(tmp_path)
+    refresh_market_anchors(config, trade_date="20260605", tushare_call=lambda *_: _rows("dc_concept"))
+
+    def fake_call(config, api_name, params, fields):
+        if api_name == "trade_cal":
+            return [
+                {"cal_date": "20260605", "is_open": 1},
+                {"cal_date": "20260608", "is_open": 1},
+            ]
+        return []
+
+    result = ensure_market_anchors(
+        config,
+        trade_date="20260608",
+        min_anchor_count=1,
+        tushare_call=fake_call,
+    )
+
+    assert result.trade_date == "20260605"
+    assert result.requested_trade_date == "20260608"
+    assert result.refreshed is True
+    assert result.anchor_count == 1
+    assert result.skipped_reason == "20260608 anchor 词库不足，使用最近已有交易日 20260605 的 anchor 词库"
+
+
 def test_refresh_market_anchors_preserves_failed_source_rows(tmp_path: Path):
     config = _config(tmp_path)
     refresh_market_anchors(config, trade_date="20260604", tushare_call=lambda _config, api, _params, _fields: _rows(api))

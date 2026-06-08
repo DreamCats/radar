@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Callable, Literal
 
 from pydantic import BaseModel, Field
@@ -50,6 +50,7 @@ class RefreshMarketAnchorsResult(BaseModel):
 
 
 class EnsureMarketAnchorsResult(RefreshMarketAnchorsResult):
+    requested_trade_date: str | None = None
     refreshed: bool = False
     skipped_reason: str | None = None
 
@@ -73,10 +74,31 @@ def ensure_market_anchors(
     if not force and existing_anchor_count >= min_anchor_count:
         return EnsureMarketAnchorsResult(
             trade_date=trade_date,
+            requested_trade_date=trade_date,
             anchor_count=existing_anchor_count,
             member_count=existing_member_count,
             refreshed=False,
             skipped_reason="anchor 词库已存在",
+        )
+
+    requested_trade_date = trade_date
+    trade_date = resolve_market_anchor_trade_date(
+        config,
+        trade_date=requested_trade_date,
+        tushare_call=tushare_call,
+    )
+    existing_anchor_count, existing_member_count = _stored_counts(config, trade_date)
+    if not force and existing_anchor_count >= min_anchor_count:
+        skipped_reason = "anchor 词库已存在"
+        if trade_date != requested_trade_date:
+            skipped_reason = f"{requested_trade_date} 非交易日，使用最近交易日 {trade_date} 的 anchor 词库"
+        return EnsureMarketAnchorsResult(
+            trade_date=trade_date,
+            requested_trade_date=requested_trade_date,
+            anchor_count=existing_anchor_count,
+            member_count=existing_member_count,
+            refreshed=False,
+            skipped_reason=skipped_reason,
         )
 
     refreshed = refresh_market_anchors(
@@ -86,14 +108,85 @@ def ensure_market_anchors(
         tushare_call=tushare_call,
     )
     anchor_count, member_count = _stored_counts(config, trade_date)
+    if anchor_count < min_anchor_count:
+        fallback_trade_date = _latest_stored_anchor_trade_date(
+            config,
+            before_trade_date=trade_date,
+            min_anchor_count=min_anchor_count,
+        )
+        if fallback_trade_date is not None:
+            fallback_anchor_count, fallback_member_count = _stored_counts(config, fallback_trade_date)
+            return EnsureMarketAnchorsResult(
+                trade_date=fallback_trade_date,
+                requested_trade_date=requested_trade_date,
+                anchor_count=fallback_anchor_count,
+                member_count=fallback_member_count,
+                source_counts=refreshed.source_counts,
+                failed_sources=refreshed.failed_sources,
+                refreshed=True,
+                skipped_reason=f"{trade_date} anchor 词库不足，使用最近已有交易日 {fallback_trade_date} 的 anchor 词库",
+            )
     return EnsureMarketAnchorsResult(
         trade_date=trade_date,
+        requested_trade_date=requested_trade_date,
         anchor_count=anchor_count,
         member_count=member_count,
         source_counts=refreshed.source_counts,
         failed_sources=refreshed.failed_sources,
         refreshed=True,
     )
+
+
+def resolve_market_anchor_trade_date(
+    config: RadarConfig,
+    *,
+    trade_date: str,
+    tushare_call: TushareCallFn | None = None,
+    lookback_days: int = 45,
+) -> str:
+    """如果请求日期不是交易日，回退到它之前最近的交易日。"""
+
+    _validate_trade_date(trade_date)
+    if lookback_days < 1:
+        raise ValueError("lookback_days 必须大于 0")
+
+    requested = datetime.strptime(trade_date, "%Y%m%d").date()
+    start_date = requested - timedelta(days=lookback_days)
+    fetch = tushare_call or (
+        lambda cfg, api_name, params, fields: call_tushare(
+            cfg,
+            api_name,
+            params,
+            fields=fields,
+            use_cache=True,
+        )
+    )
+    rows = fetch(
+        config,
+        "trade_cal",
+        {
+            "exchange": "",
+            "start_date": start_date.strftime("%Y%m%d"),
+            "end_date": trade_date,
+        },
+        "cal_date,is_open",
+    )
+
+    open_dates: list[str] = []
+    requested_is_open = False
+    for row in rows:
+        cal_date = _text(row.get("cal_date"))
+        if not re.fullmatch(r"\d{8}", cal_date) or cal_date > trade_date:
+            continue
+        is_open = str(row.get("is_open")) in {"1", "1.0", "True", "true"}
+        if is_open:
+            open_dates.append(cal_date)
+        if cal_date == trade_date:
+            requested_is_open = is_open
+
+    if requested_is_open:
+        return trade_date
+    return max(open_dates) if open_dates else trade_date
 
 
 def refresh_market_anchors(
@@ -255,6 +348,28 @@ def _stored_counts(config: RadarConfig, trade_date: str) -> tuple[int, int]:
             (trade_date,),
         ).fetchone()[0]
     return int(anchor_count), int(member_count)
+
+
+def _latest_stored_anchor_trade_date(
+    config: RadarConfig,
+    *,
+    before_trade_date: str,
+    min_anchor_count: int,
+) -> str | None:
+    with _connect(config) as conn:
+        row = conn.execute(
+            """
+            SELECT trade_date
+            FROM market_anchors
+            WHERE trade_date < ?
+            GROUP BY trade_date
+            HAVING COUNT(*) >= ?
+            ORDER BY trade_date DESC
+            LIMIT 1
+            """,
+            (before_trade_date, min_anchor_count),
+        ).fetchone()
+    return str(row["trade_date"]) if row is not None else None
 
 
 def _connect(config: RadarConfig) -> sqlite3.Connection:

@@ -63,10 +63,22 @@ def mark_stale_aggregate_runs(config: RadarConfig) -> int:
 def _run_anchor_job(config: RadarConfig, request: AnchorMessagesRequest, run_id: str) -> None:
     try:
         update_run_progress(config.database_path, run_id, metadata={"stage": "准备 anchor 词库"})
-        ensure_market_anchors(config, trade_date=request.trade_date, min_anchor_count=100)
+        anchors = ensure_market_anchors(config, trade_date=request.trade_date, min_anchor_count=100)
+        anchor_trade_date = anchors.trade_date if anchors is not None else request.trade_date
+        update_run_progress(
+            config.database_path,
+            run_id,
+            metadata={
+                "stage": "准备 anchor 词库",
+                "requested_trade_date": request.trade_date,
+                "trade_date": anchor_trade_date,
+                "market_anchor_refreshed": anchors.refreshed if anchors is not None else None,
+                "dictionary_anchor_count": anchors.anchor_count if anchors is not None else None,
+            },
+        )
         anchor_messages_range(
             config,
-            trade_date=request.trade_date,
+            trade_date=anchor_trade_date,
             source=_SOURCE_MAP[request.source],
             categories=request.categories,
             min_classification_confidence=request.min_classification_confidence,

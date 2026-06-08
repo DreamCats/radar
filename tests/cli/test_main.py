@@ -273,6 +273,10 @@ def test_anchor_messages_command_invokes_core_usecase(monkeypatch, tmp_path):
             top_anchors={"算力": 2, "寒武纪": 1},
         )
 
+    monkeypatch.setattr(
+        "radar.cli.anchor.ensure_market_anchors",
+        lambda *args, **kwargs: EnsureMarketAnchorsResult(trade_date="20260604", anchor_count=100),
+    )
     monkeypatch.setattr("radar.cli.anchor.anchor_messages_range", fake_anchor)
 
     result = CliRunner().invoke(
@@ -356,6 +360,10 @@ def test_anchor_messages_command_defaults_to_investment_categories(monkeypatch, 
             end_time=end_time,
         )
 
+    monkeypatch.setattr(
+        "radar.cli.anchor.ensure_market_anchors",
+        lambda *args, **kwargs: EnsureMarketAnchorsResult(trade_date="20260604", anchor_count=100),
+    )
     monkeypatch.setattr("radar.cli.anchor.anchor_messages_range", fake_anchor)
 
     result = CliRunner().invoke(
