@@ -1,10 +1,11 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
-import { Blocks, Building2, CalendarDays, CircleUserRound, RefreshCw, Search, Trophy, UsersRound } from "lucide-react";
+import { Blocks, Building2, CalendarDays, ChartCandlestick, CircleUserRound, RefreshCw, Search, Trophy, UsersRound } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { fetchRecommendationBacktestSummary } from "../api/radarApi";
 import { DateField, SelectField } from "../components/FormFields";
 import { PanelTitle } from "../components/PanelTitle";
+import { StrategyStockDrawer, type StrategyStockDrawerStock } from "../components/StrategyStockDrawer";
 import { toIso } from "../lib/datetime";
 import { panelMotionState } from "../lib/motion";
 import { buildPresetRange, rangeLabel, RANGE_PRESETS, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
@@ -46,6 +47,7 @@ export function LeaderboardPage() {
   const [summary, setSummary] = useState<RecommendationBacktestSummary>(emptySummary);
   const [overview, setOverview] = useState<RecommendationBacktestSummary>(emptySummary);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [selectedStock, setSelectedStock] = useState<StrategyStockDrawerStock | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,6 +116,7 @@ export function LeaderboardPage() {
   );
   const metrics = useMemo(() => buildOverviewMetrics(overview), [overview]);
   const displayedDimension = isDimension(summary.group_by) ? summary.group_by : dimension;
+  const selectedDrawerStock = selected ? drawerStockFromRow(selected, displayedDimension) : null;
   const activeDimension = DIMENSIONS.find((item) => item.key === displayedDimension) ?? DIMENSIONS[0];
   const requestedDimension = DIMENSIONS.find((item) => item.key === dimension) ?? DIMENSIONS[0];
   const loadingLabel = loading && dimension !== displayedDimension ? `正在切换到 ${requestedDimension.label}` : "正在刷新榜单";
@@ -288,6 +291,19 @@ export function LeaderboardPage() {
                     <span key={tag}>{tag}</span>
                   ))}
                 </div>
+                {selectedDrawerStock && (
+                  <div className="leaderboard-detail-actions">
+                    <button
+                      className="btn btn-primary btn-sm"
+                      type="button"
+                      onClick={() => setSelectedStock(selectedDrawerStock)}
+                      title="打开本地日 K 线"
+                    >
+                      <ChartCandlestick size={15} />
+                      K 线
+                    </button>
+                  </div>
+                )}
                 <div className="leaderboard-window-grid">
                   {summary.windows.map((window) => (
                     <WindowCard key={window} row={selected} window={window} />
@@ -310,6 +326,7 @@ export function LeaderboardPage() {
           <AnimatePresence initial={false}>{loading && <LoadingOverlay label={loadingLabel} />}</AnimatePresence>
         </motion.section>
       </motion.div>
+      <StrategyStockDrawer stock={selectedStock} onClose={() => setSelectedStock(null)} />
     </section>
   );
 }
@@ -444,6 +461,27 @@ function detailTags(row: RecommendationBacktestSummaryRow): string[] {
     row.source_candidate ? `来源 ${row.source_candidate}` : "",
     `${row.event_count} 条推荐事件`,
   ].filter(Boolean);
+}
+
+function drawerStockFromRow(row: RecommendationBacktestSummaryRow, dimension: Dimension): StrategyStockDrawerStock | null {
+  if (!row.ts_code || (dimension !== "stock" && dimension !== "analyst_stock")) {
+    return null;
+  }
+  return {
+    stock_name: row.stock_name || row.ts_code,
+    ts_code: row.ts_code,
+    event_count: row.event_count,
+    average_excess_return_t5: metric(row, "avg_excess_t5"),
+    drawer_badge: "推荐胜率榜",
+    drawer_metrics: [
+      { label: "T+1超额", value: metric(row, "avg_excess_t1") },
+      { label: "T+3超额", value: metric(row, "avg_excess_t3") },
+      { label: "T+5超额", value: metric(row, "avg_excess_t5") },
+      { label: "T+5收益", value: metric(row, "avg_return_t5") },
+    ],
+    evidence_title: "榜单证据",
+    evidence_lines: detailTags(row),
+  };
 }
 
 function sampleLabel(row: RecommendationBacktestSummaryRow, window: number): string {

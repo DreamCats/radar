@@ -171,7 +171,7 @@
 
 .leaderboard-detail-body {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   min-height: 0;
 }
 
@@ -300,6 +300,18 @@
 .leaderboard-detail-tags span:hover {
   border-color: var(--color-hairline-strong);
   background: var(--color-surface-1);
+}
+
+.leaderboard-detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 10px 14px;
+}
+
+.leaderboard-detail-actions .btn {
+  min-width: 82px;
 }
 
 .leaderboard-window-grid {
