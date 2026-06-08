@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { formatTime } from "../lib/datetime";
 import type { SourceRadarSignal, SourceRadarSignalStatus, SourceRadarSnapshot } from "../types";
+import { ChatLauncher } from "./ChatLauncher";
 import { PanelTitle } from "./PanelTitle";
 
 type SourceRadarFilter = SourceRadarSignalStatus | "all";
@@ -134,6 +135,32 @@ function SourceRadarCard({ item }: { item: SourceRadarSignal }) {
           ))}
         </ul>
       )}
+      <div className="chat-card-action-row">
+        <ChatLauncher
+          title={signalTitle(item)}
+          subtitle={item.ask_question || item.first_snippet}
+          surface="源头雷达"
+          entityId={item.signal_id}
+          buttonLabel="问这个信号"
+          buttonClassName="btn btn-sm chat-inline-action"
+          context={[
+            { label: "状态", value: statusText(item.status) },
+            { label: "信号分", value: item.score.toFixed(0) },
+            { label: "首现", value: formatTime(item.first_seen_time) },
+            { label: "首提", value: item.first_sender || "-" },
+            { label: "来源", value: item.first_group_name || "个人消息" },
+            { label: "扩散", value: `${item.asof_senders}人/${item.asof_groups}群` },
+            { label: "接力", value: `${item.followup_senders}人/${item.followup_groups}群` },
+            { label: "映射股票", value: item.mapped_stocks.slice(0, 6).join(" / ") || "-" },
+          ]}
+          evidence={[item.first_snippet, ...item.evidence].filter(Boolean)}
+          suggestedQuestions={[
+            "这个信号为什么值得看？请区分证据、数据和推断。",
+            "帮我找这个信号的反证和风险点。",
+            "如果继续跟踪，下一步应该验证哪些消息、来源和标的？",
+          ]}
+        />
+      </div>
     </article>
   );
 }

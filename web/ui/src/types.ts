@@ -107,6 +107,29 @@ export type DashboardSummary = {
   runs: RunItem[];
 };
 
+export type ChatTurnRequest = {
+  session_id?: string | null;
+  title?: string | null;
+  content: string;
+  context?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+};
+
+export type ChatMessageItem = {
+  message_id: string;
+  role: "system" | "user" | "assistant" | "tool";
+  content: string;
+  created_at: string;
+  metadata: Record<string, unknown>;
+};
+
+export type ChatTurnResponse = {
+  session_id: string;
+  user_message: ChatMessageItem;
+  assistant_message: ChatMessageItem;
+  tool_messages: ChatMessageItem[];
+};
+
 export type MessageQuery = {
   source?: string;
   group_name?: string;

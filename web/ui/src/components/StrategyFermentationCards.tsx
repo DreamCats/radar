@@ -7,6 +7,7 @@ import type {
   StrategySourceSignal,
   StrategyStockCandidate,
 } from "../types";
+import { ChatLauncher } from "./ChatLauncher";
 
 export function OpportunityCard({
   item,
@@ -113,6 +114,38 @@ export function OpportunityCard({
           </div>
         </div>
       )}
+      <div className="chat-card-action-row">
+        <ChatLauncher
+          title={item.name}
+          subtitle={item.reason}
+          surface="发酵确认"
+          entityId={item.key}
+          buttonLabel="解释机会"
+          buttonClassName="btn btn-sm chat-inline-action"
+          context={[
+            { label: "关注级别", value: item.attention_level },
+            { label: "机会分", value: item.score.toFixed(0) },
+            { label: "拐点", value: `${item.acceleration.toFixed(1)}x` },
+            { label: "广度", value: `${item.sender_count}人/${item.group_count}群` },
+            { label: "风险", value: `${item.risk_count}条` },
+            { label: "全量T+5", value: formatPercent(item.opportunity_backtest.average_excess_return_t5, true) },
+            { label: "精选T+5", value: formatPercent(item.selected_stock_backtest.average_excess_return_t5, true) },
+            { label: "相关股票", value: topStocks.map((stock) => stock.stock_name).join(" / ") || "-" },
+          ]}
+          evidence={[
+            item.reason,
+            item.risk_summary,
+            item.catalyst_terms.length ? `催化：${item.catalyst_terms.slice(0, 5).join(" / ")}` : "",
+            item.risk_terms.length ? `风险：${item.risk_terms.slice(0, 5).join(" / ")}` : "",
+            sources.length ? `主要来源：${sources.map((source) => source.name).join(" / ")}` : "",
+          ].filter((line) => line)}
+          suggestedQuestions={[
+            "这条机会的核心催化、反证和当前可操作性是什么？",
+            "相关股票里哪些更值得优先深挖？为什么？",
+            "请基于来源质量和 T+5 回测判断这个主题是否过热。",
+          ]}
+        />
+      </div>
     </article>
   );
 }

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -17,7 +17,6 @@ from radar.core.usecases.aggregation import RefineAggregateTopicsResult
 from radar.core.usecases.recommendation_backtest import (
     DEFAULT_BENCHMARK_TS_CODE,
     DEFAULT_BACKTEST_WINDOWS,
-    BacktestGroupBy,
     RecommendationBacktestSummaryResult,
 )
 from radar.core.usecases.source.models import SourceSignalSnapshotPage, SourceSignalValidationSummary
@@ -305,6 +304,29 @@ class SourceRadarSnapshotResponse(SourceSignalSnapshotPage):
 
 class SourceRadarValidationResponse(SourceSignalValidationSummary):
     pass
+
+
+class ChatTurnRequest(BaseModel):
+    session_id: str | None = None
+    title: str | None = None
+    content: str = Field(min_length=1, max_length=8000)
+    context: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ChatMessageResponse(BaseModel):
+    message_id: str
+    role: str
+    content: str
+    created_at: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ChatTurnResponse(BaseModel):
+    session_id: str
+    user_message: ChatMessageResponse
+    assistant_message: ChatMessageResponse
+    tool_messages: list[ChatMessageResponse] = Field(default_factory=list)
 
 
 class AggregateRefineResultListResponse(BaseModel):

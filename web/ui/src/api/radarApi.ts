@@ -4,6 +4,8 @@ import type {
   AggregateRefineRequest,
   AggregateRefineResult,
   AnchorRequest,
+  ChatTurnRequest,
+  ChatTurnResponse,
   DashboardSummary,
   DerivedJobItem,
   IngestJobItem,
@@ -67,6 +69,18 @@ export async function fetchMessageOverview(
   query: { days?: number; top_limit?: number; anchor_limit?: number } = {},
 ): Promise<MessageOverview> {
   return getJson(`/api/messages/overview?${params(query)}`);
+}
+
+export async function sendChatTurn(request: ChatTurnRequest): Promise<ChatTurnResponse> {
+  const response = await fetch(`${apiBase}/api/chat/turn`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  return (await response.json()) as ChatTurnResponse;
 }
 
 export async function fetchOrganizeClassifications(

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 
 import { fetchStrategyStockChart } from "../api/radarApi";
+import { ChatLauncher } from "./ChatLauncher";
 import type {
   StrategyEventCredibility,
   StrategyStockChart,
@@ -136,6 +137,33 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
             {drawerMetrics(stock).map((metric) => (
               <DecisionMetric label={metric.label} value={metric.value} key={metric.label} />
             ))}
+          </div>
+
+          <div className="strategy-stock-drawer-chat-row">
+            <ChatLauncher
+              title={stock.stock_name}
+              subtitle={stock.decision_reason || stock.lifecycle_reason || evidenceSummary(stock) || stock.ts_code}
+              surface="个股深挖"
+              entityId={stock.ts_code}
+              buttonLabel="深挖这个标的"
+              buttonClassName="btn btn-primary btn-sm chat-inline-action"
+              context={[
+                { label: "代码", value: stock.ts_code },
+                { label: "决策层", value: stock.decision_bucket },
+                { label: "生命周期", value: stock.lifecycle_state },
+                { label: "价格位置", value: stock.price_position },
+                { label: "可信度", value: stock.event_credibility?.level },
+                { label: "首现", value: stock.first_seen_time },
+                { label: "最近", value: stock.latest_message_time },
+                { label: "样本", value: evidenceSummary(stock) },
+              ]}
+              evidence={stockEvidenceLines(stock)}
+              suggestedQuestions={[
+                "这个标的现在还能不能看？请结合消息证据、价格位置和风险。",
+                "首提来源可靠吗？这条股票信号有没有过热或反证？",
+                "如果不追高，后续应该盯哪些价格、消息和来源变化？",
+              ]}
+            />
           </div>
 
           <section className="strategy-stock-evidence-panel">
@@ -339,6 +367,16 @@ function DecisionMetric({ label, value }: { label: string; value?: number | null
       <strong className={returnToneClass(value)}>{formatPercent(value, true)}</strong>
     </article>
   );
+}
+
+function stockEvidenceLines(stock: StrategyStock): string[] {
+  return [
+    stock.decision_reason,
+    stock.lifecycle_reason,
+    ...(stock.evidence_lines ?? []),
+    ...(stock.event_credibility?.reasons ?? []),
+    ...(stock.event_credibility?.risks ?? []),
+  ].filter((line): line is string => Boolean(line));
 }
 
 function drawerMetrics(stock: StrategyStock): StrategyStockDrawerMetric[] {

@@ -92,9 +92,10 @@ class ChatSessionStore:
         if not path.exists():
             return []
         events: list[ChatEvent] = []
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                events.append(ChatEvent.model_validate_json(line))
+        with path.open(encoding="utf-8") as file:
+            for line in file:
+                if line.strip():
+                    events.append(ChatEvent.model_validate_json(line))
         return events
 
     def load_messages(self, session_id: str) -> list[ChatMessage]:

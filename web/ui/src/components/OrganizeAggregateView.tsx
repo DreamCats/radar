@@ -3,6 +3,7 @@ import { AlertTriangle, CircleAlert, GitMerge, Sparkles, Tags } from "lucide-rea
 
 import { formatTime } from "../lib/datetime";
 import type { OrganizeAggregatePage, OrganizeAggregateTheme } from "../types";
+import { ChatLauncher } from "./ChatLauncher";
 import { OrganizeEvidenceItem } from "./OrganizeEvidenceItem";
 import { PanelTitle } from "./PanelTitle";
 import { scoreTone } from "./OrganizeClassificationView";
@@ -62,9 +63,34 @@ export function OrganizeAggregateView(props: {
         {props.selected ? (
           <>
             <PanelTitle title={props.selected.theme_name} meta={`${props.selected.evidence_message_ids.length} 条证据`}>
-              <span className={`organize-score ${scoreTone(props.selected.confidence)}`}>
-                {Math.round(props.selected.confidence * 100)}%
-              </span>
+              <div className="panel-title-actions">
+                <span className={`organize-score ${scoreTone(props.selected.confidence)}`}>
+                  {Math.round(props.selected.confidence * 100)}%
+                </span>
+                <ChatLauncher
+                  title={props.selected.theme_name}
+                  subtitle={props.selected.summary || props.selected.investment_logic || "投资主题聚类"}
+                  surface="聚类主题"
+                  entityId={`${props.page.result?.run_id ?? "aggregate"}:${props.selected.theme_index}`}
+                  buttonLabel="总结主题"
+                  buttonClassName="btn btn-sm chat-inline-action"
+                  context={[
+                    { label: "优先级", value: Math.round(priorityScore(props.selected)) },
+                    { label: "行动分", value: Math.round(props.selected.actionability_score) },
+                    { label: "置信度", value: `${Math.round(props.selected.confidence * 100)}%` },
+                    { label: "新鲜度", value: props.selected.novelty },
+                    { label: "证据数", value: props.selected.evidence_message_ids.length },
+                    { label: "相关标的", value: themeStockNames(props.selected) || "-" },
+                    { label: "时间窗", value: props.page.result ? `${formatTime(props.page.result.start_time)} - ${formatTime(props.page.result.end_time)}` : null },
+                  ]}
+                  evidence={themeEvidenceLines(props.selected)}
+                  suggestedQuestions={[
+                    "把这个主题总结成投资逻辑、催化、风险和跟踪问题。",
+                    "这个主题现在更像早期机会、发酵确认，还是过热复盘？",
+                    "相关标的里哪些需要优先验证？请说明依据和风险。",
+                  ]}
+                />
+              </div>
             </PanelTitle>
             <div className="organize-tags">
               <span>
@@ -116,6 +142,26 @@ function ThemeRow(props: { theme: OrganizeAggregateTheme; selected: boolean; onS
 
 function priorityScore(theme: OrganizeAggregateTheme) {
   return Number.isFinite(theme.priority_score) ? theme.priority_score : theme.actionability_score;
+}
+
+function themeStockNames(theme: OrganizeAggregateTheme): string {
+  return theme.related_stocks
+    .slice(0, 6)
+    .map((stock) => String(stock.name))
+    .filter(Boolean)
+    .join(" / ");
+}
+
+function themeEvidenceLines(theme: OrganizeAggregateTheme): string[] {
+  return [
+    theme.investment_logic || theme.summary,
+    theme.catalysts.length ? `催化：${theme.catalysts.slice(0, 5).join(" / ")}` : "",
+    theme.risk_notes.length ? `风险：${theme.risk_notes.slice(0, 5).join(" / ")}` : "",
+    theme.related_stocks.length
+      ? `相关标的：${theme.related_stocks.slice(0, 5).map((stock) => `${String(stock.name)}：${String(stock.reason || "")}`).join(" / ")}`
+      : "",
+    ...theme.evidence.slice(0, 3).map((item) => item.raw_content),
+  ].filter((line): line is string => Boolean(line));
 }
 
 function ThemeBrief(props: { theme: OrganizeAggregateTheme }) {

@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { fetchMessageGroups, fetchMessages } from "../api/radarApi";
+import { ChatLauncher } from "../components/ChatLauncher";
 import { DateField, SelectField, TextField } from "../components/FormFields";
 import { PanelTitle } from "../components/PanelTitle";
 import { formatTime, toIso } from "../lib/datetime";
@@ -327,6 +328,30 @@ function MessageDetailPanel({ item }: { item: MessageItem | null }) {
             <strong>{item.sender}</strong>
             <span>ID</span>
             <strong>{item.message_id}</strong>
+          </div>
+          <div className="chat-card-action-row">
+            <ChatLauncher
+              title={item.group_name || item.sender || item.message_id}
+              subtitle={item.raw_content}
+              surface="消息详情"
+              entityId={item.message_id}
+              buttonLabel="查上下文"
+              buttonClassName="btn btn-sm chat-inline-action"
+              context={[
+                { label: "消息ID", value: item.message_id },
+                { label: "来源", value: item.source },
+                { label: "群", value: item.group_name || "-" },
+                { label: "发送人", value: item.sender },
+                { label: "时间", value: formatTime(item.message_time) },
+                { label: "拉取窗口", value: item.fetch_window },
+              ]}
+              evidence={[item.raw_content]}
+              suggestedQuestions={[
+                "这条消息在投资上可能意味着什么？请区分原文证据和推断。",
+                "帮我查这条消息前后的上下文和同来源后续扩散。",
+                "这条消息有哪些风险、反证或需要进一步验证的点？",
+              ]}
+            />
           </div>
           <p>{item.raw_content}</p>
         </div>

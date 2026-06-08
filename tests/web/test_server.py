@@ -104,6 +104,63 @@ def test_conversations_endpoint_omits_message_count(tmp_path):
         assert "message_count" not in item
 
 
+def test_chat_turn_endpoint_creates_session_with_context(tmp_path, monkeypatch):
+    from radar.core.chat.events import ChatMessage
+
+    captured: dict[str, object] = {}
+
+    class FakeChatAgent:
+        def __init__(self, config):
+            self.config = config
+
+        def create_session(self, *, title=None, metadata=None):
+            captured["title"] = title
+            captured["metadata"] = metadata
+            return SimpleNamespace(session_id="session-1")
+
+        def run_turn(self, session_id, content):
+            captured["session_id"] = session_id
+            captured["content"] = content
+            return SimpleNamespace(
+                session_id=session_id,
+                user_message=ChatMessage(
+                    message_id="user-1",
+                    role="user",
+                    content=content,
+                    created_at="2026-06-08T10:00:00",
+                ),
+                assistant_message=ChatMessage(
+                    message_id="assistant-1",
+                    role="assistant",
+                    content="先看来源质量和反证。",
+                    created_at="2026-06-08T10:00:01",
+                ),
+                tool_messages=[],
+            )
+
+    monkeypatch.setattr("radar.web.server.routers.chat.ChatAgent", FakeChatAgent)
+    client = TestClient(create_app(_config(tmp_path)))
+    response = client.post(
+        "/api/chat/turn",
+        json={
+            "title": "PCB",
+            "content": "这个信号怎么看？",
+            "context": {"surface": "源头雷达", "entity_id": "sig-1"},
+            "metadata": {"surface": "源头雷达"},
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["session_id"] == "session-1"
+    assert data["assistant_message"]["content"] == "先看来源质量和反证。"
+    assert captured["title"] == "PCB"
+    assert captured["metadata"] == {"surface": "源头雷达"}
+    assert captured["session_id"] == "session-1"
+    assert "这个信号怎么看？" in str(captured["content"])
+    assert '"surface":"源头雷达"' in str(captured["content"])
+
+
 def test_organize_classifications_endpoint_returns_clusters(tmp_path):
     config = _config(tmp_path)
     message = _message()

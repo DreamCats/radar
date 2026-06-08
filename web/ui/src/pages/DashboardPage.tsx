@@ -4,6 +4,7 @@ import { RefreshCw } from "lucide-react";
 import {
   fetchDashboardSummary,
 } from "../api/radarApi";
+import { ChatLauncher } from "../components/ChatLauncher";
 import { ClassificationDistributionChart } from "../components/ClassificationDistributionChart";
 import { LeaderboardAlphaChart } from "../components/LeaderboardAlphaChart";
 import { AnchorHeatChart, ThemePriorityBubbleChart, TopGroupsChart, TrendChart } from "../components/OverviewCharts";
@@ -94,6 +95,32 @@ export function DashboardPage({ onOpenStrategy }: { onOpenStrategy: () => void }
         </p>
         <div>
           {loading && !initialLoading && <PageRefreshProgress label="正在刷新总览" />}
+          {summary && (
+            <ChatLauncher
+              title="总览简报"
+              subtitle={summary.latest_message_time ? `最新消息 ${formatTime(summary.latest_message_time)}` : "本地数据总览"}
+              surface="总览"
+              entityId={summary.latest_message_time ?? "dashboard"}
+              buttonLabel="今日简报"
+              buttonClassName="btn btn-sm chat-inline-action"
+              context={[
+                { label: "总消息", value: summary.total_count },
+                { label: "个人群", value: `${summary.group_message_count} 条 / ${summary.group_count} 个群` },
+                { label: "个人消息", value: `${summary.personal_message_count} 条 / ${summary.sender_count} 位发送人` },
+                { label: "硬过滤", value: filteredTotal },
+                { label: "有效分类", value: classificationPage.summary.total_count },
+                { label: "聚类主题", value: aggregatePage.themes.length },
+                { label: "策略机会", value: strategyData?.opportunity_count ?? 0 },
+                { label: "最新消息", value: summary.latest_message_time ? formatTime(summary.latest_message_time) : null },
+              ]}
+              evidence={dashboardBriefEvidence(overview, classificationPage, aggregatePage, strategyData, backtestSummary)}
+              suggestedQuestions={[
+                "今天最值得看的三个机会是什么？请给出证据、风险和下一步验证。",
+                "总览里哪些信号可能只是噪音，哪些值得进入策略页深挖？",
+                "相比普通行情看板，今天本地消息流给了哪些新增信息？",
+              ]}
+            />
+          )}
           <button className="btn btn-sm" type="button" onClick={() => void refresh()} disabled={loading} title="刷新总览">
             <RefreshCw size={15} />
             刷新
@@ -126,6 +153,35 @@ export function DashboardPage({ onOpenStrategy }: { onOpenStrategy: () => void }
       )}
     </section>
   );
+}
+
+function dashboardBriefEvidence(
+  overview: MessageOverview | null,
+  classificationPage: OrganizeClassificationPage,
+  aggregatePage: OrganizeAggregatePage,
+  strategyData: StrategyDashboard | null,
+  backtestSummary: RecommendationBacktestSummary,
+): string[] {
+  return [
+    overview?.top_groups.length
+      ? `活跃群：${overview.top_groups.slice(0, 5).map((item) => `${item.group_name} ${item.count}`).join(" / ")}`
+      : "",
+    overview?.anchor_heat.length
+      ? `热锚点：${overview.anchor_heat.slice(0, 5).map((item) => `${item.name} ${item.high_value_count}/${item.message_count}`).join(" / ")}`
+      : "",
+    classificationPage.clusters.length
+      ? `有效分类：${classificationPage.clusters.slice(0, 5).map((item) => `${item.label} ${item.count}`).join(" / ")}`
+      : "",
+    aggregatePage.themes.length
+      ? `主题：${aggregatePage.themes.slice(0, 5).map((item) => `${item.theme_name} ${Math.round(item.priority_score)}`).join(" / ")}`
+      : "",
+    strategyData?.opportunities.length
+      ? `策略机会：${strategyData.opportunities.slice(0, 5).map((item) => `${item.name} ${item.attention_level} ${item.score.toFixed(0)}`).join(" / ")}`
+      : "",
+    backtestSummary.rows.length
+      ? `回测榜：${backtestSummary.rows.slice(0, 5).map((item) => `${item.key} ${item.event_count}事件`).join(" / ")}`
+      : "",
+  ].filter((line): line is string => Boolean(line));
 }
 
 function Metric(props: {

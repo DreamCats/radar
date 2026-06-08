@@ -37,6 +37,23 @@ def test_chat_session_store_appends_events_and_messages(tmp_path):
     assert (tmp_path / "chat" / "sessions" / session.session_id / "events.jsonl").exists()
 
 
+def test_chat_session_store_reads_unicode_line_separator(tmp_path):
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+    content = "涨价\u2028Q3/Q4 可能继续验证"
+
+    store.append_message(
+        session.session_id,
+        ChatMessage(message_id=new_id(), role="tool", content=content, created_at=now_iso()),
+    )
+
+    events = store.load_events(session.session_id)
+    messages = store.load_messages(session.session_id)
+
+    assert len(events) == 2
+    assert messages[0].content == content
+
+
 def test_chat_agent_passes_file_backed_context_to_llm(tmp_path, monkeypatch):
     config = RadarConfig()
     store = ChatSessionStore(tmp_path / "chat")
