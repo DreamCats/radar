@@ -325,8 +325,7 @@ export function IngestPage() {
   function selectJob(kind: JobTemplateKey) {
     setSelectedJob(kind);
     const needsHistoryWindow = kind === "backtest" || kind === "strategyBackfill" || kind === "sourceRadar";
-    const wasHistoryWindow = selectedJob === "backtest" || selectedJob === "strategyBackfill" || selectedJob === "sourceRadar";
-    if (kind === "ingest" && wasHistoryWindow && preset === "last30d") {
+    if (!needsHistoryWindow && preset === "last30d") {
       const nextRange = buildYesterdayCloseRange();
       setPreset("yesterdayClose");
       setRange(nextRange);
