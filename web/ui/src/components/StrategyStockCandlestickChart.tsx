@@ -15,16 +15,19 @@ export function StrategyStockCandlestickChart({ candles, stock }: { candles: Str
       <div className="strategy-stock-quote-strip">
         <div className="strategy-stock-last-price">
           <strong className={quote.toneClass}>{quote.close}</strong>
-          <span className={quote.toneClass}>
-            {quote.change} {quote.pct}
+          <span className="strategy-stock-change-row">
+            <em>较昨收</em>
+            <b className={quote.toneClass}>{quote.change} {quote.pct}</b>
           </span>
         </div>
         <dl className="strategy-stock-quote-grid">
           <QuoteItem label="高" value={quote.high} toneClass={quote.highTone} />
           <QuoteItem label="低" value={quote.low} toneClass={quote.lowTone} />
           <QuoteItem label="开" value={quote.open} toneClass={quote.openTone} />
+          <QuoteItem label="昨收" value={quote.preClose} />
           <QuoteItem label="成交额" value={quote.amount} />
           <QuoteItem label="成交量" value={quote.volume} />
+          <QuoteItem label="日内" value={quote.intraday} toneClass={quote.intradayTone} />
           <QuoteItem label="日期" value={quote.date} />
         </dl>
       </div>
@@ -274,6 +277,8 @@ function quoteSummary(candles: StrategyStockCandle[]) {
   const last = candles[candles.length - 1];
   const change = last.change ?? (last.pre_close ? last.close - last.pre_close : last.close - last.open);
   const pct = last.pct_chg ?? (last.pre_close ? (change / last.pre_close) * 100 : null);
+  const intradayChange = last.close - last.open;
+  const intradayPct = last.open ? (intradayChange / last.open) * 100 : null;
   const toneClass = priceToneClass(change);
   return {
     amount: formatAmount(last.amount),
@@ -286,6 +291,9 @@ function quoteSummary(candles: StrategyStockCandle[]) {
     lowTone: priceToneClass(last.low - (last.pre_close ?? last.open)),
     open: last.open.toFixed(2),
     openTone: priceToneClass(last.open - (last.pre_close ?? last.open)),
+    intraday: `${formatSignedPrice(intradayChange)} ${formatPercentPoint(intradayPct)}`,
+    intradayTone: priceToneClass(intradayChange),
+    preClose: formatPrice(last.pre_close ?? null),
     pct: formatPercentPoint(pct),
     priceClass: change >= 0 ? "is-up" : "is-down",
     toneClass,

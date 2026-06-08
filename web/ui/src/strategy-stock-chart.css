@@ -27,21 +27,34 @@
   line-height: 1;
 }
 
-.strategy-stock-last-price span {
+.strategy-stock-change-row {
+  align-items: baseline;
+  display: flex;
+  gap: 6px;
   font-size: 14px;
+  font-weight: 650;
+}
+
+.strategy-stock-change-row em {
+  color: var(--color-ink-tertiary);
+  font-style: normal;
+  font-weight: 500;
+}
+
+.strategy-stock-change-row b {
   font-weight: 650;
 }
 
 .strategy-stock-quote-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px 18px;
   margin: 0;
 }
 
 .strategy-stock-quote-grid div {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 42px minmax(0, 1fr);
   gap: 8px;
   align-items: baseline;
 }
