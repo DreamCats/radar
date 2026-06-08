@@ -1,9 +1,8 @@
-import { ArrowUp, History, MessageCircle, Plus, Square, X } from "lucide-react";
+import { History, MessageCircle, Plus, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-
-import { fetchChatSession, fetchChatSessions, streamChatTurn } from "../api/radarApi";
-import type { ChatMessageItem, ChatSessionItem } from "../types";
+import { fetchChatModelOptions, fetchChatSession, fetchChatSessions, streamChatTurn } from "../api/radarApi";
+import type { ChatMessageItem, ChatModelOption, ChatSessionItem } from "../types";
 import {
   formatToolName,
   mergeAssistantMetadata,
@@ -14,6 +13,7 @@ import {
   updateToolActivities,
   writeActiveSessionId,
 } from "./chatHelpers";
+import { ChatComposer } from "./ChatComposer";
 import { ChatHistoryPanel } from "./ChatHistoryPanel";
 import { MarkdownContent } from "./MarkdownContent";
 
@@ -40,6 +40,8 @@ export function ChatLauncher(props: ChatLauncherProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [sessions, setSessions] = useState<ChatSessionItem[]>([]);
+  const [modelOptions, setModelOptions] = useState<ChatModelOption[]>([]);
+  const [selectedProviderName, setSelectedProviderName] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [sending, setSending] = useState(false);
@@ -59,6 +61,7 @@ export function ChatLauncher(props: ChatLauncherProps) {
       return;
     }
     void refreshSessions();
+    void refreshModelOptions();
     if (!sessionId && messages.length === 0) {
       const activeSessionId = readActiveSessionId();
       if (activeSessionId) {
@@ -83,6 +86,7 @@ export function ChatLauncher(props: ChatLauncherProps) {
     setDraft("");
     const userDraftId = `user-local-${Date.now()}`;
     const assistantDraftId = `assistant-stream-${Date.now()}`;
+    const selectedModelOption = modelOptions.find((item) => item.provider_name === selectedProviderName) ?? null;
     let hasAssistantDraft = true;
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -93,7 +97,12 @@ export function ChatLauncher(props: ChatLauncherProps) {
         role: "user",
         content,
         created_at: new Date().toISOString(),
-        metadata: { local: true },
+        metadata: {
+          local: true,
+          llm: selectedModelOption
+            ? { provider_name: selectedModelOption.provider_name, model: selectedModelOption.model, protocol: selectedModelOption.protocol }
+            : {},
+        },
       },
       {
         message_id: assistantDraftId,
@@ -109,6 +118,7 @@ export function ChatLauncher(props: ChatLauncherProps) {
           session_id: sessionId,
           title: props.title,
           content,
+          provider_name: selectedProviderName,
           context: {
             surface: props.surface,
             entity_id: props.entityId,
@@ -121,6 +131,8 @@ export function ChatLauncher(props: ChatLauncherProps) {
             surface: props.surface,
             entity_id: props.entityId,
             title: props.title,
+            chat_provider_name: selectedProviderName,
+            chat_model: selectedModelOption?.model,
           },
         },
         (event) => {
@@ -277,6 +289,21 @@ export function ChatLauncher(props: ChatLauncherProps) {
       setError(err instanceof Error ? err.message : "读取历史失败");
     } finally {
       setLoadingSessions(false);
+    }
+  }
+
+  async function refreshModelOptions() {
+    try {
+      const data = await fetchChatModelOptions();
+      setModelOptions(data.items);
+      setSelectedProviderName((current) => {
+        if (current && data.items.some((item) => item.provider_name === current)) {
+          return current;
+        }
+        return data.default_provider_name ?? data.items[0]?.provider_name ?? null;
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "读取模型配置失败");
     }
   }
 
@@ -451,33 +478,16 @@ export function ChatLauncher(props: ChatLauncherProps) {
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="chat-composer">
-                <textarea
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  rows={3}
-                  placeholder="输入你的问题..."
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      if (sending) {
-                        stopStreaming();
-                      } else {
-                        void submitTurn();
-                      }
-                    }
-                  }}
-                />
-                <button
-                  className="chat-send-button"
-                  type="button"
-                  disabled={!sending && !draft.trim()}
-                  onClick={() => (sending ? stopStreaming() : void submitTurn())}
-                  aria-label={sending ? "停止生成" : "发送"}
-                >
-                  {sending ? <Square size={14} /> : <ArrowUp size={18} />}
-                </button>
-              </div>
+              <ChatComposer
+                draft={draft}
+                modelOptions={modelOptions}
+                selectedProviderName={selectedProviderName}
+                sending={sending}
+                onDraftChange={setDraft}
+                onProviderChange={setSelectedProviderName}
+                onStop={stopStreaming}
+                onSubmit={() => void submitTurn()}
+              />
                 {error && <p className="chat-error">{error}</p>}
               </div>
             </div>

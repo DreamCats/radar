@@ -12,7 +12,15 @@ from radar.core.chat.prompts import DEFAULT_CHAT_SYSTEM_PROMPT
 from radar.core.chat.store import ChatSessionStore
 from radar.core.chat.tools import ToolRegistry
 from radar.core.config import RadarConfig
-from radar.core.llm import LlmChatDone, LlmChatResponse, LlmReasoningDelta, LlmToolCall, chat_response, stream_chat_response
+from radar.core.llm import (
+    LlmChatDone,
+    LlmChatResponse,
+    LlmReasoningDelta,
+    LlmToolCall,
+    chat_response,
+    resolve_provider,
+    stream_chat_response,
+)
 
 
 @dataclass(frozen=True)
@@ -80,11 +88,13 @@ class ChatAgent:
             raise ValueError("用户输入不能为空")
 
         events: list[ChatEvent] = []
+        llm_metadata = self._llm_metadata(provider_name=provider_name, model=model)
         user_message = ChatMessage(
             message_id=new_id(),
             role="user",
             content=content,
             created_at=now_iso(),
+            metadata={"llm": llm_metadata},
         )
         self.store.append_message(session_id, user_message)
 
@@ -111,7 +121,7 @@ class ChatAgent:
                     max_tokens=max_tokens,
                 )
                 if not response.tool_calls:
-                    assistant_message = self._append_assistant_message(session_id, response)
+                    assistant_message = self._append_assistant_message(session_id, response, llm_metadata=llm_metadata)
                     completed = self._append_event(
                         session_id,
                         "turn_completed",
@@ -130,7 +140,7 @@ class ChatAgent:
                         events=events,
                     )
 
-                self._append_assistant_message(session_id, response)
+                self._append_assistant_message(session_id, response, llm_metadata=llm_metadata)
                 for tool_call in response.tool_calls:
                     started = self._append_event(
                         session_id,
@@ -183,11 +193,13 @@ class ChatAgent:
         if not content.strip():
             raise ValueError("用户输入不能为空")
 
+        llm_metadata = self._llm_metadata(provider_name=provider_name, model=model)
         user_message = ChatMessage(
             message_id=new_id(),
             role="user",
             content=content,
             created_at=now_iso(),
+            metadata={"llm": llm_metadata},
         )
         self.store.append_message(session_id, user_message)
         yield ChatTurnStreamEvent(type="user_message", message=user_message)
@@ -224,7 +236,7 @@ class ChatAgent:
                 if response is None:
                     response = LlmChatResponse(content="", tool_calls=[])
 
-                assistant_message = self._append_assistant_message(session_id, response)
+                assistant_message = self._append_assistant_message(session_id, response, llm_metadata=llm_metadata)
                 yield ChatTurnStreamEvent(type="assistant_message", message=assistant_message)
                 if not response.tool_calls:
                     completed = self._append_event(
@@ -322,16 +334,40 @@ class ChatAgent:
             enable_thinking=True,
         )
 
-    def _append_assistant_message(self, session_id: str, response: LlmChatResponse) -> ChatMessage:
+    def _append_assistant_message(
+        self,
+        session_id: str,
+        response: LlmChatResponse,
+        *,
+        llm_metadata: dict[str, Any],
+    ) -> ChatMessage:
         assistant_message = ChatMessage(
             message_id=new_id(),
             role="assistant",
             content=response.content,
             created_at=now_iso(),
-            metadata={"tool_calls": [asdict(call) for call in response.tool_calls]},
+            metadata={"tool_calls": [asdict(call) for call in response.tool_calls], "llm": llm_metadata},
         )
         self.store.append_message(session_id, assistant_message)
         return assistant_message
+
+    def _llm_metadata(self, *, provider_name: str | None, model: str | None) -> dict[str, Any]:
+        metadata: dict[str, Any] = {"thinking_enabled": True}
+        if self.config.llm.providers:
+            selected_name, provider = resolve_provider(self.config, provider_name=provider_name, task="chat")
+            metadata.update(
+                {
+                    "provider_name": selected_name,
+                    "protocol": provider.protocol,
+                    "model": model or provider.model,
+                }
+            )
+            return metadata
+        if provider_name:
+            metadata["provider_name"] = provider_name
+        if model:
+            metadata["model"] = model
+        return metadata
 
     def _execute_tool_call(self, session_id: str, tool_call: LlmToolCall) -> ChatMessage:
         tool = self.tools.get(tool_call.name)

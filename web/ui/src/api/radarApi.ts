@@ -5,6 +5,7 @@ import type {
   AggregateRefineResult,
   AnchorRequest,
   ChatMessageItem,
+  ChatModelOptions,
   ChatSessionDetail,
   ChatSessionList,
   ChatStreamEvent,
@@ -93,6 +94,10 @@ export async function fetchChatSessions(limit = 50): Promise<ChatSessionList> {
 
 export async function fetchChatSession(sessionId: string): Promise<ChatSessionDetail> {
   return getJson(`/api/chat/sessions/${encodeURIComponent(sessionId)}`);
+}
+
+export async function fetchChatModelOptions(): Promise<ChatModelOptions> {
+  return getJson("/api/chat/model-options");
 }
 
 export async function streamChatTurn(

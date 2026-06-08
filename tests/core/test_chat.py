@@ -85,6 +85,8 @@ def test_chat_agent_passes_file_backed_context_to_llm(tmp_path, monkeypatch):
     )
 
     assert result.assistant_message.content == "收到"
+    assert result.user_message.metadata["llm"]["provider_name"] == "openai_main"
+    assert result.assistant_message.metadata["llm"]["provider_name"] == "openai_main"
     assert seen["messages"] == [
         {"role": "system", "content": "你是 radar 投研助手"},
         {"role": "user", "content": "帮我看一下今天消息"},
@@ -92,6 +94,30 @@ def test_chat_agent_passes_file_backed_context_to_llm(tmp_path, monkeypatch):
     assert seen["kwargs"]["task"] == "chat"
     assert seen["kwargs"]["provider_name"] == "openai_main"
     assert seen["kwargs"]["tools"]
+
+
+def test_chat_agent_records_resolved_llm_metadata(tmp_path, monkeypatch):
+    config = RadarConfig(
+        llm={"providers": {"deep": {"protocol": "anthropic", "secret_ref": "deep-secret", "model": "claude-test"}}},
+        secrets={"llm": {"deep-secret": {"base_url": "https://llm.invalid", "api_key": "key"}}},
+    )
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+
+    def fake_chat_response(config, messages, **kwargs):
+        return LlmChatResponse(content="收到", tool_calls=[])
+
+    monkeypatch.setattr("radar.core.chat.agent.chat_response", fake_chat_response)
+
+    result = ChatAgent(config, store=store).run_turn(session.session_id, "你好", provider_name="deep")
+
+    assert result.user_message.metadata["llm"] == {
+        "thinking_enabled": True,
+        "provider_name": "deep",
+        "protocol": "anthropic",
+        "model": "claude-test",
+    }
+    assert result.assistant_message.metadata["llm"]["provider_name"] == "deep"
 
 
 def test_chat_agent_can_send_context_to_llm_without_persisting_it(tmp_path, monkeypatch):

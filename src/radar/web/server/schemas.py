@@ -310,6 +310,7 @@ class ChatTurnRequest(BaseModel):
     session_id: str | None = None
     title: str | None = None
     content: str = Field(min_length=1, max_length=8000)
+    provider_name: str | None = None
     context: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -339,6 +340,20 @@ class ChatSessionListResponse(BaseModel):
 class ChatSessionDetailResponse(BaseModel):
     session: ChatSessionResponse
     messages: list[ChatMessageResponse]
+
+
+class ChatModelOptionResponse(BaseModel):
+    provider_name: str
+    label: str
+    protocol: Literal["openai", "anthropic"]
+    model: str
+    is_default: bool = False
+    thinking_enabled: bool = True
+
+
+class ChatModelOptionsResponse(BaseModel):
+    default_provider_name: str | None = None
+    items: list[ChatModelOptionResponse]
 
 
 class ChatTurnResponse(BaseModel):

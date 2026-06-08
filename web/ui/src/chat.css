@@ -248,59 +248,6 @@
   overflow-wrap: anywhere;
 }
 
-.chat-composer {
-  position: relative;
-  display: block;
-}
-
-.chat-composer textarea {
-  width: 100%;
-  min-width: 0;
-  min-height: 86px;
-  resize: vertical;
-  border: 1px solid var(--color-hairline);
-  border-radius: 14px;
-  background: var(--color-surface-1);
-  color: var(--color-ink);
-  padding: 12px 54px 12px 14px;
-  line-height: 1.55;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.02);
-}
-
-.chat-composer textarea:focus {
-  border-color: color-mix(in srgb, var(--color-primary) 70%, var(--color-hairline));
-  outline: 2px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
-}
-
-.chat-send-button {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-primary) 82%, white);
-  color: var(--color-bg);
-  cursor: pointer;
-  transition:
-    transform 160ms ease,
-    background 160ms ease,
-    opacity 160ms ease;
-}
-
-.chat-send-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: color-mix(in srgb, var(--color-primary) 92%, white);
-}
-
-.chat-send-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.35;
-}
-
 .chat-message-list {
   display: flex;
   flex-direction: column;

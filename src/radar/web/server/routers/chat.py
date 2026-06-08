@@ -11,6 +11,8 @@ from radar.core.chat import ChatAgent, ChatMessage, ChatSession, ChatSessionStor
 from radar.core.config import RadarConfig
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
+    ChatModelOptionResponse,
+    ChatModelOptionsResponse,
     ChatMessageResponse,
     ChatSessionDetailResponse,
     ChatSessionListResponse,
@@ -20,6 +22,22 @@ from radar.web.server.schemas import (
 )
 
 router = APIRouter(prefix="/api", tags=["chat"])
+
+
+@router.get("/chat/model-options", response_model=ChatModelOptionsResponse)
+def chat_model_options(config: RadarConfig = Depends(get_config)) -> ChatModelOptionsResponse:
+    default_provider_name = _default_chat_provider_name(config)
+    items = [
+        ChatModelOptionResponse(
+            provider_name=name,
+            label=_provider_label(name, provider.model, is_default=name == default_provider_name),
+            protocol=provider.protocol,
+            model=provider.model,
+            is_default=name == default_provider_name,
+        )
+        for name, provider in config.llm.providers.items()
+    ]
+    return ChatModelOptionsResponse(default_provider_name=default_provider_name, items=items)
 
 
 @router.get("/chat/sessions", response_model=ChatSessionListResponse)
@@ -64,6 +82,7 @@ def chat_turn(
             session_id,
             request.content,
             llm_content=_content_with_context(request.content, request.context),
+            provider_name=request.provider_name,
         )
     except FileNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
@@ -102,7 +121,12 @@ def _stream_chat_turn(request: ChatTurnRequest, config: RadarConfig) -> Iterator
         yield _sse("session", {"session_id": session_id})
 
         content = _content_with_context(request.content, request.context)
-        for item in agent.stream_turn(session_id, request.content, llm_content=content):
+        for item in agent.stream_turn(
+            session_id,
+            request.content,
+            llm_content=content,
+            provider_name=request.provider_name,
+        ):
             if item.message is not None:
                 message = ChatMessageResponse(**item.message.model_dump()).model_dump(mode="json")
                 yield _sse(item.type, {"message": message})
@@ -120,6 +144,23 @@ def _stream_chat_turn(request: ChatTurnRequest, config: RadarConfig) -> Iterator
 
 def _sse(event: str, data: dict[str, Any]) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False, separators=(',', ':'))}\n\n"
+
+
+def _default_chat_provider_name(config: RadarConfig) -> str | None:
+    if not config.llm.providers:
+        return None
+    routed = config.llm.task_routing.get("chat")
+    if routed in config.llm.providers:
+        return routed
+    if config.llm.default_provider in config.llm.providers:
+        return config.llm.default_provider
+    return next(iter(config.llm.providers))
+
+
+def _provider_label(name: str, model: str, *, is_default: bool) -> str:
+    if is_default:
+        return f"默认 · {model}"
+    return f"{name} · {model}"
 
 
 def _session_response(session: ChatSession, messages: list[ChatMessage]) -> ChatSessionResponse:

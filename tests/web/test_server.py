@@ -122,6 +122,7 @@ def test_chat_turn_endpoint_creates_session_with_context(tmp_path, monkeypatch):
             captured["session_id"] = session_id
             captured["content"] = content
             captured["llm_content"] = kwargs.get("llm_content")
+            captured["provider_name"] = kwargs.get("provider_name")
             return SimpleNamespace(
                 session_id=session_id,
                 user_message=ChatMessage(
@@ -146,6 +147,7 @@ def test_chat_turn_endpoint_creates_session_with_context(tmp_path, monkeypatch):
         json={
             "title": "PCB",
             "content": "这个信号怎么看？",
+            "provider_name": "deep",
             "context": {"surface": "源头雷达", "entity_id": "sig-1"},
             "metadata": {"surface": "源头雷达"},
         },
@@ -159,6 +161,7 @@ def test_chat_turn_endpoint_creates_session_with_context(tmp_path, monkeypatch):
     assert captured["metadata"] == {"surface": "源头雷达"}
     assert captured["session_id"] == "session-1"
     assert captured["content"] == "这个信号怎么看？"
+    assert captured["provider_name"] == "deep"
     assert "这个信号怎么看？" in str(captured["llm_content"])
     assert '"surface":"源头雷达"' in str(captured["llm_content"])
 
@@ -181,6 +184,7 @@ def test_chat_turn_stream_endpoint_returns_sse(tmp_path, monkeypatch):
             captured["session_id"] = session_id
             captured["content"] = content
             captured["llm_content"] = kwargs.get("llm_content")
+            captured["provider_name"] = kwargs.get("provider_name")
             yield SimpleNamespace(
                 type="user_message",
                 message=ChatMessage(
@@ -212,6 +216,7 @@ def test_chat_turn_stream_endpoint_returns_sse(tmp_path, monkeypatch):
         json={
             "title": "PCB",
             "content": "这个信号怎么看？",
+            "provider_name": "deep",
             "context": {"surface": "源头雷达", "entity_id": "sig-1"},
             "metadata": {"surface": "源头雷达"},
         },
@@ -223,7 +228,47 @@ def test_chat_turn_stream_endpoint_returns_sse(tmp_path, monkeypatch):
     assert '"content":"先看"' in response.text
     assert captured["session_id"] == "session-stream-1"
     assert captured["content"] == "这个信号怎么看？"
+    assert captured["provider_name"] == "deep"
     assert '"surface":"源头雷达"' in str(captured["llm_content"])
+
+
+def test_chat_model_options_endpoint_uses_shared_llm_config(tmp_path):
+    config = _config(
+        tmp_path,
+        llm={
+            "default_provider": "fast",
+            "providers": {
+                "fast": {"protocol": "openai", "secret_ref": "fast-secret", "model": "gpt-fast"},
+                "deep": {"protocol": "anthropic", "secret_ref": "deep-secret", "model": "claude-deep"},
+            },
+            "task_routing": {"chat": "deep"},
+        },
+    )
+    client = TestClient(create_app(config))
+
+    response = client.get("/api/chat/model-options")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["default_provider_name"] == "deep"
+    assert data["items"] == [
+        {
+            "provider_name": "fast",
+            "label": "fast · gpt-fast",
+            "protocol": "openai",
+            "model": "gpt-fast",
+            "is_default": False,
+            "thinking_enabled": True,
+        },
+        {
+            "provider_name": "deep",
+            "label": "默认 · claude-deep",
+            "protocol": "anthropic",
+            "model": "claude-deep",
+            "is_default": True,
+            "thinking_enabled": True,
+        },
+    ]
 
 
 def test_chat_sessions_endpoint_lists_file_backed_sessions(tmp_path):

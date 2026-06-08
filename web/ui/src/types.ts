@@ -111,6 +111,7 @@ export type ChatTurnRequest = {
   session_id?: string | null;
   title?: string | null;
   content: string;
+  provider_name?: string | null;
   context?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
 };
@@ -147,6 +148,20 @@ export type ChatSessionList = {
 export type ChatSessionDetail = {
   session: ChatSessionItem;
   messages: ChatMessageItem[];
+};
+
+export type ChatModelOption = {
+  provider_name: string;
+  label: string;
+  protocol: "openai" | "anthropic";
+  model: string;
+  is_default: boolean;
+  thinking_enabled: boolean;
+};
+
+export type ChatModelOptions = {
+  default_provider_name?: string | null;
+  items: ChatModelOption[];
 };
 
 export type ChatStreamEvent =
