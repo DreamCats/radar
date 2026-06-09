@@ -24,6 +24,7 @@ import type {
 type SourceFilter = "all" | SourceKey;
 type OrganizeMode = "classification" | "aggregate";
 const EVIDENCE_PAGE_SIZE = 30;
+const ORGANIZE_RANGE_PRESETS: Array<[RangePreset, string]> = [["yesterdayClose", "昨日 15:00"], ...RANGE_PRESETS];
 
 const emptyPage: OrganizeClassificationPage = {
   summary: {
@@ -48,8 +49,8 @@ export function OrganizePage() {
   const [source, setSource] = useState<SourceFilter>("all");
   const [keyword, setKeyword] = useState("");
   const [submittedKeyword, setSubmittedKeyword] = useState("");
-  const [range, setRange] = useState<LocalRange>(() => buildPresetRange("today"));
-  const [preset, setPreset] = useState<RangePreset>("today");
+  const [range, setRange] = useState<LocalRange>(() => buildPresetRange("yesterdayClose"));
+  const [preset, setPreset] = useState<RangePreset>("yesterdayClose");
   const [page, setPage] = useState<OrganizeClassificationPage>(emptyPage);
   const [aggregatePage, setAggregatePage] = useState<OrganizeAggregatePage>(emptyAggregatePage);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -283,7 +284,7 @@ export function OrganizePage() {
       </div>
 
       <div className="range-presets organize-presets" aria-label="快捷时间窗口">
-        {RANGE_PRESETS.map(([value, label]) => (
+        {ORGANIZE_RANGE_PRESETS.map(([value, label]) => (
           <button
             className={preset === value ? "preset-button active" : "preset-button"}
             key={value}
