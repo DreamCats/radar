@@ -9,10 +9,13 @@ import {
   formatToolName,
   mergeAssistantMetadata,
   clearActiveSessionId,
+  clearSelectedProviderName,
   readActiveSessionId,
+  readSelectedProviderName,
   statusForAgentEvent,
   updateToolActivities,
   writeActiveSessionId,
+  writeSelectedProviderName,
 } from "./chatHelpers";
 import { ChatComposer } from "./ChatComposer";
 import { ChatHistoryPanel } from "./ChatHistoryPanel";
@@ -321,6 +324,15 @@ export function ChatLauncher(props: ChatLauncherProps) {
     abortControllerRef.current?.abort();
   }
 
+  function changeProvider(providerName: string | null) {
+    setSelectedProviderName(providerName);
+    if (!providerName) {
+      clearSelectedProviderName();
+      return;
+    }
+    writeSelectedProviderName(providerName);
+  }
+
   async function refreshSessions() {
     setLoadingSessions(true);
     try {
@@ -340,6 +352,13 @@ export function ChatLauncher(props: ChatLauncherProps) {
       setSelectedProviderName((current) => {
         if (current && data.items.some((item) => item.provider_name === current)) {
           return current;
+        }
+        const saved = readSelectedProviderName();
+        if (saved && data.items.some((item) => item.provider_name === saved)) {
+          return saved;
+        }
+        if (saved) {
+          clearSelectedProviderName();
         }
         return data.default_provider_name ?? data.items[0]?.provider_name ?? null;
       });
@@ -523,7 +542,7 @@ export function ChatLauncher(props: ChatLauncherProps) {
                 evidence={props.evidence}
                 sending={sending}
                 onDraftChange={setDraft}
-                onProviderChange={setSelectedProviderName}
+                onProviderChange={changeProvider}
                 onStop={stopStreaming}
                 onSubmit={() => void submitTurn()}
                 />

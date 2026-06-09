@@ -1,6 +1,7 @@
 import type { ChatMessageItem } from "../types";
 
 const ACTIVE_SESSION_KEY = "radar.chat.activeSessionId";
+const SELECTED_PROVIDER_KEY = "radar.chat.selectedProviderName";
 
 export type ToolActivityItem = {
   key: string;
@@ -93,6 +94,18 @@ export function writeActiveSessionId(sessionId: string) {
 
 export function clearActiveSessionId() {
   window.localStorage.removeItem(ACTIVE_SESSION_KEY);
+}
+
+export function readSelectedProviderName(): string | null {
+  return window.localStorage.getItem(SELECTED_PROVIDER_KEY);
+}
+
+export function writeSelectedProviderName(providerName: string) {
+  window.localStorage.setItem(SELECTED_PROVIDER_KEY, providerName);
+}
+
+export function clearSelectedProviderName() {
+  window.localStorage.removeItem(SELECTED_PROVIDER_KEY);
 }
 
 function isToolActivityItem(value: unknown): value is ToolActivityItem {
