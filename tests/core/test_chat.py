@@ -16,6 +16,7 @@ from radar.core.config import RadarConfig
 from radar.core.llm import LlmChatDelta, LlmChatDone, LlmChatResponse, LlmReasoningDelta, LlmToolCall
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db, upsert_messages
+from radar.core.tushare import RealtimeDailyQuote
 
 
 class CountingSearchExtension:
@@ -362,6 +363,7 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
 
     assert "radar_search_messages" in tool_names
     assert "radar_get_stock_price_history" in tool_names
+    assert "radar_get_realtime_daily_quote" in tool_names
     assert "radar_backtest_summary" in tool_names
 
 
@@ -414,6 +416,40 @@ def test_builtin_tushare_tool_is_whitelisted(tmp_path, monkeypatch):
     assert captured["api_name"] == "daily"
     assert captured["params"] == {"ts_code": "600519.SH", "start_date": "20260601", "end_date": "20260603"}
     assert "close" in captured["fields"]
+
+
+def test_builtin_realtime_daily_quote_tool_uses_rt_k_helper(tmp_path, monkeypatch):
+    config = RadarConfig(storage={"data_dir": tmp_path})
+    captured = {}
+
+    monkeypatch.setattr("radar.core.chat.builtin_extensions.resolve_stock", lambda config, value: "300503.SZ")
+
+    def fake_realtime_quote(config, *, ts_code, use_cache):
+        captured.update({"ts_code": ts_code, "use_cache": use_cache})
+        return RealtimeDailyQuote(
+            ts_code="300503.SZ",
+            name="昊志机电",
+            pre_close=87.01,
+            open=83.5,
+            high=85.68,
+            low=82.51,
+            close=84.75,
+            vol=16575961,
+            amount=1395413519.46,
+            num=47447,
+        )
+
+    monkeypatch.setattr("radar.core.chat.builtin_extensions.get_realtime_daily_quote", fake_realtime_quote)
+
+    agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
+    result = agent.tools.get("radar_get_realtime_daily_quote").execute({"stock": "300503.SZ", "use_cache": False})
+
+    assert result["found"] is True
+    assert result["ts_code"] == "300503.SZ"
+    assert result["name"] == "昊志机电"
+    assert result["open"] == 83.5
+    assert result["close"] == 84.75
+    assert captured == {"ts_code": "300503.SZ", "use_cache": False}
 
 
 def test_chat_agent_records_unknown_tool_as_error(tmp_path, monkeypatch):

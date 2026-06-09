@@ -12,6 +12,7 @@ from radar.core.tushare.client import call, resolve_provider
 from radar.core.tushare.exceptions import TushareApiError, TushareConfigError, TushareHttpError
 from radar.core.tushare.http import post_tushare
 from radar.core.tushare.models import RuntimeTushareProvider
+from radar.core.tushare.realtime import get_realtime_daily_quote
 from radar.core.tushare.resolver import resolve_stock
 
 
@@ -161,6 +162,10 @@ def test_kv_cache_key_includes_param_order_and_fields(tmp_path: Path):
     assert cache.get(db, "stock_basic", {"a": 1, "b": 2}, fields="ts_code") == rows
     assert cache.get(db, "stock_basic", {"a": 1, "b": 2}, fields="name") is None
     assert cache.get(db, "stock_basic", {"a": 1, "b": 2}, fields="ts_code", ttl=0) is None
+
+
+def test_realtime_daily_quote_uses_short_cache_ttl():
+    assert cache.ttl_for("rt_k") == 60
 
 
 def test_history_skips_today_before_close_and_queries_desc(monkeypatch, tmp_path: Path):
@@ -320,6 +325,58 @@ def test_history_api_with_fields_falls_back_to_kv(monkeypatch, tmp_path: Path):
             "ts_code,trade_date",
         )
     ]
+
+
+def test_get_realtime_daily_quote_calls_rt_k_and_normalizes(monkeypatch, tmp_path: Path):
+    captured = {}
+
+    def fake_call(config, api_name, params, fields=None, *, use_cache=True, **kwargs):
+        captured.update(
+            {
+                "config": config,
+                "api_name": api_name,
+                "params": params,
+                "fields": fields,
+                "use_cache": use_cache,
+                "kwargs": kwargs,
+            }
+        )
+        return [
+            {
+                "ts_code": "300503.SZ",
+                "name": "昊志机电",
+                "pre_close": "87.01",
+                "open": "83.50",
+                "high": 85.68,
+                "low": 82.51,
+                "close": "84.75",
+                "vol": "16327661",
+                "amount": "1374470949.46",
+                "num": "47447",
+            }
+        ]
+
+    monkeypatch.setattr("radar.core.tushare.realtime.call", fake_call)
+
+    quote = get_realtime_daily_quote(_config(tmp_path), ts_code="300503.sz", use_cache=False)
+
+    assert quote is not None
+    assert captured["api_name"] == "rt_k"
+    assert captured["params"] == {"ts_code": "300503.SZ"}
+    assert captured["use_cache"] is False
+    assert "open" in captured["fields"]
+    assert captured["kwargs"] == {}
+    assert quote.ts_code == "300503.SZ"
+    assert quote.name == "昊志机电"
+    assert quote.open == 83.5
+    assert quote.close == 84.75
+    assert quote.num == 47447
+
+
+def test_get_realtime_daily_quote_returns_none_for_empty_rows(monkeypatch, tmp_path: Path):
+    monkeypatch.setattr("radar.core.tushare.realtime.call", lambda *args, **kwargs: [])
+
+    assert get_realtime_daily_quote(_config(tmp_path), ts_code="300503.SZ") is None
 
 
 def test_resolve_stock_supports_name_and_symbol(monkeypatch, tmp_path: Path):

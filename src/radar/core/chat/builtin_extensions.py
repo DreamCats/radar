@@ -18,7 +18,7 @@ from radar.core.messages import (
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db
 from radar.core.tushare import call as tushare_call
-from radar.core.tushare import resolve_stock
+from radar.core.tushare import get_realtime_daily_quote, resolve_stock
 from radar.core.usecases.recommendation_backtest import DEFAULT_BACKTEST_WINDOWS, summarize_recommendation_backtests
 from radar.core.usecases.source.storage import list_latest_source_signal_snapshots
 from radar.core.usecases.strategy import build_strategy_dashboard
@@ -39,6 +39,7 @@ class RadarBuiltinExtension:
             self._get_message_context_tool(),
             self._message_overview_tool(),
             self._resolve_stock_tool(),
+            self._realtime_daily_quote_tool(),
             self._stock_price_history_tool(),
             self._strategy_dashboard_tool(),
             self._source_signals_tool(),
@@ -135,6 +136,20 @@ class RadarBuiltinExtension:
                 required=["stock"],
             ),
             handler=self._stock_price_history,
+        )
+
+    def _realtime_daily_quote_tool(self) -> ChatTool:
+        return ChatTool(
+            name="radar_get_realtime_daily_quote",
+            description="读取 Tushare rt_k 实时日线快照，适合查询盘中开盘价、最高价、最低价、最新价和成交。",
+            input_schema=_object_schema(
+                {
+                    "stock": {"type": "string"},
+                    "use_cache": {"type": "boolean"},
+                },
+                required=["stock"],
+            ),
+            handler=self._realtime_daily_quote,
         )
 
     def _strategy_dashboard_tool(self) -> ChatTool:
@@ -264,6 +279,18 @@ class RadarBuiltinExtension:
     def _resolve_stock(self, args: dict[str, Any]) -> dict[str, Any]:
         value = str(args["value"]).strip()
         return {"value": value, "ts_code": resolve_stock(self.config, value)}
+
+    def _realtime_daily_quote(self, args: dict[str, Any]) -> dict[str, Any]:
+        stock = str(args["stock"]).strip()
+        ts_code = resolve_stock(self.config, stock)
+        quote = get_realtime_daily_quote(
+            self.config,
+            ts_code=ts_code,
+            use_cache=bool(args.get("use_cache", True)),
+        )
+        if quote is None:
+            return {"found": False, "stock": stock, "ts_code": ts_code}
+        return {"found": True, "stock": stock, **quote.model_dump(mode="json")}
 
     def _stock_price_history(self, args: dict[str, Any]) -> dict[str, Any]:
         api_name = str(args.get("api_name") or "daily")
