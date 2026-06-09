@@ -366,6 +366,9 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     assert "radar_search_messages" in tool_names
     assert "radar_get_stock_price_history" in tool_names
     assert "radar_get_realtime_daily_quote" in tool_names
+    assert "radar_get_stock_moneyflow" in tool_names
+    assert "radar_get_stock_technical_factors" in tool_names
+    assert "radar_get_limit_pool" in tool_names
     assert "radar_backtest_summary" in tool_names
 
 
@@ -401,13 +404,13 @@ def test_builtin_tushare_tool_is_whitelisted(tmp_path, monkeypatch):
     config = RadarConfig(storage={"data_dir": tmp_path})
     captured = {}
 
-    monkeypatch.setattr("radar.core.chat.builtin_extensions.resolve_stock", lambda config, value: "600519.SH")
+    monkeypatch.setattr("radar.core.chat.tushare_tools.resolve_stock", lambda config, value: "600519.SH")
 
     def fake_tushare_call(config, api_name, params, fields):
         captured.update({"api_name": api_name, "params": params, "fields": fields})
         return [{"ts_code": "600519.SH", "trade_date": "20260603", "close": 100.0}]
 
-    monkeypatch.setattr("radar.core.chat.builtin_extensions.tushare_call", fake_tushare_call)
+    monkeypatch.setattr("radar.core.chat.tushare_tools.tushare_call", fake_tushare_call)
 
     agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
     result = agent.tools.get("radar_get_stock_price_history").execute(
@@ -424,7 +427,7 @@ def test_builtin_realtime_daily_quote_tool_uses_rt_k_helper(tmp_path, monkeypatc
     config = RadarConfig(storage={"data_dir": tmp_path})
     captured = {}
 
-    monkeypatch.setattr("radar.core.chat.builtin_extensions.resolve_stock", lambda config, value: "300503.SZ")
+    monkeypatch.setattr("radar.core.chat.tushare_tools.resolve_stock", lambda config, value: "300503.SZ")
 
     def fake_realtime_quote(config, *, ts_code, use_cache):
         captured.update({"ts_code": ts_code, "use_cache": use_cache})
@@ -441,7 +444,7 @@ def test_builtin_realtime_daily_quote_tool_uses_rt_k_helper(tmp_path, monkeypatc
             num=47447,
         )
 
-    monkeypatch.setattr("radar.core.chat.builtin_extensions.get_realtime_daily_quote", fake_realtime_quote)
+    monkeypatch.setattr("radar.core.chat.tushare_tools.get_realtime_daily_quote", fake_realtime_quote)
 
     agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
     result = agent.tools.get("radar_get_realtime_daily_quote").execute({"stock": "300503.SZ", "use_cache": False})

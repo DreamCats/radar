@@ -37,6 +37,8 @@ TTL_BY_API: dict[str, int] = {
     "limit_list_d": 3_600,
     "limit_step": 3_600,
     "limit_strongest": 3_600,
+    "moneyflow_ind_dc": 3_600,
+    "moneyflow_ind_ths": 3_600,
     "rt_k": 60,
     "ths_hot": 1_800,
     "dc_hot": 1_800,

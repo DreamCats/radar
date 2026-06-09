@@ -12,6 +12,14 @@ from radar.core.tushare.client import call, resolve_provider
 from radar.core.tushare.exceptions import TushareApiError, TushareConfigError, TushareHttpError
 from radar.core.tushare.http import post_tushare
 from radar.core.tushare.models import RuntimeTushareProvider
+from radar.core.tushare.market_data import (
+    get_billboard_trading,
+    get_limit_pool,
+    get_sector_moneyflow,
+    get_stock_factor,
+    get_stock_limit,
+    get_stock_moneyflow,
+)
 from radar.core.tushare.realtime import get_realtime_daily_quote
 from radar.core.tushare.resolver import resolve_stock
 
@@ -166,6 +174,18 @@ def test_kv_cache_key_includes_param_order_and_fields(tmp_path: Path):
 
 def test_realtime_daily_quote_uses_short_cache_ttl():
     assert cache.ttl_for("rt_k") == 60
+
+
+def test_high_value_stock_apis_are_history_specs():
+    for api_name in ("moneyflow", "moneyflow_dc", "moneyflow_ths", "stk_factor", "stk_limit"):
+        spec = history.SPECS[api_name]
+        assert spec.date_field == "trade_date"
+        assert spec.ts_code_field == "ts_code"
+
+
+def test_sector_moneyflow_uses_short_kv_ttl():
+    assert cache.ttl_for("moneyflow_ind_dc") == 3600
+    assert cache.ttl_for("moneyflow_ind_ths") == 3600
 
 
 def test_history_skips_today_before_close_and_queries_desc(monkeypatch, tmp_path: Path):
@@ -377,6 +397,42 @@ def test_get_realtime_daily_quote_returns_none_for_empty_rows(monkeypatch, tmp_p
     monkeypatch.setattr("radar.core.tushare.realtime.call", lambda *args, **kwargs: [])
 
     assert get_realtime_daily_quote(_config(tmp_path), ts_code="300503.SZ") is None
+
+
+def test_market_data_helpers_call_expected_apis(monkeypatch, tmp_path: Path):
+    calls = []
+
+    def fake_call(config, api_name, params=None, fields=None, *, use_cache=True, **kwargs):
+        calls.append((api_name, params, fields, use_cache, kwargs))
+        return [{"api_name": api_name}]
+
+    monkeypatch.setattr("radar.core.tushare.market_data.call", fake_call)
+    config = _config(tmp_path)
+
+    assert get_stock_moneyflow(config, ts_code="300503.sz", source="dc", start_date="20260601", end_date="20260609") == [
+        {"api_name": "moneyflow_dc"}
+    ]
+    assert get_stock_moneyflow(config, ts_code="300503.SZ", source="ths", trade_date="20260609", use_cache=False) == [
+        {"api_name": "moneyflow_ths"}
+    ]
+    assert get_stock_moneyflow(config, ts_code="300503.SZ", source="tushare") == [{"api_name": "moneyflow"}]
+    assert get_stock_factor(config, ts_code="300503.SZ", start_date="20260601") == [{"api_name": "stk_factor"}]
+    assert get_stock_limit(config, ts_code="300503.SZ", trade_date="20260609") == [{"api_name": "stk_limit"}]
+    assert get_sector_moneyflow(config, source="dc", trade_date="20260609") == [{"api_name": "moneyflow_ind_dc"}]
+    assert get_limit_pool(config, api_name="limit_step", trade_date="20260609") == [{"api_name": "limit_step"}]
+    assert get_billboard_trading(config, api_name="top_inst", trade_date="20260609", ts_code="300503.SZ") == [
+        {"api_name": "top_inst"}
+    ]
+
+    assert calls[0] == (
+        "moneyflow_dc",
+        {"start_date": "20260601", "end_date": "20260609", "ts_code": "300503.SZ"},
+        None,
+        True,
+        {},
+    )
+    assert calls[1] == ("moneyflow_ths", {"trade_date": "20260609", "ts_code": "300503.SZ"}, None, False, {})
+    assert calls[-1] == ("top_inst", {"trade_date": "20260609", "ts_code": "300503.SZ"}, None, True, {})
 
 
 def test_resolve_stock_supports_name_and_symbol(monkeypatch, tmp_path: Path):

@@ -5,6 +5,7 @@ from typing import Any
 
 from radar.core.chat.extensions import ExtensionContext
 from radar.core.chat.shell_tool import build_shell_tool
+from radar.core.chat.tushare_tools import RadarTushareTools
 from radar.core.chat.tools import ChatTool
 from radar.core.config import RadarConfig
 from radar.core.messages import (
@@ -17,8 +18,6 @@ from radar.core.messages import (
 )
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db
-from radar.core.tushare import call as tushare_call
-from radar.core.tushare import get_realtime_daily_quote, resolve_stock
 from radar.core.usecases.recommendation_backtest import DEFAULT_BACKTEST_WINDOWS, summarize_recommendation_backtests
 from radar.core.usecases.source.storage import list_latest_source_signal_snapshots
 from radar.core.usecases.strategy import build_strategy_dashboard
@@ -38,9 +37,7 @@ class RadarBuiltinExtension:
             self._list_conversations_tool(),
             self._get_message_context_tool(),
             self._message_overview_tool(),
-            self._resolve_stock_tool(),
-            self._realtime_daily_quote_tool(),
-            self._stock_price_history_tool(),
+            *RadarTushareTools(self.config).tools(),
             self._strategy_dashboard_tool(),
             self._source_signals_tool(),
             self._backtest_summary_tool(),
@@ -110,46 +107,6 @@ class RadarBuiltinExtension:
                 }
             ),
             handler=self._message_overview,
-        )
-
-    def _resolve_stock_tool(self) -> ChatTool:
-        return ChatTool(
-            name="radar_resolve_stock",
-            description="把股票中文名、6 位代码或 ts_code 解析为唯一 Tushare ts_code。",
-            input_schema=_object_schema({"value": {"type": "string"}}, required=["value"]),
-            handler=self._resolve_stock,
-        )
-
-    def _stock_price_history_tool(self) -> ChatTool:
-        return ChatTool(
-            name="radar_get_stock_price_history",
-            description="读取受控 Tushare 历史数据，支持 daily、daily_basic、adj_factor。",
-            input_schema=_object_schema(
-                {
-                    "stock": {"type": "string"},
-                    "api_name": {"type": "string", "enum": ["daily", "daily_basic", "adj_factor"]},
-                    "start_date": {"type": "string"},
-                    "end_date": {"type": "string"},
-                    "days": {"type": "integer", "minimum": 1, "maximum": 365},
-                    "limit": {"type": "integer", "minimum": 1, "maximum": 240},
-                },
-                required=["stock"],
-            ),
-            handler=self._stock_price_history,
-        )
-
-    def _realtime_daily_quote_tool(self) -> ChatTool:
-        return ChatTool(
-            name="radar_get_realtime_daily_quote",
-            description="读取 Tushare rt_k 实时日线快照，适合查询盘中开盘价、最高价、最低价、最新价和成交。",
-            input_schema=_object_schema(
-                {
-                    "stock": {"type": "string"},
-                    "use_cache": {"type": "boolean"},
-                },
-                required=["stock"],
-            ),
-            handler=self._realtime_daily_quote,
         )
 
     def _strategy_dashboard_tool(self) -> ChatTool:
@@ -276,50 +233,6 @@ class RadarBuiltinExtension:
             conn.close()
         return overview.model_dump(mode="json")
 
-    def _resolve_stock(self, args: dict[str, Any]) -> dict[str, Any]:
-        value = str(args["value"]).strip()
-        return {"value": value, "ts_code": resolve_stock(self.config, value)}
-
-    def _realtime_daily_quote(self, args: dict[str, Any]) -> dict[str, Any]:
-        stock = str(args["stock"]).strip()
-        ts_code = resolve_stock(self.config, stock)
-        quote = get_realtime_daily_quote(
-            self.config,
-            ts_code=ts_code,
-            use_cache=bool(args.get("use_cache", True)),
-        )
-        if quote is None:
-            return {"found": False, "stock": stock, "ts_code": ts_code}
-        return {"found": True, "stock": stock, **quote.model_dump(mode="json")}
-
-    def _stock_price_history(self, args: dict[str, Any]) -> dict[str, Any]:
-        api_name = str(args.get("api_name") or "daily")
-        if api_name not in _TUSHARE_FIELDS:
-            raise ValueError(f"不支持的 Tushare 接口: {api_name}")
-
-        stock = str(args["stock"]).strip()
-        ts_code = resolve_stock(self.config, stock)
-        end_date = _date_key(args.get("end_date")) or datetime.now().strftime("%Y%m%d")
-        start_date = _date_key(args.get("start_date"))
-        if start_date is None:
-            days = _bounded_int(args.get("days"), default=90, maximum=365)
-            start_date = (datetime.strptime(end_date, "%Y%m%d") - timedelta(days=days)).strftime("%Y%m%d")
-
-        rows = tushare_call(
-            self.config,
-            api_name,
-            {"ts_code": ts_code, "start_date": start_date, "end_date": end_date},
-            fields=_TUSHARE_FIELDS[api_name],
-        )
-        limit = _bounded_int(args.get("limit"), default=120, maximum=240)
-        return {
-            "ts_code": ts_code,
-            "api_name": api_name,
-            "start_date": start_date,
-            "end_date": end_date,
-            "items": rows[:limit],
-        }
-
     def _strategy_dashboard(self, args: dict[str, Any]) -> dict[str, Any]:
         dashboard = build_strategy_dashboard(
             self.config,
@@ -358,13 +271,6 @@ class RadarBuiltinExtension:
         return result.model_dump(mode="json")
 
 
-_TUSHARE_FIELDS = {
-    "daily": "ts_code,trade_date,open,high,low,close,pre_close,change,pct_chg,vol,amount",
-    "daily_basic": "ts_code,trade_date,turnover_rate,volume_ratio,pe,pb,ps,total_mv,circ_mv",
-    "adj_factor": "ts_code,trade_date,adj_factor",
-}
-
-
 def _object_schema(properties: dict[str, Any], *, required: list[str] | None = None) -> dict[str, Any]:
     return {
         "type": "object",
@@ -395,13 +301,6 @@ def _optional_datetime(value: object) -> datetime | None:
     if text is None:
         return None
     return datetime.fromisoformat(text)
-
-
-def _date_key(value: object) -> str | None:
-    text = _optional_str(value)
-    if text is None:
-        return None
-    return text.replace("-", "")
 
 
 def _windows(value: object) -> list[int]:
