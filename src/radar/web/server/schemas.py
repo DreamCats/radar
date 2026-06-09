@@ -21,7 +21,6 @@ from radar.core.usecases.recommendation_backtest import (
 )
 from radar.core.usecases.source.models import SourceSignalSnapshotPage, SourceSignalValidationSummary
 from radar.core.usecases.strategy import (
-    LeadSignalSummary,
     StrategyDashboard,
     StrategyStockChart,
     StrategySnapshotSaveResult,
@@ -308,10 +307,6 @@ class StrategySnapshotSaveResponse(StrategySnapshotSaveResult):
 
 
 class StrategyValidationResponse(StrategyValidationSummary):
-    pass
-
-
-class LeadSignalResponse(LeadSignalSummary):
     pass
 
 

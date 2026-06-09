@@ -16,8 +16,6 @@ import type {
   IngestJobItem,
   IngestRequest,
   IngestResultItem,
-  LeadSignalQuery,
-  LeadSignalSummary,
   MessageConversationPage,
   MessageConversationQuery,
   MessageGroupItem,
@@ -250,10 +248,6 @@ export async function fetchStrategyStockChart(tsCode: string, query: StrategySto
 
 export async function fetchStrategyValidation(query: StrategyValidationQuery = {}): Promise<StrategyValidationSummary> {
   return getJson(`/api/strategy/validation?${params(query)}`);
-}
-
-export async function fetchLeadSignals(query: LeadSignalQuery = {}): Promise<LeadSignalSummary> {
-  return getJson(`/api/strategy/lead-signals?${params(query)}`);
 }
 
 export async function fetchSourceRadarSnapshot(query: SourceRadarQuery = {}): Promise<SourceRadarSnapshot> {
