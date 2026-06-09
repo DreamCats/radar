@@ -52,19 +52,36 @@ export function ChatLauncher(props: ChatLauncherProps) {
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const idleTimerRef = useRef<number | null>(null);
+  const autoFollowBottomRef = useRef(true);
+  const messageListRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [autoFollowBottom, setAutoFollowBottom] = useState(true);
+  const [hasNewMessagesBelow, setHasNewMessagesBelow] = useState(false);
   const visibleContext = props.context.filter((item) => item.value !== undefined && item.value !== null && `${item.value}`.trim() !== "");
 
   useEffect(() => {
-    if (open) {
-      messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+    if (!open) {
+      return;
     }
+    const frame = window.requestAnimationFrame(() => {
+      if (autoFollowBottomRef.current) {
+        scrollMessageListToBottom(false);
+        setHasNewMessagesBelow(false);
+        return;
+      }
+      if (messages.length > 0) {
+        setHasNewMessagesBelow(true);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [messages, open, sending]);
 
   useEffect(() => {
     if (!open) {
       return;
     }
+    setBottomFollowMode(true);
+    setHasNewMessagesBelow(false);
     void refreshSessions();
     void refreshModelOptions();
     if (!sessionId && messages.length === 0) {
@@ -90,11 +107,43 @@ export function ChatLauncher(props: ChatLauncherProps) {
     idleTimerRef.current = null;
   }
 
+  function setBottomFollowMode(nextValue: boolean) {
+    autoFollowBottomRef.current = nextValue;
+    setAutoFollowBottom((current) => (current === nextValue ? current : nextValue));
+  }
+
+  function scrollMessageListToBottom(smooth: boolean) {
+    const list = messageListRef.current;
+    if (!list) {
+      return;
+    }
+    if (smooth) {
+      list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+      return;
+    }
+    list.scrollTop = list.scrollHeight;
+  }
+
+  function handleMessageScrollStateChange(isNearBottom: boolean) {
+    setBottomFollowMode(isNearBottom);
+    if (isNearBottom) {
+      setHasNewMessagesBelow(false);
+    }
+  }
+
+  function jumpToLatestMessage() {
+    setBottomFollowMode(true);
+    setHasNewMessagesBelow(false);
+    scrollMessageListToBottom(true);
+  }
+
   async function submitTurn() {
     const content = draft.trim();
     if (!content || sending) {
       return;
     }
+    setBottomFollowMode(true);
+    setHasNewMessagesBelow(false);
     setSending(true);
     setError(null);
     setDraft("");
@@ -370,6 +419,8 @@ export function ChatLauncher(props: ChatLauncherProps) {
   async function restoreSession(nextSessionId: string) {
     try {
       const data = await fetchChatSession(nextSessionId);
+      setBottomFollowMode(true);
+      setHasNewMessagesBelow(false);
       setSessionId(data.session.session_id);
       setMessages(data.messages);
       writeActiveSessionId(data.session.session_id);
@@ -384,6 +435,8 @@ export function ChatLauncher(props: ChatLauncherProps) {
   function startNewSession() {
     abortControllerRef.current?.abort();
     clearActiveSessionId();
+    setBottomFollowMode(true);
+    setHasNewMessagesBelow(false);
     setSessionId(null);
     setMessages([]);
     setDraft("");
@@ -425,6 +478,8 @@ export function ChatLauncher(props: ChatLauncherProps) {
       await deleteChatSession(nextSessionId);
       if (nextSessionId === sessionId) {
         clearActiveSessionId();
+        setBottomFollowMode(true);
+        setHasNewMessagesBelow(false);
         setSessionId(null);
         setMessages([]);
       }
@@ -532,19 +587,26 @@ export function ChatLauncher(props: ChatLauncherProps) {
                   </details>
                 )}
                 </div>
-                <ChatMessageList messages={messages} endRef={messagesEndRef} />
+                <ChatMessageList
+                  messages={messages}
+                  endRef={messagesEndRef}
+                  listRef={messageListRef}
+                  showJumpToBottom={!autoFollowBottom && hasNewMessagesBelow}
+                  onJumpToBottom={jumpToLatestMessage}
+                  onScrollStateChange={handleMessageScrollStateChange}
+                />
                 <ChatComposer
-                draft={draft}
-                modelOptions={modelOptions}
-                selectedProviderName={selectedProviderName}
-                messages={messages}
-                contextItems={visibleContext}
-                evidence={props.evidence}
-                sending={sending}
-                onDraftChange={setDraft}
-                onProviderChange={changeProvider}
-                onStop={stopStreaming}
-                onSubmit={() => void submitTurn()}
+                  draft={draft}
+                  modelOptions={modelOptions}
+                  selectedProviderName={selectedProviderName}
+                  messages={messages}
+                  contextItems={visibleContext}
+                  evidence={props.evidence}
+                  sending={sending}
+                  onDraftChange={setDraft}
+                  onProviderChange={changeProvider}
+                  onStop={stopStreaming}
+                  onSubmit={() => void submitTurn()}
                 />
                 {error && <p className="chat-error">{error}</p>}
               </div>
