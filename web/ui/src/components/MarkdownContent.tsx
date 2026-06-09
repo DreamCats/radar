@@ -29,7 +29,12 @@ function TextBlock({ content }: { content: string }) {
       continue;
     }
 
-    const heading = /^(#{1,3})\s+(.+)$/.exec(line);
+    if (isHorizontalRule(line)) {
+      nodes.push(<hr key={index} />);
+      continue;
+    }
+
+    const heading = /^(#{1,6})\s+(.+)$/.exec(line);
     if (heading) {
       const level = heading[1].length;
       const children = renderInlineMarkdown(heading[2]);
@@ -114,7 +119,8 @@ function TextBlock({ content }: { content: string }) {
     while (
       index + 1 < lines.length &&
       lines[index + 1].trim() &&
-      !/^(#{1,3})\s+/.test(lines[index + 1]) &&
+      !isHorizontalRule(lines[index + 1]) &&
+      !/^(#{1,6})\s+/.test(lines[index + 1]) &&
       !/^\s*[-*]\s+/.test(lines[index + 1]) &&
       !/^\s*\d+\.\s+/.test(lines[index + 1]) &&
       !/^>\s?/.test(lines[index + 1])
@@ -125,6 +131,10 @@ function TextBlock({ content }: { content: string }) {
     nodes.push(<p key={index}>{renderInlineMarkdown(paragraphLines.join("\n"))}</p>);
   }
   return <>{nodes}</>;
+}
+
+function isHorizontalRule(line: string): boolean {
+  return /^\s*-{3,}\s*$/.test(line);
 }
 
 function isTableHeader(lines: string[], index: number): boolean {
