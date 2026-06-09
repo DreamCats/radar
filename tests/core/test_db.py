@@ -29,9 +29,9 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "strategy_snapshot_stocks",
             "strategy_snapshot_returns",
             "view_cache",
-            "source_structures",
-            "source_signal_snapshots",
         } <= tables
+        assert "source_structures" not in tables
+        assert "source_signal_snapshots" not in tables
         assert applied_migrations(conn) == {
             "001_init_messages",
             "002_init_runs",
@@ -47,6 +47,7 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "012_view_cache",
             "013_source_radar",
             "014_anchor_status_trade_date_key",
+            "015_drop_deprecated_source_radar",
         }
     finally:
         conn.close()
@@ -78,7 +79,7 @@ def test_migrations_are_idempotent(tmp_path):
         migrate_message_db(conn)
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 14
+        assert count == 15
     finally:
         conn.close()
 

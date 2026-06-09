@@ -308,17 +308,6 @@ export type StrategySnapshotBackfillJobRequest = {
   benchmark_ts_code: string;
 };
 
-export type SourceRadarJobRequest = {
-  start_time: string;
-  end_time: string;
-  force: boolean;
-  per_day_limit: number;
-  batch_size: number;
-  max_concurrency: number;
-  lookback_days: number;
-  scan_limit: number;
-};
-
 export type StrategySnapshotSaveResult = {
   snapshot_id: string;
   strategy_type: string;
@@ -329,7 +318,7 @@ export type StrategySnapshotSaveResult = {
 };
 
 export type DerivedJobItem = {
-  job_type: "anchor" | "aggregate_refine" | "recommendation_backtest" | "strategy_backfill" | "source_radar";
+  job_type: "anchor" | "aggregate_refine" | "recommendation_backtest" | "strategy_backfill";
   run_id: string;
   reused_existing: boolean;
   status: "running";
@@ -511,14 +500,6 @@ export type OrganizeEvidenceQuery = Omit<OrganizeClassificationQuery, "evidence_
 };
 
 export type {
-  SourceRadarQuery,
-  SourceRadarSignal,
-  SourceRadarSignalStatus,
-  SourceRadarSnapshot,
-  SourceRadarValidationMetric,
-  SourceRadarValidationQuery,
-  SourceRadarValidationRow,
-  SourceRadarValidationSummary,
   StrategyAttentionLevel,
   StrategyBacktestMetric,
   StrategyDashboard,

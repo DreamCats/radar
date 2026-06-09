@@ -1,15 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
-import {
-  fetchSourceRadarSnapshot,
-  fetchSourceRadarValidation,
-  fetchStrategyOpportunities,
-  fetchStrategyValidation,
-} from "../api/radarApi";
+import { fetchStrategyOpportunities, fetchStrategyValidation } from "../api/radarApi";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
-import { SourceRadarPanel } from "../components/SourceRadarPanel";
 import {
   DecisionStockGroup,
   OpportunityCard,
@@ -19,25 +13,13 @@ import {
 import { StrategyStockDrawer, type StrategyStockDrawerStock } from "../components/StrategyStockDrawer";
 import { StrategyValidationPanel } from "../components/StrategyValidationPanel";
 import { formatTime } from "../lib/datetime";
-import type {
-  SourceRadarSnapshot,
-  SourceRadarValidationSummary,
-  StrategyDashboard,
-  StrategyValidationSummary,
-} from "../types";
-type StrategyMode = "source" | "fermentation" | "validation";
-type ValidationMode = "fermentation" | "source";
+import type { StrategyDashboard, StrategyValidationSummary } from "../types";
+type StrategyMode = "fermentation" | "validation";
 
-const SHOW_SOURCE_RADAR_ENTRY = false;
 const SHOW_STRATEGY_VALIDATION_ENTRY = false;
 
 export function StrategyPage() {
-  const sourceAsOfReadyRef = useRef(false);
   const [activeMode, setActiveMode] = useState<StrategyMode>("fermentation");
-  const [activeValidationMode, setActiveValidationMode] = useState<ValidationMode>("source");
-  const [sourceAsOfTime, setSourceAsOfTime] = useState("");
-  const [sourceRadar, setSourceRadar] = useState<SourceRadarSnapshot | null>(null);
-  const [sourceValidation, setSourceValidation] = useState<SourceRadarValidationSummary | null>(null);
   const [data, setData] = useState<StrategyDashboard | null>(null);
   const [validation, setValidation] = useState<StrategyValidationSummary | null>(null);
   const [selectedStock, setSelectedStock] = useState<StrategyStockDrawerStock | null>(null);
@@ -48,15 +30,8 @@ export function StrategyPage() {
     setLoading(true);
     setError(null);
     try {
-      if (mode === "source") {
-        setSourceRadar(await fetchSourceRadarSnapshot({ limit: 20, as_of_time: sourceAsOfTime || undefined }));
-      } else if (mode === "validation") {
-        const [strategyResult, sourceResult] = await Promise.all([
-          fetchStrategyValidation({ window_days: 5, source_limit: 8 }),
-          fetchSourceRadarValidation({ window_days: 5, limit: 12 }),
-        ]);
-        setValidation(strategyResult);
-        setSourceValidation(sourceResult);
+      if (mode === "validation") {
+        setValidation(await fetchStrategyValidation({ window_days: 5, source_limit: 8 }));
       } else {
         setData(await fetchStrategyOpportunities({ days: 30, recent_days: 7, limit: 12 }));
       }
@@ -68,24 +43,12 @@ export function StrategyPage() {
   }
 
   useEffect(() => {
-    if (activeMode === "source" && !sourceRadar) {
-      void refresh("source");
-    } else if (activeMode === "fermentation" && !data) {
+    if (activeMode === "fermentation" && !data) {
       void refresh("fermentation");
-    } else if (activeMode === "validation" && (!validation || !sourceValidation)) {
+    } else if (activeMode === "validation" && !validation) {
       void refresh("validation");
     }
   }, [activeMode]);
-
-  useEffect(() => {
-    if (!sourceAsOfReadyRef.current) {
-      sourceAsOfReadyRef.current = true;
-      return;
-    }
-    if (activeMode === "source") {
-      void refresh("source");
-    }
-  }, [sourceAsOfTime]);
 
   const opportunities = data?.opportunities ?? [];
   const focusCount = opportunities.filter((item) => item.attention_level === "重点关注").length;
@@ -94,18 +57,13 @@ export function StrategyPage() {
   const actionableStockGroup = stockGroups[0];
   const secondaryStockGroups = stockGroups.slice(1);
   const actionableStockCount = stockGroups[0].items.length;
-  const activeDataLoaded =
-    activeMode === "source"
-      ? sourceRadar
-      : activeMode === "validation"
-        ? validation || sourceValidation
-        : data;
+  const activeDataLoaded = activeMode === "validation" ? validation : data;
   const initialLoading = loading && !activeDataLoaded;
 
   return (
     <section className="strategy-page">
       <div className="dashboard-actions">
-        <p>{strategyHeaderText(activeMode, initialLoading, sourceRadar, data, validation)}</p>
+        <p>{strategyHeaderText(activeMode, initialLoading, data, validation)}</p>
         <div>
           {loading && !initialLoading && <PageRefreshProgress label="正在刷新策略" />}
           <button className="btn btn-sm" type="button" onClick={() => void refresh(activeMode)} disabled={loading}>
@@ -115,19 +73,12 @@ export function StrategyPage() {
         </div>
       </div>
       <div className="strategy-mode-tabs" role="tablist" aria-label="策略模式">
-        {SHOW_SOURCE_RADAR_ENTRY && <ModeTab active={activeMode === "source"} label="源头雷达" onClick={() => setActiveMode("source")} />}
         <ModeTab active={activeMode === "fermentation"} label="发酵确认" onClick={() => setActiveMode("fermentation")} />
         {SHOW_STRATEGY_VALIDATION_ENTRY && (
           <ModeTab active={activeMode === "validation"} label="策略验证" onClick={() => setActiveMode("validation")} />
         )}
       </div>
       {initialLoading && <PageLoadingState label={loadingLabel(activeMode)} variant="strategy" />}
-      {!initialLoading && activeMode === "source" && (
-        <>
-          {error && <p className="error-line">{error}</p>}
-          <SourceRadarPanel snapshot={sourceRadar} selectedAsOfTime={sourceAsOfTime} onAsOfTimeChange={setSourceAsOfTime} />
-        </>
-      )}
       {!initialLoading && activeMode === "fermentation" && (
         <>
           <div className="statbar metric-grid">
@@ -180,12 +131,7 @@ export function StrategyPage() {
       {!initialLoading && activeMode === "validation" && (
         <>
           {error && <p className="error-line">{error}</p>}
-          <StrategyValidationPanel
-            summary={validation}
-            sourceSummary={sourceValidation}
-            activeMode={activeValidationMode}
-            onModeChange={setActiveValidationMode}
-          />
+          <StrategyValidationPanel summary={validation} />
         </>
       )}
       <StrategyStockDrawer stock={selectedStock} onClose={() => setSelectedStock(null)} />
@@ -204,15 +150,11 @@ function ModeTab(props: { active: boolean; label: string; onClick: () => void })
 function strategyHeaderText(
   mode: StrategyMode,
   loading: boolean,
-  sourceRadar: SourceRadarSnapshot | null,
   data: StrategyDashboard | null,
   validation: StrategyValidationSummary | null,
 ): string {
   if (loading) {
     return loadingLabel(mode);
-  }
-  if (mode === "source") {
-    return sourceRadar?.as_of_time ? `源头快照 ${formatTime(sourceRadar.as_of_time)} · 早期概念雷达` : "暂无源头雷达快照";
   }
   if (mode === "validation") {
     return validation ? `策略验证工作台 · T+${validation.window_days} · 发酵确认 ${validation.matured_stock_count} 个成熟样本` : "暂无策略验证数据";
@@ -221,9 +163,6 @@ function strategyHeaderText(
 }
 
 function loadingLabel(mode: StrategyMode): string {
-  if (mode === "source") {
-    return "正在加载源头雷达快照";
-  }
   if (mode === "validation") {
     return "正在加载策略验证";
   }

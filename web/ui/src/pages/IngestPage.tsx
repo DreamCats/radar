@@ -11,7 +11,6 @@ import {
   startIngestWechatJob,
   startRecommendationBacktestJob,
   saveStrategySnapshot,
-  startSourceRadarJob,
   startStrategyBackfillJob,
 } from "../api/radarApi";
 import { DateField, SelectField, TextField } from "../components/FormFields";
@@ -77,7 +76,6 @@ export function IngestPage() {
   const configGridClass = [
     "job-config-grid",
     selectedJob === "strategyBackfill" ? "minimal" : "",
-    selectedJob === "sourceRadar" ? "source-radar" : "",
   ].filter(Boolean).join(" ");
 
   useEffect(() => {
@@ -263,24 +261,6 @@ export function IngestPage() {
         reused_existing: item.reused_existing,
       }));
     }
-    if (kind === "sourceRadar") {
-      const items = await startSourceRadarJob({
-        start_time: window.start_time,
-        end_time: window.end_time,
-        force,
-        per_day_limit: 500,
-        batch_size: 24,
-        max_concurrency: 10,
-        lookback_days: 60,
-        scan_limit: 20,
-      });
-      return items.map((item) => ({
-        kind,
-        source: "早期概念",
-        run_id: item.run_id,
-        reused_existing: item.reused_existing,
-      }));
-    }
     const items = await startAggregateRefineJob({
       trade_date: tradeDate,
       source,
@@ -324,7 +304,7 @@ export function IngestPage() {
 
   function selectJob(kind: JobTemplateKey) {
     setSelectedJob(kind);
-    const needsHistoryWindow = kind === "backtest" || kind === "strategyBackfill" || kind === "sourceRadar";
+    const needsHistoryWindow = kind === "backtest" || kind === "strategyBackfill";
     if (!needsHistoryWindow && preset === "last30d") {
       const nextRange = buildYesterdayCloseRange();
       setPreset("yesterdayClose");
@@ -402,7 +382,7 @@ export function IngestPage() {
                 <PanelTitle title={selectedTemplate.title} meta={`${selectedTemplate.meta} · ${selectedTemplate.serves}`} />
               </div>
               <div className={configGridClass}>
-                {selectedJob !== "strategyBackfill" && selectedJob !== "sourceRadar" && (
+                {selectedJob !== "strategyBackfill" && (
                   <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
                 )}
                 <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />

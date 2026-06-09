@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from threading import Event
@@ -1148,85 +1147,6 @@ def test_recommendation_backtest_jobs_endpoint_starts_and_reuses_running_job(mon
     assert calls[0]["run_id"] == first["run_id"]
 
 
-def test_source_radar_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path):
-    config = _config(tmp_path)
-    extract_calls: list[dict] = []
-    scan_calls: list[dict] = []
-    started = Event()
-    release = Event()
-
-    def fake_extract(config, *, start_time, end_time, limit, force, batch_size, max_concurrency, provider_name, provider_names):
-        extract_calls.append(
-            {
-                "start_time": start_time,
-                "end_time": end_time,
-                "limit": limit,
-                "force": force,
-                "batch_size": batch_size,
-                "max_concurrency": max_concurrency,
-                "provider_name": provider_name,
-                "provider_names": provider_names,
-            }
-        )
-        started.set()
-        release.wait(timeout=2)
-        return SimpleNamespace(scanned_count=3, extracted_count=2, inserted_count=2, failed_llm_batches=0)
-
-    def fake_scan(config, *, start_time, end_time, as_of_time, lookback_days, limit, save_snapshot):
-        scan_calls.append(
-            {
-                "start_time": start_time,
-                "end_time": end_time,
-                "as_of_time": as_of_time,
-                "lookback_days": lookback_days,
-                "limit": limit,
-                "save_snapshot": save_snapshot,
-            }
-        )
-        return SimpleNamespace(candidate_count=4, candidates=[object(), object()])
-
-    monkeypatch.setattr("radar.web.server.source_jobs.extract_source_structures", fake_extract)
-    monkeypatch.setattr("radar.web.server.source_jobs.scan_source_signals", fake_scan)
-
-    client = TestClient(create_app(config))
-    payload = {
-        "start_time": "2026-06-06T00:00:00",
-        "end_time": "2026-06-06T23:59:59",
-        "force": False,
-        "per_day_limit": 500,
-        "batch_size": 8,
-        "max_concurrency": 10,
-        "lookback_days": 60,
-        "scan_limit": 20,
-    }
-    response = client.post("/api/source/radar/jobs", json=payload)
-
-    assert response.status_code == 200
-    first = response.json()["items"][0]
-    assert started.wait(timeout=1)
-    assert first["job_type"] == "source_radar"
-    assert first["status"] == "running"
-    assert first["reused_existing"] is False
-    assert get_run(config.database_path, first["run_id"]) is not None
-
-    response = client.post("/api/source/radar/jobs", json=payload)
-    second = response.json()["items"][0]
-
-    assert second["run_id"] == first["run_id"]
-    assert second["reused_existing"] is True
-    release.set()
-    for _ in range(20):
-        if scan_calls:
-            break
-        sleep(0.05)
-    assert extract_calls[0]["start_time"] == datetime.fromisoformat("2026-06-06T00:00:00")
-    assert extract_calls[0]["end_time"] == datetime.fromisoformat("2026-06-06T23:59:59")
-    assert extract_calls[0]["limit"] == 500
-    assert extract_calls[0]["max_concurrency"] == 10
-    assert scan_calls[0]["save_snapshot"] is True
-    assert scan_calls[0]["lookback_days"] == 60
-
-
 def test_recommendation_backtest_summary_endpoint_returns_rows(monkeypatch, tmp_path):
     config = _config(tmp_path)
     calls: list[dict] = []
@@ -1289,61 +1209,6 @@ def test_recommendation_backtest_summary_endpoint_returns_rows(monkeypatch, tmp_
     assert calls[0]["limit"] == 10
 
 
-def test_strategy_source_radar_endpoint_returns_latest_snapshot(tmp_path):
-    config = _config(tmp_path)
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        _insert_source_signal_snapshot(conn, "old", "2026-06-05T15:00:00", "旧概念", 55)
-        _insert_source_signal_snapshot(conn, "new", "2026-06-07T15:00:00", "AI服务器MLCC", 88)
-    finally:
-        conn.close()
-
-    client = TestClient(create_app(config))
-    response = client.get("/api/strategy/source-radar", params={"limit": 10})
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["as_of_time"] == "2026-06-07T15:00:00"
-    assert data["item_count"] == 1
-    assert data["available_as_of_times"] == ["2026-06-07T15:00:00", "2026-06-05T15:00:00"]
-    assert data["items"][0]["anchor_span"] == "AI服务器MLCC"
-    assert data["items"][0]["score"] == 88
-
-
-def test_strategy_source_radar_validation_endpoint_tracks_signal_evolution(tmp_path):
-    config = _config(tmp_path)
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        _insert_source_signal_snapshot(conn, "ai-mlcc", "2026-06-01T15:00:00", "AI服务器MLCC", 70)
-        _insert_source_signal_snapshot(
-            conn,
-            "ai-mlcc",
-            "2026-06-03T15:00:00",
-            "AI服务器MLCC",
-            91,
-            status="mapped",
-            mapped_stocks=["风华高科"],
-            followup_senders=3,
-        )
-        _insert_source_signal_snapshot(conn, "cold", "2026-06-01T15:00:00", "冷门概念", 60)
-    finally:
-        conn.close()
-
-    client = TestClient(create_app(config))
-    response = client.get("/api/strategy/source-radar/validation", params={"window_days": 5, "limit": 10})
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["snapshot_count"] == 2
-    assert data["signal_count"] == 2
-    assert data["spreading_count"] == 1
-    assert data["mapped_count"] == 1
-    assert data["top_signals"][0]["title"] == "早期AI服务器MLCC"
-    assert data["top_signals"][0]["mapped_stocks"] == ["风华高科"]
-
-
 def _config(tmp_path, **overrides) -> RadarConfig:
     return RadarConfig(
         storage={
@@ -1352,78 +1217,6 @@ def _config(tmp_path, **overrides) -> RadarConfig:
         },
         **overrides,
     )
-
-
-def _insert_source_signal_snapshot(
-    conn,
-    signal_id: str,
-    as_of_time: str,
-    anchor: str,
-    score: int,
-    *,
-    status: str = "source_seed",
-    mapped_stocks: list[str] | None = None,
-    followup_senders: int = 0,
-) -> None:
-    payload = {
-        "signal_id": signal_id,
-        "status": status,
-        "anchor_span": anchor,
-        "modifier_span": "早期",
-        "novel_span": anchor,
-        "relation_type": "modifier-anchor",
-        "score": score,
-        "novelty_strength": 0.9,
-        "earliness_score": 0.8,
-        "askability_score": 0.7,
-        "trade_score": 0.6,
-        "first_message_id": f"m-{signal_id}",
-        "first_seen_time": as_of_time,
-        "first_sender": "分析师A",
-        "first_group_name": "科技群",
-        "first_snippet": "早期概念讨论",
-        "prior_anchor_mentions": 0,
-        "prior_modifier_mentions": 0,
-        "prior_exact_mentions": 0,
-        "prior_combo_mentions": 0,
-        "asof_mentions": 1,
-        "asof_groups": 1,
-        "asof_senders": 1,
-        "followup_groups": 0,
-        "followup_senders": followup_senders,
-        "mapped_stocks": mapped_stocks or [],
-        "ask_question": "是否出现新需求？",
-        "evidence": ["历史精确 0 次"],
-    }
-    conn.execute(
-        """
-        INSERT INTO source_signal_snapshots (
-            snapshot_id, signal_id, status, anchor_span, modifier_span, novel_span,
-            relation_type, score, novelty_strength, earliness_score, askability_score,
-            trade_score, first_message_id, first_seen_time, as_of_time, payload_json, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            f"snap-{signal_id}-{as_of_time}",
-            signal_id,
-            status,
-            anchor,
-            "早期",
-            anchor,
-            "modifier-anchor",
-            score,
-            0.9,
-            0.8,
-            0.7,
-            0.6,
-            f"m-{signal_id}",
-            as_of_time,
-            as_of_time,
-            json.dumps(payload, ensure_ascii=False),
-            as_of_time,
-        ),
-    )
-    conn.commit()
 
 
 def _message(

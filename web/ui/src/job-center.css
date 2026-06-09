@@ -63,11 +63,6 @@
   gap: var(--space-xs);
 }
 
-.job-config-grid.source-radar {
-  grid-template-columns: repeat(2, minmax(220px, 1fr)) minmax(128px, 0.45fr) 144px;
-  max-width: 860px;
-}
-
 .job-config-grid.minimal {
   grid-template-columns: repeat(2, minmax(220px, 1fr)) 144px;
   max-width: 720px;

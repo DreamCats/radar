@@ -486,6 +486,19 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON message_anchor_status(extractor_version, trade_date);
         """,
     ),
+    (
+        "015_drop_deprecated_source_radar",
+        """
+        DROP TABLE IF EXISTS source_signal_snapshots;
+        DROP TABLE IF EXISTS source_structures;
+
+        DELETE FROM view_cache
+        WHERE cache_key LIKE 'strategy.source_radar%';
+
+        DELETE FROM runs
+        WHERE kind IN ('source_extract', 'source_radar_snapshot');
+        """,
+    ),
 ]
 
 MARKET_MIGRATIONS: list[Migration] = [
