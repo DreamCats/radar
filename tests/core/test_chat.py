@@ -100,6 +100,7 @@ def test_chat_agent_passes_file_backed_context_to_llm(tmp_path, monkeypatch):
         return LlmChatResponse(content="收到", tool_calls=[])
 
     monkeypatch.setattr("radar.core.chat.agent.chat_response", fake_chat_response)
+    monkeypatch.setattr("radar.core.chat.agent._today_prompt_date", lambda: "2026-06-09")
 
     agent = ChatAgent(config, store=store)
     result = agent.run_turn(
@@ -113,7 +114,7 @@ def test_chat_agent_passes_file_backed_context_to_llm(tmp_path, monkeypatch):
     assert result.user_message.metadata["llm"]["provider_name"] == "openai_main"
     assert result.assistant_message.metadata["llm"]["provider_name"] == "openai_main"
     assert seen["messages"] == [
-        {"role": "system", "content": "你是 radar 投研助手"},
+        {"role": "system", "content": "你是 radar 投研助手\n\n当日日期：2026-06-09"},
         {"role": "user", "content": "帮我看一下今天消息"},
     ]
     assert seen["kwargs"]["task"] == "chat"
@@ -175,10 +176,11 @@ def test_chat_agent_uses_default_system_prompt(tmp_path, monkeypatch):
         return LlmChatResponse(content="收到", tool_calls=[])
 
     monkeypatch.setattr("radar.core.chat.agent.chat_response", fake_chat_response)
+    monkeypatch.setattr("radar.core.chat.agent._today_prompt_date", lambda: "2026-06-09")
 
     ChatAgent(config, store=store).run_turn(session.session_id, "今天有什么机会？")
 
-    assert seen["messages"][0] == {"role": "system", "content": DEFAULT_CHAT_SYSTEM_PROMPT}
+    assert seen["messages"][0] == {"role": "system", "content": f"{DEFAULT_CHAT_SYSTEM_PROMPT}\n\n当日日期：2026-06-09"}
     assert seen["messages"][1] == {"role": "user", "content": "今天有什么机会？"}
 
 

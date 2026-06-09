@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass
+from datetime import date
 from typing import Any
 
 from radar.core.chat.builtin_extensions import RadarBuiltinExtension
@@ -454,6 +455,8 @@ class ChatAgent:
     ) -> list[dict[str, str]]:
         messages: list[dict[str, str]] = []
         resolved_system_prompt = system_prompt or DEFAULT_CHAT_SYSTEM_PROMPT
+        if resolved_system_prompt:
+            resolved_system_prompt = f"{resolved_system_prompt}\n\n当日日期：{_today_prompt_date()}"
         if skill_prompt:
             resolved_system_prompt = f"{resolved_system_prompt}\n\n{skill_prompt}" if resolved_system_prompt else skill_prompt
         if resolved_system_prompt:
@@ -491,3 +494,7 @@ class ChatAgent:
         )
         self.store.append_event(event)
         return event
+
+
+def _today_prompt_date() -> str:
+    return date.today().isoformat()
