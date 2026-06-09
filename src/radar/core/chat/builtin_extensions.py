@@ -19,7 +19,6 @@ from radar.core.messages import (
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db
 from radar.core.usecases.recommendation_backtest import DEFAULT_BACKTEST_WINDOWS, summarize_recommendation_backtests
-from radar.core.usecases.source.storage import list_latest_source_signal_snapshots
 from radar.core.usecases.strategy import build_strategy_dashboard
 
 
@@ -39,7 +38,6 @@ class RadarBuiltinExtension:
             self._message_overview_tool(),
             *RadarTushareTools(self.config).tools(),
             self._strategy_dashboard_tool(),
-            self._source_signals_tool(),
             self._backtest_summary_tool(),
         ):
             context.register_tool(tool)
@@ -121,19 +119,6 @@ class RadarBuiltinExtension:
                 }
             ),
             handler=self._strategy_dashboard,
-        )
-
-    def _source_signals_tool(self) -> ChatTool:
-        return ChatTool(
-            name="radar_source_signals",
-            description="读取最新或指定时间前的源头信号快照。",
-            input_schema=_object_schema(
-                {
-                    "as_of_time": {"type": "string"},
-                    "limit": {"type": "integer", "minimum": 1, "maximum": 50},
-                }
-            ),
-            handler=self._source_signals,
         )
 
     def _backtest_summary_tool(self) -> ChatTool:
@@ -241,19 +226,6 @@ class RadarBuiltinExtension:
             limit=_bounded_int(args.get("limit"), default=8, maximum=20),
         )
         return dashboard.model_dump(mode="json")
-
-    def _source_signals(self, args: dict[str, Any]) -> dict[str, Any]:
-        conn = connect(self.config.database_path)
-        try:
-            init_db(conn)
-            page = list_latest_source_signal_snapshots(
-                conn,
-                as_of_time=_optional_datetime(args.get("as_of_time")),
-                limit=_bounded_int(args.get("limit"), default=10, maximum=50),
-            )
-        finally:
-            conn.close()
-        return page.model_dump(mode="json")
 
     def _backtest_summary(self, args: dict[str, Any]) -> dict[str, Any]:
         end_time = _optional_datetime(args.get("end_time")) or datetime.now()

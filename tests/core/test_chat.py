@@ -370,6 +370,7 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     assert "radar_get_stock_technical_factors" in tool_names
     assert "radar_get_limit_pool" in tool_names
     assert "radar_backtest_summary" in tool_names
+    assert "radar_source_signals" not in tool_names
 
 
 def test_builtin_message_tools_read_local_database(tmp_path):

@@ -31,7 +31,6 @@ export function formatToolName(toolName: string): string {
     radar_message_overview: "消息总览",
     radar_resolve_stock: "股票代码解析",
     radar_search_messages: "消息搜索",
-    radar_source_signals: "源头信号",
     radar_strategy_dashboard: "策略看板",
   };
   return labels[toolName] ?? (toolName || "工具");
