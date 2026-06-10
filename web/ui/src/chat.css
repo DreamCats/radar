@@ -341,11 +341,6 @@
   justify-content: flex-end;
 }
 
-.strategy-stock-drawer-chat-row {
-  display: flex;
-  justify-content: flex-end;
-}
-
 @media (max-width: 640px) {
   .chat-launcher-shell {
     padding: 0;

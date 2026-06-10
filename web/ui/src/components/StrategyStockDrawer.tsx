@@ -96,13 +96,36 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
       <button className="strategy-stock-drawer-scrim" type="button" aria-label="关闭K线抽屉" onClick={onClose} />
       <aside className="strategy-stock-drawer">
         <header className="strategy-stock-drawer-head">
-          <div>
+          <div className="strategy-stock-drawer-title">
             <strong>{stock.stock_name}</strong>
             <span>{stock.ts_code}</span>
           </div>
-          <button className="icon-btn" type="button" aria-label="关闭" onClick={onClose}>
-            <X size={16} />
-          </button>
+          <div className="strategy-stock-drawer-head-actions">
+            <ChatLauncher
+              title={stock.stock_name}
+              subtitle={evidenceSummary(stock) || stock.ts_code}
+              surface="个股深挖"
+              entityId={stock.ts_code}
+              buttonLabel="AI"
+              buttonClassName="btn btn-primary btn-sm strategy-stock-ai-action"
+              context={[
+                { label: "代码", value: stock.ts_code },
+                { label: "阶段", value: stock.drawer_badge },
+                { label: "首现", value: stock.first_seen_time },
+                { label: "最近", value: stock.latest_message_time },
+                { label: "样本", value: evidenceSummary(stock) },
+              ]}
+              evidence={stockEvidenceLines(stock)}
+              suggestedQuestions={[
+                "这个标的现在还能不能看？请结合消息证据、价格位置和风险。",
+                "首提来源可靠吗？这条股票信号有没有过热或反证？",
+                "如果不追高，后续应该盯哪些价格、消息和来源变化？",
+              ]}
+            />
+            <button className="icon-btn" type="button" aria-label="关闭" onClick={onClose}>
+              <X size={16} />
+            </button>
+          </div>
         </header>
 
         <div className="strategy-stock-drawer-tags">
@@ -123,30 +146,6 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
             {drawerMetrics(stock).map((metric) => (
               <DecisionMetric label={metric.label} value={metric.value} key={metric.label} />
             ))}
-          </div>
-
-          <div className="strategy-stock-drawer-chat-row">
-            <ChatLauncher
-              title={stock.stock_name}
-              subtitle={evidenceSummary(stock) || stock.ts_code}
-              surface="个股深挖"
-              entityId={stock.ts_code}
-              buttonLabel="深挖这个标的"
-              buttonClassName="btn btn-primary btn-sm chat-inline-action"
-              context={[
-                { label: "代码", value: stock.ts_code },
-                { label: "阶段", value: stock.drawer_badge },
-                { label: "首现", value: stock.first_seen_time },
-                { label: "最近", value: stock.latest_message_time },
-                { label: "样本", value: evidenceSummary(stock) },
-              ]}
-              evidence={stockEvidenceLines(stock)}
-              suggestedQuestions={[
-                "这个标的现在还能不能看？请结合消息证据、价格位置和风险。",
-                "首提来源可靠吗？这条股票信号有没有过热或反证？",
-                "如果不追高，后续应该盯哪些价格、消息和来源变化？",
-              ]}
-            />
           </div>
 
           <section className="strategy-stock-evidence-panel">
