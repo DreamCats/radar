@@ -144,6 +144,24 @@
   font-weight: 700;
 }
 
+.markdown-percent-up {
+  color: var(--color-price-up);
+  font-weight: 700;
+}
+
+.markdown-percent-down {
+  color: var(--color-price-down);
+  font-weight: 700;
+}
+
+.markdown-number,
+.markdown-percent-up,
+.markdown-percent-down {
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
 .markdown-content code {
   border: 1px solid var(--color-hairline);
   border-radius: 4px;
