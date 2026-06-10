@@ -265,8 +265,20 @@ class StrategySnapshotBackfillJobRequest(BaseModel):
     benchmark_ts_code: str = DEFAULT_BENCHMARK_TS_CODE
 
 
+class StockEvidenceChainJobRequest(BaseModel):
+    start_time: datetime
+    end_time: datetime
+    evidence_days: int = Field(default=40, ge=7, le=90)
+    limit: int = Field(default=120, ge=1, le=500)
+    run_llm: bool = True
+    llm_workers: int = Field(default=16, ge=1, le=64)
+    provider_names: list[str] | None = None
+    model: str | None = None
+    force_llm: bool = False
+
+
 class DerivedJobItem(BaseModel):
-    job_type: Literal["anchor", "aggregate_refine", "recommendation_backtest", "strategy_backfill"]
+    job_type: Literal["anchor", "aggregate_refine", "recommendation_backtest", "strategy_backfill", "stock_evidence_chain"]
     run_id: str
     reused_existing: bool = False
     status: Literal["running"]

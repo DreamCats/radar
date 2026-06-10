@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import sqlite3
@@ -67,6 +68,7 @@ def save_judgement(
 ) -> None:
     candidate = pack.candidate
     now = datetime.now().isoformat()
+    signature = evidence_signature(pack)
     evidence_refs = [
         {
             "message_id": item.message.message_id,
@@ -80,6 +82,7 @@ def save_judgement(
     payload = dict(judgement.result)
     payload["summary"] = judgement.summary
     payload["raw_text"] = judgement.raw_text
+    payload["evidence_signature"] = signature
     if pack.market is not None:
         payload["market_evidence"] = _market_payload(pack)
     conn.execute(
@@ -89,8 +92,8 @@ def save_judgement(
             stock_name, stage, confidence, trigger_count, unique_trigger_count,
             sender_count, conversation_count, evidence_count, channels_json,
             evidence_refs_json, llm_provider, model, prompt_version,
-            result_json, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            result_json, created_at, updated_at, evidence_signature
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(as_of_time, ts_code, prompt_version) DO UPDATE SET
             stage = excluded.stage,
             confidence = excluded.confidence,
@@ -104,6 +107,7 @@ def save_judgement(
             llm_provider = excluded.llm_provider,
             model = excluded.model,
             result_json = excluded.result_json,
+            evidence_signature = excluded.evidence_signature,
             updated_at = excluded.updated_at
         """,
         (
@@ -128,9 +132,69 @@ def save_judgement(
             json.dumps(payload, ensure_ascii=False),
             now,
             now,
+            signature,
         ),
     )
     conn.commit()
+
+
+def load_reusable_judgement(
+    conn: sqlite3.Connection,
+    *,
+    pack: EvidencePack,
+) -> Judgement | None:
+    signature = evidence_signature(pack)
+    row = conn.execute(
+        """
+        SELECT stage, confidence, result_json, llm_provider, model
+        FROM stock_lifecycle_judgements
+        WHERE ts_code = ?
+          AND prompt_version = ?
+          AND evidence_signature = ?
+        ORDER BY updated_at DESC
+        LIMIT 1
+        """,
+        (pack.candidate.stock.ts_code, PROMPT_VERSION, signature),
+    ).fetchone()
+    if row is None:
+        return None
+    result = _safe_json(row["result_json"])
+    return Judgement(
+        stage=str(row["stage"]),
+        confidence=_float(row["confidence"]),
+        summary=str(result.get("summary") or result.get("one_line") or ""),
+        raw_text=str(result.get("raw_text") or ""),
+        result=result,
+        provider=row["llm_provider"],
+        model=row["model"],
+    )
+
+
+def evidence_signature(pack: EvidencePack) -> str:
+    candidate = pack.candidate
+    payload = {
+        "prompt_version": PROMPT_VERSION,
+        "stock": candidate.stock.ts_code,
+        "trigger_count": candidate.trigger_count,
+        "unique_trigger_count": candidate.unique_trigger_count,
+        "sender_count": candidate.sender_count,
+        "conversation_count": candidate.conversation_count,
+        "evidence_score": candidate.evidence_score,
+        "channels": sorted(candidate.channels),
+        "family_counts": candidate.family_counts,
+        "messages": [
+            {
+                "message_id": item.message.message_id,
+                "message_time": item.message.message_time.isoformat(),
+                "fingerprint": item.fingerprint,
+                "families": sorted(item.evidence_families),
+            }
+            for item in pack.evidence
+        ],
+        "market": _market_payload(pack) if pack.market is not None else {},
+    }
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()
 
 
 def _system_prompt() -> str:
@@ -245,6 +309,14 @@ def _parse_result(text: str) -> dict[str, object]:
         return {}
 
 
+def _safe_json(text: object) -> dict[str, object]:
+    try:
+        parsed = json.loads(str(text or "{}"))
+        return parsed if isinstance(parsed, dict) else {}
+    except json.JSONDecodeError:
+        return {}
+
+
 def _strip_json_fence(text: str) -> str:
     if not text.startswith("```"):
         return text
@@ -271,6 +343,10 @@ def _extract_stage(result: dict[str, object], text: str) -> str:
 
 def _extract_confidence(result: dict[str, object]) -> float | None:
     value = result.get("confidence")
+    return _float(value)
+
+
+def _float(value: object) -> float | None:
     try:
         confidence = float(value)
     except (TypeError, ValueError):

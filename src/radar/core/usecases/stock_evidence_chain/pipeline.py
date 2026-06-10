@@ -7,7 +7,7 @@ from datetime import datetime, time, timedelta
 from radar.core.config import RadarConfig
 from radar.core.db import migrate_market_db
 from radar.core.store import connect, init_db
-from radar.core.usecases.stock_evidence_chain.llm import judge_pack, save_judgement
+from radar.core.usecases.stock_evidence_chain.llm import judge_pack, load_reusable_judgement, save_judgement
 from radar.core.usecases.stock_evidence_chain.market import load_market_evidence
 from radar.core.usecases.stock_evidence_chain.matcher import (
     StockMatcher,
@@ -45,6 +45,7 @@ class EvidenceChainRunResult:
     mention_count: int
     candidate_count: int
     judged_count: int
+    reused_count: int
     failed_count: int
 
 
@@ -96,6 +97,7 @@ def build_stock_evidence_chain(
     llm_model: str | None = None,
     llm_max_tokens: int = 2048,
     llm_temperature: float = 0.2,
+    force_llm: bool = False,
 ) -> EvidenceChainRunResult:
     conn = connect(config.database_path)
     market_conn = connect(config.market_database_path)
@@ -108,7 +110,7 @@ def build_stock_evidence_chain(
         indexed = index_stock_mentions(config, start=evidence_start, end=as_of)
         candidates = load_candidates(conn, window_start=window_start, as_of=as_of)[:limit]
         save_candidates(conn, as_of=as_of, window_start=window_start, evidence_start=evidence_start, candidates=candidates)
-        judged, failed = 0, 0
+        judged, reused, failed = 0, 0, 0
         if run_llm and candidates:
             packs = []
             for item in candidates:
@@ -122,7 +124,7 @@ def build_stock_evidence_chain(
                     as_of=as_of,
                 )
                 packs.append(EvidencePack(candidate=pack.candidate, evidence=pack.evidence, market=market))
-            judged, failed = _judge_packs(
+            judged, reused, failed = _judge_packs(
                 config,
                 conn,
                 packs=packs,
@@ -134,6 +136,7 @@ def build_stock_evidence_chain(
                 max_tokens=llm_max_tokens,
                 temperature=llm_temperature,
                 workers=llm_workers,
+                force_llm=force_llm,
             )
         return EvidenceChainRunResult(
             as_of=as_of,
@@ -143,6 +146,7 @@ def build_stock_evidence_chain(
             mention_count=indexed.mention_count,
             candidate_count=len(candidates),
             judged_count=judged,
+            reused_count=reused,
             failed_count=failed,
         )
     finally:
@@ -189,12 +193,26 @@ def _judge_packs(
     max_tokens: int,
     temperature: float,
     workers: int,
-) -> tuple[int, int]:
+    force_llm: bool,
+) -> tuple[int, int, int]:
     judged = 0
+    reused = 0
     failed = 0
     with ThreadPoolExecutor(max_workers=max(workers, 1)) as pool:
         futures = {}
         for index, pack in enumerate(packs):
+            reusable = None if force_llm else load_reusable_judgement(conn, pack=pack)
+            if reusable is not None:
+                save_judgement(
+                    conn,
+                    as_of=as_of,
+                    window_start=window_start,
+                    evidence_start=evidence_start,
+                    pack=pack,
+                    judgement=reusable,
+                )
+                reused += 1
+                continue
             provider = providers[index % len(providers)]
             future = pool.submit(
                 judge_pack,
@@ -221,7 +239,7 @@ def _judge_packs(
                 judged += 1
             except Exception:
                 failed += 1
-    return judged, failed
+    return judged, reused, failed
 
 
 def _latest_message_time(conn) -> datetime:

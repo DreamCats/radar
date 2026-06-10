@@ -111,4 +111,14 @@ EVIDENCE_CHAIN_MIGRATIONS: list[Migration] = [
         GROUP BY message_id;
         """,
     ),
+    (
+        "018_stock_lifecycle_judgement_signature",
+        """
+        ALTER TABLE stock_lifecycle_judgements
+            ADD COLUMN evidence_signature TEXT;
+
+        CREATE INDEX IF NOT EXISTS idx_stock_lifecycle_judgements_signature
+            ON stock_lifecycle_judgements(ts_code, prompt_version, evidence_signature, updated_at);
+        """,
+    ),
 ]

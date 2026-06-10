@@ -237,6 +237,7 @@ def list_runs(
     database: Path,
     *,
     kind: str | None = None,
+    kinds: list[str] | None = None,
     status: RunStatus | None = None,
     limit: int = 50,
 ) -> list[RunRecord]:
@@ -251,6 +252,10 @@ def list_runs(
     if kind:
         where.append("kind = ?")
         params.append(kind)
+    if kinds:
+        placeholders = ", ".join("?" for _ in kinds)
+        where.append(f"kind IN ({placeholders})")
+        params.extend(kinds)
     if status:
         where.append("status = ?")
         params.append(status)

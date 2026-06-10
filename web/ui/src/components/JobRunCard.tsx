@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Clock3, LoaderCircle } from "lucide-react";
 
 import type { RunItem } from "../types";
 
-type JobRunKind = "ingest" | "classify" | "anchor" | "refine" | "backtest" | "strategyBackfill";
+type JobRunKind = "ingest" | "classify" | "anchor" | "refine" | "backtest" | "strategyBackfill" | "stockEvidenceChain";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -17,7 +17,7 @@ export function JobRunCard({ kind, source, run, runId, reusedExisting = false }:
   const metadata = run?.metadata ?? {};
   const title = `${kindTitle(kind)} · ${source}`;
   const progress = progressPercent(kind, run);
-  const stage = textValue(metadata.stage) || statusText(kind, status);
+  const stage = status === "failed" ? failedStage(run) : textValue(metadata.stage) || statusText(kind, status);
   const metrics = jobMetrics(kind, run);
   const detail = detailText(run);
 
@@ -77,6 +77,9 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "backtest" || kind === "strategyBackfill") {
       return backtestProgress(run);
     }
+    if (kind === "stockEvidenceChain") {
+      return evidenceChainProgress(run);
+    }
     return refineProgress(run);
   }
   return 100;
@@ -122,6 +125,14 @@ function backtestProgress(run?: RunItem): number {
   return boundedPercent(done, total);
 }
 
+function evidenceChainProgress(run?: RunItem): number {
+  const metadata = run?.metadata ?? {};
+  if (numberValue(metadata.candidate_count) > 0 || run?.stored_count) {
+    return 65;
+  }
+  return numberValue(metadata.indexed_messages) > 0 ? 35 : 8;
+}
+
 function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   if (kind === "ingest") {
     return ingestMetrics(run);
@@ -137,6 +148,9 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   }
   if (kind === "strategyBackfill") {
     return strategyBackfillMetrics(run);
+  }
+  if (kind === "stockEvidenceChain") {
+    return evidenceChainMetrics(run);
   }
   return refineMetrics(run);
 }
@@ -254,6 +268,25 @@ function strategyBackfillMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
+function evidenceChainMetrics(run?: RunItem): string[] {
+  const metadata = run?.metadata ?? {};
+  const indexed = numberValue(metadata.indexed_messages) || run?.raw_count || 0;
+  const mentions = numberValue(metadata.mention_count);
+  const candidates = numberValue(metadata.candidate_count) || run?.stored_count || 0;
+  const judged = numberValue(metadata.judged_count);
+  const reused = numberValue(metadata.reused_count);
+  const failed = numberValue(metadata.failed_count) || run?.filtered_count || 0;
+  return [
+    `索引消息 ${indexed} 条`,
+    `股票命中 ${mentions} 条`,
+    `候选 ${candidates} 只`,
+    `LLM 新判 ${judged}`,
+    `复用 ${reused}`,
+    `失败 ${failed}`,
+    durationText(run),
+  ].filter(Boolean);
+}
+
 function detailText(run?: RunItem): string {
   if (!run) {
     return "任务已提交，等待服务端返回运行状态。";
@@ -267,6 +300,14 @@ function detailText(run?: RunItem): string {
   const base = start && end ? `时间窗口：${start} - ${end}` : `目标：${run.target}`;
   const anchorReason = textValue(metadata.market_anchor_skipped_reason);
   return anchorReason ? `${base}；${anchorReason}` : base;
+}
+
+function failedStage(run?: RunItem): string {
+  const message = run?.error_message?.trim();
+  if (!message) {
+    return "失败";
+  }
+  return `失败：${message.slice(0, 48)}`;
 }
 
 function statusText(kind: JobRunKind, status: RunItem["status"] | "running"): string {
@@ -297,6 +338,9 @@ function kindTitle(kind: JobRunKind): string {
   }
   if (kind === "strategyBackfill") {
     return "策略快照回填";
+  }
+  if (kind === "stockEvidenceChain") {
+    return "个股证据链";
   }
   return "聚合 refine";
 }

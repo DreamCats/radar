@@ -9,6 +9,7 @@ from radar.web.server.backtest_jobs import mark_stale_backtest_runs
 from radar.web.server.classify_jobs import mark_stale_classify_runs
 from radar.web.server.deps import get_config
 from radar.web.server.ingest_jobs import mark_stale_ingest_runs
+from radar.web.server.strategy_jobs import STOCK_EVIDENCE_CHAIN_RUN_KIND, STRATEGY_BACKFILL_RUN_KIND, mark_stale_strategy_runs
 from radar.web.server.schemas import RunListResponse
 
 router = APIRouter(prefix="/api", tags=["runs"])
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/api", tags=["runs"])
 @router.get("/runs", response_model=RunListResponse)
 def runs(
     kind: str | None = Query(default=None),
+    kinds: str | None = Query(default=None),
     status: RunStatus | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
     config: RadarConfig = Depends(get_config),
@@ -25,7 +27,10 @@ def runs(
     mark_stale_classify_runs(config)
     mark_stale_aggregate_runs(config)
     mark_stale_backtest_runs(config)
-    return RunListResponse(items=list_runs(config.database_path, kind=kind, status=status, limit=limit))
+    mark_stale_strategy_runs(config, kind=STRATEGY_BACKFILL_RUN_KIND)
+    mark_stale_strategy_runs(config, kind=STOCK_EVIDENCE_CHAIN_RUN_KIND)
+    kind_list = [item.strip() for item in kinds.split(",") if item.strip()] if kinds else None
+    return RunListResponse(items=list_runs(config.database_path, kind=kind, kinds=kind_list, status=status, limit=limit))
 
 
 @router.post("/runs/{run_id}/cancel", response_model=RunRecord)

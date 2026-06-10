@@ -34,6 +34,7 @@ import type {
   RecommendationBacktestSummary,
   RunItem,
   StrategyDashboard,
+  StockEvidenceChainJobRequest,
   StrategySnapshotBackfillJobRequest,
   StrategySnapshotSaveRequest,
   StrategySnapshotSaveResult,
@@ -202,7 +203,7 @@ export async function fetchOrganizeAggregateEvidence(
   return getJson(`/api/organize/aggregates/evidence?${params(query)}`);
 }
 
-export async function fetchRuns(query: { kind?: string; status?: RunItem["status"]; limit?: number } = {}): Promise<RunItem[]> {
+export async function fetchRuns(query: { kind?: string; kinds?: string[]; status?: RunItem["status"]; limit?: number } = {}): Promise<RunItem[]> {
   const data = await getJson<{ items: RunItem[] }>(`/api/runs?${params({ limit: 20, ...query })}`);
   return data.items;
 }
@@ -348,6 +349,19 @@ export async function startStrategyBackfillJob(request: StrategySnapshotBackfill
   return data.items;
 }
 
+export async function startStockEvidenceChainJob(request: StockEvidenceChainJobRequest): Promise<DerivedJobItem[]> {
+  const response = await fetch(`${apiBase}/api/strategy/evidence-chain/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: DerivedJobItem[] };
+  return data.items;
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(`${apiBase}${path}`);
   if (!response.ok) {
@@ -360,7 +374,7 @@ function params(query: Record<string, unknown>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined && value !== "") {
-      search.set(key, String(value));
+      search.set(key, Array.isArray(value) ? value.join(",") : String(value));
     }
   }
   return search.toString();

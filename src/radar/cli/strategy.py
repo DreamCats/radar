@@ -52,6 +52,7 @@ def evidence_chain_index_command(ctx: click.Context, start_time: str, end_time: 
 @click.option("--llm-workers", type=click.IntRange(1, 64), default=16, show_default=True)
 @click.option("--llm-provider", "llm_providers", multiple=True, help="LLM provider，可重复；不传走默认 provider。")
 @click.option("--llm-model", default=None)
+@click.option("--force-llm", is_flag=True, help="忽略证据签名缓存，强制重新调用 LLM。")
 @click.pass_context
 def evidence_chain_run_command(
     ctx: click.Context,
@@ -63,6 +64,7 @@ def evidence_chain_run_command(
     llm_workers: int,
     llm_providers: tuple[str, ...],
     llm_model: str | None,
+    force_llm: bool,
 ) -> None:
     """生成候选池；可选并发调用 LLM 判断阶段。"""
 
@@ -76,12 +78,13 @@ def evidence_chain_run_command(
         llm_workers=llm_workers,
         llm_providers=list(llm_providers) or None,
         llm_model=llm_model,
+        force_llm=force_llm,
     )
     click.echo(
         "strategy/evidence-chain/run: "
         f"as_of={result.as_of.isoformat()} indexed_messages={result.indexed_messages} "
         f"mentions={result.mention_count} candidates={result.candidate_count} "
-        f"judged={result.judged_count} failed={result.failed_count}"
+        f"judged={result.judged_count} reused={result.reused_count} failed={result.failed_count}"
     )
 
 

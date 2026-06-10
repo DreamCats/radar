@@ -18,6 +18,7 @@ from radar.core.view_cache import (
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     DerivedJobResponse,
+    StockEvidenceChainJobRequest,
     StrategyDashboardResponse,
     StrategyStockChartResponse,
     StrategySnapshotBackfillJobRequest,
@@ -25,7 +26,7 @@ from radar.web.server.schemas import (
     StrategySnapshotSaveResponse,
     StrategyValidationResponse,
 )
-from radar.web.server.strategy_jobs import submit_strategy_backfill_job
+from radar.web.server.strategy_jobs import submit_stock_evidence_chain_job, submit_strategy_backfill_job
 
 router = APIRouter(prefix="/api/strategy", tags=["strategy"])
 
@@ -114,3 +115,13 @@ def start_strategy_backfill_job(
     if request.start_time and request.end_time and request.end_time <= request.start_time:
         raise HTTPException(status_code=400, detail="end_time 必须晚于 start_time")
     return DerivedJobResponse(items=[submit_strategy_backfill_job(config, request)])
+
+
+@router.post("/evidence-chain/jobs", response_model=DerivedJobResponse)
+def start_stock_evidence_chain_job(
+    request: StockEvidenceChainJobRequest,
+    config: RadarConfig = Depends(get_config),
+) -> DerivedJobResponse:
+    if request.end_time <= request.start_time:
+        raise HTTPException(status_code=400, detail="end_time 必须晚于 start_time")
+    return DerivedJobResponse(items=[submit_stock_evidence_chain_job(config, request)])
