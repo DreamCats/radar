@@ -143,7 +143,7 @@ function AlphaTooltip(props: { active?: boolean; payload?: Array<{ payload?: Lea
       <span>T+5 平均收益: {formatSignedPercent(point.avgReturn)}</span>
       <span>{point.windowWinRates.map((item) => `${item.label} ${formatPercent(item.value)}`).join(" / ")}</span>
       <span>
-        样本: {point.sampleCount} / 推荐事件: {point.eventCount}
+        样本: {point.sampleCount} / 证据事件: {point.eventCount}
       </span>
     </div>
   );
@@ -178,7 +178,7 @@ function rowTitle(row: RecommendationBacktestSummaryRow, dimension: BacktestGrou
 
 function rowSubtitle(row: RecommendationBacktestSummaryRow, dimension: BacktestGroupBy): string {
   if (dimension === "source") {
-    return `${row.event_count} 条推荐事件`;
+    return `${row.event_count} 条证据事件`;
   }
   return [
     row.stock_name || row.ts_code ? `股票 ${row.stock_name || row.ts_code}` : "",

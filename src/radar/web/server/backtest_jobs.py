@@ -81,8 +81,9 @@ def _target(request: RecommendationBacktestRequest) -> str:
         f"{request.source}:{window_target}:"
         f"windows={windows}|benchmark={request.benchmark_ts_code}"
         f"|min_conf={request.min_classification_confidence}"
+        f"|extractor={RECOMMENDATION_EVENT_EXTRACTOR_VERSION}"
     )
 
 
 def _metadata(request: RecommendationBacktestRequest) -> dict[str, object]:
-    return request.model_dump(mode="json")
+    return request.model_dump(mode="json") | {"extractor_version": RECOMMENDATION_EVENT_EXTRACTOR_VERSION}

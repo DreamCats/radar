@@ -545,7 +545,7 @@ narrative_stock_snapshots
 radar strategy cleanup-deprecated --confirm
 ```
 
-`message_anchors`、`aggregate_refine_results`、`recommendation_events`、`recommendation_backtest_windows` 暂时不自动删除。它们仍可能被旧策略、榜单、回测或诊断页面引用，后续确认无依赖后再清。
+`message_anchors` 与 `aggregate_refine_results` 已进入废弃清理；旧 anchor 事件生成的 `recommendation_events` / `recommendation_backtest_windows` 也会被迁移清掉。当前榜单只保留个股证据链生成的生命周期证据事件。
 
 ## 验收标准
 

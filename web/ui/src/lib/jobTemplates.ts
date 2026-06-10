@@ -13,7 +13,7 @@ const ALL_JOB_TEMPLATES = [
   { key: "ingest", title: "微信数据源", meta: "原始入库", serves: "服务于全站数据底座", icon: Database },
   { key: "classify", title: "消息分类", meta: "LLM 派生", serves: "服务于整理 / 榜单 / 策略", icon: Bot },
   { key: "anchor", title: "Anchor 更新", meta: "市场词库", serves: "更新股票 / 概念 / 行业 / 主题", icon: Anchor },
-  { key: "backtest", title: "推荐回测补齐", meta: "T+N 补齐", serves: "服务于榜单胜率回测", icon: ChartNoAxesCombined },
+  { key: "backtest", title: "证据回测补齐", meta: "T+N 补齐", serves: "服务于高质量证据榜", icon: ChartNoAxesCombined },
   { key: "stockEvidenceChain", title: "个股证据链", meta: "策略离线", serves: "服务于早期筛选 / 阶段判断", icon: GitBranch },
 ] satisfies Array<{ key: JobTemplateKey; title: string; meta: string; serves: string; icon: typeof Database }>;
 
@@ -41,7 +41,7 @@ export function configHints(kind: JobTemplateKey): string[] {
     return ["按交易日更新", "只写 market_anchors", "不扫描消息库"];
   }
   if (kind === "backtest") {
-    return ["默认近 30 天", "补齐 T+1/T+2/T+3/T+5", "已完成窗口自动跳过", "未成熟下次继续补"];
+    return ["来自个股证据链", "补齐 T+1/T+2/T+3/T+5", "已完成窗口自动跳过", "未成熟下次继续补"];
   }
   if (kind === "stockEvidenceChain") {
     return ["默认证据回看 40 天", "候选最多 120 只", "LLM 并发 16", "相同证据自动复用判断"];

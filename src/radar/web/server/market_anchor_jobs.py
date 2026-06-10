@@ -12,13 +12,13 @@ from radar.web.server.schemas import DerivedJobItem, MarketAnchorUpdateRequest
 ANCHOR_RUN_KIND = "market_anchor_update"
 STALE_AFTER = timedelta(hours=4)
 
-_EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="radar-aggregate")
+_EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="radar-market-anchor")
 _SUBMIT_LOCK = Lock()
 
 
 def submit_market_anchor_update_job(config: RadarConfig, request: MarketAnchorUpdateRequest) -> DerivedJobItem:
     with _SUBMIT_LOCK:
-        mark_stale_aggregate_runs(config)
+        mark_stale_market_anchor_runs(config)
         target = _anchor_target(request)
         running = get_running_run(config.database_path, kind=ANCHOR_RUN_KIND, target=target)
         if running is not None:
@@ -29,7 +29,7 @@ def submit_market_anchor_update_job(config: RadarConfig, request: MarketAnchorUp
         return DerivedJobItem(job_type="anchor", run_id=run_id, reused_existing=False, status="running")
 
 
-def mark_stale_aggregate_runs(config: RadarConfig) -> int:
+def mark_stale_market_anchor_runs(config: RadarConfig) -> int:
     older_than = datetime.now() - STALE_AFTER
     return fail_stale_runs(config.database_path, older_than=older_than, kind=ANCHOR_RUN_KIND)
 

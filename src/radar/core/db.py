@@ -130,23 +130,7 @@ MESSAGE_MIGRATIONS: list[Migration] = [
     (
         "008_aggregate_refine_results",
         """
-        CREATE TABLE IF NOT EXISTS aggregate_refine_results (
-            input_hash         TEXT PRIMARY KEY,
-            run_id             TEXT NOT NULL,
-            trade_date         TEXT NOT NULL,
-            start_time         TEXT NOT NULL,
-            end_time           TEXT NOT NULL,
-            extractor_version  TEXT NOT NULL,
-            prompt_version     TEXT NOT NULL,
-            candidate_count    INTEGER NOT NULL,
-            theme_count        INTEGER NOT NULL,
-            result_json        TEXT NOT NULL,
-            created_at         TEXT NOT NULL,
-            updated_at         TEXT NOT NULL
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_aggregate_refine_results_window
-            ON aggregate_refine_results(trade_date, start_time, end_time, updated_at DESC);
+        -- Deprecated: aggregate refine has been removed.
         """,
     ),
     (
@@ -366,6 +350,29 @@ MESSAGE_MIGRATIONS: list[Migration] = [
 
         DELETE FROM runs
         WHERE kind = 'message_anchor_range';
+        """,
+    ),
+    (
+        "021_drop_deprecated_aggregate_and_anchor_backtests",
+        """
+        DELETE FROM recommendation_backtest_windows
+        WHERE event_id IN (
+            SELECT event_id
+            FROM recommendation_events
+            WHERE extractor_version <> 'lifecycle-evidence-v1'
+        );
+
+        DELETE FROM recommendation_events
+        WHERE extractor_version <> 'lifecycle-evidence-v1';
+
+        DROP TABLE IF EXISTS aggregate_refine_results;
+
+        DELETE FROM view_cache
+        WHERE cache_key LIKE 'organize.aggregate%'
+           OR dependency_key LIKE '%aggregate_refine_results%';
+
+        DELETE FROM runs
+        WHERE kind IN ('aggregate_refine', 'aggregate_topics');
         """,
     ),
 ]

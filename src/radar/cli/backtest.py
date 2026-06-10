@@ -27,7 +27,7 @@ _SOURCE_MAP: dict[str, MessageSource | None] = {
 
 @click.group()
 def backtest() -> None:
-    """推荐消息胜率回测。"""
+    """高质量证据胜率回测。"""
 
 
 @backtest.command("refresh")
@@ -58,7 +58,7 @@ def refresh_command(
     min_classification_confidence: float,
     force: bool,
 ) -> None:
-    """扫描最近 N 天 recommendation+stock 事件，补齐成熟 T+N。"""
+    """从个股证据链生成证据事件，补齐成熟 T+N。"""
 
     result = refresh_recommendation_backtests(
         load_cli_config(ctx),

@@ -210,7 +210,7 @@ function backtestMetrics(run?: RunItem): string[] {
   const missing = numberValue(metadata.missing_price_count);
   const failed = numberValue(metadata.failed_count);
   return [
-    `推荐事件 ${events} 条`,
+    `证据事件 ${events} 条`,
     `新增事件 ${inserted} 条`,
     `已补齐窗口 ${refreshed}`,
     `已完成跳过 ${skipped}`,
@@ -287,7 +287,7 @@ function kindTitle(kind: JobRunKind): string {
     return "Anchor 更新";
   }
   if (kind === "backtest") {
-    return "推荐回测补齐";
+    return "证据回测补齐";
   }
   if (kind === "stockEvidenceChain") {
     return "个股证据链";

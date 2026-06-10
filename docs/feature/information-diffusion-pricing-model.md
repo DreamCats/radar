@@ -519,7 +519,7 @@
 | 全文索引 | `messages_fts` | 关键词倒查、首现近似、重复内容检索 |
 | 消息分类 | `message_classifications` | 筛掉闲聊，保留 `research` / `event` / `recommendation` / `industry` |
 | Anchor 抽取 | `message_anchors` | 识别股票、概念、行业、主题，但需要归一化和去重 |
-| 聚合主题精炼 | `aggregate_refine_results` | 聚合主题、催化、风险、逻辑成型 |
+| 聚合主题精炼 | `aggregate_refine_results` | 已废弃：后续不再作为叙事/榜单产物 |
 | 推荐事件 | `recommendation_events` | 股票、来源、分析师、推荐时间和方向 |
 | 推荐回测 | `recommendation_backtest_windows` | T+1/T+2/T+3/T+5 行情反馈，必须和 `recommendation_events` 一起用 |
 | 行情缓存 | `market.sqlite3:tushare_history` | 涨幅、回撤、价格位置、股票定价状态 |

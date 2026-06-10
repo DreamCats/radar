@@ -18,7 +18,6 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "fetch_windows",
             "runs",
             "message_classifications",
-            "aggregate_refine_results",
             "recommendation_events",
             "recommendation_backtest_windows",
             "analysts",
@@ -34,6 +33,7 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
         assert "strategy_snapshot_returns" not in tables
         assert "message_anchors" not in tables
         assert "message_anchor_status" not in tables
+        assert "aggregate_refine_results" not in tables
         assert "source_structures" not in tables
         assert "source_signal_snapshots" not in tables
         assert applied_migrations(conn) == {
@@ -56,6 +56,7 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "018_stock_lifecycle_judgement_signature",
             "019_drop_deprecated_fermentation_strategy",
             "020_drop_message_anchor_tables",
+            "021_drop_deprecated_aggregate_and_anchor_backtests",
         }
     finally:
         conn.close()

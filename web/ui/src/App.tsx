@@ -96,7 +96,7 @@ function pageTitle(tab: TabKey): string {
     wechat: "微信消息",
     messages: "消息查询",
     organize: "消息整理",
-    leaderboard: "推荐胜率榜",
+    leaderboard: "证据胜率榜",
     strategy: "个股证据链",
     ingest: "作业中心",
   };

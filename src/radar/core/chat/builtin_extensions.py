@@ -122,7 +122,7 @@ class RadarBuiltinExtension:
     def _backtest_summary_tool(self) -> ChatTool:
         return ChatTool(
             name="radar_backtest_summary",
-            description="读取推荐事件回测汇总，按来源、分析师、股票或行业聚合。",
+            description="读取高质量证据事件回测汇总，按来源、分析师、股票或行业聚合。",
             input_schema=_object_schema(
                 {
                     "start_time": {"type": "string"},

@@ -760,7 +760,7 @@ def test_anchor_jobs_endpoint_updates_market_anchors_and_reuses_running_job(monk
             failed_sources={},
         )
 
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.ensure_market_anchors", fake_ensure)
+    monkeypatch.setattr("radar.web.server.market_anchor_jobs.ensure_market_anchors", fake_ensure)
 
     client = TestClient(create_app(config))
     payload = {
@@ -794,7 +794,7 @@ def test_anchor_jobs_endpoint_updates_market_anchors_and_reuses_running_job(monk
 def test_anchor_jobs_endpoint_records_resolved_trade_date(monkeypatch, tmp_path):
     config = _config(tmp_path)
     monkeypatch.setattr(
-        "radar.web.server.aggregate_jobs.ensure_market_anchors",
+        "radar.web.server.market_anchor_jobs.ensure_market_anchors",
         lambda *args, **kwargs: SimpleNamespace(
             trade_date="20260605",
             refreshed=False,
