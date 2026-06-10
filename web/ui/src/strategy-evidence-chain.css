@@ -38,6 +38,74 @@
   overflow: hidden;
 }
 
+.stock-evidence-sort-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.stock-evidence-sort-help > button {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  color: var(--color-ink-tertiary);
+  background: transparent;
+  cursor: help;
+}
+
+.stock-evidence-sort-help > button:hover,
+.stock-evidence-sort-help > button:focus-visible {
+  border-color: var(--color-hairline);
+  color: var(--color-ink);
+  background: var(--color-surface-2);
+  outline: none;
+}
+
+.stock-evidence-sort-tooltip {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  z-index: 20;
+  display: grid;
+  width: min(360px, calc(100vw - 48px));
+  gap: 5px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 0.36);
+  color: var(--color-ink-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  opacity: 0;
+  padding: 10px 12px;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.stock-evidence-sort-tooltip strong {
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stock-evidence-sort-tooltip span {
+  color: var(--color-ink-muted);
+}
+
+.stock-evidence-sort-help:hover .stock-evidence-sort-tooltip,
+.stock-evidence-sort-help:focus-within .stock-evidence-sort-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .stock-evidence-stage-tabs {
   display: flex;
   flex-wrap: wrap;

@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Clock3, MessageSquareText, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleAlert, Clock3, MessageSquareText, TrendingUp, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -46,7 +46,7 @@ export function StockEvidenceChainPanel({ data, error, onSelectStock }: Props) {
       {!error && !items.length && <p className="empty-line">暂无个股证据链判断。先在作业中心运行「个股证据链」。</p>}
       {!!items.length && (
         <section className="panel stock-evidence-panel">
-          <PanelTitle title="个股证据链" meta={windowMeta(data)} />
+          <PanelTitle title="个股证据链" meta={windowMeta(data)} titleExtra={<SortRuleHelp />} />
           <div className="stock-evidence-stage-tabs" role="tablist" aria-label="证据链阶段">
             {stageTabs.map((label) => (
               <button className={stage === label ? "active" : ""} type="button" key={label} onClick={() => setStage(label)}>
@@ -72,6 +72,23 @@ export function StockEvidenceChainPanel({ data, error, onSelectStock }: Props) {
         </section>
       )}
     </div>
+  );
+}
+
+function SortRuleHelp() {
+  return (
+    <span className="stock-evidence-sort-help">
+      <button type="button" aria-label="查看排序规则">
+        <CircleAlert size={14} />
+      </button>
+      <span className="stock-evidence-sort-tooltip" role="tooltip">
+        <strong>默认按可行动优先级排序</strong>
+        <span>先看阶段：种子 / 论证 / 线索 / 早扩散优先。</span>
+        <span>再看证据：催化、调研、研报、推票、市场验证。</span>
+        <span>然后看新增变化、多人多群扩散、置信度。</span>
+        <span>涨幅过大或拥挤期会后置，主要用于复盘避坑。</span>
+      </span>
+    </span>
   );
 }
 

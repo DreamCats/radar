@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from datetime import date, time
+import json
+import uuid
+from datetime import date, datetime, time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
+from radar.core.store import connect, init_db
 from radar.core.tushare import history
 from radar.web.server.app import create_app
 
@@ -19,6 +22,70 @@ def test_stock_evidence_chain_latest_endpoint_returns_empty_dashboard(tmp_path: 
     assert data["item_count"] == 0
     assert data["items"] == []
     assert data["stage_counts"] == {}
+
+
+def test_stock_evidence_chain_latest_orders_by_actionable_priority(tmp_path: Path):
+    config = _config(tmp_path)
+    as_of = datetime(2026, 6, 9, 15, 0)
+    window_start = datetime(2026, 6, 8, 15, 0)
+    evidence_start = datetime(2026, 5, 1, 15, 0)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        _insert_candidate(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="000001.SZ",
+            stock_name="拥挤股份",
+            rank=1,
+            evidence_score=18,
+            family_counts={"price": 6, "push": 3},
+        )
+        _insert_judgement(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="000001.SZ",
+            stock_name="拥挤股份",
+            stage="crowded",
+            confidence=0.9,
+            return_since_first_point=0.72,
+        )
+        _insert_candidate(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="000002.SZ",
+            stock_name="早期股份",
+            rank=2,
+            evidence_score=12,
+            family_counts={"catalyst": 2, "roadshow": 1},
+        )
+        _insert_judgement(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="000002.SZ",
+            stock_name="早期股份",
+            stage="seed",
+            confidence=0.72,
+            return_since_first_point=0.04,
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/strategy/evidence-chain/latest", params={"limit": 2})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert [item["stock_name"] for item in data["items"]] == ["早期股份", "拥挤股份"]
+    assert data["items"][0]["rank"] == 2
 
 
 def test_strategy_stock_chart_endpoint_reads_local_market_history(monkeypatch, tmp_path: Path):
@@ -114,3 +181,105 @@ def _daily(ts_code: str, trade_date: str, open_price: float, high: float, low: f
         "vol": 1000,
         "amount": 10000,
     }
+
+
+def _insert_candidate(
+    conn,
+    *,
+    as_of: datetime,
+    window_start: datetime,
+    evidence_start: datetime,
+    ts_code: str,
+    stock_name: str,
+    rank: int,
+    evidence_score: int,
+    family_counts: dict[str, int],
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO stock_lifecycle_candidates (
+            as_of_time, window_start_time, evidence_start_time, ts_code, stock_name,
+            trigger_count, unique_trigger_count, sender_count, conversation_count,
+            evidence_score, channels_json, family_counts_json, rank, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            as_of.isoformat(),
+            window_start.isoformat(),
+            evidence_start.isoformat(),
+            ts_code,
+            stock_name,
+            12,
+            8,
+            4,
+            4,
+            evidence_score,
+            json.dumps(["heat"], ensure_ascii=False),
+            json.dumps(family_counts, ensure_ascii=False),
+            rank,
+            as_of.isoformat(),
+        ),
+    )
+    conn.commit()
+
+
+def _insert_judgement(
+    conn,
+    *,
+    as_of: datetime,
+    window_start: datetime,
+    evidence_start: datetime,
+    ts_code: str,
+    stock_name: str,
+    stage: str,
+    confidence: float,
+    return_since_first_point: float,
+) -> None:
+    result = {
+        "stage_label": {"seed": "种子期", "crowded": "拥挤期"}[stage],
+        "one_line": f"{stock_name} 测试判断",
+        "why": ["测试证据"],
+        "market_evidence": {
+            "summary": {
+                "return_since_first_point": return_since_first_point,
+                "drawdown_from_selected_high": -0.02,
+            },
+            "points": [],
+        },
+    }
+    conn.execute(
+        """
+        INSERT INTO stock_lifecycle_judgements (
+            judgement_id, as_of_time, window_start_time, evidence_start_time, ts_code,
+            stock_name, stage, confidence, trigger_count, unique_trigger_count,
+            sender_count, conversation_count, evidence_count, channels_json,
+            evidence_refs_json, llm_provider, model, prompt_version,
+            result_json, created_at, updated_at, evidence_signature
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            uuid.uuid4().hex,
+            as_of.isoformat(),
+            window_start.isoformat(),
+            evidence_start.isoformat(),
+            ts_code,
+            stock_name,
+            stage,
+            confidence,
+            12,
+            8,
+            4,
+            4,
+            6,
+            json.dumps(["heat"], ensure_ascii=False),
+            "[]",
+            "test",
+            "test",
+            "test",
+            json.dumps(result, ensure_ascii=False),
+            as_of.isoformat(),
+            as_of.isoformat(),
+            "test",
+        ),
+    )
+    conn.commit()
