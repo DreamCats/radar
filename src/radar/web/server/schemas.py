@@ -19,6 +19,7 @@ from radar.core.usecases.recommendation_backtest import (
     DEFAULT_BACKTEST_WINDOWS,
     RecommendationBacktestSummaryResult,
 )
+from radar.core.usecases.stock_evidence_chain import StockEvidenceChainDashboard
 from radar.core.usecases.strategy import (
     StrategyDashboard,
     StrategyStockChart,
@@ -293,6 +294,10 @@ class RecommendationBacktestSummaryResponse(RecommendationBacktestSummaryResult)
 
 
 class StrategyDashboardResponse(StrategyDashboard):
+    pass
+
+
+class StockEvidenceChainDashboardResponse(StockEvidenceChainDashboard):
     pass
 
 

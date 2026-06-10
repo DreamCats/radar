@@ -9,6 +9,7 @@ from radar.core.usecases.strategy import (
     save_cached_strategy_snapshot,
     summarize_strategy_validation,
 )
+from radar.core.usecases.stock_evidence_chain import latest_stock_evidence_chain
 from radar.core.view_cache import (
     cached_model,
     cache_key,
@@ -19,6 +20,7 @@ from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     DerivedJobResponse,
     StockEvidenceChainJobRequest,
+    StockEvidenceChainDashboardResponse,
     StrategyDashboardResponse,
     StrategyStockChartResponse,
     StrategySnapshotBackfillJobRequest,
@@ -51,6 +53,14 @@ def strategy_opportunities(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return result
+
+
+@router.get("/evidence-chain/latest", response_model=StockEvidenceChainDashboardResponse)
+def stock_evidence_chain_latest(
+    limit: int = Query(default=120, ge=1, le=500),
+    config: RadarConfig = Depends(get_config),
+) -> StockEvidenceChainDashboardResponse:
+    return StockEvidenceChainDashboardResponse(**latest_stock_evidence_chain(config, limit=limit).model_dump())
 
 
 @router.get("/stocks/{ts_code}/chart", response_model=StrategyStockChartResponse)

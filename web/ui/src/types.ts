@@ -405,6 +405,10 @@ export type OrganizeEvidenceQuery = Omit<OrganizeClassificationQuery, "evidence_
 };
 
 export type {
+  StockEvidenceChainDashboard,
+  StockEvidenceChainItem,
+  StockEvidenceMarketPoint,
+  StockEvidenceMessage,
   StrategyAttentionLevel,
   StrategyBacktestMetric,
   StrategyDashboard,

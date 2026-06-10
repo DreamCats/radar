@@ -33,6 +33,7 @@ import type {
   RecommendationBacktestRequest,
   RecommendationBacktestSummary,
   RunItem,
+  StockEvidenceChainDashboard,
   StrategyDashboard,
   StockEvidenceChainJobRequest,
   StrategySnapshotBackfillJobRequest,
@@ -236,6 +237,10 @@ export async function fetchRecommendationBacktestSummary(query: {
 
 export async function fetchStrategyOpportunities(query: StrategyQuery = {}): Promise<StrategyDashboard> {
   return getJson(`/api/strategy/opportunities?${params(query)}`);
+}
+
+export async function fetchStockEvidenceChainLatest(query: { limit?: number } = {}): Promise<StockEvidenceChainDashboard> {
+  return getJson(`/api/strategy/evidence-chain/latest?${params(query)}`);
 }
 
 export async function fetchStrategyStockChart(tsCode: string, query: StrategyStockChartQuery = {}): Promise<StrategyStockChart> {
