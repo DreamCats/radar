@@ -458,3 +458,17 @@
 .overview-chat-workspace .markdown-content p {
   max-width: 78ch;
 }
+
+.overview-chat-workspace .markdown-table-wrap {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.overview-chat-workspace .markdown-content table {
+  background: transparent;
+}
+
+.overview-chat-workspace .markdown-content th {
+  background: transparent;
+}

@@ -20,7 +20,7 @@ export function DashboardPage() {
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [contextRailOpen, setContextRailOpen] = useState(true);
+  const [contextRailOpen, setContextRailOpen] = useState(false);
 
   async function refresh() {
     setLoading(true);
