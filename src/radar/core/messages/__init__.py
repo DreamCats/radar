@@ -7,7 +7,6 @@ from radar.core.messages.conversations import (
     list_conversations,
 )
 from radar.core.messages.overview import (
-    MessageAnchorHeat,
     MessageOverview,
     MessageOverviewBucket,
     MessageOverviewGroup,
@@ -33,7 +32,6 @@ __all__ = [
     "MessageFilters",
     "MessageContext",
     "MessageGroupSummary",
-    "MessageAnchorHeat",
     "MessageOverview",
     "MessageOverviewBucket",
     "MessageOverviewGroup",

@@ -8,8 +8,8 @@ from radar.core.models import MessageSource
 from radar.core.runs import fail_run, finish_run, start_run, update_run_progress
 from radar.core.store import connect, init_db
 from radar.core.tushare.client import call
-from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION
 from radar.core.usecases.recommendation_backtest.events import (
+    RECOMMENDATION_EVENT_EXTRACTOR_VERSION,
     list_recommendation_events,
     refresh_recommendation_events,
 )
@@ -67,12 +67,12 @@ def refresh_recommendation_backtests(
     windows: list[int] | None = None,
     source: MessageSource | None = None,
     min_classification_confidence: float = 0.7,
-    extractor_version: str = ANCHOR_EXTRACTOR_VERSION,
+    extractor_version: str = RECOMMENDATION_EVENT_EXTRACTOR_VERSION,
     benchmark_ts_code: str = DEFAULT_BENCHMARK_TS_CODE,
     force: bool = False,
     run_id: str | None = None,
 ) -> RecommendationBacktestRefreshResult:
-    """刷新最近窗口内 recommendation 事件，并补齐已经成熟的 T+N 回测。"""
+    """刷新最近窗口内生命周期证据事件，并补齐已经成熟的 T+N 回测。"""
 
     window_values = _normalize_windows(windows)
     _validate_inputs(
@@ -110,6 +110,7 @@ def refresh_recommendation_backtests(
     try:
         init_db(conn)
         events, inserted_event_count = refresh_recommendation_events(
+            config,
             conn,
             start_time=start_time,
             end_time=end_time,
@@ -119,7 +120,13 @@ def refresh_recommendation_backtests(
         )
         conn.commit()
         if not events:
-            events = list_recommendation_events(conn, start_time=start_time, end_time=end_time, source=source)
+            events = list_recommendation_events(
+                conn,
+                start_time=start_time,
+                end_time=end_time,
+                source=source,
+                extractor_version=extractor_version,
+            )
 
         stats = _refresh_windows(
             conn,
@@ -214,7 +221,7 @@ def _refresh_windows(
                 run_id,
                 raw_count=index,
                 stored_count=stats["refreshed_count"],
-                metadata={"stage": "刷新推荐回测补齐", "event_count": len(events), "completed_event_count": index, **stats},
+                metadata={"stage": "刷新证据回测补齐", "event_count": len(events), "completed_event_count": index, **stats},
             )
     return stats
 

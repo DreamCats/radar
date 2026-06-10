@@ -313,6 +313,12 @@ button:disabled {
   font-weight: 600;
 }
 
+.panel-title-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .panel-title p {
   margin-top: 3px;
   color: var(--color-ink-subtle);

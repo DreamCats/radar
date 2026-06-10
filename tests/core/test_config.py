@@ -89,6 +89,44 @@ def test_env_overrides_tushare_token(config_dir: Path, monkeypatch):
     assert config.secrets.market["tushare_main"].token == "token-from-env"
 
 
+def test_env_overrides_brave_search_key(config_dir: Path, monkeypatch):
+    monkeypatch.setenv("RADAR_BRAVE_SEARCH_API_KEY", "brave-key-from-env")
+    monkeypatch.setenv("RADAR_BRAVE_SEARCH_BASE_URL", "https://example.invalid/brave")
+    monkeypatch.setenv("RADAR_BRAVE_SEARCH_TIMEOUT", "12")
+
+    config = load_config(config_dir)
+
+    assert config.brave_search.provider == "brave"
+    assert config.brave_search.secret_ref == "brave_search_main"
+    assert config.brave_search.base_url == "https://example.invalid/brave"
+    assert config.brave_search.timeout == 12
+    assert config.secrets.brave_search["brave_search_main"].api_key == "brave-key-from-env"
+
+
+def test_load_does_not_read_brave_search_cli_config(config_dir: Path, tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    cli_config = tmp_path / "Library" / "Application Support" / "brave-search" / "config.json"
+    cli_config.parent.mkdir(parents=True)
+    cli_config.write_text(
+        """
+{
+  "api_key": "brave-key-from-cli",
+  "base_url": "https://api.search.brave.software",
+  "timeout": 7
+}
+""",
+        encoding="utf-8",
+    )
+
+    config = load_config(config_dir)
+
+    assert config.brave_search.provider is None
+    assert config.brave_search.secret_ref is None
+    assert config.brave_search.base_url == "https://api.search.brave.com"
+    assert config.brave_search.timeout == 30
+    assert config.secrets.brave_search == {}
+
+
 def test_load_accepts_legacy_tushare_api_url(config_dir: Path):
     (config_dir / "config.yaml").write_text(
         """

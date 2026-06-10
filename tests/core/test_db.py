@@ -18,20 +18,24 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "fetch_windows",
             "runs",
             "message_classifications",
-            "message_anchors",
-            "message_anchor_status",
-            "aggregate_refine_results",
             "recommendation_events",
             "recommendation_backtest_windows",
             "analysts",
             "analyst_aliases",
-            "strategy_snapshots",
-            "strategy_snapshot_stocks",
-            "strategy_snapshot_returns",
             "view_cache",
-            "source_structures",
-            "source_signal_snapshots",
+            "stock_message_mentions",
+            "stock_lifecycle_candidates",
+            "stock_lifecycle_judgements",
+            "stock_mention_status",
         } <= tables
+        assert "strategy_snapshots" not in tables
+        assert "strategy_snapshot_stocks" not in tables
+        assert "strategy_snapshot_returns" not in tables
+        assert "message_anchors" not in tables
+        assert "message_anchor_status" not in tables
+        assert "aggregate_refine_results" not in tables
+        assert "source_structures" not in tables
+        assert "source_signal_snapshots" not in tables
         assert applied_migrations(conn) == {
             "001_init_messages",
             "002_init_runs",
@@ -43,10 +47,16 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "008_aggregate_refine_results",
             "009_recommendation_backtest",
             "010_recommendation_identity_sector",
-            "011_strategy_snapshots",
             "012_view_cache",
             "013_source_radar",
             "014_anchor_status_trade_date_key",
+            "015_drop_deprecated_source_radar",
+            "016_stock_evidence_chain",
+            "017_stock_mention_status",
+            "018_stock_lifecycle_judgement_signature",
+            "019_drop_deprecated_fermentation_strategy",
+            "020_drop_message_anchor_tables",
+            "021_drop_deprecated_aggregate_and_anchor_backtests",
         }
     finally:
         conn.close()
@@ -78,7 +88,7 @@ def test_migrations_are_idempotent(tmp_path):
         migrate_message_db(conn)
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 14
+        assert count == 19
     finally:
         conn.close()
 

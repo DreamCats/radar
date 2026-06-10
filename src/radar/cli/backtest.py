@@ -16,7 +16,7 @@ from radar.core.usecases.recommendation_backtest import (
     refresh_recommendation_backtests,
     summarize_recommendation_backtests,
 )
-from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION
+from radar.core.usecases.recommendation_backtest.events import RECOMMENDATION_EVENT_EXTRACTOR_VERSION
 
 _SOURCE_MAP: dict[str, MessageSource | None] = {
     "all": None,
@@ -27,7 +27,7 @@ _SOURCE_MAP: dict[str, MessageSource | None] = {
 
 @click.group()
 def backtest() -> None:
-    """推荐消息胜率回测。"""
+    """高质量证据胜率回测。"""
 
 
 @backtest.command("refresh")
@@ -35,7 +35,7 @@ def backtest() -> None:
 @click.option("--window-days", type=click.IntRange(1, 365), default=30, show_default=True)
 @click.option("--window", "windows", type=click.IntRange(1, 30), multiple=True, help="T+N 窗口，可重复。")
 @click.option("--benchmark", "benchmark_ts_code", default=DEFAULT_BENCHMARK_TS_CODE, show_default=True)
-@click.option("--extractor-version", default=ANCHOR_EXTRACTOR_VERSION, show_default=True)
+@click.option("--extractor-version", default=RECOMMENDATION_EVENT_EXTRACTOR_VERSION, show_default=True)
 @click.option(
     "--source",
     "source_key",
@@ -58,7 +58,7 @@ def refresh_command(
     min_classification_confidence: float,
     force: bool,
 ) -> None:
-    """扫描最近 N 天 recommendation+stock 事件，补齐成熟 T+N。"""
+    """从个股证据链生成证据事件，补齐成熟 T+N。"""
 
     result = refresh_recommendation_backtests(
         load_cli_config(ctx),

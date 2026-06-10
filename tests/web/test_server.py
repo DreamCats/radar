@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from threading import Event
@@ -13,8 +12,6 @@ from radar.core.models import MessageClassification, RawMessage
 from radar.core.runs import finish_run, get_run, start_run
 from radar.core.store import connect, init_db, upsert_message_classifications, upsert_messages
 from radar.core.usecases import IngestRangeResult
-from radar.core.usecases.aggregation import AggregateTopicsResult, RefineAggregateTopicsResult, RefinedTheme
-from radar.core.usecases.aggregation.storage import store_refine_result
 from radar.core.usecases.recommendation_backtest import (
     RecommendationBacktestSummaryResult,
     RecommendationBacktestSummaryRow,
@@ -481,85 +478,11 @@ def test_organize_classification_evidence_endpoint_requires_cursor_pair(tmp_path
     assert "cursor_time" in response.json()["detail"]
 
 
-def test_organize_aggregates_endpoint_returns_latest_result_with_evidence(tmp_path):
-    config = _config(tmp_path)
-    messages = [
-        _message(message_id="m1", message_time="2026-06-04T10:00:00"),
-        _message(message_id="m2", message_time="2026-06-04T10:01:00"),
-    ]
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        upsert_messages(conn, messages)
-        upsert_message_classifications(
-            conn,
-            [
-                _classification(messages[0], "research", 0.92, "研究观点"),
-                _classification(messages[1], "recommendation", 0.93, "投资推荐"),
-            ],
-        )
-        store_refine_result(conn, _refine_result("run-refine", ["m1", "m2"]))
-    finally:
-        conn.close()
+def test_organize_aggregate_endpoints_are_removed(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
 
-    client = TestClient(create_app(config))
-    response = client.get(
-        "/api/organize/aggregates",
-        params={
-            "start_time": "2026-06-04T09:00:00",
-            "end_time": "2026-06-04T12:00:00",
-            "evidence_limit": 1,
-        },
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["result"]["run_id"] == "run-refine"
-    assert data["result"]["theme_count"] == 1
-    assert data["themes"][0]["theme_name"] == "固态电池聚类"
-    assert data["themes"][0]["priority_score"] > 0
-    assert [item["message_id"] for item in data["themes"][0]["evidence"]] == ["m2"]
-
-
-def test_organize_aggregate_evidence_endpoint_pages_results(tmp_path):
-    config = _config(tmp_path)
-    messages = [
-        _message(message_id="m1", message_time="2026-06-04T10:00:00"),
-        _message(message_id="m2", message_time="2026-06-04T10:01:00"),
-        _message(message_id="m3", message_time="2026-06-04T10:02:00"),
-    ]
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        upsert_messages(conn, messages)
-        upsert_message_classifications(conn, [_classification(message, "research", 0.92, "研究观点") for message in messages])
-        store_refine_result(conn, _refine_result("run-refine", ["m1", "m2", "m3"]))
-    finally:
-        conn.close()
-
-    client = TestClient(create_app(config))
-    first = client.get("/api/organize/aggregates/evidence", params={"run_id": "run-refine", "theme_index": 0, "limit": 2})
-
-    assert first.status_code == 200
-    first_data = first.json()
-    assert [item["message_id"] for item in first_data["items"]] == ["m3", "m2"]
-    assert first_data["next_cursor_id"] == "m2"
-
-    second = client.get(
-        "/api/organize/aggregates/evidence",
-        params={
-            "run_id": "run-refine",
-            "theme_index": 0,
-            "limit": 2,
-            "cursor_time": first_data["next_cursor_time"],
-            "cursor_id": first_data["next_cursor_id"],
-        },
-    )
-
-    assert second.status_code == 200
-    second_data = second.json()
-    assert [item["message_id"] for item in second_data["items"]] == ["m1"]
-    assert second_data["next_cursor_id"] is None
+    assert client.get("/api/organize/aggregates").status_code == 404
+    assert client.get("/api/organize/aggregates/evidence", params={"run_id": "r", "theme_index": 0}).status_code == 404
 
 
 def test_root_endpoint_points_to_dashboard(tmp_path):
@@ -811,49 +734,41 @@ def test_classify_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_p
     }
 
 
-def test_anchor_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path):
+def test_anchor_jobs_endpoint_updates_market_anchors_and_reuses_running_job(monkeypatch, tmp_path):
     config = _config(tmp_path)
     calls: list[dict] = []
     started = Event()
     release = Event()
 
-    def fake_anchor(config, *, trade_date, source, categories, min_classification_confidence, start_time, end_time,
-                    chunk_hours, limit, force, max_anchors_per_message, run_id):
+    def fake_ensure(config, *, trade_date, min_anchor_count, force):
         calls.append(
             {
                 "trade_date": trade_date,
-                "source": source,
-                "categories": categories,
-                "min_classification_confidence": min_classification_confidence,
-                "start_time": start_time,
-                "end_time": end_time,
-                "chunk_hours": chunk_hours,
-                "limit": limit,
+                "min_anchor_count": min_anchor_count,
                 "force": force,
-                "max_anchors_per_message": max_anchors_per_message,
-                "run_id": run_id,
             }
         )
         started.set()
         release.wait(timeout=2)
+        return SimpleNamespace(
+            trade_date=trade_date,
+            refreshed=True,
+            anchor_count=3020,
+            member_count=9000,
+            skipped_reason=None,
+            source_counts={},
+            failed_sources={},
+        )
 
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.ensure_market_anchors", lambda *args, **kwargs: None)
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.anchor_messages_range", fake_anchor)
+    monkeypatch.setattr("radar.web.server.market_anchor_jobs.ensure_market_anchors", fake_ensure)
 
     client = TestClient(create_app(config))
     payload = {
         "trade_date": "20260604",
-        "source": "group_message",
-        "start_time": "2026-06-04T10:00:00",
-        "end_time": "2026-06-04T11:00:00",
         "force": True,
-        "chunk_hours": 1,
-        "limit": 200,
-        "categories": ["research", "recommendation"],
-        "min_classification_confidence": 0.75,
-        "max_anchors": 8,
+        "min_anchor_count": 120,
     }
-    response = client.post("/api/anchor/messages/jobs", json=payload)
+    response = client.post("/api/market/anchors/jobs", json=payload)
 
     assert response.status_code == 200
     first = response.json()["items"][0]
@@ -863,7 +778,7 @@ def test_anchor_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_pat
     assert first["reused_existing"] is False
     assert get_run(config.database_path, first["run_id"]) is not None
 
-    response = client.post("/api/anchor/messages/jobs", json=payload)
+    response = client.post("/api/market/anchors/jobs", json=payload)
     second = response.json()["items"][0]
 
     assert second["run_id"] == first["run_id"]
@@ -871,218 +786,47 @@ def test_anchor_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_pat
     release.set()
     assert calls[0] == {
         "trade_date": "20260604",
-        "source": "个人群",
-        "categories": ["research", "recommendation"],
-        "min_classification_confidence": 0.75,
-        "start_time": datetime.fromisoformat("2026-06-04T10:00:00"),
-        "end_time": datetime.fromisoformat("2026-06-04T11:00:00"),
-        "chunk_hours": 1,
-        "limit": 200,
+        "min_anchor_count": 120,
         "force": True,
-        "max_anchors_per_message": 8,
-        "run_id": first["run_id"],
     }
 
 
-def test_anchor_jobs_endpoint_uses_resolved_trade_date(monkeypatch, tmp_path):
+def test_anchor_jobs_endpoint_records_resolved_trade_date(monkeypatch, tmp_path):
     config = _config(tmp_path)
-    calls: list[dict] = []
-    started = Event()
-    release = Event()
-
-    def fake_anchor(config, *, trade_date, source, categories, min_classification_confidence, start_time, end_time,
-                    chunk_hours, limit, force, max_anchors_per_message, run_id):
-        calls.append(
-            {
-                "trade_date": trade_date,
-                "source": source,
-                "run_id": run_id,
-            }
-        )
-        started.set()
-        release.wait(timeout=2)
-
     monkeypatch.setattr(
-        "radar.web.server.aggregate_jobs.ensure_market_anchors",
-        lambda *args, **kwargs: SimpleNamespace(trade_date="20260605", refreshed=False, anchor_count=3020),
+        "radar.web.server.market_anchor_jobs.ensure_market_anchors",
+        lambda *args, **kwargs: SimpleNamespace(
+            trade_date="20260605",
+            refreshed=False,
+            anchor_count=3020,
+            member_count=9000,
+            skipped_reason="20260606 非交易日，使用最近交易日 20260605 的 anchor 词库",
+            source_counts={},
+            failed_sources={},
+        ),
     )
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.anchor_messages_range", fake_anchor)
 
     client = TestClient(create_app(config))
     response = client.post(
-        "/api/anchor/messages/jobs",
+        "/api/market/anchors/jobs",
         json={
             "trade_date": "20260606",
-            "source": "group_message",
-            "start_time": "2026-06-06T10:00:00",
-            "end_time": "2026-06-06T11:00:00",
         },
     )
 
     assert response.status_code == 200
     run_id = response.json()["items"][0]["run_id"]
-    assert started.wait(timeout=1)
-    release.set()
-    assert calls == [{"trade_date": "20260605", "source": "个人群", "run_id": run_id}]
+    wait_for_run_status(config.database_path, run_id, "skipped")
+    run = get_run(config.database_path, run_id)
+    assert run is not None
+    assert run.metadata["trade_date"] == "20260605"
 
 
-def test_aggregate_refine_jobs_endpoint_starts_job(monkeypatch, tmp_path):
-    config = _config(tmp_path)
-    calls: list[dict] = []
-    started = Event()
-    release = Event()
+def test_aggregate_refine_endpoints_are_removed(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
 
-    def fake_refine(config, *, trade_date, source, categories, min_classification_confidence, start_time, end_time,
-                    min_messages, candidate_limit, evidence_limit, batch_size, max_concurrency,
-                    provider_name, provider_names, force, run_id):
-        calls.append(
-            {
-                "trade_date": trade_date,
-                "source": source,
-                "categories": categories,
-                "min_classification_confidence": min_classification_confidence,
-                "start_time": start_time,
-                "end_time": end_time,
-                "min_messages": min_messages,
-                "candidate_limit": candidate_limit,
-                "evidence_limit": evidence_limit,
-                "batch_size": batch_size,
-                "max_concurrency": max_concurrency,
-                "provider_name": provider_name,
-                "provider_names": provider_names,
-                "force": force,
-                "run_id": run_id,
-            }
-        )
-        started.set()
-        release.wait(timeout=2)
-
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.ensure_market_anchors", lambda *args, **kwargs: None)
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.refine_aggregate_topics", fake_refine)
-
-    client = TestClient(create_app(config))
-    payload = {
-        "trade_date": "20260604",
-        "source": "all",
-        "start_time": "2026-06-04T10:00:00",
-        "end_time": "2026-06-04T11:00:00",
-        "force": False,
-        "categories": ["research"],
-        "min_classification_confidence": 0.7,
-        "min_messages": 2,
-        "candidate_limit": 20,
-        "evidence_limit": 2,
-        "batch_size": 5,
-        "max_concurrency": 10,
-        "provider_names": ["p1", "p2"],
-    }
-    response = client.post("/api/aggregate/refine/jobs", json=payload)
-
-    assert response.status_code == 200
-    first = response.json()["items"][0]
-    assert started.wait(timeout=1)
-    assert first["job_type"] == "aggregate_refine"
-    assert first["status"] == "running"
-    assert get_run(config.database_path, first["run_id"]) is not None
-    release.set()
-    assert calls[0]["source"] is None
-    assert calls[0]["provider_names"] == ["p1", "p2"]
-    assert calls[0]["run_id"] == first["run_id"]
-
-
-def test_aggregate_refine_jobs_endpoint_uses_resolved_trade_date(monkeypatch, tmp_path):
-    config = _config(tmp_path)
-    calls: list[dict] = []
-    started = Event()
-    release = Event()
-
-    def fake_refine(
-        config,
-        *,
-        trade_date,
-        source,
-        categories,
-        min_classification_confidence,
-        start_time,
-        end_time,
-        min_messages,
-        candidate_limit,
-        evidence_limit,
-        batch_size,
-        max_concurrency,
-        provider_name,
-        provider_names,
-        force,
-        run_id,
-    ):
-        calls.append({"trade_date": trade_date, "source": source, "run_id": run_id})
-        started.set()
-        release.wait(timeout=2)
-
-    monkeypatch.setattr(
-        "radar.web.server.aggregate_jobs.ensure_market_anchors",
-        lambda *args, **kwargs: SimpleNamespace(trade_date="20260605", refreshed=False, anchor_count=3020),
-    )
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.refine_aggregate_topics", fake_refine)
-
-    client = TestClient(create_app(config))
-    response = client.post(
-        "/api/aggregate/refine/jobs",
-        json={
-            "trade_date": "20260608",
-            "source": "all",
-            "start_time": "2026-06-07T15:00:00",
-            "end_time": "2026-06-08T23:05:00",
-        },
-    )
-
-    assert response.status_code == 200
-    run_id = response.json()["items"][0]["run_id"]
-    assert started.wait(timeout=1)
-    release.set()
-    assert calls == [{"trade_date": "20260605", "source": None, "run_id": run_id}]
-
-
-def test_aggregate_refine_results_endpoint_returns_recent_results(tmp_path):
-    config = _config(tmp_path)
-    local_result = AggregateTopicsResult(
-        trade_date="20260604",
-        extractor_version="test",
-        start_time=datetime.fromisoformat("2026-06-04T10:00:00"),
-        end_time=datetime.fromisoformat("2026-06-04T11:00:00"),
-        categories=["research"],
-        min_classification_confidence=0.7,
-        scoped_message_count=2,
-        anchored_message_count=2,
-        topic_count=1,
-        topics=[],
-    )
-    result = RefineAggregateTopicsResult(
-        run_id="run-refine",
-        input_hash="hash-refine",
-        status="succeeded",
-        trade_date="20260604",
-        extractor_version="test",
-        prompt_version="test-prompt",
-        candidate_count=1,
-        theme_count=1,
-        local_result=local_result,
-        themes=[RefinedTheme(theme_name="玻璃基板", actionability_score=80)],
-    )
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        store_refine_result(conn, result)
-    finally:
-        conn.close()
-
-    client = TestClient(create_app(config))
-    response = client.get("/api/aggregate/refine/results", params={"limit": 5})
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["items"][0]["input_hash"] == "hash-refine"
-    assert data["items"][0]["themes"][0]["theme_name"] == "玻璃基板"
+    assert client.post("/api/aggregate/refine/jobs", json={}).status_code == 404
+    assert client.get("/api/aggregate/refine/results").status_code == 404
 
 
 def test_recommendation_backtest_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path):
@@ -1148,85 +892,6 @@ def test_recommendation_backtest_jobs_endpoint_starts_and_reuses_running_job(mon
     assert calls[0]["run_id"] == first["run_id"]
 
 
-def test_source_radar_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path):
-    config = _config(tmp_path)
-    extract_calls: list[dict] = []
-    scan_calls: list[dict] = []
-    started = Event()
-    release = Event()
-
-    def fake_extract(config, *, start_time, end_time, limit, force, batch_size, max_concurrency, provider_name, provider_names):
-        extract_calls.append(
-            {
-                "start_time": start_time,
-                "end_time": end_time,
-                "limit": limit,
-                "force": force,
-                "batch_size": batch_size,
-                "max_concurrency": max_concurrency,
-                "provider_name": provider_name,
-                "provider_names": provider_names,
-            }
-        )
-        started.set()
-        release.wait(timeout=2)
-        return SimpleNamespace(scanned_count=3, extracted_count=2, inserted_count=2, failed_llm_batches=0)
-
-    def fake_scan(config, *, start_time, end_time, as_of_time, lookback_days, limit, save_snapshot):
-        scan_calls.append(
-            {
-                "start_time": start_time,
-                "end_time": end_time,
-                "as_of_time": as_of_time,
-                "lookback_days": lookback_days,
-                "limit": limit,
-                "save_snapshot": save_snapshot,
-            }
-        )
-        return SimpleNamespace(candidate_count=4, candidates=[object(), object()])
-
-    monkeypatch.setattr("radar.web.server.source_jobs.extract_source_structures", fake_extract)
-    monkeypatch.setattr("radar.web.server.source_jobs.scan_source_signals", fake_scan)
-
-    client = TestClient(create_app(config))
-    payload = {
-        "start_time": "2026-06-06T00:00:00",
-        "end_time": "2026-06-06T23:59:59",
-        "force": False,
-        "per_day_limit": 500,
-        "batch_size": 8,
-        "max_concurrency": 10,
-        "lookback_days": 60,
-        "scan_limit": 20,
-    }
-    response = client.post("/api/source/radar/jobs", json=payload)
-
-    assert response.status_code == 200
-    first = response.json()["items"][0]
-    assert started.wait(timeout=1)
-    assert first["job_type"] == "source_radar"
-    assert first["status"] == "running"
-    assert first["reused_existing"] is False
-    assert get_run(config.database_path, first["run_id"]) is not None
-
-    response = client.post("/api/source/radar/jobs", json=payload)
-    second = response.json()["items"][0]
-
-    assert second["run_id"] == first["run_id"]
-    assert second["reused_existing"] is True
-    release.set()
-    for _ in range(20):
-        if scan_calls:
-            break
-        sleep(0.05)
-    assert extract_calls[0]["start_time"] == datetime.fromisoformat("2026-06-06T00:00:00")
-    assert extract_calls[0]["end_time"] == datetime.fromisoformat("2026-06-06T23:59:59")
-    assert extract_calls[0]["limit"] == 500
-    assert extract_calls[0]["max_concurrency"] == 10
-    assert scan_calls[0]["save_snapshot"] is True
-    assert scan_calls[0]["lookback_days"] == 60
-
-
 def test_recommendation_backtest_summary_endpoint_returns_rows(monkeypatch, tmp_path):
     config = _config(tmp_path)
     calls: list[dict] = []
@@ -1289,61 +954,6 @@ def test_recommendation_backtest_summary_endpoint_returns_rows(monkeypatch, tmp_
     assert calls[0]["limit"] == 10
 
 
-def test_strategy_source_radar_endpoint_returns_latest_snapshot(tmp_path):
-    config = _config(tmp_path)
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        _insert_source_signal_snapshot(conn, "old", "2026-06-05T15:00:00", "旧概念", 55)
-        _insert_source_signal_snapshot(conn, "new", "2026-06-07T15:00:00", "AI服务器MLCC", 88)
-    finally:
-        conn.close()
-
-    client = TestClient(create_app(config))
-    response = client.get("/api/strategy/source-radar", params={"limit": 10})
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["as_of_time"] == "2026-06-07T15:00:00"
-    assert data["item_count"] == 1
-    assert data["available_as_of_times"] == ["2026-06-07T15:00:00", "2026-06-05T15:00:00"]
-    assert data["items"][0]["anchor_span"] == "AI服务器MLCC"
-    assert data["items"][0]["score"] == 88
-
-
-def test_strategy_source_radar_validation_endpoint_tracks_signal_evolution(tmp_path):
-    config = _config(tmp_path)
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        _insert_source_signal_snapshot(conn, "ai-mlcc", "2026-06-01T15:00:00", "AI服务器MLCC", 70)
-        _insert_source_signal_snapshot(
-            conn,
-            "ai-mlcc",
-            "2026-06-03T15:00:00",
-            "AI服务器MLCC",
-            91,
-            status="mapped",
-            mapped_stocks=["风华高科"],
-            followup_senders=3,
-        )
-        _insert_source_signal_snapshot(conn, "cold", "2026-06-01T15:00:00", "冷门概念", 60)
-    finally:
-        conn.close()
-
-    client = TestClient(create_app(config))
-    response = client.get("/api/strategy/source-radar/validation", params={"window_days": 5, "limit": 10})
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["snapshot_count"] == 2
-    assert data["signal_count"] == 2
-    assert data["spreading_count"] == 1
-    assert data["mapped_count"] == 1
-    assert data["top_signals"][0]["title"] == "早期AI服务器MLCC"
-    assert data["top_signals"][0]["mapped_stocks"] == ["风华高科"]
-
-
 def _config(tmp_path, **overrides) -> RadarConfig:
     return RadarConfig(
         storage={
@@ -1352,78 +962,6 @@ def _config(tmp_path, **overrides) -> RadarConfig:
         },
         **overrides,
     )
-
-
-def _insert_source_signal_snapshot(
-    conn,
-    signal_id: str,
-    as_of_time: str,
-    anchor: str,
-    score: int,
-    *,
-    status: str = "source_seed",
-    mapped_stocks: list[str] | None = None,
-    followup_senders: int = 0,
-) -> None:
-    payload = {
-        "signal_id": signal_id,
-        "status": status,
-        "anchor_span": anchor,
-        "modifier_span": "早期",
-        "novel_span": anchor,
-        "relation_type": "modifier-anchor",
-        "score": score,
-        "novelty_strength": 0.9,
-        "earliness_score": 0.8,
-        "askability_score": 0.7,
-        "trade_score": 0.6,
-        "first_message_id": f"m-{signal_id}",
-        "first_seen_time": as_of_time,
-        "first_sender": "分析师A",
-        "first_group_name": "科技群",
-        "first_snippet": "早期概念讨论",
-        "prior_anchor_mentions": 0,
-        "prior_modifier_mentions": 0,
-        "prior_exact_mentions": 0,
-        "prior_combo_mentions": 0,
-        "asof_mentions": 1,
-        "asof_groups": 1,
-        "asof_senders": 1,
-        "followup_groups": 0,
-        "followup_senders": followup_senders,
-        "mapped_stocks": mapped_stocks or [],
-        "ask_question": "是否出现新需求？",
-        "evidence": ["历史精确 0 次"],
-    }
-    conn.execute(
-        """
-        INSERT INTO source_signal_snapshots (
-            snapshot_id, signal_id, status, anchor_span, modifier_span, novel_span,
-            relation_type, score, novelty_strength, earliness_score, askability_score,
-            trade_score, first_message_id, first_seen_time, as_of_time, payload_json, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            f"snap-{signal_id}-{as_of_time}",
-            signal_id,
-            status,
-            anchor,
-            "早期",
-            anchor,
-            "modifier-anchor",
-            score,
-            0.9,
-            0.8,
-            0.7,
-            0.6,
-            f"m-{signal_id}",
-            as_of_time,
-            as_of_time,
-            json.dumps(payload, ensure_ascii=False),
-            as_of_time,
-        ),
-    )
-    conn.commit()
 
 
 def _message(
@@ -1467,42 +1005,4 @@ def _classification(
         classifier_version="test",
         created_at=now,
         updated_at=now,
-    )
-
-
-def _refine_result(run_id: str, evidence_ids: list[str]) -> RefineAggregateTopicsResult:
-    local_result = AggregateTopicsResult(
-        trade_date="20260604",
-        extractor_version="test",
-        start_time=datetime.fromisoformat("2026-06-04T09:00:00"),
-        end_time=datetime.fromisoformat("2026-06-04T12:00:00"),
-        categories=["research", "recommendation"],
-        min_classification_confidence=0.7,
-        scoped_message_count=len(evidence_ids),
-        anchored_message_count=len(evidence_ids),
-        topic_count=1,
-        topics=[],
-    )
-    return RefineAggregateTopicsResult(
-        run_id=run_id,
-        input_hash=f"hash-{run_id}",
-        status="succeeded",
-        trade_date="20260604",
-        extractor_version="test",
-        prompt_version="test-prompt",
-        candidate_count=1,
-        theme_count=1,
-        llm_batch_count=1,
-        failed_llm_batches=0,
-        max_concurrency=2,
-        local_result=local_result,
-        themes=[
-            RefinedTheme(
-                theme_name="固态电池聚类",
-                summary="固态电池观点聚合",
-                evidence_message_ids=evidence_ids,
-                confidence=0.82,
-                actionability_score=78,
-            )
-        ],
     )

@@ -1,5 +1,3 @@
-import type { StrategyDashboard } from "./types/strategy";
-
 export type MessageSource = "个人消息" | "个人群";
 export type SourceKey = "personal_message" | "group_message";
 export type IngestSource = "all" | SourceKey;
@@ -79,31 +77,18 @@ export type MessageOverviewHour = {
   count: number;
 };
 
-export type MessageAnchorHeat = {
-  name: string;
-  anchor_type: "stock" | "concept" | "industry" | "theme";
-  mention_count: number;
-  message_count: number;
-  high_value_count: number;
-  average_confidence: number;
-  latest_message_time: string;
-};
-
 export type MessageOverview = {
   summary: MessageOverviewSummary;
   date_buckets: MessageOverviewBucket[];
   source_breakdown: MessageOverviewSource[];
   top_groups: MessageOverviewGroup[];
   hourly_buckets: MessageOverviewHour[];
-  anchor_heat: MessageAnchorHeat[];
 };
 
 export type DashboardSummary = {
   overview: MessageOverview;
   classifications: OrganizeClassificationPage;
-  aggregates: OrganizeAggregatePage;
   backtest: RecommendationBacktestSummary;
-  strategy: StrategyDashboard;
   runs: RunItem[];
 };
 
@@ -205,135 +190,17 @@ export type RunItem = {
   metadata: Record<string, unknown>;
 };
 
-export type IngestRequest = {
-  source: IngestSource;
-  start_time: string;
-  end_time: string;
-  force: boolean;
-  chunk_hours: number;
-  concurrency: number;
-};
-
-export type IngestResultItem = {
-  source_key: SourceKey;
-  source: MessageSource;
-  chunk_count: number;
-  skipped_count: number;
-  raw_count: number;
-  filtered_count: number;
-  stored_count: number;
-  run_id?: string | null;
-};
-
-export type IngestJobItem = {
-  source_key: SourceKey;
-  source: MessageSource;
-  run_id: string;
-  reused_existing: boolean;
-  status: "running";
-};
-
-export type ClassifyRequest = {
-  source: IngestSource;
-  start_time: string;
-  end_time: string;
-  force: boolean;
-  chunk_hours: number;
-  limit: number;
-  batch_size: number;
-  max_concurrency: number;
-  retry?: ClassificationRetryMode;
-  low_confidence_threshold: number;
-};
-
-export type ClassifyJobItem = {
-  source_key: IngestSource;
-  source: string;
-  run_id: string;
-  reused_existing: boolean;
-  status: "running";
-};
-
-export type AnchorRequest = {
-  trade_date: string;
-  source: IngestSource;
-  start_time: string;
-  end_time: string;
-  force: boolean;
-  chunk_hours: number;
-  limit: number;
-  categories: MessageCategory[];
-  min_classification_confidence: number;
-  max_anchors: number;
-};
-
-export type AggregateRefineRequest = {
-  trade_date: string;
-  source: IngestSource;
-  start_time: string;
-  end_time: string;
-  force: boolean;
-  categories: MessageCategory[];
-  min_classification_confidence: number;
-  min_messages: number;
-  candidate_limit: number;
-  evidence_limit: number;
-  batch_size: number;
-  max_concurrency: number;
-};
-
-export type RecommendationBacktestRequest = {
-  as_of: string;
-  window_days: number;
-  start_time: string;
-  end_time: string;
-  windows: number[];
-  source: IngestSource;
-  min_classification_confidence: number;
-  benchmark_ts_code: string;
-  force: boolean;
-};
-
-export type StrategySnapshotSaveRequest = {
-  days: number;
-  recent_days: number;
-  limit: number;
-  force: boolean;
-};
-
-export type StrategySnapshotBackfillJobRequest = {
-  start_time: string;
-  end_time: string;
-  windows: number[];
-  benchmark_ts_code: string;
-};
-
-export type SourceRadarJobRequest = {
-  start_time: string;
-  end_time: string;
-  force: boolean;
-  per_day_limit: number;
-  batch_size: number;
-  max_concurrency: number;
-  lookback_days: number;
-  scan_limit: number;
-};
-
-export type StrategySnapshotSaveResult = {
-  snapshot_id: string;
-  strategy_type: string;
-  generated_at: string;
-  stock_count: number;
-  opportunity_count: number;
-  reused_existing: boolean;
-};
-
-export type DerivedJobItem = {
-  job_type: "anchor" | "aggregate_refine" | "recommendation_backtest" | "strategy_backfill" | "source_radar";
-  run_id: string;
-  reused_existing: boolean;
-  status: "running";
-};
+export type {
+  AnchorRequest,
+  ClassifyJobItem,
+  ClassifyRequest,
+  DerivedJobItem,
+  IngestJobItem,
+  IngestRequest,
+  IngestResultItem,
+  RecommendationBacktestRequest,
+  StockEvidenceChainJobRequest,
+} from "./types/jobs";
 
 export type BacktestGroupBy =
   | "source"
@@ -364,90 +231,6 @@ export type RecommendationBacktestSummary = {
   windows: number[];
   row_count: number;
   rows: RecommendationBacktestSummaryRow[];
-};
-
-export type RefinedThemeStock = {
-  name: string;
-  reason: string;
-  confidence: number;
-};
-
-export type RefinedTheme = {
-  theme_name: string;
-  aliases: string[];
-  summary: string;
-  investment_logic: string;
-  catalysts: string[];
-  related_stocks: RefinedThemeStock[];
-  evidence_message_ids: string[];
-  novelty: string;
-  confidence: number;
-  actionability_score: number;
-  risk_notes: string[];
-  merge_from_candidate_ids: string[];
-};
-
-export type AggregateRefineResult = {
-  run_id: string;
-  input_hash: string;
-  status: string;
-  trade_date: string;
-  extractor_version: string;
-  prompt_version: string;
-  candidate_count: number;
-  theme_count: number;
-  llm_batch_count: number;
-  failed_llm_batches: number;
-  max_concurrency: number;
-  themes: RefinedTheme[];
-};
-
-export type OrganizeAggregateSummary = {
-  run_id: string;
-  input_hash: string;
-  status: string;
-  trade_date: string;
-  start_time: string;
-  end_time: string;
-  candidate_count: number;
-  theme_count: number;
-  llm_batch_count: number;
-  failed_llm_batches: number;
-  max_concurrency: number;
-  evidence_message_count: number;
-};
-
-export type OrganizeAggregateTheme = RefinedTheme & {
-  theme_index: number;
-  priority_score: number;
-  evidence: OrganizeEvidenceMessage[];
-};
-
-export type OrganizeAggregatePage = {
-  result?: OrganizeAggregateSummary | null;
-  themes: OrganizeAggregateTheme[];
-};
-
-export type OrganizeAggregateQuery = {
-  source?: SourceKey;
-  keyword?: string;
-  start_time?: string;
-  end_time?: string;
-  evidence_limit?: number;
-};
-
-export type OrganizeAggregateEvidencePage = {
-  items: OrganizeEvidenceMessage[];
-  next_cursor_time?: string | null;
-  next_cursor_id?: string | null;
-};
-
-export type OrganizeAggregateEvidenceQuery = Omit<OrganizeAggregateQuery, "evidence_limit"> & {
-  run_id: string;
-  theme_index: number;
-  cursor_time?: string;
-  cursor_id?: string;
-  limit?: number;
 };
 
 export type OrganizeEvidenceMessage = {
@@ -511,32 +294,11 @@ export type OrganizeEvidenceQuery = Omit<OrganizeClassificationQuery, "evidence_
 };
 
 export type {
-  SourceRadarQuery,
-  SourceRadarSignal,
-  SourceRadarSignalStatus,
-  SourceRadarSnapshot,
-  SourceRadarValidationMetric,
-  SourceRadarValidationQuery,
-  SourceRadarValidationRow,
-  SourceRadarValidationSummary,
-  StrategyAttentionLevel,
-  StrategyBacktestMetric,
-  StrategyDashboard,
-  StrategyEventCredibility,
-  StrategyEventCredibilityLevel,
-  StrategyOpportunity,
-  StrategyQuery,
-  StrategyRelatedStock,
-  StrategySourceSignal,
-  StrategyStockCandle,
-  StrategyStockChart,
-  StrategyStockCandidate,
-  StrategyStockChartQuery,
-  StrategyStockDecisionBucket,
-  StrategyStockLifecycleState,
-  StrategyStockPricePosition,
-  StrategyThemeBrief,
-  StrategyValidationMetric,
-  StrategyValidationQuery,
-  StrategyValidationSummary,
+  StockEvidenceChainDashboard,
+  StockEvidenceChainItem,
+  StockEvidenceMarketPoint,
+  StockEvidenceMessage,
+  StockEvidenceStockCandle,
+  StockEvidenceStockChart,
+  StockEvidenceStockChartQuery,
 } from "./types/strategy";

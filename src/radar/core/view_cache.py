@@ -113,30 +113,6 @@ def dashboard_dependency_key(config: RadarConfig) -> str:
     )
 
 
-def strategy_dependency_key(config: RadarConfig) -> str:
-    return dashboard_dependency_key(config)
-
-
-def strategy_validation_dependency_key(config: RadarConfig) -> str:
-    with connect(config.database_path) as conn:
-        migrate_message_db(conn)
-        parts = {
-            "strategy_snapshots": _table_signature(conn, "strategy_snapshots", "generated_at"),
-            "strategy_snapshot_stocks": _table_signature(conn, "strategy_snapshot_stocks", "latest_message_time"),
-            "strategy_snapshot_returns": _table_signature(conn, "strategy_snapshot_returns", "updated_at"),
-        }
-    return _hash_parts(parts)
-
-
-def source_radar_dependency_key(config: RadarConfig) -> str:
-    with connect(config.database_path) as conn:
-        migrate_message_db(conn)
-        parts = {
-            "source_signal_snapshots": _table_signature(conn, "source_signal_snapshots", "created_at"),
-        }
-    return _hash_parts(parts)
-
-
 def cleanup_cache(database: Path, *, keep: int = 500) -> int:
     with connect(database) as conn:
         migrate_message_db(conn)
@@ -159,8 +135,6 @@ def _message_dependency(database: Path) -> dict[str, tuple[int, str]]:
         return {
             "messages": _table_signature(conn, "messages", "message_time"),
             "message_classifications": _table_signature(conn, "message_classifications", "updated_at"),
-            "message_anchors": _table_signature(conn, "message_anchors", "trade_date"),
-            "aggregate_refine_results": _table_signature(conn, "aggregate_refine_results", "updated_at"),
             "recommendation_events": _table_signature(conn, "recommendation_events", "message_time"),
             "recommendation_backtest_windows": _table_signature(conn, "recommendation_backtest_windows", "updated_at"),
         }

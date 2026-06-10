@@ -259,20 +259,33 @@
 
 .wechat-thread-title-row {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.wechat-thread-title-main {
+  display: flex;
   align-items: baseline;
   gap: 10px;
   min-width: 0;
 }
 
-.wechat-thread-title-row h2 {
+.wechat-thread-title-main h2 {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.wechat-thread-title-row span {
+.wechat-thread-title-main span {
   flex: 0 0 auto;
+}
+
+.wechat-thread-ai-action {
+  flex: 0 0 auto;
+  min-width: 58px;
 }
 
 .wechat-thread-filters {

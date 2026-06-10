@@ -149,7 +149,7 @@ export function LeaderboardPage() {
   return (
     <section className={loading ? "leaderboard-page loading" : "leaderboard-page"}>
       <div className="leaderboard-header">
-        <PanelTitle title="推荐胜率榜" meta="已成熟 T+N 窗口">
+        <PanelTitle title="证据胜率榜" meta="已成熟 T+N 窗口">
           <button className="btn btn-sm" type="button" onClick={() => void load()} disabled={loading} title="刷新榜单">
             <RefreshCw className="leaderboard-refresh-icon" size={15} />
             刷新
@@ -201,7 +201,7 @@ export function LeaderboardPage() {
       </div>
 
       <div className="leaderboard-metrics">
-        <Metric label="推荐事件" value={metrics.eventCount} detail="按来源去重汇总" />
+        <Metric label="证据事件" value={metrics.eventCount} detail="按来源去重汇总" />
         <Metric label="T+5 胜率" value={formatPercent(metrics.t5WinRate)} detail={`${metrics.t5SampleCount} 个成熟窗口`} />
         <Metric label="T+5 平均收益" value={formatSignedPercent(metrics.t5AvgReturn)} detail="个股收益" tone={metrics.t5AvgReturn} />
         <Metric label="T+5 平均超额" value={formatSignedPercent(metrics.t5AvgExcess)} detail="相对基准" tone={metrics.t5AvgExcess} />
@@ -266,7 +266,7 @@ export function LeaderboardPage() {
                     </span>
                   </motion.button>
                 ))}
-                {!loading && summary.rows.length === 0 && <p className="empty-line">暂无已成熟回测结果。先在作业页执行推荐回测补齐。</p>}
+                {!loading && summary.rows.length === 0 && <p className="empty-line">暂无已成熟回测结果。先在作业页执行证据回测补齐。</p>}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -448,9 +448,9 @@ function rowTitle(row: RecommendationBacktestSummaryRow, dimension: Dimension): 
 function rowSubtitle(row: RecommendationBacktestSummaryRow, dimension: Dimension): string {
   const parts = detailTags(row);
   if (dimension === "source") {
-    return `${row.event_count} 条推荐事件`;
+    return `${row.event_count} 条证据事件`;
   }
-  return parts.length > 0 ? parts.join(" / ") : `${row.event_count} 条推荐事件`;
+  return parts.length > 0 ? parts.join(" / ") : `${row.event_count} 条证据事件`;
 }
 
 function detailTags(row: RecommendationBacktestSummaryRow): string[] {
@@ -459,7 +459,7 @@ function detailTags(row: RecommendationBacktestSummaryRow): string[] {
     row.stock_name || row.ts_code ? `股票 ${row.stock_name || row.ts_code}` : "",
     row.sector_name ? `板块 ${row.sector_name}` : "",
     row.source_candidate ? `来源 ${row.source_candidate}` : "",
-    `${row.event_count} 条推荐事件`,
+    `${row.event_count} 条证据事件`,
   ].filter(Boolean);
 }
 
@@ -472,7 +472,7 @@ function drawerStockFromRow(row: RecommendationBacktestSummaryRow, dimension: Di
     ts_code: row.ts_code,
     event_count: row.event_count,
     average_excess_return_t5: metric(row, "avg_excess_t5"),
-    drawer_badge: "推荐胜率榜",
+    drawer_badge: "证据胜率榜",
     drawer_metrics: [
       { label: "T+1超额", value: metric(row, "avg_excess_t1") },
       { label: "T+3超额", value: metric(row, "avg_excess_t3") },

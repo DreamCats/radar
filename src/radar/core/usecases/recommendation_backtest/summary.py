@@ -7,6 +7,7 @@ from datetime import datetime
 from radar.core.config import RadarConfig
 from radar.core.models import MessageSource
 from radar.core.store import connect, init_db
+from radar.core.usecases.recommendation_backtest.events import RECOMMENDATION_EVENT_EXTRACTOR_VERSION
 from radar.core.usecases.recommendation_backtest.models import (
     DEFAULT_BACKTEST_WINDOWS,
     BacktestGroupBy,
@@ -25,15 +26,23 @@ def summarize_recommendation_backtests(
     source: MessageSource | None = None,
     min_count: int = 1,
     limit: int = 20,
+    extractor_version: str = RECOMMENDATION_EVENT_EXTRACTOR_VERSION,
 ) -> RecommendationBacktestSummaryResult:
-    """汇总 recommendation 回测结果；默认按来源候选输出画像。"""
+    """汇总生命周期证据回测结果；默认按来源候选输出画像。"""
 
     _validate_inputs(start_time, end_time, min_count, limit)
     window_values = sorted(set(windows or DEFAULT_BACKTEST_WINDOWS))
     conn = connect(config.database_path)
     try:
         init_db(conn)
-        rows = _window_rows(conn, start_time=start_time, end_time=end_time, windows=window_values, source=source)
+        rows = _window_rows(
+            conn,
+            start_time=start_time,
+            end_time=end_time,
+            windows=window_values,
+            source=source,
+            extractor_version=extractor_version,
+        )
     finally:
         conn.close()
 
@@ -62,10 +71,11 @@ def _window_rows(
     end_time: datetime,
     windows: list[int],
     source: MessageSource | None,
+    extractor_version: str,
 ) -> list[sqlite3.Row]:
     placeholders = ", ".join("?" for _ in windows)
     source_clause = "AND e.source = ?" if source else ""
-    params: list[object] = [start_time.isoformat(), end_time.isoformat(), *windows]
+    params: list[object] = [start_time.isoformat(), end_time.isoformat(), extractor_version, *windows]
     if source:
         params.append(source)
     return conn.execute(
@@ -78,6 +88,7 @@ def _window_rows(
         JOIN recommendation_backtest_windows w ON w.event_id = e.event_id
         WHERE e.message_time >= ?
           AND e.message_time < ?
+          AND e.extractor_version = ?
           AND w.status = 'succeeded'
           AND w.window_days IN ({placeholders})
           {source_clause}

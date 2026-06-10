@@ -1,68 +1,97 @@
 from __future__ import annotations
 
+import json
+import uuid
 from datetime import date, datetime, time
 from pathlib import Path
-from threading import Event
 
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
-from radar.core.models import MessageAnchor, MessageClassification, RawMessage
-from radar.core.runs import get_run
-from radar.core.store import connect, init_db, replace_message_anchors, upsert_message_classifications, upsert_messages
+from radar.core.store import connect, init_db
+from radar.core.tushare import RealtimeDailyQuote
 from radar.core.tushare import history
-from radar.core.usecases.strategy.snapshots import StrategySnapshotBackfillResult, StrategySnapshotSaveResult
 from radar.web.server.app import create_app
 
 
-def test_strategy_opportunities_endpoint_returns_ranked_items(tmp_path: Path):
+def test_stock_evidence_chain_latest_endpoint_returns_empty_dashboard(tmp_path: Path):
+    client = TestClient(create_app(_config(tmp_path)))
+    response = client.get("/api/strategy/evidence-chain/latest", params={"limit": 5})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["item_count"] == 0
+    assert data["items"] == []
+    assert data["stage_counts"] == {}
+
+
+def test_stock_evidence_chain_latest_orders_by_actionable_priority(tmp_path: Path):
     config = _config(tmp_path)
-    messages = [
-        _message("m1", "2026-06-07T10:00:00", "PCB 订单 扩产"),
-        _message("m2", "2026-06-06T10:00:00", "PCB 业绩 放量"),
-        _message("m3", "2026-06-05T10:00:00", "PCB 涨价"),
-    ]
+    as_of = datetime(2026, 6, 9, 15, 0)
+    window_start = datetime(2026, 6, 8, 15, 0)
+    evidence_start = datetime(2026, 5, 1, 15, 0)
     conn = connect(config.database_path)
     try:
         init_db(conn)
-        upsert_messages(conn, messages)
-        upsert_message_classifications(conn, [_classification(message) for message in messages])
-        replace_message_anchors(
+        _insert_candidate(
             conn,
-            message_ids=[message.message_id for message in messages],
-            anchors=[_anchor(message, "PCB") for message in messages],
-            trade_date="20260607",
-            extractor_version="test-anchor",
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="000001.SZ",
+            stock_name="拥挤股份",
+            rank=1,
+            evidence_score=18,
+            family_counts={"price": 6, "push": 3},
+        )
+        _insert_judgement(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="000001.SZ",
+            stock_name="拥挤股份",
+            stage="crowded",
+            confidence=0.9,
+            return_since_first_point=0.72,
+        )
+        _insert_candidate(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="000002.SZ",
+            stock_name="早期股份",
+            rank=2,
+            evidence_score=12,
+            family_counts={"catalyst": 2, "roadshow": 1},
+        )
+        _insert_judgement(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="000002.SZ",
+            stock_name="早期股份",
+            stage="seed",
+            confidence=0.72,
+            return_since_first_point=0.04,
         )
     finally:
         conn.close()
 
     client = TestClient(create_app(config))
-    response = client.get("/api/strategy/opportunities", params={"days": 30, "recent_days": 7, "limit": 3})
+    response = client.get("/api/strategy/evidence-chain/latest", params={"limit": 2})
 
     assert response.status_code == 200
     data = response.json()
-    assert data["opportunities"][0]["name"] == "PCB"
-    assert data["opportunities"][0]["recent_message_count"] == 3
-    assert data["opportunities"][0]["opportunity_backtest"]["event_count"] == 0
-    assert data["opportunities"][0]["selected_stock_backtest"]["event_count"] == 0
-
-
-def test_strategy_validation_endpoint_returns_empty_summary(tmp_path: Path):
-    client = TestClient(create_app(_config(tmp_path)))
-    response = client.get("/api/strategy/validation", params={"window_days": 5})
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["window_days"] == 5
-    assert data["snapshot_count"] == 0
-    assert data["matured_stock_count"] == 0
-    assert data["by_decision_bucket"] == []
+    assert [item["stock_name"] for item in data["items"]] == ["早期股份", "拥挤股份"]
+    assert data["items"][0]["rank"] == 2
 
 
 def test_strategy_stock_chart_endpoint_reads_local_market_history(monkeypatch, tmp_path: Path):
     config = _config(tmp_path)
-    monkeypatch.setattr("radar.core.usecases.strategy.stock_chart._refresh_recent_daily_cache", lambda *args, **kwargs: None)
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._refresh_recent_daily_cache", lambda *args, **kwargs: None)
     daily = history.spec_for("daily")
     assert daily is not None
     history.put_rows(
@@ -90,7 +119,7 @@ def test_strategy_stock_chart_endpoint_reads_local_market_history(monkeypatch, t
 
 
 def test_strategy_stock_chart_endpoint_returns_empty_when_cache_missing(monkeypatch, tmp_path: Path):
-    monkeypatch.setattr("radar.core.usecases.strategy.stock_chart._refresh_recent_daily_cache", lambda *args, **kwargs: None)
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._refresh_recent_daily_cache", lambda *args, **kwargs: None)
     client = TestClient(create_app(_config(tmp_path)))
     response = client.get("/api/strategy/stocks/000001.SZ/chart")
 
@@ -123,7 +152,7 @@ def test_strategy_stock_chart_endpoint_refreshes_latest_daily_after_close(monkey
         )
         return []
 
-    monkeypatch.setattr("radar.core.usecases.strategy.stock_chart.tushare_client.call", fake_call)
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart.tushare_client.call", fake_call)
 
     client = TestClient(create_app(config))
     response = client.get("/api/strategy/stocks/300024.SZ/chart", params={"days": 5})
@@ -135,164 +164,168 @@ def test_strategy_stock_chart_endpoint_refreshes_latest_daily_after_close(monkey
     assert [item["trade_date"] for item in data["candles"]] == ["20260605", "20260608"]
 
 
-def test_strategy_snapshot_save_endpoint_uses_cache(monkeypatch, tmp_path: Path):
+def test_strategy_stock_chart_endpoint_appends_intraday_realtime_candle(monkeypatch, tmp_path: Path):
     config = _config(tmp_path)
-    calls: list[dict] = []
+    daily = history.spec_for("daily")
+    assert daily is not None
+    history.put_rows(
+        config.market_database_path,
+        daily,
+        [_daily("300503.SZ", "20260605", 80.0, 82.0, 78.0, 81.0, pct_chg=1.25)],
+    )
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._refresh_recent_daily_cache", lambda *args, **kwargs: None)
+    monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: date(2026, 6, 8))
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._now_time", lambda: time(10, 30))
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._is_trading_day", lambda *args, **kwargs: True)
 
-    def fake_save(config, *, days, recent_days, limit, force):
-        calls.append({"days": days, "recent_days": recent_days, "limit": limit, "force": force})
-        return StrategySnapshotSaveResult(
-            snapshot_id="snap-1",
-            generated_at=datetime.fromisoformat("2026-06-07T12:00:00"),
-            stock_count=2,
-            opportunity_count=3,
-            reused_existing=True,
+    def fake_quote(config_arg, *, ts_code, use_cache):
+        assert ts_code == "300503.SZ"
+        assert use_cache is True
+        return RealtimeDailyQuote(
+            ts_code=ts_code,
+            name="昊志机电",
+            pre_close=81.0,
+            open=83.0,
+            high=88.0,
+            low=82.5,
+            close=86.0,
+            vol=2000,
+            amount=30000,
+            num=120,
         )
 
-    monkeypatch.setattr("radar.web.server.routers.strategy.save_cached_strategy_snapshot", fake_save)
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart.get_realtime_daily_quote", fake_quote)
 
     client = TestClient(create_app(config))
-    response = client.post(
-        "/api/strategy/snapshots",
-        json={"days": 30, "recent_days": 7, "limit": 12, "force": False},
-    )
+    response = client.get("/api/strategy/stocks/300503.SZ/chart", params={"days": 5})
 
     assert response.status_code == 200
     data = response.json()
-    assert data["snapshot_id"] == "snap-1"
-    assert data["reused_existing"] is True
-    assert calls == [{"days": 30, "recent_days": 7, "limit": 12, "force": False}]
-
-
-def test_strategy_backfill_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path: Path):
-    config = _config(tmp_path)
-    calls: list[dict] = []
-    started = Event()
-    finished = Event()
-    release = Event()
-
-    def fake_backfill(config, *, windows, benchmark_ts_code, snapshot_start_time, snapshot_end_time):
-        try:
-            started.set()
-            release.wait(timeout=2)
-            calls.append(
-                {
-                    "windows": windows,
-                    "benchmark_ts_code": benchmark_ts_code,
-                    "snapshot_start_time": snapshot_start_time,
-                    "snapshot_end_time": snapshot_end_time,
-                }
-            )
-            return StrategySnapshotBackfillResult(
-                snapshot_count=1,
-                stock_count=2,
-                refreshed_count=1,
-                pending_count=1,
-                missing_price_count=0,
-                failed_count=0,
-                windows=windows,
-            )
-        finally:
-            finished.set()
-
-    monkeypatch.setattr("radar.web.server.strategy_jobs.backfill_strategy_snapshot_returns", fake_backfill)
-
-    client = TestClient(create_app(config))
-    payload = {
-        "start_time": "2026-05-08T00:00:00",
-        "end_time": "2026-06-07T00:00:00",
-        "windows": [1, 3, 5, 10],
-        "benchmark_ts_code": "000300.SH",
-    }
-    response = client.post("/api/strategy/snapshots/backfill/jobs", json=payload)
-
-    assert response.status_code == 200
-    first = response.json()["items"][0]
-    assert first["job_type"] == "strategy_backfill"
-    assert first["status"] == "running"
-    assert first["reused_existing"] is False
-    assert started.wait(timeout=1)
-    assert get_run(config.database_path, first["run_id"]) is not None
-
-    response = client.post("/api/strategy/snapshots/backfill/jobs", json=payload)
-    second = response.json()["items"][0]
-
-    assert second["run_id"] == first["run_id"]
-    assert second["reused_existing"] is True
-    release.set()
-    assert finished.wait(timeout=1)
-    assert calls[0]["snapshot_start_time"] == datetime.fromisoformat("2026-05-08T00:00:00")
-    assert calls[0]["snapshot_end_time"] == datetime.fromisoformat("2026-06-07T00:00:00")
+    assert data["latest_trade_date"] == "20260608"
+    assert data["latest_source"] == "rt_k"
+    assert data["latest_is_realtime"] is True
+    assert [item["trade_date"] for item in data["candles"]] == ["20260605", "20260608"]
+    assert data["candles"][-1]["close"] == 86.0
+    assert data["candles"][-1]["amount"] == 30000
 
 
 def _config(tmp_path: Path) -> RadarConfig:
     return RadarConfig(storage={"data_dir": tmp_path / "data", "database": tmp_path / "radar.sqlite3"})
 
 
-def _message(message_id: str, message_time: str, content: str) -> RawMessage:
-    return RawMessage(
-        message_id=message_id,
-        source="个人群",
-        sender=f"sender-{message_id}",
-        message_time=datetime.fromisoformat(message_time),
-        raw_content=content,
-        group_name="策略测试群",
-        fetch_time=datetime.fromisoformat("2026-06-07T10:01:00"),
-        fetch_window="20260607100000-20260607110000",
-    )
-
-
-def _classification(message: RawMessage) -> MessageClassification:
-    now = datetime.fromisoformat("2026-06-07T12:00:00")
-    return MessageClassification(
-        message_id=message.message_id,
-        category="recommendation",
-        confidence=0.9,
-        reason="策略测试",
-        status="auto",
-        classifier_type="llm",
-        classifier_version="test",
-        created_at=now,
-        updated_at=now,
-    )
-
-
-def _anchor(message: RawMessage, name: str) -> MessageAnchor:
-    now = datetime.fromisoformat("2026-06-07T12:00:00")
-    return MessageAnchor(
-        message_id=message.message_id,
-        anchor_id=f"concept:{name}",
-        anchor_type="concept",
-        name=name,
-        confidence=0.9,
-        evidence=[],
-        extractor_version="test-anchor",
-        trade_date="20260607",
-        created_at=now,
-        updated_at=now,
-    )
-
-
-def _daily(
-    ts_code: str,
-    trade_date: str,
-    open_: float,
-    high: float,
-    low: float,
-    close: float,
-    *,
-    pct_chg: float,
-) -> dict:
+def _daily(ts_code: str, trade_date: str, open_price: float, high: float, low: float, close: float, *, pct_chg: float | None = None):
     return {
         "ts_code": ts_code,
         "trade_date": trade_date,
-        "open": open_,
+        "open": open_price,
         "high": high,
         "low": low,
         "close": close,
-        "pre_close": open_,
-        "change": close - open_,
+        "pre_close": open_price,
+        "change": close - open_price,
         "pct_chg": pct_chg,
-        "vol": 10000,
-        "amount": 120000,
+        "vol": 1000,
+        "amount": 10000,
     }
+
+
+def _insert_candidate(
+    conn,
+    *,
+    as_of: datetime,
+    window_start: datetime,
+    evidence_start: datetime,
+    ts_code: str,
+    stock_name: str,
+    rank: int,
+    evidence_score: int,
+    family_counts: dict[str, int],
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO stock_lifecycle_candidates (
+            as_of_time, window_start_time, evidence_start_time, ts_code, stock_name,
+            trigger_count, unique_trigger_count, sender_count, conversation_count,
+            evidence_score, channels_json, family_counts_json, rank, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            as_of.isoformat(),
+            window_start.isoformat(),
+            evidence_start.isoformat(),
+            ts_code,
+            stock_name,
+            12,
+            8,
+            4,
+            4,
+            evidence_score,
+            json.dumps(["heat"], ensure_ascii=False),
+            json.dumps(family_counts, ensure_ascii=False),
+            rank,
+            as_of.isoformat(),
+        ),
+    )
+    conn.commit()
+
+
+def _insert_judgement(
+    conn,
+    *,
+    as_of: datetime,
+    window_start: datetime,
+    evidence_start: datetime,
+    ts_code: str,
+    stock_name: str,
+    stage: str,
+    confidence: float,
+    return_since_first_point: float,
+) -> None:
+    result = {
+        "stage_label": {"seed": "种子期", "crowded": "拥挤期"}[stage],
+        "one_line": f"{stock_name} 测试判断",
+        "why": ["测试证据"],
+        "market_evidence": {
+            "summary": {
+                "return_since_first_point": return_since_first_point,
+                "drawdown_from_selected_high": -0.02,
+            },
+            "points": [],
+        },
+    }
+    conn.execute(
+        """
+        INSERT INTO stock_lifecycle_judgements (
+            judgement_id, as_of_time, window_start_time, evidence_start_time, ts_code,
+            stock_name, stage, confidence, trigger_count, unique_trigger_count,
+            sender_count, conversation_count, evidence_count, channels_json,
+            evidence_refs_json, llm_provider, model, prompt_version,
+            result_json, created_at, updated_at, evidence_signature
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            uuid.uuid4().hex,
+            as_of.isoformat(),
+            window_start.isoformat(),
+            evidence_start.isoformat(),
+            ts_code,
+            stock_name,
+            stage,
+            confidence,
+            12,
+            8,
+            4,
+            4,
+            6,
+            json.dumps(["heat"], ensure_ascii=False),
+            "[]",
+            "test",
+            "test",
+            "test",
+            json.dumps(result, ensure_ascii=False),
+            as_of.isoformat(),
+            as_of.isoformat(),
+            "test",
+        ),
+    )
+    conn.commit()

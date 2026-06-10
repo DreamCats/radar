@@ -14,10 +14,16 @@
   cursor: pointer;
 }
 
-.chat-reasoning .markdown-content {
+.chat-reasoning .markdown-content,
+.chat-reasoning .drawer-markdown-content {
   color: var(--color-ink-subtle);
   font-size: 12px;
   line-height: 1.6;
+}
+
+.chat-tool-activity-block {
+  display: grid;
+  gap: 6px;
 }
 
 .chat-tool-activity-list {
@@ -36,6 +42,27 @@
   color: var(--color-ink-subtle);
   font-size: 12px;
   padding: 4px 8px;
+}
+
+.chat-tool-activity-count {
+  margin-left: 4px;
+  color: var(--color-ink-faint);
+}
+
+.chat-tool-activity-toggle {
+  width: fit-content;
+  border: 1px solid var(--color-hairline);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-surface-1) 68%, transparent);
+  color: var(--color-ink-subtle);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.chat-tool-activity-toggle:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-hairline));
+  color: var(--color-ink);
 }
 
 .chat-tool-activity-running::before,
@@ -59,11 +86,12 @@
 
 .markdown-content {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   color: var(--color-ink-muted);
   font-size: 13px;
+  line-height: 1.72;
 }
 
 .markdown-content h3,
@@ -80,15 +108,59 @@
 .markdown-content h3,
 .markdown-content h4 {
   color: var(--color-ink);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.45;
+}
+
+.markdown-content h3 {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--color-hairline) 72%, transparent);
+  font-size: 17px;
+}
+
+.markdown-content h3:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.markdown-content h4 {
+  color: color-mix(in srgb, var(--color-ink) 88%, var(--color-primary-hover));
 }
 
 .markdown-content ul,
 .markdown-content ol {
   display: grid;
-  gap: 4px;
-  padding-left: 18px;
+  gap: 6px;
+  padding-left: 20px;
+}
+
+.markdown-content li::marker {
+  color: var(--color-primary-hover);
+}
+
+.markdown-content strong {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.markdown-percent-up {
+  color: var(--color-price-up);
+  font-weight: 700;
+}
+
+.markdown-percent-down {
+  color: var(--color-price-down);
+  font-weight: 700;
+}
+
+.markdown-number,
+.markdown-percent-up,
+.markdown-percent-down {
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .markdown-content code {
@@ -103,29 +175,30 @@
   overflow: auto;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-sm);
-  background: var(--color-surface-3);
-  padding: 10px;
+  background: color-mix(in srgb, var(--color-surface-3) 88%, black);
+  padding: 12px;
 }
 
 .markdown-table-wrap {
   max-width: 100%;
   overflow: auto;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--color-hairline-strong) 76%, transparent);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.025);
 }
 
 .markdown-content table {
   width: 100%;
   min-width: 360px;
   border-collapse: collapse;
-  background: var(--color-surface-2);
+  background: color-mix(in srgb, var(--color-surface-2) 78%, transparent);
   white-space: normal;
 }
 
 .markdown-content th,
 .markdown-content td {
   border-bottom: 1px solid var(--color-hairline);
-  padding: 7px 9px;
+  padding: 9px 10px;
   text-align: left;
   vertical-align: top;
 }
@@ -134,6 +207,12 @@
   color: var(--color-ink);
   font-size: 12px;
   font-weight: 700;
+  background: color-mix(in srgb, var(--color-surface-3) 72%, transparent);
+}
+
+.markdown-content td:not(:first-child),
+.markdown-content th:not(:first-child) {
+  font-variant-numeric: tabular-nums;
 }
 
 .markdown-content tr:last-child td {
@@ -147,9 +226,12 @@
 }
 
 .markdown-content blockquote {
-  border-left: 2px solid var(--color-primary);
-  color: var(--color-ink-subtle);
-  padding-left: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 34%, var(--color-hairline));
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  color: var(--color-ink-muted);
+  padding: 10px 12px;
 }
 
 .markdown-content hr {
@@ -160,4 +242,233 @@
 
 .markdown-content a {
   color: var(--color-primary);
+}
+
+.chat-workspace .chat-message-list {
+  gap: 14px;
+  padding: 8px 8px 12px 0;
+}
+
+.chat-workspace .chat-message {
+  max-width: min(100%, 820px);
+}
+
+.chat-workspace .chat-message-user {
+  max-width: min(78%, 640px);
+  background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface-2));
+}
+
+.chat-workspace .chat-message-assistant {
+  width: min(100%, 860px);
+  padding: 4px 2px;
+}
+
+.chat-workspace .drawer-markdown-content {
+  display: grid;
+  gap: 10px;
+  max-width: 820px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  color: color-mix(in srgb, var(--color-ink-muted) 92%, var(--color-ink));
+  font-size: 14px;
+  line-height: 1.72;
+}
+
+.chat-workspace .drawer-markdown-content h3,
+.chat-workspace .drawer-markdown-content h4,
+.chat-workspace .drawer-markdown-content p,
+.chat-workspace .drawer-markdown-content ul,
+.chat-workspace .drawer-markdown-content ol,
+.chat-workspace .drawer-markdown-content blockquote,
+.chat-workspace .drawer-markdown-content pre,
+.chat-workspace .drawer-markdown-content hr {
+  margin: 0;
+}
+
+.chat-workspace .drawer-markdown-content h3,
+.chat-workspace .drawer-markdown-content h4 {
+  color: var(--color-ink);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.chat-workspace .drawer-markdown-content h3 {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--color-hairline) 72%, transparent);
+  font-size: 17px;
+}
+
+.chat-workspace .drawer-markdown-content h3:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.chat-workspace .drawer-markdown-content h4 {
+  color: color-mix(in srgb, var(--color-ink) 88%, var(--color-primary-hover));
+}
+
+.chat-workspace .drawer-markdown-content p {
+  max-width: 78ch;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  color: var(--color-ink-muted);
+  font-size: 13px;
+  line-height: 1.72;
+}
+
+.chat-workspace .drawer-markdown-content ul,
+.chat-workspace .drawer-markdown-content ol {
+  display: grid;
+  gap: 6px;
+  padding-left: 20px;
+}
+
+.chat-workspace .drawer-markdown-content li {
+  max-width: 78ch;
+}
+
+.chat-workspace .drawer-markdown-content li::marker {
+  color: var(--color-primary-hover);
+}
+
+.chat-workspace .drawer-markdown-content strong {
+  color: var(--color-ink);
+  font-size: inherit;
+  font-weight: 700;
+  line-height: inherit;
+}
+
+.chat-workspace .drawer-markdown-content span {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.chat-workspace .drawer-markdown-number,
+.chat-workspace .drawer-markdown-percent-up,
+.chat-workspace .drawer-markdown-percent-down {
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.chat-workspace .drawer-markdown-number {
+  color: inherit;
+  font-weight: inherit;
+}
+
+.chat-workspace .drawer-markdown-percent-up {
+  color: var(--color-price-up);
+  font-weight: 700;
+}
+
+.chat-workspace .drawer-markdown-percent-down {
+  color: var(--color-price-down);
+  font-weight: 700;
+}
+
+.chat-workspace .drawer-markdown-content code {
+  border: 1px solid var(--color-hairline);
+  border-radius: 4px;
+  background: var(--color-surface-3);
+  color: var(--color-ink);
+  padding: 1px 4px;
+}
+
+.chat-workspace .drawer-markdown-content pre {
+  overflow: auto;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-3) 88%, black);
+  padding: 12px;
+}
+
+.chat-workspace .drawer-markdown-table-wrap {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--color-hairline-strong) 76%, transparent);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.025);
+}
+
+.chat-workspace .drawer-markdown-content table {
+  width: 100%;
+  min-width: 360px;
+  border-collapse: collapse;
+  background: color-mix(in srgb, var(--color-surface-2) 78%, transparent);
+  white-space: normal;
+}
+
+.chat-workspace .drawer-markdown-content th,
+.chat-workspace .drawer-markdown-content td {
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 9px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.chat-workspace .drawer-markdown-content th {
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--color-surface-3) 72%, transparent);
+}
+
+.chat-workspace .drawer-markdown-content td:not(:first-child),
+.chat-workspace .drawer-markdown-content th:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+}
+
+.chat-workspace .drawer-markdown-content tr:last-child td {
+  border-bottom: 0;
+}
+
+.chat-workspace .drawer-markdown-content pre code {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.chat-workspace .drawer-markdown-content blockquote {
+  border: 1px solid color-mix(in srgb, var(--color-primary) 34%, var(--color-hairline));
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  color: var(--color-ink-muted);
+  padding: 10px 12px;
+}
+
+.chat-workspace .drawer-markdown-content hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.chat-workspace .drawer-markdown-content a {
+  color: var(--color-primary);
+}
+
+.overview-chat-workspace .markdown-content {
+  max-width: 820px;
+  color: color-mix(in srgb, var(--color-ink-muted) 92%, var(--color-ink));
+  font-size: 14px;
+}
+
+.overview-chat-workspace .markdown-content p {
+  max-width: 78ch;
+}
+
+.overview-chat-workspace .markdown-table-wrap {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.overview-chat-workspace .markdown-content table {
+  background: transparent;
+}
+
+.overview-chat-workspace .markdown-content th {
+  background: transparent;
 }

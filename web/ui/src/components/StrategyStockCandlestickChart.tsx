@@ -1,11 +1,19 @@
 import { useMemo } from "react";
-import type { StrategyStockCandle } from "../types";
+import type { StockEvidenceStockCandle } from "../types";
 type ChartStock = {
   stock_name: string;
   first_seen_time?: string | null;
   latest_message_time?: string | null;
 };
-export function StrategyStockCandlestickChart({ candles, stock }: { candles: StrategyStockCandle[]; stock: ChartStock }) {
+export function StrategyStockCandlestickChart({
+  candles,
+  stock,
+  latestIsRealtime = false,
+}: {
+  candles: StockEvidenceStockCandle[];
+  stock: ChartStock;
+  latestIsRealtime?: boolean;
+}) {
   const chart = useMemo(() => buildChart(candles), [candles]);
   const markers = useMemo(() => signalMarkers(candles, stock), [candles, stock]);
   const quote = useMemo(() => quoteSummary(candles), [candles]);
@@ -33,7 +41,7 @@ export function StrategyStockCandlestickChart({ candles, stock }: { candles: Str
       </div>
 
       <div className="strategy-stock-chart-title">
-        <strong>日K · {candles.length}交易日</strong>
+        <strong>日K · {candles.length}交易日{latestIsRealtime ? " · 盘中快照" : ""}</strong>
         <span className="strategy-ma-legend">
           <em className="ma5">MA5:{formatPrice(chart.maLatest[5])}</em>
           <em className="ma10">10:{formatPrice(chart.maLatest[10])}</em>
@@ -136,7 +144,7 @@ function QuoteItem({ label, value, toneClass }: { label: string; value: string; 
   );
 }
 
-function buildChart(candles: StrategyStockCandle[]) {
+function buildChart(candles: StockEvidenceStockCandle[]) {
   const width = 860;
   const height = 438;
   const left = 58;
@@ -207,7 +215,7 @@ function buildChart(candles: StrategyStockCandle[]) {
 }
 
 function maPoints(
-  candles: StrategyStockCandle[],
+  candles: StockEvidenceStockCandle[],
   period: number,
   xForIndex: (index: number) => number,
   yForPrice: (price: number) => number,
@@ -224,7 +232,7 @@ function maPoints(
 }
 
 function volumeMaPoints(
-  candles: StrategyStockCandle[],
+  candles: StockEvidenceStockCandle[],
   period: number,
   xForIndex: (index: number) => number,
   yForVolume: (volume: number) => number,
@@ -241,11 +249,11 @@ function volumeMaPoints(
   return points.join(" ");
 }
 
-function maLatest(candles: StrategyStockCandle[], period: number): number | null {
+function maLatest(candles: StockEvidenceStockCandle[], period: number): number | null {
   return maAt(candles, period, candles.length - 1);
 }
 
-function maAt(candles: StrategyStockCandle[], period: number, index: number): number | null {
+function maAt(candles: StockEvidenceStockCandle[], period: number, index: number): number | null {
   if (index + 1 < period) {
     return null;
   }
@@ -253,7 +261,7 @@ function maAt(candles: StrategyStockCandle[], period: number, index: number): nu
   return slice.reduce((sum, item) => sum + item.close, 0) / period;
 }
 
-function signalMarkers(candles: StrategyStockCandle[], stock: ChartStock) {
+function signalMarkers(candles: StockEvidenceStockCandle[], stock: ChartStock) {
   const markers: Array<{ label: string; index: number }> = [];
   const firstSeen = dateKey(stock.first_seen_time);
   const latest = dateKey(stock.latest_message_time);
@@ -268,12 +276,12 @@ function signalMarkers(candles: StrategyStockCandle[], stock: ChartStock) {
   return markers;
 }
 
-function nearestCandleIndex(candles: StrategyStockCandle[], key: string): number {
+function nearestCandleIndex(candles: StockEvidenceStockCandle[], key: string): number {
   const index = candles.findIndex((item) => item.trade_date >= key);
   return index >= 0 ? index : candles.length - 1;
 }
 
-function quoteSummary(candles: StrategyStockCandle[]) {
+function quoteSummary(candles: StockEvidenceStockCandle[]) {
   const last = candles[candles.length - 1];
   const change = last.change ?? (last.pre_close ? last.close - last.pre_close : last.close - last.open);
   const pct = last.pct_chg ?? (last.pre_close ? (change / last.pre_close) * 100 : null);
@@ -301,7 +309,7 @@ function quoteSummary(candles: StrategyStockCandle[]) {
   };
 }
 
-function dateTicks(candles: StrategyStockCandle[], xForIndex: (index: number) => number) {
+function dateTicks(candles: StockEvidenceStockCandle[], xForIndex: (index: number) => number) {
   const indexes = Array.from(new Set([0, Math.floor((candles.length - 1) / 2), candles.length - 1]));
   return indexes.map((index, position) => ({
     anchor: tickAnchor(position, indexes.length),

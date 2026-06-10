@@ -1,16 +1,10 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
-import { fetchStrategyStockChart } from "../api/radarApi";
+import { fetchStockEvidenceStockChart } from "../api/radarApi";
 import { ChatLauncher } from "./ChatLauncher";
 import { StrategyStockCandlestickChart } from "./StrategyStockCandlestickChart";
-import type {
-  StrategyEventCredibility,
-  StrategyStockChart,
-  StrategyStockDecisionBucket,
-  StrategyStockLifecycleState,
-  StrategyStockPricePosition,
-} from "../types";
+import type { StockEvidenceStockChart } from "../types";
 
 export type StrategyStockDrawerMetric = {
   label: string;
@@ -24,17 +18,11 @@ export type StrategyStockDrawerStock = {
   source_count?: number;
   first_seen_time?: string | null;
   latest_message_time?: string | null;
-  lifecycle_state?: StrategyStockLifecycleState | null;
-  lifecycle_reason?: string | null;
   price_return_since_first_seen?: number | null;
   recent_price_return_3d?: number | null;
   drawdown_from_high_since_first_seen?: number | null;
-  price_position?: StrategyStockPricePosition | null;
   average_excess_return_t5?: number | null;
   realtime_score?: number | null;
-  event_credibility?: StrategyEventCredibility | null;
-  decision_bucket?: StrategyStockDecisionBucket | null;
-  decision_reason?: string | null;
   drawer_badge?: string;
   drawer_metrics?: StrategyStockDrawerMetric[];
   evidence_title?: string;
@@ -49,7 +37,7 @@ type Props = {
 };
 
 export function StrategyStockDrawer({ stock, onClose }: Props) {
-  const [chart, setChart] = useState<StrategyStockChart | null>(null);
+  const [chart, setChart] = useState<StockEvidenceStockChart | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +50,7 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    void fetchStrategyStockChart(stock.ts_code, { days: 120 })
+    void fetchStockEvidenceStockChart(stock.ts_code, { days: 120 })
       .then((result) => {
         if (!cancelled) {
           setChart(result);
@@ -108,51 +96,21 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
       <button className="strategy-stock-drawer-scrim" type="button" aria-label="关闭K线抽屉" onClick={onClose} />
       <aside className="strategy-stock-drawer">
         <header className="strategy-stock-drawer-head">
-          <div>
+          <div className="strategy-stock-drawer-title">
             <strong>{stock.stock_name}</strong>
             <span>{stock.ts_code}</span>
           </div>
-          <button className="icon-btn" type="button" aria-label="关闭" onClick={onClose}>
-            <X size={16} />
-          </button>
-        </header>
-
-        <div className="strategy-stock-drawer-tags">
-          {stock.drawer_badge && <span className="strategy-stock-context-tag">{stock.drawer_badge}</span>}
-          {stock.decision_bucket && <span className={decisionClass(stock.decision_bucket)}>{stock.decision_bucket}</span>}
-          {stock.lifecycle_state && <span className={`strategy-stock-state strategy-stock-state-${stock.lifecycle_state}`}>{stock.lifecycle_state}</span>}
-          {stock.price_position && <span className={`strategy-price-position strategy-price-position-${stock.price_position}`}>{stock.price_position}</span>}
-          {stock.event_credibility && <span className={credibilityClass(stock.event_credibility.level)}>{stock.event_credibility.level}</span>}
-        </div>
-
-        <div className="strategy-stock-drawer-body">
-          {loading && <p className="strategy-stock-chart-empty">正在加载本地行情</p>}
-          {!loading && error && <p className="error-line">{error}</p>}
-          {!loading && !error && candles.length === 0 && (
-            <p className="strategy-stock-chart-empty">{chart?.missing_reason ?? "本地暂无日线缓存"}</p>
-          )}
-          {!loading && !error && candles.length > 0 && <StrategyStockCandlestickChart candles={candles} stock={stock} />}
-
-          <div className="strategy-stock-decision-grid">
-            {drawerMetrics(stock).map((metric) => (
-              <DecisionMetric label={metric.label} value={metric.value} key={metric.label} />
-            ))}
-          </div>
-
-          <div className="strategy-stock-drawer-chat-row">
+          <div className="strategy-stock-drawer-head-actions">
             <ChatLauncher
               title={stock.stock_name}
-              subtitle={stock.decision_reason || stock.lifecycle_reason || evidenceSummary(stock) || stock.ts_code}
+              subtitle={evidenceSummary(stock) || stock.ts_code}
               surface="个股深挖"
               entityId={stock.ts_code}
-              buttonLabel="深挖这个标的"
-              buttonClassName="btn btn-primary btn-sm chat-inline-action"
+              buttonLabel="AI"
+              buttonClassName="btn btn-primary btn-sm strategy-stock-ai-action"
               context={[
                 { label: "代码", value: stock.ts_code },
-                { label: "决策层", value: stock.decision_bucket },
-                { label: "生命周期", value: stock.lifecycle_state },
-                { label: "价格位置", value: stock.price_position },
-                { label: "可信度", value: stock.event_credibility?.level },
+                { label: "阶段", value: stock.drawer_badge },
                 { label: "首现", value: stock.first_seen_time },
                 { label: "最近", value: stock.latest_message_time },
                 { label: "样本", value: evidenceSummary(stock) },
@@ -164,24 +122,37 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
                 "如果不追高，后续应该盯哪些价格、消息和来源变化？",
               ]}
             />
+            <button className="icon-btn" type="button" aria-label="关闭" onClick={onClose}>
+              <X size={16} />
+            </button>
+          </div>
+        </header>
+
+        <div className="strategy-stock-drawer-tags">
+          {stock.drawer_badge && <span className="strategy-stock-context-tag">{stock.drawer_badge}</span>}
+        </div>
+
+        <div className="strategy-stock-drawer-body">
+          {loading && <p className="strategy-stock-chart-empty">正在加载本地行情</p>}
+          {!loading && error && <p className="error-line">{error}</p>}
+          {!loading && !error && candles.length === 0 && (
+            <p className="strategy-stock-chart-empty">{chart?.missing_reason ?? "本地暂无日线缓存"}</p>
+          )}
+          {!loading && !error && candles.length > 0 && (
+            <StrategyStockCandlestickChart candles={candles} stock={stock} latestIsRealtime={chart?.latest_is_realtime ?? false} />
+          )}
+
+          <div className="strategy-stock-decision-grid">
+            {drawerMetrics(stock).map((metric) => (
+              <DecisionMetric label={metric.label} value={metric.value} key={metric.label} />
+            ))}
           </div>
 
           <section className="strategy-stock-evidence-panel">
             <strong>{stock.evidence_title ?? "策略证据"}</strong>
             {evidenceSummary(stock) && <span>{evidenceSummary(stock)}</span>}
-            {stock.event_credibility?.first_source_name && (
-              <p>
-                首提 {stock.event_credibility.first_source_name}
-                {stock.event_credibility.first_group_name ? ` · ${stock.event_credibility.first_group_name}` : ""}
-              </p>
-            )}
-            {stock.decision_reason && <p>{stock.decision_reason}</p>}
-            {stock.lifecycle_reason && <p>{stock.lifecycle_reason}</p>}
             {stock.evidence_lines?.map((line) => (
               <p key={line}>{line}</p>
-            ))}
-            {stock.event_credibility?.risks.slice(0, 2).map((risk) => (
-              <p key={risk}>{risk}</p>
             ))}
           </section>
         </div>
@@ -200,13 +171,7 @@ function DecisionMetric({ label, value }: { label: string; value?: number | null
 }
 
 function stockEvidenceLines(stock: StrategyStock): string[] {
-  return [
-    stock.decision_reason,
-    stock.lifecycle_reason,
-    ...(stock.evidence_lines ?? []),
-    ...(stock.event_credibility?.reasons ?? []),
-    ...(stock.event_credibility?.risks ?? []),
-  ].filter((line): line is string => Boolean(line));
+  return stock.evidence_lines ?? [];
 }
 
 function drawerMetrics(stock: StrategyStock): StrategyStockDrawerMetric[] {
@@ -243,12 +208,4 @@ function returnToneClass(value?: number | null): string {
     return "return-flat";
   }
   return value > 0 ? "return-up" : "return-down";
-}
-
-function decisionClass(bucket: StrategyStock["decision_bucket"]): string {
-  return `strategy-decision strategy-decision-${bucket}`;
-}
-
-function credibilityClass(level: NonNullable<StrategyStock["event_credibility"]>["level"]): string {
-  return `strategy-credibility strategy-credibility-${level}`;
 }

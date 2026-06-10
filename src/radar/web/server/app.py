@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from radar.core.config import RadarConfig, load_config
-from radar.web.server.routers import aggregate, backtest, chat, classify, dashboard, health, ingest, messages, organize, runs, source, strategy
+from radar.web.server.routers import backtest, chat, classify, dashboard, health, ingest, market, messages, organize, runs, strategy
 
 
 def create_app(config: RadarConfig | None = None) -> FastAPI:
@@ -30,11 +30,10 @@ def create_app(config: RadarConfig | None = None) -> FastAPI:
     app.include_router(runs.router)
     app.include_router(ingest.router)
     app.include_router(classify.router)
-    app.include_router(aggregate.router)
+    app.include_router(market.router)
     app.include_router(backtest.router)
     app.include_router(organize.router)
     app.include_router(strategy.router)
-    app.include_router(source.router)
 
     @app.get("/")
     def root() -> dict[str, str]:

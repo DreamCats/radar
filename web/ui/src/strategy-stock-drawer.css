@@ -39,9 +39,25 @@
   padding: 14px 16px 12px;
 }
 
-.strategy-stock-drawer-head > div {
+.strategy-stock-drawer-title {
   display: grid;
   gap: 3px;
+}
+
+.strategy-stock-drawer-head-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.strategy-stock-ai-action {
+  display: inline-flex;
+  min-width: 58px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 10px;
 }
 
 .strategy-stock-drawer-head strong {

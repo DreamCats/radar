@@ -14,7 +14,7 @@ def build_shell_tool(config: RadarConfig) -> ChatTool:
         name="radar_run_shell",
         description=(
             "在本机执行 shell 命令。默认使用 zsh -lic，因此会加载用户 .zshrc 中的环境变量。"
-            "适合给 skills 调用本地 CLI；优先执行只读查询命令。"
+            "适合给 skills 调用本地 CLI、读取系统时间等本机状态；优先执行只读查询命令。"
         ),
         input_schema={
             "type": "object",

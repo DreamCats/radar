@@ -4,15 +4,14 @@ import { Activity, BarChart3, Database, Layers3, ListOrdered, MessageCircle, Rad
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
-import { MessagesPage } from "./pages/MessagesPage";
 import { OrganizePage } from "./pages/OrganizePage";
 import { StrategyPage } from "./pages/StrategyPage";
 import { WechatPage } from "./pages/WechatPage";
 
-type TabKey = "dashboard" | "wechat" | "messages" | "organize" | "leaderboard" | "strategy" | "ingest";
+type TabKey = "dashboard" | "wechat" | "organize" | "leaderboard" | "strategy" | "ingest";
 
 const NAV_ITEMS = [
-  { key: "dashboard", label: "总览", icon: Activity },
+  { key: "dashboard", label: "洞察", icon: Activity },
   { key: "wechat", label: "微信", icon: MessageCircle },
   { key: "organize", label: "整理", icon: Layers3 },
   { key: "leaderboard", label: "榜单", icon: ListOrdered },
@@ -22,6 +21,8 @@ const NAV_ITEMS = [
 
 export function App() {
   const [tab, setTab] = useState<TabKey>("dashboard");
+  const isDashboard = tab === "dashboard";
+  const isImmersive = isDashboard || tab === "strategy";
 
   return (
     <main className="app workspace-shell">
@@ -61,25 +62,26 @@ export function App() {
           </button>
         </div>
       </aside>
-      <section className="main workspace-main">
-        <header className="topbar">
-          <div className="topbar-title">
-            <span className="title">{pageTitle(tab)}</span>
-            <span className="caption">· local dashboard</span>
-          </div>
-          <div className="system-pill">
-            <span className="pulse-dot" />
-            本地数据核
-          </div>
-          <button className="btn btn-primary btn-sm" type="button" onClick={() => setTab("ingest")}>
-            <RefreshCw size={14} />
-            作业
-          </button>
-        </header>
-        <div className="content">
-          {tab === "dashboard" && <DashboardPage onOpenStrategy={() => setTab("strategy")} />}
+      <section className={isImmersive ? "main workspace-main immersive-main" : "main workspace-main"}>
+        {!isImmersive ? (
+          <header className="topbar">
+            <div className="topbar-title">
+              <span className="title">{pageTitle(tab)}</span>
+              <span className="caption">· local dashboard</span>
+            </div>
+            <div className="system-pill">
+              <span className="pulse-dot" />
+              本地数据核
+            </div>
+            <button className="btn btn-primary btn-sm" type="button" onClick={() => setTab("ingest")}>
+              <RefreshCw size={14} />
+              作业
+            </button>
+          </header>
+        ) : null}
+        <div className={isImmersive ? "content immersive-content" : "content"}>
+          {tab === "dashboard" && <DashboardPage />}
           {tab === "wechat" && <WechatPage />}
-          {tab === "messages" && <MessagesPage />}
           {tab === "organize" && <OrganizePage />}
           {tab === "leaderboard" && <LeaderboardPage />}
           {tab === "strategy" && <StrategyPage />}
@@ -92,12 +94,11 @@ export function App() {
 
 function pageTitle(tab: TabKey): string {
   const titles: Record<TabKey, string> = {
-    dashboard: "数据概览",
+    dashboard: "洞察",
     wechat: "微信消息",
-    messages: "消息查询",
     organize: "消息整理",
-    leaderboard: "推荐胜率榜",
-    strategy: "策略信号",
+    leaderboard: "证据胜率榜",
+    strategy: "个股证据链",
     ingest: "作业中心",
   };
   return titles[tab];

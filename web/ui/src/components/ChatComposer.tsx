@@ -23,6 +23,8 @@ type ChatComposerProps = {
   messages: ChatMessageItem[];
   contextItems: ChatContextItem[];
   evidence?: string[];
+  placeholder?: string;
+  quickPrompts?: { label: string; prompt: string }[];
   onDraftChange: (value: string) => void;
   onProviderChange: (value: string | null) => void;
   onSubmit: () => void;
@@ -37,6 +39,8 @@ export function ChatComposer({
   messages,
   contextItems,
   evidence,
+  placeholder,
+  quickPrompts,
   onDraftChange,
   onProviderChange,
   onSubmit,
@@ -54,9 +58,12 @@ export function ChatComposer({
     evidence: evidence ?? [],
     totalTokens: selectedOption?.context_window_tokens ?? 256_000,
   });
+  const visualUsedPercent = contextUsage.usedTokens > 0 ? Math.max(1, contextUsage.usedPercent) : 0;
+  const usedPercentLabel = formatUsedPercent(contextUsage);
+  const remainingPercentLabel = formatRemainingPercent(contextUsage);
   const contextTooltip = [
     "背景信息窗口：",
-    `${contextUsage.usedPercent}% 已用（剩余 ${100 - contextUsage.usedPercent}%）`,
+    `${usedPercentLabel} 已用（剩余 ${remainingPercentLabel}）`,
     `约 ${formatTokenCount(contextUsage.usedTokens)} 标记，共 ${formatTokenCount(contextUsage.totalTokens)}`,
   ].join("\n");
 
@@ -74,7 +81,7 @@ export function ChatComposer({
   }, [modelMenuOpen]);
 
   return (
-    <div className="chat-composer">
+    <div className={quickPrompts && quickPrompts.length > 0 ? "chat-composer with-shortcuts" : "chat-composer"}>
       <textarea
         value={draft}
         onChange={(event) => onDraftChange(event.target.value)}
@@ -85,7 +92,7 @@ export function ChatComposer({
           isComposingRef.current = false;
         }}
         rows={3}
-        placeholder="输入你的问题..."
+        placeholder={placeholder ?? "输入你的问题..."}
         onKeyDown={(event) => {
           const nativeEvent = event.nativeEvent as KeyboardEvent;
           if (isComposingRef.current || nativeEvent.isComposing || nativeEvent.keyCode === 229) {
@@ -101,16 +108,25 @@ export function ChatComposer({
           }
         }}
       />
+      {quickPrompts && quickPrompts.length > 0 ? (
+        <div className="chat-composer-shortcuts" aria-label="快捷问题">
+          {quickPrompts.map((item) => (
+            <button key={item.label} type="button" onClick={() => onDraftChange(item.prompt)}>
+              {item.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="chat-composer-actions">
         <div className="chat-context-meter" tabIndex={0} aria-label={contextTooltip}>
           <span
             className="chat-context-ring"
-            style={{ "--ctx-used": `${contextUsage.usedPercent}%` } as CSSProperties}
+            style={{ "--ctx-used": `${visualUsedPercent}%` } as CSSProperties}
             aria-hidden="true"
           />
           <span className="chat-context-tooltip" role="tooltip">
             <strong>背景信息窗口：</strong>
-            <span>{contextUsage.usedPercent}% 已用（剩余 {100 - contextUsage.usedPercent}%）</span>
+            <span>{usedPercentLabel} 已用（剩余 {remainingPercentLabel}）</span>
             <span>
               约 {formatTokenCount(contextUsage.usedTokens)} 标记，共 {formatTokenCount(contextUsage.totalTokens)}
             </span>
@@ -206,6 +222,20 @@ function estimateTokenCount(text: string): number {
     0,
   );
   return cjkCount + latinTokenCount;
+}
+
+function formatUsedPercent(usage: ContextUsage): string {
+  if (usage.usedTokens > 0 && usage.usedPercent === 0) {
+    return "<1%";
+  }
+  return `${usage.usedPercent}%`;
+}
+
+function formatRemainingPercent(usage: ContextUsage): string {
+  if (usage.usedTokens > 0 && usage.usedPercent === 0) {
+    return ">99%";
+  }
+  return `${100 - usage.usedPercent}%`;
 }
 
 function formatTokenCount(tokens: number): string {

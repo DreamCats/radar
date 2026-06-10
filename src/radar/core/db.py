@@ -4,6 +4,8 @@ import sqlite3
 import threading
 from collections.abc import Sequence
 
+from radar.core.db_evidence_chain import EVIDENCE_CHAIN_MIGRATIONS
+
 Migration = tuple[str, str]
 _MIGRATION_LOCK = threading.Lock()
 
@@ -122,61 +124,13 @@ MESSAGE_MIGRATIONS: list[Migration] = [
     (
         "007_message_anchors",
         """
-        CREATE TABLE IF NOT EXISTS message_anchors (
-            message_id        TEXT NOT NULL,
-            anchor_id         TEXT NOT NULL,
-            anchor_type       TEXT NOT NULL,
-            name              TEXT NOT NULL,
-            confidence        REAL NOT NULL,
-            evidence_json     TEXT NOT NULL DEFAULT '[]',
-            extractor_version TEXT NOT NULL,
-            trade_date        TEXT NOT NULL,
-            created_at        TEXT NOT NULL,
-            updated_at        TEXT NOT NULL,
-            PRIMARY KEY (message_id, anchor_id, extractor_version, trade_date),
-            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_message_anchors_anchor
-            ON message_anchors(anchor_type, name, trade_date);
-        CREATE INDEX IF NOT EXISTS idx_message_anchors_message
-            ON message_anchors(message_id, extractor_version);
-
-        CREATE TABLE IF NOT EXISTS message_anchor_status (
-            message_id        TEXT NOT NULL,
-            extractor_version TEXT NOT NULL,
-            trade_date        TEXT NOT NULL,
-            anchor_count      INTEGER NOT NULL,
-            created_at        TEXT NOT NULL,
-            updated_at        TEXT NOT NULL,
-            PRIMARY KEY (message_id, extractor_version, trade_date),
-            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_message_anchor_status_version
-            ON message_anchor_status(extractor_version, trade_date);
+        -- Deprecated: message-level anchor extraction has been removed.
         """,
     ),
     (
         "008_aggregate_refine_results",
         """
-        CREATE TABLE IF NOT EXISTS aggregate_refine_results (
-            input_hash         TEXT PRIMARY KEY,
-            run_id             TEXT NOT NULL,
-            trade_date         TEXT NOT NULL,
-            start_time         TEXT NOT NULL,
-            end_time           TEXT NOT NULL,
-            extractor_version  TEXT NOT NULL,
-            prompt_version     TEXT NOT NULL,
-            candidate_count    INTEGER NOT NULL,
-            theme_count        INTEGER NOT NULL,
-            result_json        TEXT NOT NULL,
-            created_at         TEXT NOT NULL,
-            updated_at         TEXT NOT NULL
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_aggregate_refine_results_window
-            ON aggregate_refine_results(trade_date, start_time, end_time, updated_at DESC);
+        -- Deprecated: aggregate refine has been removed.
         """,
     ),
     (
@@ -274,80 +228,6 @@ MESSAGE_MIGRATIONS: list[Migration] = [
         """,
     ),
     (
-        "011_strategy_snapshots",
-        """
-        CREATE TABLE IF NOT EXISTS strategy_snapshots (
-            snapshot_id       TEXT PRIMARY KEY,
-            strategy_type     TEXT NOT NULL,
-            start_time        TEXT NOT NULL,
-            end_time          TEXT NOT NULL,
-            recent_start_time TEXT NOT NULL,
-            generated_at      TEXT NOT NULL,
-            created_at        TEXT NOT NULL,
-            opportunity_count INTEGER NOT NULL,
-            stock_count       INTEGER NOT NULL,
-            payload_json      TEXT NOT NULL
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_strategy_snapshots_generated
-            ON strategy_snapshots(strategy_type, generated_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_strategy_snapshots_window
-            ON strategy_snapshots(strategy_type, end_time DESC);
-
-        CREATE TABLE IF NOT EXISTS strategy_snapshot_stocks (
-            snapshot_id                  TEXT NOT NULL,
-            ts_code                      TEXT NOT NULL,
-            stock_name                   TEXT NOT NULL,
-            rank                         INTEGER NOT NULL,
-            decision_bucket              TEXT NOT NULL,
-            decision_reason              TEXT,
-            realtime_score               REAL NOT NULL,
-            credibility_level            TEXT,
-            lifecycle_state              TEXT,
-            price_position               TEXT,
-            first_seen_time              TEXT,
-            latest_message_time          TEXT,
-            event_count                  INTEGER NOT NULL,
-            source_count                 INTEGER NOT NULL,
-            win_rate_t5                  REAL,
-            average_excess_return_t5     REAL,
-            first_source_name            TEXT,
-            payload_json                 TEXT NOT NULL,
-            PRIMARY KEY (snapshot_id, ts_code),
-            FOREIGN KEY (snapshot_id) REFERENCES strategy_snapshots(snapshot_id) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_strategy_snapshot_stocks_bucket
-            ON strategy_snapshot_stocks(decision_bucket, realtime_score DESC);
-        CREATE INDEX IF NOT EXISTS idx_strategy_snapshot_stocks_code
-            ON strategy_snapshot_stocks(ts_code, snapshot_id);
-
-        CREATE TABLE IF NOT EXISTS strategy_snapshot_returns (
-            snapshot_id              TEXT NOT NULL,
-            ts_code                  TEXT NOT NULL,
-            window_days              INTEGER NOT NULL,
-            benchmark_ts_code        TEXT NOT NULL,
-            base_trade_date          TEXT,
-            target_trade_date        TEXT,
-            base_close               REAL,
-            target_close             REAL,
-            return_rate              REAL,
-            benchmark_return_rate    REAL,
-            excess_return_rate       REAL,
-            max_drawdown_rate        REAL,
-            status                   TEXT NOT NULL,
-            error_message            TEXT,
-            updated_at               TEXT NOT NULL,
-            PRIMARY KEY (snapshot_id, ts_code, window_days, benchmark_ts_code),
-            FOREIGN KEY (snapshot_id, ts_code)
-                REFERENCES strategy_snapshot_stocks(snapshot_id, ts_code) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_strategy_snapshot_returns_status
-            ON strategy_snapshot_returns(status, updated_at DESC);
-        """,
-    ),
-    (
         "012_view_cache",
         """
         CREATE TABLE IF NOT EXISTS view_cache (
@@ -426,64 +306,73 @@ MESSAGE_MIGRATIONS: list[Migration] = [
     (
         "014_anchor_status_trade_date_key",
         """
-        DROP INDEX IF EXISTS idx_message_anchors_anchor;
-        DROP INDEX IF EXISTS idx_message_anchors_message;
-        DROP INDEX IF EXISTS idx_message_anchor_status_version;
+        -- Deprecated: message-level anchor extraction has been removed.
+        """,
+    ),
+    (
+        "015_drop_deprecated_source_radar",
+        """
+        DROP TABLE IF EXISTS source_signal_snapshots;
+        DROP TABLE IF EXISTS source_structures;
 
-        CREATE TABLE message_anchors_v014 (
-            message_id        TEXT NOT NULL,
-            anchor_id         TEXT NOT NULL,
-            anchor_type       TEXT NOT NULL,
-            name              TEXT NOT NULL,
-            confidence        REAL NOT NULL,
-            evidence_json     TEXT NOT NULL DEFAULT '[]',
-            extractor_version TEXT NOT NULL,
-            trade_date        TEXT NOT NULL,
-            created_at        TEXT NOT NULL,
-            updated_at        TEXT NOT NULL,
-            PRIMARY KEY (message_id, anchor_id, extractor_version, trade_date),
-            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
+        DELETE FROM view_cache
+        WHERE cache_key LIKE 'strategy.source_radar%';
+
+        DELETE FROM runs
+        WHERE kind IN ('source_extract', 'source_radar_snapshot');
+        """,
+    ),
+] + EVIDENCE_CHAIN_MIGRATIONS + [
+    (
+        "019_drop_deprecated_fermentation_strategy",
+        """
+        DROP TABLE IF EXISTS strategy_snapshot_returns;
+        DROP TABLE IF EXISTS strategy_snapshot_stocks;
+        DROP TABLE IF EXISTS strategy_snapshots;
+
+        DELETE FROM view_cache
+        WHERE cache_key LIKE 'strategy.opportunities%'
+           OR cache_key LIKE 'strategy.validation%';
+
+        DELETE FROM runs
+        WHERE kind = 'strategy_snapshot_backfill'
+           OR target LIKE 'opportunity_signal:%';
+        """,
+    ),
+    (
+        "020_drop_message_anchor_tables",
+        """
+        DROP TABLE IF EXISTS message_anchor_status;
+        DROP TABLE IF EXISTS message_anchors;
+
+        DELETE FROM view_cache
+        WHERE dependency_key LIKE '%message_anchors%';
+
+        DELETE FROM runs
+        WHERE kind = 'message_anchor_range';
+        """,
+    ),
+    (
+        "021_drop_deprecated_aggregate_and_anchor_backtests",
+        """
+        DELETE FROM recommendation_backtest_windows
+        WHERE event_id IN (
+            SELECT event_id
+            FROM recommendation_events
+            WHERE extractor_version <> 'lifecycle-evidence-v1'
         );
 
-        INSERT OR IGNORE INTO message_anchors_v014 (
-            message_id, anchor_id, anchor_type, name, confidence, evidence_json,
-            extractor_version, trade_date, created_at, updated_at
-        )
-        SELECT
-            message_id, anchor_id, anchor_type, name, confidence, evidence_json,
-            extractor_version, trade_date, created_at, updated_at
-        FROM message_anchors;
+        DELETE FROM recommendation_events
+        WHERE extractor_version <> 'lifecycle-evidence-v1';
 
-        DROP TABLE message_anchors;
-        ALTER TABLE message_anchors_v014 RENAME TO message_anchors;
+        DROP TABLE IF EXISTS aggregate_refine_results;
 
-        CREATE INDEX IF NOT EXISTS idx_message_anchors_anchor
-            ON message_anchors(anchor_type, name, trade_date);
-        CREATE INDEX IF NOT EXISTS idx_message_anchors_message
-            ON message_anchors(message_id, extractor_version);
+        DELETE FROM view_cache
+        WHERE cache_key LIKE 'organize.aggregate%'
+           OR dependency_key LIKE '%aggregate_refine_results%';
 
-        CREATE TABLE message_anchor_status_v014 (
-            message_id        TEXT NOT NULL,
-            extractor_version TEXT NOT NULL,
-            trade_date        TEXT NOT NULL,
-            anchor_count      INTEGER NOT NULL,
-            created_at        TEXT NOT NULL,
-            updated_at        TEXT NOT NULL,
-            PRIMARY KEY (message_id, extractor_version, trade_date),
-            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
-        );
-
-        INSERT OR IGNORE INTO message_anchor_status_v014 (
-            message_id, extractor_version, trade_date, anchor_count, created_at, updated_at
-        )
-        SELECT message_id, extractor_version, trade_date, anchor_count, created_at, updated_at
-        FROM message_anchor_status;
-
-        DROP TABLE message_anchor_status;
-        ALTER TABLE message_anchor_status_v014 RENAME TO message_anchor_status;
-
-        CREATE INDEX IF NOT EXISTS idx_message_anchor_status_version
-            ON message_anchor_status(extractor_version, trade_date);
+        DELETE FROM runs
+        WHERE kind IN ('aggregate_refine', 'aggregate_topics');
         """,
     ),
 ]

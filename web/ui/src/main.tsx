@@ -14,14 +14,11 @@ import "./leaderboard.css";
 import "./leaderboard-motion.css";
 import "./leaderboard-responsive.css";
 import "./loading.css";
-import "./messages.css";
 import "./organize.css";
-import "./organize-aggregate.css";
 import "./organize-responsive.css";
-import "./strategy.css";
+import "./strategy-evidence-chain.css";
 import "./strategy-stock-chart.css";
 import "./strategy-stock-drawer.css";
-import "./strategy-validation.css";
 import "./wechat.css";
 
 createRoot(document.getElementById("root")!).render(<App />);

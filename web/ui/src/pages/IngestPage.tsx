@@ -5,28 +5,21 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   cancelRun,
   fetchRuns,
-  startAggregateRefineJob,
-  startAnchorMessagesJob,
-  startClassifyMessagesJob,
-  startIngestWechatJob,
-  startRecommendationBacktestJob,
-  saveStrategySnapshot,
-  startSourceRadarJob,
-  startStrategyBackfillJob,
 } from "../api/radarApi";
 import { DateField, SelectField, TextField } from "../components/FormFields";
 import { JobRunCard } from "../components/JobRunCard";
 import { PanelTitle } from "../components/PanelTitle";
 import { toIso } from "../lib/datetime";
-import { configHints, DEFAULT_CATEGORIES, JOB_TEMPLATES, SOURCE_OPTIONS } from "../lib/jobTemplates";
+import { configHints, JOB_TEMPLATE_GROUPS, JOB_TEMPLATES, SOURCE_OPTIONS } from "../lib/jobTemplates";
 import {
+  JOB_RUN_KINDS,
   mergeRuns,
   mergeTrackedJobs,
-  sourceLabel,
   trackedJobFromRun,
   type JobTemplateKey,
   type TrackedJob,
 } from "../lib/jobRuns";
+import { startJob } from "../lib/jobStart";
 import { panelMotionState } from "../lib/motion";
 import {
   buildPresetRange,
@@ -40,6 +33,10 @@ import {
 import type { IngestSource, RunItem } from "../types";
 
 const INGEST_RANGE_PRESETS: Array<[RangePreset, string]> = [["yesterdayClose", "昨日 15:00"], ...RANGE_PRESETS];
+const RECENT_RUN_LIMIT = 50;
+const RUNNING_RUN_LIMIT = 50;
+const RUNNING_REFRESH_MS = 4000;
+const IDLE_REFRESH_MS = 30000;
 
 export function IngestPage() {
   const initialRange = useMemo(() => buildPresetRange("yesterdayClose"), []);
@@ -59,7 +56,8 @@ export function IngestPage() {
   const startValue = toLocalIso(range.startDate, range.startTime);
   const endValue = toLocalIso(range.endDate, range.endTime);
   const validWindow = Boolean(startValue && endValue) && startValue <= endValue;
-  const canSubmit = validWindow;
+  const validTradeDate = /^\d{8}$/.test(tradeDate);
+  const canSubmit = selectedJob === "anchor" ? validTradeDate : validWindow;
   const selectedTemplate = JOB_TEMPLATES.find((item) => item.key === selectedJob) ?? JOB_TEMPLATES[0];
   const rows = runs
     .map((run) => {
@@ -76,8 +74,7 @@ export function IngestPage() {
   const rangePresets = selectedJob === "ingest" ? INGEST_RANGE_PRESETS : RANGE_PRESETS;
   const configGridClass = [
     "job-config-grid",
-    selectedJob === "strategyBackfill" ? "minimal" : "",
-    selectedJob === "sourceRadar" ? "source-radar" : "",
+    selectedJob === "stockEvidenceChain" ? "strategy" : "",
   ].filter(Boolean).join(" ");
 
   useEffect(() => {
@@ -85,9 +82,9 @@ export function IngestPage() {
     let timer: number | undefined;
 
     async function refresh() {
-      await refreshRunsAndResults();
+      const hasRunningRuns = await refreshRunsAndResults();
       if (!cancelled) {
-        timer = window.setTimeout(refresh, 4000);
+        timer = window.setTimeout(refresh, hasRunningRuns ? RUNNING_REFRESH_MS : IDLE_REFRESH_MS);
       }
     }
 
@@ -100,12 +97,12 @@ export function IngestPage() {
     };
   }, []);
 
-  async function refreshRunsAndResults() {
+  async function refreshRunsAndResults(): Promise<boolean> {
     setError(null);
     try {
       const [runItems, runningItems] = await Promise.all([
-        fetchRuns({ limit: 200 }),
-        fetchRuns({ status: "running", limit: 50 }),
+        fetchRuns({ kinds: JOB_RUN_KINDS, limit: RECENT_RUN_LIMIT }),
+        fetchRuns({ kinds: JOB_RUN_KINDS, status: "running", limit: RUNNING_RUN_LIMIT }),
       ]);
       const mergedRuns = mergeRuns(runItems, runningItems);
       setRuns(mergedRuns);
@@ -114,10 +111,12 @@ export function IngestPage() {
       const restoredJobs = mergeTrackedJobs(restoredRunningJobs, restoredRecentJobs);
       if (restoredJobs.length > 0) {
         const knownRunIds = new Set(mergedRuns.map((item) => item.run_id));
-        setTrackedJobs((current) => mergeTrackedJobs(restoredJobs, current.filter((item) => knownRunIds.has(item.run_id))));
+          setTrackedJobs((current) => mergeTrackedJobs(restoredJobs, current.filter((item) => knownRunIds.has(item.run_id))));
       }
+      return runningItems.length > 0;
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载作业数据失败");
+      return false;
     }
   }
 
@@ -127,26 +126,20 @@ export function IngestPage() {
     try {
       const start_time = startValue;
       const end_time = endValue;
-      const newJobs = await startJob(selectedJob, { start_time, end_time });
+      const newJobs = await startJob({
+        kind: selectedJob,
+        source,
+        force,
+        tradeDate,
+        range,
+        window: { start_time, end_time },
+      });
       setTrackedJobs((current) => mergeTrackedJobs(newJobs, current));
-      const snapshotError = selectedJob === "backtest" ? await saveFermentationSnapshot() : null;
       await refreshRunsAndResults();
-      if (snapshotError) {
-        setError(`回测任务已提交，但自动保存发酵确认快照失败：${snapshotError}`);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "作业提交失败");
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function saveFermentationSnapshot(): Promise<string | null> {
-    try {
-      await saveStrategySnapshot({ days: 30, recent_days: 7, limit: 12, force: false });
-      return null;
-    } catch (err) {
-      return err instanceof Error ? err.message : "未知错误";
     }
   }
 
@@ -174,135 +167,6 @@ export function IngestPage() {
     void submitSelectedJob();
   }
 
-  async function startJob(kind: JobTemplateKey, window: { start_time: string; end_time: string }): Promise<TrackedJob[]> {
-    if (kind === "ingest") {
-      const items = await startIngestWechatJob({
-        source,
-        start_time: window.start_time,
-        end_time: window.end_time,
-        force,
-        chunk_hours: 1,
-        concurrency: 4,
-      });
-      return items.map((item) => ({
-        kind,
-        source: item.source,
-        run_id: item.run_id,
-        reused_existing: item.reused_existing,
-      }));
-    }
-    if (kind === "classify") {
-      const items = await startClassifyMessagesJob({
-        source,
-        start_time: window.start_time,
-        end_time: window.end_time,
-        force,
-        chunk_hours: 1,
-        limit: 500,
-        batch_size: 16,
-        max_concurrency: 10,
-        low_confidence_threshold: 0.65,
-      });
-      return items.map((item) => ({
-        kind,
-        source: item.source,
-        run_id: item.run_id,
-        reused_existing: item.reused_existing,
-      }));
-    }
-    if (kind === "anchor") {
-      const items = await startAnchorMessagesJob({
-        trade_date: tradeDate,
-        source,
-        start_time: window.start_time,
-        end_time: window.end_time,
-        force,
-        chunk_hours: 1,
-        limit: 500,
-        categories: DEFAULT_CATEGORIES,
-        min_classification_confidence: 0.7,
-        max_anchors: 7,
-      });
-      return items.map((item) => ({
-        kind,
-        source: sourceLabel(source),
-        run_id: item.run_id,
-        reused_existing: item.reused_existing,
-      }));
-    }
-    if (kind === "backtest") {
-      const items = await startRecommendationBacktestJob({
-        as_of: range.endDate,
-        window_days: backtestWindowDays(range.startDate, range.endDate),
-        start_time: window.start_time,
-        end_time: window.end_time,
-        windows: [1, 2, 3, 5],
-        source,
-        min_classification_confidence: 0.7,
-        benchmark_ts_code: "000300.SH",
-        force,
-      });
-      return items.map((item) => ({
-        kind,
-        source: sourceLabel(source),
-        run_id: item.run_id,
-        reused_existing: item.reused_existing,
-      }));
-    }
-    if (kind === "strategyBackfill") {
-      const items = await startStrategyBackfillJob({
-        start_time: window.start_time,
-        end_time: window.end_time,
-        windows: [1, 3, 5, 10],
-        benchmark_ts_code: "000300.SH",
-      });
-      return items.map((item) => ({
-        kind,
-        source: "发酵确认",
-        run_id: item.run_id,
-        reused_existing: item.reused_existing,
-      }));
-    }
-    if (kind === "sourceRadar") {
-      const items = await startSourceRadarJob({
-        start_time: window.start_time,
-        end_time: window.end_time,
-        force,
-        per_day_limit: 500,
-        batch_size: 24,
-        max_concurrency: 10,
-        lookback_days: 60,
-        scan_limit: 20,
-      });
-      return items.map((item) => ({
-        kind,
-        source: "早期概念",
-        run_id: item.run_id,
-        reused_existing: item.reused_existing,
-      }));
-    }
-    const items = await startAggregateRefineJob({
-      trade_date: tradeDate,
-      source,
-      start_time: window.start_time,
-      end_time: window.end_time,
-      force,
-      categories: DEFAULT_CATEGORIES,
-      min_classification_confidence: 0.7,
-      min_messages: 2,
-      candidate_limit: 50,
-      evidence_limit: 3,
-      batch_size: 5,
-      max_concurrency: 10,
-    });
-    return items.map((item) => ({
-      kind,
-      source: sourceLabel(source),
-      run_id: item.run_id,
-      reused_existing: item.reused_existing,
-    }));
-  }
-
   function applyPreset(value: RangePreset) {
     const nextRange = buildPresetRange(value);
     setPreset(value);
@@ -324,7 +188,7 @@ export function IngestPage() {
 
   function selectJob(kind: JobTemplateKey) {
     setSelectedJob(kind);
-    const needsHistoryWindow = kind === "backtest" || kind === "strategyBackfill" || kind === "sourceRadar";
+    const needsHistoryWindow = kind === "backtest";
     if (!needsHistoryWindow && preset === "last30d") {
       const nextRange = buildYesterdayCloseRange();
       setPreset("yesterdayClose");
@@ -367,24 +231,29 @@ export function IngestPage() {
         <aside className="content-panel job-template-panel">
           <PanelTitle title="作业类型" meta={`${JOB_TEMPLATES.length} 个模板`} />
           <div className="job-template-list">
-            {JOB_TEMPLATES.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  className={selectedJob === item.key ? "job-template active" : "job-template"}
-                  key={item.key}
-                  type="button"
-                  onClick={() => selectJob(item.key)}
-                >
-                  <Icon size={16} />
-                    <span>
-                      <strong>{item.title}</strong>
-                      <small>{item.meta}</small>
-                      <small>{item.serves}</small>
-                    </span>
-                  </button>
-                );
-            })}
+            {JOB_TEMPLATE_GROUPS.map((group) => (
+              <div className="job-template-group" key={group.title}>
+                <p className="job-template-group-title">{group.title}</p>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      className={selectedJob === item.key ? "job-template active" : "job-template"}
+                      key={item.key}
+                      type="button"
+                      onClick={() => selectJob(item.key)}
+                    >
+                      <Icon size={16} />
+                      <span>
+                        <strong>{item.title}</strong>
+                        <small>{item.meta}</small>
+                        <small>{item.serves}</small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </aside>
 
@@ -402,20 +271,22 @@ export function IngestPage() {
                 <PanelTitle title={selectedTemplate.title} meta={`${selectedTemplate.meta} · ${selectedTemplate.serves}`} />
               </div>
               <div className={configGridClass}>
-                {selectedJob !== "strategyBackfill" && selectedJob !== "sourceRadar" && (
+                {selectedJob !== "stockEvidenceChain" && selectedJob !== "anchor" && (
                   <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
                 )}
-                <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
-                <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
-                {(selectedJob === "anchor" || selectedJob === "refine") && (
+                {selectedJob !== "anchor" && (
+                  <>
+                    <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
+                    <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
+                  </>
+                )}
+                {selectedJob === "anchor" && (
                   <TextField label="交易日" value={tradeDate} onChange={setTradeDate} />
                 )}
-                {selectedJob !== "strategyBackfill" && (
-                  <label className="toggle-field">
-                    <input checked={force} type="checkbox" onChange={(event) => setForce(event.target.checked)} />
-                    <span>{forceLabel(selectedJob)}</span>
-                  </label>
-                )}
+                <label className="toggle-field">
+                  <input checked={force} type="checkbox" onChange={(event) => setForce(event.target.checked)} />
+                  <span>{forceLabel(selectedJob)}</span>
+                </label>
                 <button
                   className="primary-button ingest-submit"
                   type="button"
@@ -426,7 +297,8 @@ export function IngestPage() {
                   {canceling ? "终止中" : submitting ? "提交中" : hasRunning ? "终止任务" : "开始执行"}
                 </button>
               </div>
-              {!validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}
+              {selectedJob !== "anchor" && !validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}
+              {selectedJob === "anchor" && !validTradeDate && <p className="error-line">交易日格式应为 YYYYMMDD。</p>}
               {error && <p className="error-line">{error}</p>}
               <div className="job-config-hints">
                 {configHints(selectedJob).map((item) => (
@@ -458,7 +330,7 @@ export function IngestPage() {
                   transition={jobMotion.transition}
                 >
                   <JobRunCard
-                    kind={job.kind === "refine" ? "refine" : job.kind}
+                    kind={job.kind}
                     run={run}
                     runId={job.run_id}
                     source={job.source}
@@ -479,18 +351,15 @@ function dateToTradeDate(value: string): string {
   return value.replace(/-/g, "");
 }
 
-function backtestWindowDays(startDate: string, endDate: string): number {
-  const start = new Date(`${startDate}T00:00:00`).getTime();
-  const end = new Date(`${endDate}T00:00:00`).getTime();
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
-    return 30;
-  }
-  return Math.max(1, Math.round((end - start) / 86400000) + 1);
-}
-
 function forceLabel(kind: JobTemplateKey): string {
   if (kind === "ingest") {
     return "强制重拉";
+  }
+  if (kind === "anchor") {
+    return "强制刷新";
+  }
+  if (kind === "stockEvidenceChain") {
+    return "强制重判 LLM";
   }
   return "强制重跑";
 }

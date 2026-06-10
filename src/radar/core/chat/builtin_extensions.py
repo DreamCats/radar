@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any
 
+from radar.core.chat.brave_search_tools import RadarBraveSearchTools
 from radar.core.chat.extensions import ExtensionContext
 from radar.core.chat.shell_tool import build_shell_tool
 from radar.core.chat.tushare_tools import RadarTushareTools
@@ -19,7 +20,8 @@ from radar.core.messages import (
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db
 from radar.core.usecases.recommendation_backtest import DEFAULT_BACKTEST_WINDOWS, summarize_recommendation_backtests
-from radar.core.usecases.strategy import build_strategy_dashboard
+from radar.core.tushare import resolve_stock
+from radar.core.usecases.stock_evidence_chain import get_stock_evidence_stock_chart, latest_stock_evidence_chain
 
 
 class RadarBuiltinExtension:
@@ -33,11 +35,14 @@ class RadarBuiltinExtension:
     def register(self, context: ExtensionContext) -> None:
         for tool in (
             self._search_messages_tool(),
+            self._get_conversation_window_tool(),
             self._list_conversations_tool(),
             self._get_message_context_tool(),
             self._message_overview_tool(),
+            *RadarBraveSearchTools(self.config).tools(),
             *RadarTushareTools(self.config).tools(),
-            self._strategy_dashboard_tool(),
+            self._stock_evidence_chart_tool(),
+            self._stock_evidence_chain_tool(),
             self._backtest_summary_tool(),
         ):
             context.register_tool(tool)
@@ -60,6 +65,27 @@ class RadarBuiltinExtension:
                 }
             ),
             handler=self._search_messages,
+        )
+
+    def _get_conversation_window_tool(self) -> ChatTool:
+        return ChatTool(
+            name="radar_get_conversation_window",
+            description="按群聊或个人私聊读取一个时间窗口内的完整消息，用于理解当前会话上下文并支持向前翻页。",
+            input_schema=_object_schema(
+                {
+                    "source": {"type": "string", "enum": ["个人消息", "个人群"]},
+                    "group_name": {"type": "string"},
+                    "sender": {"type": "string"},
+                    "conversation": {"type": "string"},
+                    "start_time": {"type": "string"},
+                    "end_time": {"type": "string"},
+                    "cursor_time": {"type": "string"},
+                    "cursor_id": {"type": "string"},
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 80},
+                },
+                required=["source"],
+            ),
+            handler=self._get_conversation_window,
         )
 
     def _list_conversations_tool(self) -> ChatTool:
@@ -96,35 +122,48 @@ class RadarBuiltinExtension:
     def _message_overview_tool(self) -> ChatTool:
         return ChatTool(
             name="radar_message_overview",
-            description="读取本地消息库总览、来源分布、热门群和 anchor 热力。",
+            description="读取本地消息库总览、来源分布、热门群和小时分布。",
             input_schema=_object_schema(
                 {
                     "days": {"type": "integer", "minimum": 1, "maximum": 60},
                     "top_limit": {"type": "integer", "minimum": 1, "maximum": 20},
-                    "anchor_limit": {"type": "integer", "minimum": 1, "maximum": 50},
                 }
             ),
             handler=self._message_overview,
         )
 
-    def _strategy_dashboard_tool(self) -> ChatTool:
+    def _stock_evidence_chain_tool(self) -> ChatTool:
         return ChatTool(
-            name="radar_strategy_dashboard",
-            description="读取 radar 策略看板摘要，包括机会、源头质量和股票候选。",
+            name="radar_stock_evidence_chain",
+            description="读取 radar 最新个股证据链判断；可按股票或阶段过滤，返回阶段、证据、风险和市场证据摘要。",
             input_schema=_object_schema(
                 {
-                    "days": {"type": "integer", "minimum": 1, "maximum": 90},
-                    "recent_days": {"type": "integer", "minimum": 1, "maximum": 30},
-                    "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+                    "stock": {"type": "string"},
+                    "stage": {"type": "string", "enum": ["lead", "seed", "formed", "spreading", "pricing", "crowded"]},
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 120},
                 }
             ),
-            handler=self._strategy_dashboard,
+            handler=self._stock_evidence_chain,
+        )
+
+    def _stock_evidence_chart_tool(self) -> ChatTool:
+        return ChatTool(
+            name="radar_stock_evidence_chart",
+            description="读取个股证据链策略同源的本地日 K 线和成交额证据，返回 candles 及价格/成交额摘要。",
+            input_schema=_object_schema(
+                {
+                    "stock": {"type": "string"},
+                    "days": {"type": "integer", "minimum": 1, "maximum": 260},
+                },
+                required=["stock"],
+            ),
+            handler=self._stock_evidence_chart,
         )
 
     def _backtest_summary_tool(self) -> ChatTool:
         return ChatTool(
             name="radar_backtest_summary",
-            description="读取推荐事件回测汇总，按来源、分析师、股票或行业聚合。",
+            description="读取高质量证据事件回测汇总，按来源、分析师、股票或行业聚合。",
             input_schema=_object_schema(
                 {
                     "start_time": {"type": "string"},
@@ -161,6 +200,49 @@ class RadarBuiltinExtension:
             conn.close()
         return {
             "items": [_message_summary(item) for item in page.items],
+            "next_cursor_time": _json_value(page.next_cursor_time),
+            "next_cursor_id": page.next_cursor_id,
+        }
+
+    def _get_conversation_window(self, args: dict[str, Any]) -> dict[str, Any]:
+        source = str(args["source"])
+        conversation = _optional_str(args.get("conversation"))
+        group_name = _optional_str(args.get("group_name"))
+        sender = _optional_str(args.get("sender"))
+        if source == "个人群":
+            group_name = group_name or conversation
+            if not group_name:
+                raise ValueError("读取个人群窗口需要 group_name 或 conversation")
+        elif source == "个人消息":
+            sender = sender or conversation
+            if not sender:
+                raise ValueError("读取个人消息窗口需要 sender 或 conversation")
+        else:
+            raise ValueError("source 必须是 个人群 或 个人消息")
+
+        filters = MessageFilters.model_validate(
+            {
+                "source": source,
+                "group_name": group_name if source == "个人群" else None,
+                "sender": sender if source == "个人消息" else None,
+                "start_time": _optional_datetime(args.get("start_time")),
+                "end_time": _optional_datetime(args.get("end_time")),
+                "cursor_time": _optional_datetime(args.get("cursor_time")),
+                "cursor_id": _optional_str(args.get("cursor_id")),
+                "limit": _bounded_int(args.get("limit"), default=50, maximum=80),
+            }
+        )
+        conn = connect(self.config.database_path)
+        try:
+            init_db(conn)
+            page = list_messages(conn, filters)
+        finally:
+            conn.close()
+        return {
+            "source": source,
+            "group_name": group_name,
+            "sender": sender,
+            "items": [_message_window_item(item) for item in page.items],
             "next_cursor_time": _json_value(page.next_cursor_time),
             "next_cursor_id": page.next_cursor_id,
         }
@@ -212,20 +294,47 @@ class RadarBuiltinExtension:
                 conn,
                 days=_bounded_int(args.get("days"), default=14, maximum=60),
                 top_limit=_bounded_int(args.get("top_limit"), default=8, maximum=20),
-                anchor_limit=_bounded_int(args.get("anchor_limit"), default=20, maximum=50),
             )
         finally:
             conn.close()
         return overview.model_dump(mode="json")
 
-    def _strategy_dashboard(self, args: dict[str, Any]) -> dict[str, Any]:
-        dashboard = build_strategy_dashboard(
-            self.config,
-            days=_bounded_int(args.get("days"), default=30, maximum=90),
-            recent_days=_bounded_int(args.get("recent_days"), default=7, maximum=30),
-            limit=_bounded_int(args.get("limit"), default=8, maximum=20),
-        )
+    def _stock_evidence_chain(self, args: dict[str, Any]) -> dict[str, Any]:
+        stock = _optional_str(args.get("stock"))
+        stage = _optional_str(args.get("stage"))
+        limit = _bounded_int(args.get("limit"), default=20, maximum=120)
+        dashboard = latest_stock_evidence_chain(self.config, limit=500 if stock else limit)
+        items = dashboard.items
+        if stock:
+            stock_key = stock.upper()
+            items = [
+                item
+                for item in items
+                if stock_key in item.ts_code.upper() or stock in item.stock_name
+            ]
+        if stage:
+            items = [item for item in items if item.stage == stage]
+        limited_items = items[:limit]
+        dashboard = dashboard.model_copy(update={"items": limited_items, "item_count": len(limited_items), "stage_counts": _stock_stage_counts(limited_items)})
         return dashboard.model_dump(mode="json")
+
+    def _stock_evidence_chart(self, args: dict[str, Any]) -> dict[str, Any]:
+        stock = str(args["stock"]).strip()
+        ts_code = resolve_stock(self.config, stock)
+        chart = get_stock_evidence_stock_chart(
+            self.config,
+            ts_code=ts_code,
+            days=_bounded_int(args.get("days"), default=120, maximum=260),
+        )
+        result = chart.model_dump(mode="json")
+        result.update(
+            {
+                "found": bool(chart.candles),
+                "stock": stock,
+                "summary": _stock_chart_summary(chart.candles),
+            }
+        )
+        return result
 
     def _backtest_summary(self, args: dict[str, Any]) -> dict[str, Any]:
         end_time = _optional_datetime(args.get("end_time")) or datetime.now()
@@ -283,6 +392,58 @@ def _windows(value: object) -> list[int]:
     return parsed or list(DEFAULT_BACKTEST_WINDOWS)
 
 
+def _stock_stage_counts(items: list[Any]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        stage = str(getattr(item, "stage", "") or "")
+        if stage:
+            counts[stage] = counts.get(stage, 0) + 1
+    return counts
+
+
+def _stock_chart_summary(candles: list[Any]) -> dict[str, Any]:
+    if not candles:
+        return {}
+
+    first = candles[0]
+    latest = candles[-1]
+    high_close = max(candles, key=lambda item: item.close)
+    low_close = min(candles, key=lambda item: item.close)
+    latest_amount = getattr(latest, "amount", None)
+    avg5_amount = _average_amount(candles[-5:])
+    avg20_amount = _average_amount(candles[-20:])
+    return {
+        "first_trade_date": first.trade_date,
+        "latest_trade_date": latest.trade_date,
+        "latest_close": latest.close,
+        "latest_pct_chg": getattr(latest, "pct_chg", None),
+        "return_from_first": _rate(latest.close, first.close),
+        "return_from_low_close": _rate(latest.close, low_close.close),
+        "drawdown_from_high_close": _rate(latest.close, high_close.close),
+        "high_close_trade_date": high_close.trade_date,
+        "high_close": high_close.close,
+        "low_close_trade_date": low_close.trade_date,
+        "low_close": low_close.close,
+        "latest_amount": latest_amount,
+        "avg5_amount": avg5_amount,
+        "avg20_amount": avg20_amount,
+        "latest_amount_vs_avg20": _rate(latest_amount, avg20_amount),
+    }
+
+
+def _average_amount(candles: list[Any]) -> float | None:
+    values = [float(item.amount) for item in candles if getattr(item, "amount", None) is not None]
+    if not values:
+        return None
+    return round(sum(values) / len(values), 4)
+
+
+def _rate(current: float | None, base: float | None) -> float | None:
+    if current is None or base is None or base == 0:
+        return None
+    return round((current - base) / base, 4)
+
+
 def _message_summary(message: RawMessage) -> dict[str, Any]:
     return {
         "message_id": message.message_id,
@@ -298,6 +459,20 @@ def _message_detail(message: RawMessage) -> dict[str, Any]:
     item = _message_summary(message)
     item["content"] = _clip(message.raw_content, 1000)
     return item
+
+
+def _message_window_item(message: RawMessage) -> dict[str, Any]:
+    content = _clip(message.raw_content, 2000)
+    return {
+        "message_id": message.message_id,
+        "source": message.source,
+        "sender": message.sender,
+        "group_name": message.group_name,
+        "message_time": message.message_time.isoformat(),
+        "content": content,
+        "content_length": len(message.raw_content),
+        "content_truncated": content != message.raw_content,
+    }
 
 
 def _clip(text: str, limit: int) -> str:

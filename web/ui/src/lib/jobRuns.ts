@@ -1,6 +1,11 @@
 import type { IngestSource, RunItem } from "../types";
 
-export type JobTemplateKey = "ingest" | "classify" | "anchor" | "refine" | "backtest" | "strategyBackfill" | "sourceRadar";
+export type JobTemplateKey =
+  | "ingest"
+  | "classify"
+  | "anchor"
+  | "backtest"
+  | "stockEvidenceChain";
 
 export type TrackedJob = {
   kind: JobTemplateKey;
@@ -12,12 +17,12 @@ export type TrackedJob = {
 const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   wechat_ingest_range: "ingest",
   message_classify_range: "classify",
-  message_anchor_range: "anchor",
-  aggregate_refine: "refine",
+  market_anchor_update: "anchor",
   recommendation_backtest_refresh: "backtest",
-  strategy_snapshot_backfill: "strategyBackfill",
-  source_radar_snapshot: "sourceRadar",
+  stock_evidence_chain: "stockEvidenceChain",
 };
+
+export const JOB_RUN_KINDS = Object.keys(RUN_KIND_TO_JOB);
 
 const SOURCE_LABELS: Record<IngestSource, string> = {
   all: "全部",
@@ -69,11 +74,11 @@ export function sourceLabel(value: IngestSource): string {
 }
 
 function sourceFromRun(run: RunItem): string {
-  if (run.kind === "strategy_snapshot_backfill") {
-    return "发酵确认";
+  if (run.kind === "stock_evidence_chain") {
+    return "全库证据";
   }
-  if (run.kind === "source_radar_snapshot") {
-    return "早期概念";
+  if (run.kind === "market_anchor_update") {
+    return "市场词库";
   }
   const source = textValue(run.metadata.source);
   if (source && !isSourceKey(source)) {

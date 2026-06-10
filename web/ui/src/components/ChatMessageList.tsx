@@ -1,23 +1,42 @@
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Check, Copy } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import type { RefObject, UIEvent } from "react";
+import { useState, type RefObject, type UIEvent } from "react";
 
 import type { ChatMessageItem } from "../types";
-import { toolActivities } from "./chatHelpers";
+import { copyText } from "../lib/clipboard";
+import { toolActivities, type ToolActivityItem } from "./chatHelpers";
+import { DrawerMarkdownContent } from "./DrawerMarkdownContent";
 import { MarkdownContent } from "./MarkdownContent";
 
 type ChatMessageListProps = {
   endRef: RefObject<HTMLDivElement | null>;
   listRef: RefObject<HTMLDivElement | null>;
   messages: ChatMessageItem[];
+  emptyState?: "overview";
+  markdownSurface?: "drawer";
   showJumpToBottom: boolean;
   onJumpToBottom: () => void;
   onScrollStateChange: (isNearBottom: boolean) => void;
 };
 
 export function ChatMessageList(props: ChatMessageListProps) {
+  const Content = props.markdownSurface === "drawer" ? DrawerMarkdownContent : MarkdownContent;
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     props.onScrollStateChange(isNearBottom(event.currentTarget));
+  }
+
+  async function handleCopyMessage(message: ChatMessageItem) {
+    try {
+      await copyText(message.content);
+      setCopiedMessageId(message.message_id);
+      window.setTimeout(() => {
+        setCopiedMessageId((current) => (current === message.message_id ? null : current));
+      }, 1400);
+    } catch {
+      setCopiedMessageId(null);
+    }
   }
 
   return (
@@ -27,11 +46,19 @@ export function ChatMessageList(props: ChatMessageListProps) {
         ref={props.listRef}
         onScroll={handleScroll}
       >
+        {props.messages.length === 0 && props.emptyState === "overview" ? (
+          <div className="chat-empty-state">
+            <strong>本地消息已就绪</strong>
+            <span>等待一个股票、产业链或消息线索。</span>
+          </div>
+        ) : null}
         <AnimatePresence initial={false}>
           {props.messages.map((message) => {
             const status = typeof message.metadata.status === "string" ? message.metadata.status : "";
             const reasoning = typeof message.metadata.reasoning === "string" ? message.metadata.reasoning : "";
             const activities = toolActivities(message.metadata.tool_activities);
+            const canCopy = message.role === "assistant" && Boolean(message.content) && !message.metadata.streaming;
+            const isCopied = copiedMessageId === message.message_id;
             return (
               <motion.article
                 className={`chat-message chat-message-${message.role}`}
@@ -45,21 +72,13 @@ export function ChatMessageList(props: ChatMessageListProps) {
                 {message.role === "assistant" && (reasoning || activities.length > 0) ? (
                   <details className="chat-reasoning" open={Boolean(message.metadata.streaming)}>
                     <summary>推理过程</summary>
-                    {reasoning ? <MarkdownContent content={reasoning} /> : null}
-                    {activities.length > 0 ? (
-                      <ul className="chat-tool-activity-list">
-                        {activities.map((activity) => (
-                          <li className={`chat-tool-activity-${activity.status}`} key={activity.key}>
-                            {activity.label}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
+                    {reasoning ? <Content content={reasoning} /> : null}
+                    {activities.length > 0 ? <ChatToolActivityList activities={activities} /> : null}
                   </details>
                 ) : null}
                 {message.content ? (
                   <>
-                    <MarkdownContent content={message.content} />
+                    <Content content={message.content} />
                     {message.metadata.streaming ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
                   </>
                 ) : (
@@ -70,6 +89,22 @@ export function ChatMessageList(props: ChatMessageListProps) {
                     <em />
                   </div>
                 )}
+                {canCopy ? (
+                  <div className="chat-message-actions">
+                    <button
+                      className={isCopied ? "chat-message-copy is-copied" : "chat-message-copy"}
+                      type="button"
+                      aria-label={isCopied ? "已复制回复" : "复制回复"}
+                      title={isCopied ? "已复制" : "复制"}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleCopyMessage(message);
+                      }}
+                    >
+                      {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                ) : null}
               </motion.article>
             );
           })}
@@ -84,6 +119,55 @@ export function ChatMessageList(props: ChatMessageListProps) {
       ) : null}
     </div>
   );
+}
+
+const TOOL_ACTIVITY_COLLAPSE_LIMIT = 6;
+
+type ToolActivityDisplayItem = ToolActivityItem & {
+  count: number;
+};
+
+function ChatToolActivityList({ activities }: { activities: ToolActivityItem[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const groupedActivities = groupConsecutiveToolActivities(activities);
+  const hasHiddenGroups = groupedActivities.length > TOOL_ACTIVITY_COLLAPSE_LIMIT;
+  const hasGroupedItems = groupedActivities.some((activity) => activity.count > 1);
+  const canExpand = hasHiddenGroups || hasGroupedItems;
+  const displayActivities =
+    expanded ? activities.map((activity) => ({ ...activity, count: 1 })) : groupedActivities.slice(0, TOOL_ACTIVITY_COLLAPSE_LIMIT);
+  const hiddenCount = hasHiddenGroups
+    ? groupedActivities.slice(TOOL_ACTIVITY_COLLAPSE_LIMIT).reduce((total, activity) => total + activity.count, 0)
+    : 0;
+
+  return (
+    <div className="chat-tool-activity-block">
+      <ul className="chat-tool-activity-list">
+        {displayActivities.map((activity) => (
+          <li className={`chat-tool-activity-${activity.status}`} key={activity.key}>
+            {activity.label}
+            {activity.count > 1 ? <span className="chat-tool-activity-count">x{activity.count}</span> : null}
+          </li>
+        ))}
+      </ul>
+      {canExpand ? (
+        <button className="chat-tool-activity-toggle" type="button" onClick={() => setExpanded((value) => !value)}>
+          {expanded ? "收起工具调用" : hiddenCount > 0 ? `还有 ${hiddenCount} 个工具调用` : `展开 ${activities.length} 个工具调用`}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function groupConsecutiveToolActivities(activities: ToolActivityItem[]): ToolActivityDisplayItem[] {
+  return activities.reduce<ToolActivityDisplayItem[]>((groups, activity) => {
+    const last = groups[groups.length - 1];
+    if (last && last.label === activity.label && last.status === activity.status) {
+      last.count += 1;
+      return groups;
+    }
+    groups.push({ ...activity, count: 1 });
+    return groups;
+  }, []);
 }
 
 function isNearBottom(element: HTMLDivElement): boolean {

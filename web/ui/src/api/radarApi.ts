@@ -1,8 +1,6 @@
 import type {
   ClassifyJobItem,
   ClassifyRequest,
-  AggregateRefineRequest,
-  AggregateRefineResult,
   AnchorRequest,
   ChatMessageItem,
   ChatModelOptions,
@@ -22,10 +20,6 @@ import type {
   MessageOverview,
   MessagePage,
   MessageQuery,
-  OrganizeAggregateEvidencePage,
-  OrganizeAggregateEvidenceQuery,
-  OrganizeAggregatePage,
-  OrganizeAggregateQuery,
   OrganizeClassificationPage,
   OrganizeClassificationQuery,
   OrganizeEvidencePage,
@@ -33,20 +27,10 @@ import type {
   RecommendationBacktestRequest,
   RecommendationBacktestSummary,
   RunItem,
-  SourceRadarQuery,
-  SourceRadarJobRequest,
-  SourceRadarSnapshot,
-  SourceRadarValidationQuery,
-  SourceRadarValidationSummary,
-  StrategyDashboard,
-  StrategySnapshotBackfillJobRequest,
-  StrategySnapshotSaveRequest,
-  StrategySnapshotSaveResult,
-  StrategyQuery,
-  StrategyStockChart,
-  StrategyStockChartQuery,
-  StrategyValidationQuery,
-  StrategyValidationSummary,
+  StockEvidenceChainDashboard,
+  StockEvidenceChainJobRequest,
+  StockEvidenceStockChart,
+  StockEvidenceStockChartQuery,
 } from "../types";
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
@@ -69,7 +53,7 @@ export async function fetchMessageGroups(query: { source?: string; keyword?: str
 }
 
 export async function fetchMessageOverview(
-  query: { days?: number; top_limit?: number; anchor_limit?: number } = {},
+  query: { days?: number; top_limit?: number } = {},
 ): Promise<MessageOverview> {
   return getJson(`/api/messages/overview?${params(query)}`);
 }
@@ -195,19 +179,7 @@ export async function fetchOrganizeEvidence(query: OrganizeEvidenceQuery): Promi
   return getJson(`/api/organize/classifications/evidence?${params(query)}`);
 }
 
-export async function fetchOrganizeAggregates(
-  query: OrganizeAggregateQuery = {},
-): Promise<OrganizeAggregatePage> {
-  return getJson(`/api/organize/aggregates?${params(query)}`);
-}
-
-export async function fetchOrganizeAggregateEvidence(
-  query: OrganizeAggregateEvidenceQuery,
-): Promise<OrganizeAggregateEvidencePage> {
-  return getJson(`/api/organize/aggregates/evidence?${params(query)}`);
-}
-
-export async function fetchRuns(query: { kind?: string; status?: RunItem["status"]; limit?: number } = {}): Promise<RunItem[]> {
+export async function fetchRuns(query: { kind?: string; kinds?: string[]; status?: RunItem["status"]; limit?: number } = {}): Promise<RunItem[]> {
   const data = await getJson<{ items: RunItem[] }>(`/api/runs?${params({ limit: 20, ...query })}`);
   return data.items;
 }
@@ -222,11 +194,6 @@ export async function cancelRun(runId: string): Promise<RunItem> {
   return (await response.json()) as RunItem;
 }
 
-export async function fetchAggregateRefineResults(): Promise<AggregateRefineResult[]> {
-  const data = await getJson<{ items: AggregateRefineResult[] }>("/api/aggregate/refine/results?limit=5");
-  return data.items;
-}
-
 export async function fetchRecommendationBacktestSummary(query: {
   start_time: string;
   end_time: string;
@@ -238,24 +205,12 @@ export async function fetchRecommendationBacktestSummary(query: {
   return getJson(`/api/recommendation/backtest/summary?${params(query)}`);
 }
 
-export async function fetchStrategyOpportunities(query: StrategyQuery = {}): Promise<StrategyDashboard> {
-  return getJson(`/api/strategy/opportunities?${params(query)}`);
+export async function fetchStockEvidenceChainLatest(query: { limit?: number } = {}): Promise<StockEvidenceChainDashboard> {
+  return getJson(`/api/strategy/evidence-chain/latest?${params(query)}`);
 }
 
-export async function fetchStrategyStockChart(tsCode: string, query: StrategyStockChartQuery = {}): Promise<StrategyStockChart> {
+export async function fetchStockEvidenceStockChart(tsCode: string, query: StockEvidenceStockChartQuery = {}): Promise<StockEvidenceStockChart> {
   return getJson(`/api/strategy/stocks/${encodeURIComponent(tsCode)}/chart?${params(query)}`);
-}
-
-export async function fetchStrategyValidation(query: StrategyValidationQuery = {}): Promise<StrategyValidationSummary> {
-  return getJson(`/api/strategy/validation?${params(query)}`);
-}
-
-export async function fetchSourceRadarSnapshot(query: SourceRadarQuery = {}): Promise<SourceRadarSnapshot> {
-  return getJson(`/api/strategy/source-radar?${params(query)}`);
-}
-
-export async function fetchSourceRadarValidation(query: SourceRadarValidationQuery = {}): Promise<SourceRadarValidationSummary> {
-  return getJson(`/api/strategy/source-radar/validation?${params(query)}`);
 }
 
 export async function ingestWechat(request: IngestRequest): Promise<IngestResultItem[]> {
@@ -297,21 +252,8 @@ export async function startClassifyMessagesJob(request: ClassifyRequest): Promis
   return data.items;
 }
 
-export async function startAnchorMessagesJob(request: AnchorRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/anchor/messages/jobs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    throw new Error(await errorText(response));
-  }
-  const data = (await response.json()) as { items: DerivedJobItem[] };
-  return data.items;
-}
-
-export async function startAggregateRefineJob(request: AggregateRefineRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/aggregate/refine/jobs`, {
+export async function startMarketAnchorUpdateJob(request: AnchorRequest): Promise<DerivedJobItem[]> {
+  const response = await fetch(`${apiBase}/api/market/anchors/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -336,33 +278,8 @@ export async function startRecommendationBacktestJob(request: RecommendationBack
   return data.items;
 }
 
-export async function saveStrategySnapshot(request: StrategySnapshotSaveRequest): Promise<StrategySnapshotSaveResult> {
-  const response = await fetch(`${apiBase}/api/strategy/snapshots`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    throw new Error(await errorText(response));
-  }
-  return (await response.json()) as StrategySnapshotSaveResult;
-}
-
-export async function startStrategyBackfillJob(request: StrategySnapshotBackfillJobRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/strategy/snapshots/backfill/jobs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    throw new Error(await errorText(response));
-  }
-  const data = (await response.json()) as { items: DerivedJobItem[] };
-  return data.items;
-}
-
-export async function startSourceRadarJob(request: SourceRadarJobRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/source/radar/jobs`, {
+export async function startStockEvidenceChainJob(request: StockEvidenceChainJobRequest): Promise<DerivedJobItem[]> {
+  const response = await fetch(`${apiBase}/api/strategy/evidence-chain/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -386,7 +303,7 @@ function params(query: Record<string, unknown>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined && value !== "") {
-      search.set(key, String(value));
+      search.set(key, Array.isArray(value) ? value.join(",") : String(value));
     }
   }
   return search.toString();

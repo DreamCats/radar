@@ -51,21 +51,6 @@ class MessageClassification(BaseModel):
     updated_at: datetime
 
 
-class MessageAnchor(BaseModel):
-    """原始消息命中的市场 anchor；用于后续主题聚合的结构化抓手。"""
-
-    message_id: str
-    anchor_id: str
-    anchor_type: MessageAnchorType
-    name: str
-    confidence: float = Field(ge=0.0, le=1.0)
-    evidence: list[dict[str, object]] = Field(default_factory=list)
-    extractor_version: str
-    trade_date: str
-    created_at: datetime
-    updated_at: datetime
-
-
 class WechatApiMessage(BaseModel):
     """微信 API 原始字段是中文，单独建模便于隔离外部格式变化。"""
 

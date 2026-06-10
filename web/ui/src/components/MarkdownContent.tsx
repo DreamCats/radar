@@ -174,7 +174,8 @@ function splitMarkdownBlocks(content: string): MarkdownBlock[] {
 
 function renderInlineMarkdown(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)\s]+\))/g;
+  const pattern =
+    /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)\s]+\)|(?:^|(?<![\d.]))[+\-−]\d+(?:\.\d+)?%|(?:^|(?<![\d.]))[+\-−]?\d+(?:\.\d+)?%?(?!\uFE0F?\u20E3))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(text)) !== null) {
@@ -186,6 +187,28 @@ function renderInlineMarkdown(text: string): ReactNode[] {
       nodes.push(<strong key={match.index}>{token.slice(2, -2)}</strong>);
     } else if (token.startsWith("`")) {
       nodes.push(<code key={match.index}>{token.slice(1, -1)}</code>);
+    } else if (isSignedPercent(token.trim())) {
+      const leadingText = token.match(/^\s*/)?.[0] ?? "";
+      const percentText = token.trim();
+      if (leadingText) {
+        nodes.push(leadingText);
+      }
+      nodes.push(
+        <span className={percentText.startsWith("+") ? "markdown-percent-up" : "markdown-percent-down"} key={match.index}>
+          {percentText}
+        </span>,
+      );
+    } else if (isNumberToken(token.trim())) {
+      const leadingText = token.match(/^\s*/)?.[0] ?? "";
+      const numberText = token.trim();
+      if (leadingText) {
+        nodes.push(leadingText);
+      }
+      nodes.push(
+        <span className="markdown-number" key={match.index}>
+          {numberText}
+        </span>,
+      );
     } else {
       const link = /^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/.exec(token);
       if (link) {
@@ -202,4 +225,12 @@ function renderInlineMarkdown(text: string): ReactNode[] {
     nodes.push(text.slice(lastIndex));
   }
   return nodes;
+}
+
+function isSignedPercent(token: string): boolean {
+  return /^[+\-−]\d+(?:\.\d+)?%$/.test(token);
+}
+
+function isNumberToken(token: string): boolean {
+  return /^[+\-−]?\d+(?:\.\d+)?%?$/.test(token);
 }

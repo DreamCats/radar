@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { fetchConversations, fetchMessageGroups, fetchMessages } from "../api/radarApi";
+import { ChatLauncher } from "../components/ChatLauncher";
 import { Avatar, WechatFilters } from "../components/WechatControls";
 import { formatTime } from "../lib/datetime";
 import { panelMotionState } from "../lib/motion";
@@ -25,6 +26,10 @@ const threadLimit = 30;
 const conversationSkeletonItems = Array.from({ length: 7 }, (_, index) => index);
 
 type ThreadScrollIntent = { mode: "bottom" } | { mode: "preserve"; scrollTop: number; scrollHeight: number };
+
+function formatThreadEvidence(item: MessageItem) {
+  return `${formatTime(item.message_time)} ${displayName(item)}：${item.raw_content}`;
+}
 
 export function WechatPage() {
   const shouldReduceMotion = useReducedMotion();
@@ -264,6 +269,7 @@ export function WechatPage() {
                 matchedSenderStats={matchedSenderStats}
                 selectedSender={selectedSender}
                 senderQuery={senderQuery}
+                threadEvidence={filteredThreadItems.slice(-20).map(formatThreadEvidence)}
                 threadKeyword={threadKeyword}
                 totalCount={threadItems.length}
                 onSenderChange={setSelectedSender}
@@ -333,6 +339,7 @@ function ThreadHeader(props: {
   matchedSenderStats: { sender: string; count: number }[];
   selectedSender: string | null;
   senderQuery: string;
+  threadEvidence: string[];
   threadKeyword: string;
   totalCount: number;
   onSenderChange: (sender: string | null) => void;
@@ -344,10 +351,35 @@ function ThreadHeader(props: {
       <Avatar name={props.conversation.title} />
       <div className="wechat-thread-head-main">
         <div className="wechat-thread-title-row">
-          <h2>{props.conversation.title}</h2>
-          <span>
-            {props.conversation.source} · {props.filteredCount}/{props.totalCount} 条
-          </span>
+          <div className="wechat-thread-title-main">
+            <h2>{props.conversation.title}</h2>
+            <span>
+              {props.conversation.source} · {props.filteredCount}/{props.totalCount} 条
+            </span>
+          </div>
+          <ChatLauncher
+            title={props.conversation.title}
+            subtitle={`${props.conversation.source} · 当前可见 ${props.filteredCount}/${props.totalCount} 条`}
+            surface="微信会话"
+            entityId={props.conversation.key}
+            buttonLabel="AI"
+            buttonClassName="btn btn-primary btn-sm wechat-thread-ai-action"
+            context={[
+              { label: "会话", value: props.conversation.title },
+              { label: "来源", value: props.conversation.source },
+              { label: "最新发送人", value: props.conversation.latest_sender },
+              { label: "最新时间", value: formatTime(props.conversation.latest_time) },
+              { label: "当前筛选发送人", value: props.selectedSender ?? "全部" },
+              { label: "当前关键词", value: props.threadKeyword || "无" },
+              { label: "当前可见", value: `${props.filteredCount}/${props.totalCount} 条` },
+            ]}
+            evidence={props.threadEvidence}
+            suggestedQuestions={[
+              "帮我解释这个会话最近在聊什么，哪些内容和投资有关？",
+              "这里面涉及哪些股票、行业或主题？请按原文证据和你的推断分开。",
+              "这段聊天有没有值得继续深挖的线索、风险或反证？",
+            ]}
+          />
         </div>
         <div className="wechat-thread-filters" aria-label="群内筛选">
           <div className="wechat-filter-input">
