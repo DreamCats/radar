@@ -18,20 +18,26 @@ from radar.core.config import RadarConfig
 
 CONTEXT_ENDPOINT = "/res/v1/llm/context"
 THRESHOLD_MODES = {"strict", "balanced", "lenient"}
+BRAVE_SEARCH_CONFIG_HINT = (
+    "Brave Search 未配置：请设置环境变量 RADAR_BRAVE_SEARCH_API_KEY，"
+    "或在 radar secrets.yaml 配置 secrets.brave_search.<name>.api_key，"
+    "并在 config.yaml 设置 brave_search.provider=brave、brave_search.secret_ref=<name>"
+)
 
 
 def resolve_provider(config: RadarConfig) -> RuntimeBraveSearchProvider:
     """把 radar 配置解析成 Brave Search 运行期 provider。"""
 
     if config.brave_search.provider != "brave":
-        raise BraveSearchConfigError("brave_search.provider 未配置为 brave")
+        raise BraveSearchConfigError(BRAVE_SEARCH_CONFIG_HINT)
     if not config.brave_search.secret_ref:
-        raise BraveSearchConfigError("brave_search.secret_ref 未配置")
+        raise BraveSearchConfigError(BRAVE_SEARCH_CONFIG_HINT)
 
     secret = config.secrets.brave_search.get(config.brave_search.secret_ref)
     if secret is None or not secret.api_key:
         raise BraveSearchConfigError(
-            f"未配置 Brave Search API key: {config.brave_search.secret_ref}"
+            f"未配置 Brave Search API key: {config.brave_search.secret_ref}。"
+            f"{BRAVE_SEARCH_CONFIG_HINT}"
         )
 
     return RuntimeBraveSearchProvider(

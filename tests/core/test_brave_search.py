@@ -15,7 +15,7 @@ from radar.core.config import RadarConfig
 def test_resolve_provider_requires_brave_search_config(tmp_path):
     config = RadarConfig(storage={"data_dir": tmp_path})
 
-    with pytest.raises(BraveSearchConfigError, match="provider"):
+    with pytest.raises(BraveSearchConfigError, match="RADAR_BRAVE_SEARCH_API_KEY"):
         resolve_provider(config)
 
 

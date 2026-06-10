@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any
 
+from radar.core.chat.brave_search_tools import RadarBraveSearchTools
 from radar.core.chat.extensions import ExtensionContext
 from radar.core.chat.shell_tool import build_shell_tool
 from radar.core.chat.tushare_tools import RadarTushareTools
@@ -38,6 +39,7 @@ class RadarBuiltinExtension:
             self._list_conversations_tool(),
             self._get_message_context_tool(),
             self._message_overview_tool(),
+            *RadarBraveSearchTools(self.config).tools(),
             *RadarTushareTools(self.config).tools(),
             self._stock_evidence_chart_tool(),
             self._stock_evidence_chain_tool(),

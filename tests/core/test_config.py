@@ -103,7 +103,7 @@ def test_env_overrides_brave_search_key(config_dir: Path, monkeypatch):
     assert config.secrets.brave_search["brave_search_main"].api_key == "brave-key-from-env"
 
 
-def test_load_falls_back_to_brave_search_cli_config(config_dir: Path, tmp_path: Path, monkeypatch):
+def test_load_does_not_read_brave_search_cli_config(config_dir: Path, tmp_path: Path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
     cli_config = tmp_path / "Library" / "Application Support" / "brave-search" / "config.json"
     cli_config.parent.mkdir(parents=True)
@@ -120,11 +120,11 @@ def test_load_falls_back_to_brave_search_cli_config(config_dir: Path, tmp_path: 
 
     config = load_config(config_dir)
 
-    assert config.brave_search.provider == "brave"
-    assert config.brave_search.secret_ref == "brave_search_main"
-    assert config.brave_search.base_url == "https://api.search.brave.software"
-    assert config.brave_search.timeout == 7
-    assert config.secrets.brave_search["brave_search_main"].api_key == "brave-key-from-cli"
+    assert config.brave_search.provider is None
+    assert config.brave_search.secret_ref is None
+    assert config.brave_search.base_url == "https://api.search.brave.com"
+    assert config.brave_search.timeout == 30
+    assert config.secrets.brave_search == {}
 
 
 def test_load_accepts_legacy_tushare_api_url(config_dir: Path):
