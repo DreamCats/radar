@@ -1,5 +1,4 @@
 import {
-  startAggregateRefineJob,
   startClassifyMessagesJob,
   startIngestWechatJob,
   startMarketAnchorUpdateJob,
@@ -7,7 +6,6 @@ import {
   startStockEvidenceChainJob,
 } from "../api/radarApi";
 import type { IngestSource } from "../types";
-import { DEFAULT_CATEGORIES } from "./jobTemplates";
 import { sourceLabel, type JobTemplateKey, type TrackedJob } from "./jobRuns";
 import type { LocalRange } from "./timeRange";
 
@@ -84,21 +82,7 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
     });
     return derivedJobs(kind, "全库证据", items);
   }
-  const items = await startAggregateRefineJob({
-    trade_date: tradeDate,
-    source,
-    start_time: window.start_time,
-    end_time: window.end_time,
-    force,
-    categories: DEFAULT_CATEGORIES,
-    min_classification_confidence: 0.7,
-    min_messages: 2,
-    candidate_limit: 50,
-    evidence_limit: 3,
-    batch_size: 5,
-    max_concurrency: 10,
-  });
-  return derivedJobs(kind, sourceLabel(source), items);
+  throw new Error(`未知作业类型：${kind}`);
 }
 
 function derivedJobs(kind: JobTemplateKey, source: string, items: Array<{ run_id: string; reused_existing: boolean }>): TrackedJob[] {

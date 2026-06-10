@@ -19,8 +19,7 @@
   }
 
   .cluster-list,
-  .evidence-list,
-  .aggregate-detail-scroll {
+  .evidence-list {
     max-height: 420px;
   }
 }
@@ -30,7 +29,4 @@
     grid-template-columns: 1fr;
   }
 
-  .aggregate-stock-list {
-    grid-template-columns: 1fr;
-  }
 }

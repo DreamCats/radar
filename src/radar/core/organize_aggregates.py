@@ -13,7 +13,7 @@ from radar.core.usecases.aggregation.models import RefinedTheme, RefineAggregate
 
 
 class OrganizeAggregateFilters(BaseModel):
-    """整理页聚类模式：只读取已落库的 refine 结果，不触发离线任务。"""
+    """历史聚合结果读取：只读取已落库的 refine 结果，不触发离线任务。"""
 
     source: MessageSource | None = None
     keyword: str | None = None

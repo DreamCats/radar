@@ -1,7 +1,6 @@
 type SourceKey = "personal_message" | "group_message";
 type IngestSource = "all" | SourceKey;
 type MessageSource = "个人消息" | "个人群";
-type MessageCategory = "research" | "recommendation" | "event" | "industry" | "tool_ad" | "chat" | "unknown";
 type ClassificationRetryMode = "needs_review" | "unknown" | "low_confidence";
 
 export type IngestRequest = {
@@ -59,21 +58,6 @@ export type AnchorRequest = {
   min_anchor_count: number;
 };
 
-export type AggregateRefineRequest = {
-  trade_date: string;
-  source: IngestSource;
-  start_time: string;
-  end_time: string;
-  force: boolean;
-  categories: MessageCategory[];
-  min_classification_confidence: number;
-  min_messages: number;
-  candidate_limit: number;
-  evidence_limit: number;
-  batch_size: number;
-  max_concurrency: number;
-};
-
 export type RecommendationBacktestRequest = {
   as_of: string;
   window_days: number;
@@ -97,7 +81,7 @@ export type StockEvidenceChainJobRequest = {
 };
 
 export type DerivedJobItem = {
-  job_type: "anchor" | "aggregate_refine" | "recommendation_backtest" | "stock_evidence_chain";
+  job_type: "anchor" | "recommendation_backtest" | "stock_evidence_chain";
   run_id: string;
   reused_existing: boolean;
   status: "running";

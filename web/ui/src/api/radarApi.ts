@@ -1,8 +1,6 @@
 import type {
   ClassifyJobItem,
   ClassifyRequest,
-  AggregateRefineRequest,
-  AggregateRefineResult,
   AnchorRequest,
   ChatMessageItem,
   ChatModelOptions,
@@ -22,10 +20,6 @@ import type {
   MessageOverview,
   MessagePage,
   MessageQuery,
-  OrganizeAggregateEvidencePage,
-  OrganizeAggregateEvidenceQuery,
-  OrganizeAggregatePage,
-  OrganizeAggregateQuery,
   OrganizeClassificationPage,
   OrganizeClassificationQuery,
   OrganizeEvidencePage,
@@ -185,18 +179,6 @@ export async function fetchOrganizeEvidence(query: OrganizeEvidenceQuery): Promi
   return getJson(`/api/organize/classifications/evidence?${params(query)}`);
 }
 
-export async function fetchOrganizeAggregates(
-  query: OrganizeAggregateQuery = {},
-): Promise<OrganizeAggregatePage> {
-  return getJson(`/api/organize/aggregates?${params(query)}`);
-}
-
-export async function fetchOrganizeAggregateEvidence(
-  query: OrganizeAggregateEvidenceQuery,
-): Promise<OrganizeAggregateEvidencePage> {
-  return getJson(`/api/organize/aggregates/evidence?${params(query)}`);
-}
-
 export async function fetchRuns(query: { kind?: string; kinds?: string[]; status?: RunItem["status"]; limit?: number } = {}): Promise<RunItem[]> {
   const data = await getJson<{ items: RunItem[] }>(`/api/runs?${params({ limit: 20, ...query })}`);
   return data.items;
@@ -210,11 +192,6 @@ export async function cancelRun(runId: string): Promise<RunItem> {
     throw new Error(await errorText(response));
   }
   return (await response.json()) as RunItem;
-}
-
-export async function fetchAggregateRefineResults(): Promise<AggregateRefineResult[]> {
-  const data = await getJson<{ items: AggregateRefineResult[] }>("/api/aggregate/refine/results?limit=5");
-  return data.items;
 }
 
 export async function fetchRecommendationBacktestSummary(query: {
@@ -277,19 +254,6 @@ export async function startClassifyMessagesJob(request: ClassifyRequest): Promis
 
 export async function startMarketAnchorUpdateJob(request: AnchorRequest): Promise<DerivedJobItem[]> {
   const response = await fetch(`${apiBase}/api/market/anchors/jobs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    throw new Error(await errorText(response));
-  }
-  const data = (await response.json()) as { items: DerivedJobItem[] };
-  return data.items;
-}
-
-export async function startAggregateRefineJob(request: AggregateRefineRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/aggregate/refine/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

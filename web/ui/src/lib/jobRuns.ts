@@ -4,7 +4,6 @@ export type JobTemplateKey =
   | "ingest"
   | "classify"
   | "anchor"
-  | "refine"
   | "backtest"
   | "stockEvidenceChain";
 
@@ -19,7 +18,6 @@ const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   wechat_ingest_range: "ingest",
   message_classify_range: "classify",
   market_anchor_update: "anchor",
-  aggregate_refine: "refine",
   recommendation_backtest_refresh: "backtest",
   stock_evidence_chain: "stockEvidenceChain",
 };

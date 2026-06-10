@@ -280,7 +280,7 @@ export function IngestPage() {
                     <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
                   </>
                 )}
-                {(selectedJob === "anchor" || selectedJob === "refine") && (
+                {selectedJob === "anchor" && (
                   <TextField label="交易日" value={tradeDate} onChange={setTradeDate} />
                 )}
                 <label className="toggle-field">
@@ -330,7 +330,7 @@ export function IngestPage() {
                   transition={jobMotion.transition}
                 >
                   <JobRunCard
-                    kind={job.kind === "refine" ? "refine" : job.kind}
+                    kind={job.kind}
                     run={run}
                     runId={job.run_id}
                     source={job.source}

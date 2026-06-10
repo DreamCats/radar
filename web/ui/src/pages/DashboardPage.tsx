@@ -5,12 +5,11 @@ import { fetchDashboardSummary } from "../api/radarApi";
 import { ChatLauncher } from "../components/ChatLauncher";
 import { ClassificationDistributionChart } from "../components/ClassificationDistributionChart";
 import { LeaderboardAlphaChart } from "../components/LeaderboardAlphaChart";
-import { AnchorHeatChart, ThemePriorityBubbleChart, TopGroupsChart, TrendChart } from "../components/OverviewCharts";
+import { TopGroupsChart, TrendChart } from "../components/OverviewCharts";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { formatTime } from "../lib/datetime";
 import type {
   MessageOverview,
-  OrganizeAggregatePage,
   OrganizeClassificationPage,
   RecommendationBacktestSummary,
   RunItem,
@@ -29,11 +28,6 @@ const emptyClassificationPage: OrganizeClassificationPage = {
   clusters: [],
 };
 
-const emptyAggregatePage: OrganizeAggregatePage = {
-  result: null,
-  themes: [],
-};
-
 const emptyBacktestSummary: RecommendationBacktestSummary = {
   start_time: "",
   end_time: "",
@@ -46,7 +40,6 @@ const emptyBacktestSummary: RecommendationBacktestSummary = {
 export function DashboardPage() {
   const [overview, setOverview] = useState<MessageOverview | null>(null);
   const [classificationPage, setClassificationPage] = useState<OrganizeClassificationPage>(emptyClassificationPage);
-  const [aggregatePage, setAggregatePage] = useState<OrganizeAggregatePage>(emptyAggregatePage);
   const [backtestSummary, setBacktestSummary] = useState<RecommendationBacktestSummary>(emptyBacktestSummary);
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,7 +52,6 @@ export function DashboardPage() {
       const summary = await fetchDashboardSummary();
       setOverview(summary.overview);
       setClassificationPage(summary.classifications);
-      setAggregatePage(summary.aggregates);
       setBacktestSummary(summary.backtest);
       setRuns(summary.runs);
     } catch (err) {
@@ -103,10 +95,9 @@ export function DashboardPage() {
                 { label: "个人消息", value: `${summary.personal_message_count} 条 / ${summary.sender_count} 位发送人` },
                 { label: "硬过滤", value: filteredTotal },
                 { label: "有效分类", value: classificationPage.summary.total_count },
-                { label: "聚类主题", value: aggregatePage.themes.length },
                 { label: "最新消息", value: summary.latest_message_time ? formatTime(summary.latest_message_time) : null },
               ]}
-              evidence={dashboardBriefEvidence(overview, classificationPage, aggregatePage, backtestSummary)}
+              evidence={dashboardBriefEvidence(overview, classificationPage, backtestSummary)}
               suggestedQuestions={[
                 "今天最值得看的三个机会是什么？请给出证据、风险和下一步验证。",
                 "总览里哪些信号可能只是噪音，哪些值得进入策略页深挖？",
@@ -132,8 +123,6 @@ export function DashboardPage() {
       {error && <p className="error-line">{error}</p>}
       <div className="overview-chart-grid">
         <LeaderboardAlphaChart rows={backtestSummary.rows} dimension={backtestSummary.group_by} />
-        <ThemePriorityBubbleChart themes={aggregatePage.themes} />
-        <AnchorHeatChart data={overview?.anchor_heat ?? []} />
         <TrendChart overview={overview} />
         <TopGroupsChart data={overview?.top_groups ?? []} />
         <ClassificationDistributionChart
@@ -150,21 +139,14 @@ export function DashboardPage() {
 function dashboardBriefEvidence(
   overview: MessageOverview | null,
   classificationPage: OrganizeClassificationPage,
-  aggregatePage: OrganizeAggregatePage,
   backtestSummary: RecommendationBacktestSummary,
 ): string[] {
   return [
     overview?.top_groups.length
       ? `活跃群：${overview.top_groups.slice(0, 5).map((item) => `${item.group_name} ${item.count}`).join(" / ")}`
       : "",
-    overview?.anchor_heat.length
-      ? `热锚点：${overview.anchor_heat.slice(0, 5).map((item) => `${item.name} ${item.high_value_count}/${item.message_count}`).join(" / ")}`
-      : "",
     classificationPage.clusters.length
       ? `有效分类：${classificationPage.clusters.slice(0, 5).map((item) => `${item.label} ${item.count}`).join(" / ")}`
-      : "",
-    aggregatePage.themes.length
-      ? `主题：${aggregatePage.themes.slice(0, 5).map((item) => `${item.theme_name} ${Math.round(item.priority_score)}`).join(" / ")}`
       : "",
     backtestSummary.rows.length
       ? `回测榜：${backtestSummary.rows.slice(0, 5).map((item) => `${item.key} ${item.event_count}事件`).join(" / ")}`

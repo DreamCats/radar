@@ -77,29 +77,17 @@ export type MessageOverviewHour = {
   count: number;
 };
 
-export type MessageAnchorHeat = {
-  name: string;
-  anchor_type: "stock" | "concept" | "industry" | "theme";
-  mention_count: number;
-  message_count: number;
-  high_value_count: number;
-  average_confidence: number;
-  latest_message_time: string;
-};
-
 export type MessageOverview = {
   summary: MessageOverviewSummary;
   date_buckets: MessageOverviewBucket[];
   source_breakdown: MessageOverviewSource[];
   top_groups: MessageOverviewGroup[];
   hourly_buckets: MessageOverviewHour[];
-  anchor_heat: MessageAnchorHeat[];
 };
 
 export type DashboardSummary = {
   overview: MessageOverview;
   classifications: OrganizeClassificationPage;
-  aggregates: OrganizeAggregatePage;
   backtest: RecommendationBacktestSummary;
   runs: RunItem[];
 };
@@ -203,7 +191,6 @@ export type RunItem = {
 };
 
 export type {
-  AggregateRefineRequest,
   AnchorRequest,
   ClassifyJobItem,
   ClassifyRequest,
@@ -244,90 +231,6 @@ export type RecommendationBacktestSummary = {
   windows: number[];
   row_count: number;
   rows: RecommendationBacktestSummaryRow[];
-};
-
-export type RefinedThemeStock = {
-  name: string;
-  reason: string;
-  confidence: number;
-};
-
-export type RefinedTheme = {
-  theme_name: string;
-  aliases: string[];
-  summary: string;
-  investment_logic: string;
-  catalysts: string[];
-  related_stocks: RefinedThemeStock[];
-  evidence_message_ids: string[];
-  novelty: string;
-  confidence: number;
-  actionability_score: number;
-  risk_notes: string[];
-  merge_from_candidate_ids: string[];
-};
-
-export type AggregateRefineResult = {
-  run_id: string;
-  input_hash: string;
-  status: string;
-  trade_date: string;
-  extractor_version: string;
-  prompt_version: string;
-  candidate_count: number;
-  theme_count: number;
-  llm_batch_count: number;
-  failed_llm_batches: number;
-  max_concurrency: number;
-  themes: RefinedTheme[];
-};
-
-export type OrganizeAggregateSummary = {
-  run_id: string;
-  input_hash: string;
-  status: string;
-  trade_date: string;
-  start_time: string;
-  end_time: string;
-  candidate_count: number;
-  theme_count: number;
-  llm_batch_count: number;
-  failed_llm_batches: number;
-  max_concurrency: number;
-  evidence_message_count: number;
-};
-
-export type OrganizeAggregateTheme = RefinedTheme & {
-  theme_index: number;
-  priority_score: number;
-  evidence: OrganizeEvidenceMessage[];
-};
-
-export type OrganizeAggregatePage = {
-  result?: OrganizeAggregateSummary | null;
-  themes: OrganizeAggregateTheme[];
-};
-
-export type OrganizeAggregateQuery = {
-  source?: SourceKey;
-  keyword?: string;
-  start_time?: string;
-  end_time?: string;
-  evidence_limit?: number;
-};
-
-export type OrganizeAggregateEvidencePage = {
-  items: OrganizeEvidenceMessage[];
-  next_cursor_time?: string | null;
-  next_cursor_id?: string | null;
-};
-
-export type OrganizeAggregateEvidenceQuery = Omit<OrganizeAggregateQuery, "evidence_limit"> & {
-  run_id: string;
-  theme_index: number;
-  cursor_time?: string;
-  cursor_id?: string;
-  limit?: number;
 };
 
 export type OrganizeEvidenceMessage = {

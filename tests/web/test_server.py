@@ -12,8 +12,6 @@ from radar.core.models import MessageClassification, RawMessage
 from radar.core.runs import finish_run, get_run, start_run
 from radar.core.store import connect, init_db, upsert_message_classifications, upsert_messages
 from radar.core.usecases import IngestRangeResult
-from radar.core.usecases.aggregation import AggregateTopicsResult, RefineAggregateTopicsResult, RefinedTheme
-from radar.core.usecases.aggregation.storage import store_refine_result
 from radar.core.usecases.recommendation_backtest import (
     RecommendationBacktestSummaryResult,
     RecommendationBacktestSummaryRow,
@@ -480,85 +478,11 @@ def test_organize_classification_evidence_endpoint_requires_cursor_pair(tmp_path
     assert "cursor_time" in response.json()["detail"]
 
 
-def test_organize_aggregates_endpoint_returns_latest_result_with_evidence(tmp_path):
-    config = _config(tmp_path)
-    messages = [
-        _message(message_id="m1", message_time="2026-06-04T10:00:00"),
-        _message(message_id="m2", message_time="2026-06-04T10:01:00"),
-    ]
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        upsert_messages(conn, messages)
-        upsert_message_classifications(
-            conn,
-            [
-                _classification(messages[0], "research", 0.92, "研究观点"),
-                _classification(messages[1], "recommendation", 0.93, "投资推荐"),
-            ],
-        )
-        store_refine_result(conn, _refine_result("run-refine", ["m1", "m2"]))
-    finally:
-        conn.close()
+def test_organize_aggregate_endpoints_are_removed(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
 
-    client = TestClient(create_app(config))
-    response = client.get(
-        "/api/organize/aggregates",
-        params={
-            "start_time": "2026-06-04T09:00:00",
-            "end_time": "2026-06-04T12:00:00",
-            "evidence_limit": 1,
-        },
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["result"]["run_id"] == "run-refine"
-    assert data["result"]["theme_count"] == 1
-    assert data["themes"][0]["theme_name"] == "固态电池聚类"
-    assert data["themes"][0]["priority_score"] > 0
-    assert [item["message_id"] for item in data["themes"][0]["evidence"]] == ["m2"]
-
-
-def test_organize_aggregate_evidence_endpoint_pages_results(tmp_path):
-    config = _config(tmp_path)
-    messages = [
-        _message(message_id="m1", message_time="2026-06-04T10:00:00"),
-        _message(message_id="m2", message_time="2026-06-04T10:01:00"),
-        _message(message_id="m3", message_time="2026-06-04T10:02:00"),
-    ]
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        upsert_messages(conn, messages)
-        upsert_message_classifications(conn, [_classification(message, "research", 0.92, "研究观点") for message in messages])
-        store_refine_result(conn, _refine_result("run-refine", ["m1", "m2", "m3"]))
-    finally:
-        conn.close()
-
-    client = TestClient(create_app(config))
-    first = client.get("/api/organize/aggregates/evidence", params={"run_id": "run-refine", "theme_index": 0, "limit": 2})
-
-    assert first.status_code == 200
-    first_data = first.json()
-    assert [item["message_id"] for item in first_data["items"]] == ["m3", "m2"]
-    assert first_data["next_cursor_id"] == "m2"
-
-    second = client.get(
-        "/api/organize/aggregates/evidence",
-        params={
-            "run_id": "run-refine",
-            "theme_index": 0,
-            "limit": 2,
-            "cursor_time": first_data["next_cursor_time"],
-            "cursor_id": first_data["next_cursor_id"],
-        },
-    )
-
-    assert second.status_code == 200
-    second_data = second.json()
-    assert [item["message_id"] for item in second_data["items"]] == ["m1"]
-    assert second_data["next_cursor_id"] is None
+    assert client.get("/api/organize/aggregates").status_code == 404
+    assert client.get("/api/organize/aggregates/evidence", params={"run_id": "r", "theme_index": 0}).status_code == 404
 
 
 def test_root_endpoint_points_to_dashboard(tmp_path):
@@ -898,163 +822,11 @@ def test_anchor_jobs_endpoint_records_resolved_trade_date(monkeypatch, tmp_path)
     assert run.metadata["trade_date"] == "20260605"
 
 
-def test_aggregate_refine_jobs_endpoint_starts_job(monkeypatch, tmp_path):
-    config = _config(tmp_path)
-    calls: list[dict] = []
-    started = Event()
-    release = Event()
+def test_aggregate_refine_endpoints_are_removed(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
 
-    def fake_refine(config, *, trade_date, source, categories, min_classification_confidence, start_time, end_time,
-                    min_messages, candidate_limit, evidence_limit, batch_size, max_concurrency,
-                    provider_name, provider_names, force, run_id):
-        calls.append(
-            {
-                "trade_date": trade_date,
-                "source": source,
-                "categories": categories,
-                "min_classification_confidence": min_classification_confidence,
-                "start_time": start_time,
-                "end_time": end_time,
-                "min_messages": min_messages,
-                "candidate_limit": candidate_limit,
-                "evidence_limit": evidence_limit,
-                "batch_size": batch_size,
-                "max_concurrency": max_concurrency,
-                "provider_name": provider_name,
-                "provider_names": provider_names,
-                "force": force,
-                "run_id": run_id,
-            }
-        )
-        started.set()
-        release.wait(timeout=2)
-
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.ensure_market_anchors", lambda *args, **kwargs: None)
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.refine_aggregate_topics", fake_refine)
-
-    client = TestClient(create_app(config))
-    payload = {
-        "trade_date": "20260604",
-        "source": "all",
-        "start_time": "2026-06-04T10:00:00",
-        "end_time": "2026-06-04T11:00:00",
-        "force": False,
-        "categories": ["research"],
-        "min_classification_confidence": 0.7,
-        "min_messages": 2,
-        "candidate_limit": 20,
-        "evidence_limit": 2,
-        "batch_size": 5,
-        "max_concurrency": 10,
-        "provider_names": ["p1", "p2"],
-    }
-    response = client.post("/api/aggregate/refine/jobs", json=payload)
-
-    assert response.status_code == 200
-    first = response.json()["items"][0]
-    assert started.wait(timeout=1)
-    assert first["job_type"] == "aggregate_refine"
-    assert first["status"] == "running"
-    assert get_run(config.database_path, first["run_id"]) is not None
-    release.set()
-    assert calls[0]["source"] is None
-    assert calls[0]["provider_names"] == ["p1", "p2"]
-    assert calls[0]["run_id"] == first["run_id"]
-
-
-def test_aggregate_refine_jobs_endpoint_uses_resolved_trade_date(monkeypatch, tmp_path):
-    config = _config(tmp_path)
-    calls: list[dict] = []
-    started = Event()
-    release = Event()
-
-    def fake_refine(
-        config,
-        *,
-        trade_date,
-        source,
-        categories,
-        min_classification_confidence,
-        start_time,
-        end_time,
-        min_messages,
-        candidate_limit,
-        evidence_limit,
-        batch_size,
-        max_concurrency,
-        provider_name,
-        provider_names,
-        force,
-        run_id,
-    ):
-        calls.append({"trade_date": trade_date, "source": source, "run_id": run_id})
-        started.set()
-        release.wait(timeout=2)
-
-    monkeypatch.setattr(
-        "radar.web.server.aggregate_jobs.ensure_market_anchors",
-        lambda *args, **kwargs: SimpleNamespace(trade_date="20260605", refreshed=False, anchor_count=3020),
-    )
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.refine_aggregate_topics", fake_refine)
-
-    client = TestClient(create_app(config))
-    response = client.post(
-        "/api/aggregate/refine/jobs",
-        json={
-            "trade_date": "20260608",
-            "source": "all",
-            "start_time": "2026-06-07T15:00:00",
-            "end_time": "2026-06-08T23:05:00",
-        },
-    )
-
-    assert response.status_code == 200
-    run_id = response.json()["items"][0]["run_id"]
-    assert started.wait(timeout=1)
-    release.set()
-    assert calls == [{"trade_date": "20260605", "source": None, "run_id": run_id}]
-
-
-def test_aggregate_refine_results_endpoint_returns_recent_results(tmp_path):
-    config = _config(tmp_path)
-    local_result = AggregateTopicsResult(
-        trade_date="20260604",
-        extractor_version="test",
-        start_time=datetime.fromisoformat("2026-06-04T10:00:00"),
-        end_time=datetime.fromisoformat("2026-06-04T11:00:00"),
-        categories=["research"],
-        min_classification_confidence=0.7,
-        scoped_message_count=2,
-        anchored_message_count=2,
-        topic_count=1,
-        topics=[],
-    )
-    result = RefineAggregateTopicsResult(
-        run_id="run-refine",
-        input_hash="hash-refine",
-        status="succeeded",
-        trade_date="20260604",
-        extractor_version="test",
-        prompt_version="test-prompt",
-        candidate_count=1,
-        theme_count=1,
-        local_result=local_result,
-        themes=[RefinedTheme(theme_name="玻璃基板", actionability_score=80)],
-    )
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
-        store_refine_result(conn, result)
-    finally:
-        conn.close()
-
-    client = TestClient(create_app(config))
-    response = client.get("/api/aggregate/refine/results", params={"limit": 5})
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["items"][0]["input_hash"] == "hash-refine"
-    assert data["items"][0]["themes"][0]["theme_name"] == "玻璃基板"
+    assert client.post("/api/aggregate/refine/jobs", json={}).status_code == 404
+    assert client.get("/api/aggregate/refine/results").status_code == 404
 
 
 def test_recommendation_backtest_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path):
@@ -1233,42 +1005,4 @@ def _classification(
         classifier_version="test",
         created_at=now,
         updated_at=now,
-    )
-
-
-def _refine_result(run_id: str, evidence_ids: list[str]) -> RefineAggregateTopicsResult:
-    local_result = AggregateTopicsResult(
-        trade_date="20260604",
-        extractor_version="test",
-        start_time=datetime.fromisoformat("2026-06-04T09:00:00"),
-        end_time=datetime.fromisoformat("2026-06-04T12:00:00"),
-        categories=["research", "recommendation"],
-        min_classification_confidence=0.7,
-        scoped_message_count=len(evidence_ids),
-        anchored_message_count=len(evidence_ids),
-        topic_count=1,
-        topics=[],
-    )
-    return RefineAggregateTopicsResult(
-        run_id=run_id,
-        input_hash=f"hash-{run_id}",
-        status="succeeded",
-        trade_date="20260604",
-        extractor_version="test",
-        prompt_version="test-prompt",
-        candidate_count=1,
-        theme_count=1,
-        llm_batch_count=1,
-        failed_llm_batches=0,
-        max_concurrency=2,
-        local_result=local_result,
-        themes=[
-            RefinedTheme(
-                theme_name="固态电池聚类",
-                summary="固态电池观点聚合",
-                evidence_message_ids=evidence_ids,
-                confidence=0.82,
-                actionability_score=78,
-            )
-        ],
     )

@@ -16,7 +16,6 @@ import "./leaderboard-responsive.css";
 import "./loading.css";
 import "./messages.css";
 import "./organize.css";
-import "./organize-aggregate.css";
 import "./organize-responsive.css";
 import "./strategy-evidence-chain.css";
 import "./strategy-stock-chart.css";

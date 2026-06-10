@@ -11,7 +11,7 @@ from radar.core.store import connect, init_db, upsert_message_classifications, u
 from radar.web.server.app import create_app
 
 
-def test_messages_overview_endpoint_returns_empty_anchor_heat(tmp_path: Path):
+def test_messages_overview_endpoint_does_not_return_anchor_heat(tmp_path: Path):
     config = _config(tmp_path)
     messages = [
         _message("m1", "2026-06-04T10:00:00"),
@@ -34,10 +34,10 @@ def test_messages_overview_endpoint_returns_empty_anchor_heat(tmp_path: Path):
         conn.close()
 
     client = TestClient(create_app(config))
-    response = client.get("/api/messages/overview", params={"days": 2, "anchor_limit": 5})
+    response = client.get("/api/messages/overview", params={"days": 2})
 
     assert response.status_code == 200
-    assert response.json()["anchor_heat"] == []
+    assert "anchor_heat" not in response.json()
 
 
 def _config(tmp_path: Path) -> RadarConfig:

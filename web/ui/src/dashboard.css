@@ -261,15 +261,6 @@
   height: 310px;
 }
 
-.theme-priority-body {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-}
-
-.theme-priority-canvas {
-  height: 220px;
-}
-
 .observation-watchlist {
   display: grid;
   gap: 0;

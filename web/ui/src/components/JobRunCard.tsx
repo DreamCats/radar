@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Clock3, LoaderCircle } from "lucide-react";
 
 import type { RunItem } from "../types";
 
-type JobRunKind = "ingest" | "classify" | "anchor" | "refine" | "backtest" | "stockEvidenceChain";
+type JobRunKind = "ingest" | "classify" | "anchor" | "backtest" | "stockEvidenceChain";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -83,7 +83,7 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "stockEvidenceChain") {
       return evidenceChainProgress(run);
     }
-    return refineProgress(run);
+    return 8;
   }
   return 100;
 }
@@ -104,16 +104,6 @@ function chunkProgress(run?: RunItem): number {
   const done = numberValue(metadata.completed_chunk_count);
   if (!total) {
     return numberValue(metadata.scanned_count) > 0 ? 25 : 8;
-  }
-  return boundedPercent(done, total);
-}
-
-function refineProgress(run?: RunItem): number {
-  const metadata = run?.metadata ?? {};
-  const total = numberValue(metadata.llm_batch_count) || numberValue(metadata.batch_count);
-  const done = numberValue(metadata.completed_batch_count);
-  if (!total) {
-    return numberValue(metadata.candidate_count) > 0 ? 35 : 8;
   }
   return boundedPercent(done, total);
 }
@@ -152,7 +142,7 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   if (kind === "stockEvidenceChain") {
     return evidenceChainMetrics(run);
   }
-  return refineMetrics(run);
+  return [];
 }
 
 function ingestMetrics(run?: RunItem): string[] {
@@ -206,22 +196,6 @@ function anchorMetrics(run?: RunItem): string[] {
     `成分 ${members} 条`,
     metadata.market_anchor_refreshed === false ? "已复用" : "",
     failedSources ? `失败源 ${failedSources}` : "",
-    durationText(run),
-  ].filter(Boolean);
-}
-
-function refineMetrics(run?: RunItem): string[] {
-  const metadata = run?.metadata ?? {};
-  const candidates = run?.raw_count || numberValue(metadata.candidate_count);
-  const themes = run?.stored_count || numberValue(metadata.theme_count);
-  const batches = numberValue(metadata.llm_batch_count);
-  const failed = run?.filtered_count || numberValue(metadata.failed_llm_batches);
-  return [
-    anchorTradeDateText(metadata),
-    `候选 ${candidates} 个`,
-    `主题 ${themes} 个`,
-    batches ? `批次 ${batches}` : "",
-    failed ? `失败批次 ${failed}` : "失败批次 0",
     durationText(run),
   ].filter(Boolean);
 }
@@ -318,7 +292,7 @@ function kindTitle(kind: JobRunKind): string {
   if (kind === "stockEvidenceChain") {
     return "个股证据链";
   }
-  return "聚合 refine";
+  return "作业";
 }
 
 function durationText(run?: RunItem): string {

@@ -3,17 +3,12 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from radar.core.models import ClassificationRetryMode, MessageCategory, MessageSource, RawMessage
 from radar.core.dashboard import DashboardSummaryPayload
 from radar.core.organize import OrganizeClassificationCluster, OrganizeClassificationSummary, OrganizeEvidenceMessage
-from radar.core.organize_aggregates import (
-    OrganizeAggregateEvidencePage,
-    OrganizeAggregatePage,
-)
 from radar.core.runs import RunRecord
-from radar.core.usecases.aggregation import RefineAggregateTopicsResult
 from radar.core.usecases.recommendation_backtest import (
     DEFAULT_BENCHMARK_TS_CODE,
     DEFAULT_BACKTEST_WINDOWS,
@@ -100,23 +95,12 @@ class MessageOverviewHourResponse(BaseModel):
     count: int
 
 
-class MessageAnchorHeatResponse(BaseModel):
-    name: str
-    anchor_type: Literal["stock", "concept", "industry", "theme"]
-    mention_count: int
-    message_count: int
-    high_value_count: int
-    average_confidence: float
-    latest_message_time: datetime
-
-
 class MessageOverviewResponse(BaseModel):
     summary: MessageOverviewSummaryResponse
     date_buckets: list[MessageOverviewBucketResponse]
     source_breakdown: list[MessageOverviewSourceResponse]
     top_groups: list[MessageOverviewGroupResponse]
     hourly_buckets: list[MessageOverviewHourResponse]
-    anchor_heat: list[MessageAnchorHeatResponse]
 
 
 class RunListResponse(BaseModel):
@@ -196,34 +180,6 @@ class MarketAnchorUpdateRequest(BaseModel):
     min_anchor_count: int = Field(default=100, ge=1, le=100000)
 
 
-class AggregateRefineRequest(BaseModel):
-    trade_date: str
-    source: JobSourceKey = "all"
-    start_time: datetime
-    end_time: datetime
-    force: bool = False
-    categories: list[MessageCategory] = Field(default_factory=lambda: ["research", "recommendation", "industry"])
-    min_classification_confidence: float = Field(default=0.7, ge=0, le=1)
-    min_messages: int = Field(default=2, ge=1, le=100)
-    candidate_limit: int = Field(default=50, ge=1, le=100)
-    evidence_limit: int = Field(default=3, ge=0, le=10)
-    batch_size: int = Field(default=5, ge=1, le=30)
-    max_concurrency: int = Field(default=10, ge=1, le=16)
-    provider_name: str | None = None
-    provider_names: list[str] | None = None
-
-    @field_validator("categories")
-    @classmethod
-    def _reject_event_category(cls, value: list[MessageCategory]) -> list[MessageCategory]:
-        _ensure_no_event_category(value)
-        return value
-
-
-def _ensure_no_event_category(value: list[MessageCategory]) -> None:
-    if "event" in value:
-        raise ValueError("会议活动(event)不参与衍生离线任务输入")
-
-
 class RecommendationBacktestRequest(BaseModel):
     as_of: date
     window_days: int = Field(default=30, ge=1, le=365)
@@ -249,7 +205,7 @@ class StockEvidenceChainJobRequest(BaseModel):
 
 
 class DerivedJobItem(BaseModel):
-    job_type: Literal["anchor", "aggregate_refine", "recommendation_backtest", "stock_evidence_chain"]
+    job_type: Literal["anchor", "recommendation_backtest", "stock_evidence_chain"]
     run_id: str
     reused_existing: bool = False
     status: Literal["running"]
@@ -329,10 +285,6 @@ class ChatTurnResponse(BaseModel):
     tool_messages: list[ChatMessageResponse] = Field(default_factory=list)
 
 
-class AggregateRefineResultListResponse(BaseModel):
-    items: list[RefineAggregateTopicsResult]
-
-
 class OrganizeClassificationResponse(BaseModel):
     summary: OrganizeClassificationSummary
     clusters: list[OrganizeClassificationCluster]
@@ -342,11 +294,3 @@ class OrganizeEvidencePageResponse(BaseModel):
     items: list[OrganizeEvidenceMessage]
     next_cursor_time: datetime | None = None
     next_cursor_id: str | None = None
-
-
-class OrganizeAggregateResponse(OrganizeAggregatePage):
-    pass
-
-
-class OrganizeAggregateEvidencePageResponse(OrganizeAggregateEvidencePage):
-    pass

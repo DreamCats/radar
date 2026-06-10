@@ -22,7 +22,7 @@ def dashboard_summary(config: RadarConfig = Depends(get_config)) -> DashboardSum
     dependency_key = dashboard_dependency_key(config)
     payload = cached_model(
         config.database_path,
-        key=cache_key("dashboard.summary", {"version": 1}),
+        key=cache_key("dashboard.summary", {"version": 2}),
         dependency_key=dependency_key,
         model_type=DashboardSummaryPayload,
         compute=lambda: build_dashboard_summary_payload(config),

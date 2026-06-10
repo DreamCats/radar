@@ -5,7 +5,7 @@ from datetime import date, datetime, time, timedelta
 
 from pydantic import BaseModel
 
-from radar.core.models import MessageAnchorType, MessageSource
+from radar.core.models import MessageSource
 
 
 class MessageOverviewSummary(BaseModel):
@@ -43,23 +43,12 @@ class MessageOverviewHour(BaseModel):
     count: int
 
 
-class MessageAnchorHeat(BaseModel):
-    name: str
-    anchor_type: MessageAnchorType
-    mention_count: int
-    message_count: int
-    high_value_count: int
-    average_confidence: float
-    latest_message_time: datetime
-
-
 class MessageOverview(BaseModel):
     summary: MessageOverviewSummary
     date_buckets: list[MessageOverviewBucket]
     source_breakdown: list[MessageOverviewSource]
     top_groups: list[MessageOverviewGroup]
     hourly_buckets: list[MessageOverviewHour]
-    anchor_heat: list[MessageAnchorHeat]
 
 
 def get_message_overview(
@@ -67,7 +56,6 @@ def get_message_overview(
     *,
     days: int = 14,
     top_limit: int = 8,
-    anchor_limit: int = 20,
 ) -> MessageOverview:
     """按数据库聚合总览数据，避免 Web 首屏拉取大量消息再统计。"""
 
@@ -79,7 +67,6 @@ def get_message_overview(
             source_breakdown=[],
             top_groups=[],
             hourly_buckets=[],
-            anchor_heat=[],
         )
 
     start_date = summary.latest_message_time.date() - timedelta(days=days - 1)
@@ -89,7 +76,6 @@ def get_message_overview(
         source_breakdown=_source_breakdown(conn),
         top_groups=_top_groups(conn, limit=top_limit),
         hourly_buckets=_hourly_buckets(conn),
-        anchor_heat=[],
     )
 
 
