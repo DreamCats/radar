@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, BarChart3, Database, Layers3, ListOrdered, MessageCircle, RadioTower, RefreshCw, Search } from "lucide-react";
+import { Activity, BarChart3, Database, Layers3, ListOrdered, MessageCircle, RadioTower, Search } from "lucide-react";
 
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
@@ -21,8 +21,6 @@ const NAV_ITEMS = [
 
 export function App() {
   const [tab, setTab] = useState<TabKey>("dashboard");
-  const isDashboard = tab === "dashboard";
-  const isImmersive = isDashboard || tab === "strategy";
 
   return (
     <main className="app workspace-shell">
@@ -62,24 +60,8 @@ export function App() {
           </button>
         </div>
       </aside>
-      <section className={isImmersive ? "main workspace-main immersive-main" : "main workspace-main"}>
-        {!isImmersive ? (
-          <header className="topbar">
-            <div className="topbar-title">
-              <span className="title">{pageTitle(tab)}</span>
-              <span className="caption">· local dashboard</span>
-            </div>
-            <div className="system-pill">
-              <span className="pulse-dot" />
-              本地数据核
-            </div>
-            <button className="btn btn-primary btn-sm" type="button" onClick={() => setTab("ingest")}>
-              <RefreshCw size={14} />
-              作业
-            </button>
-          </header>
-        ) : null}
-        <div className={isImmersive ? "content immersive-content" : "content"}>
+      <section className="main workspace-main">
+        <div className="content">
           {tab === "dashboard" && <DashboardPage />}
           {tab === "wechat" && <WechatPage />}
           {tab === "organize" && <OrganizePage />}
@@ -90,16 +72,4 @@ export function App() {
       </section>
     </main>
   );
-}
-
-function pageTitle(tab: TabKey): string {
-  const titles: Record<TabKey, string> = {
-    dashboard: "洞察",
-    wechat: "微信消息",
-    organize: "消息整理",
-    leaderboard: "证据胜率榜",
-    strategy: "个股证据链",
-    ingest: "作业中心",
-  };
-  return titles[tab];
 }
