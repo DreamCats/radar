@@ -33,8 +33,7 @@ export function OverviewChatWorkspace(props: OverviewChatWorkspaceProps) {
   return (
     <div className="overview-chat-workspace">
       <header className="overview-chat-head">
-        <div className="chat-launcher-title">
-          <span>{props.surface}</span>
+        <div className="overview-chat-title">
           <strong>{props.title}</strong>
           <em>{props.subtitle}</em>
         </div>

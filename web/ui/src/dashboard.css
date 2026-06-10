@@ -155,27 +155,46 @@
 
 .overview-chat-head {
   display: flex;
-  min-height: 58px;
+  min-height: 44px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   border-bottom: 1px solid var(--color-hairline);
   background: color-mix(in srgb, var(--color-surface-1) 82%, transparent);
-  padding: 16px;
+  padding: 10px 14px;
 }
 
-.overview-chat-head span,
-.overview-chat-head em {
+.overview-chat-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.overview-chat-title em {
   color: var(--color-ink-subtle);
   font-size: 12px;
   font-style: normal;
+  line-height: 1;
 }
 
-.overview-chat-head strong {
+.overview-chat-title em::before {
+  content: "·";
+  margin-right: 8px;
+  color: var(--color-ink-tertiary);
+}
+
+.overview-chat-title strong {
   overflow-wrap: anywhere;
   color: var(--color-ink);
-  font-size: 18px;
-  line-height: 1.25;
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.overview-chat-head span {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  font-style: normal;
 }
 
 .overview-chat-body {
