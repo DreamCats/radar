@@ -21,9 +21,11 @@
   width: min(920px, calc(100vw - 48px));
   height: min(820px, calc(100vh - 48px));
   overflow: hidden;
-  border: 1px solid var(--color-hairline-strong);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-1);
+  border: 1px solid color-mix(in srgb, var(--color-hairline-strong) 82%, transparent);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.025), transparent 160px),
+    color-mix(in srgb, var(--color-surface-1) 84%, black);
   box-shadow: 0 24px 80px rgb(0 0 0 / 0.42);
 }
 
@@ -38,10 +40,12 @@
 
 .chat-launcher-head {
   display: flex;
+  min-height: 58px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   border-bottom: 1px solid var(--color-hairline);
+  background: color-mix(in srgb, var(--color-surface-1) 82%, transparent);
   padding: 16px;
 }
 
@@ -81,7 +85,7 @@
   gap: 12px;
   min-height: 0;
   overflow: hidden;
-  padding: 14px 16px 18px;
+  padding: 18px;
 }
 
 .chat-launcher-body.with-history {
@@ -289,6 +293,21 @@
   width: min(100%, 760px);
   max-width: 100%;
   padding: 4px 2px;
+}
+
+.chat-workspace .chat-composer {
+  border: 1px solid color-mix(in srgb, var(--color-hairline-strong) 84%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-surface-2) 72%, transparent);
+  padding: 8px;
+  box-shadow: 0 -14px 42px rgb(0 0 0 / 0.16);
+}
+
+.chat-workspace .chat-composer textarea {
+  min-height: 94px;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--color-canvas) 52%, transparent);
+  font-size: 14px;
 }
 
 .chat-typing {

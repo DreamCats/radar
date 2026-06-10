@@ -4,9 +4,9 @@ type MarkdownBlock =
   | { type: "code"; language: string; content: string }
   | { type: "text"; content: string };
 
-export function MarkdownContent({ content }: { content: string }) {
+export function DrawerMarkdownContent({ content }: { content: string }) {
   return (
-    <div className="markdown-content">
+    <div className="drawer-markdown-content">
       {splitMarkdownBlocks(content).map((block, index) =>
         block.type === "code" ? (
           <pre key={index}>
@@ -86,7 +86,7 @@ function TextBlock({ content }: { content: string }) {
       }
       index -= 1;
       nodes.push(
-        <div className="markdown-table-wrap" key={index}>
+        <div className="drawer-markdown-table-wrap" key={index}>
           <table>
             <thead>
               <tr>
@@ -194,7 +194,7 @@ function renderInlineMarkdown(text: string): ReactNode[] {
         nodes.push(leadingText);
       }
       nodes.push(
-        <span className={percentText.startsWith("+") ? "markdown-percent-up" : "markdown-percent-down"} key={match.index}>
+        <span className={percentText.startsWith("+") ? "drawer-markdown-percent-up" : "drawer-markdown-percent-down"} key={match.index}>
           {percentText}
         </span>,
       );
@@ -205,7 +205,7 @@ function renderInlineMarkdown(text: string): ReactNode[] {
         nodes.push(leadingText);
       }
       nodes.push(
-        <span className="markdown-number" key={match.index}>
+        <span className="drawer-markdown-number" key={match.index}>
           {numberText}
         </span>,
       );

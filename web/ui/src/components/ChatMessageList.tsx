@@ -4,6 +4,7 @@ import { useState, type RefObject, type UIEvent } from "react";
 
 import type { ChatMessageItem } from "../types";
 import { toolActivities, type ToolActivityItem } from "./chatHelpers";
+import { DrawerMarkdownContent } from "./DrawerMarkdownContent";
 import { MarkdownContent } from "./MarkdownContent";
 
 type ChatMessageListProps = {
@@ -11,12 +12,15 @@ type ChatMessageListProps = {
   listRef: RefObject<HTMLDivElement | null>;
   messages: ChatMessageItem[];
   emptyState?: "overview";
+  markdownSurface?: "drawer";
   showJumpToBottom: boolean;
   onJumpToBottom: () => void;
   onScrollStateChange: (isNearBottom: boolean) => void;
 };
 
 export function ChatMessageList(props: ChatMessageListProps) {
+  const Content = props.markdownSurface === "drawer" ? DrawerMarkdownContent : MarkdownContent;
+
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     props.onScrollStateChange(isNearBottom(event.currentTarget));
   }
@@ -52,13 +56,13 @@ export function ChatMessageList(props: ChatMessageListProps) {
                 {message.role === "assistant" && (reasoning || activities.length > 0) ? (
                   <details className="chat-reasoning" open={Boolean(message.metadata.streaming)}>
                     <summary>推理过程</summary>
-                    {reasoning ? <MarkdownContent content={reasoning} /> : null}
+                    {reasoning ? <Content content={reasoning} /> : null}
                     {activities.length > 0 ? <ChatToolActivityList activities={activities} /> : null}
                   </details>
                 ) : null}
                 {message.content ? (
                   <>
-                    <MarkdownContent content={message.content} />
+                    <Content content={message.content} />
                     {message.metadata.streaming ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
                   </>
                 ) : (
