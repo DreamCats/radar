@@ -9,10 +9,11 @@ import { formatTime } from "../lib/datetime";
 import type { MessageOverview, RunItem } from "../types";
 
 const SUGGESTED_QUESTIONS = [
-  { label: "今日简报", prompt: "生成今日简报：从本地消息流里找 3 个值得看的方向，说明证据、风险和下一步。" },
-  { label: "未定价异动", prompt: "找出可能还没被行情充分定价的异动线索。" },
-  { label: "噪音过滤", prompt: "从本地消息流里过滤低价值噪音，告诉我哪些内容不值得看，哪些值得进入策略页深挖。" },
-  { label: "复盘作业", prompt: "复盘最近作业：哪些结果值得看，哪些只是噪音？" },
+  { label: "今日简报", prompt: "站在投资人的角度生成今日简报：只列 3 个最值得看的方向，给出原文证据、行情确认、风险和下一步。" },
+  { label: "最值得跟踪", prompt: "从本地消息流里按投资价值排序，找出最值得跟踪的 3 条线索，说明为什么现在值得看。" },
+  { label: "查证据链", prompt: "围绕当前线索补一遍证据链：原文出处、关键催化、行情/资金验证、反证和缺口。" },
+  { label: "资金/K线", prompt: "把当前提到的股票拉一遍资金流和 K 线，判断是发酵、兑现、分歧还是追高。" },
+  { label: "风险排雷", prompt: "站在投资人角度排雷：哪些是旧题材、利好兑现、资金不配合或追高风险，哪些可以暂时不看。" },
 ];
 
 export function DashboardPage() {
