@@ -1,5 +1,3 @@
-import type { StrategyDashboard } from "./types/strategy";
-
 export type MessageSource = "个人消息" | "个人群";
 export type SourceKey = "personal_message" | "group_message";
 export type IngestSource = "all" | SourceKey;
@@ -103,7 +101,6 @@ export type DashboardSummary = {
   classifications: OrganizeClassificationPage;
   aggregates: OrganizeAggregatePage;
   backtest: RecommendationBacktestSummary;
-  strategy: StrategyDashboard;
   runs: RunItem[];
 };
 
@@ -216,18 +213,7 @@ export type {
   IngestResultItem,
   RecommendationBacktestRequest,
   StockEvidenceChainJobRequest,
-  StrategySnapshotBackfillJobRequest,
-  StrategySnapshotSaveRequest,
 } from "./types/jobs";
-
-export type StrategySnapshotSaveResult = {
-  snapshot_id: string;
-  strategy_type: string;
-  generated_at: string;
-  stock_count: number;
-  opportunity_count: number;
-  reused_existing: boolean;
-};
 
 export type BacktestGroupBy =
   | "source"
@@ -409,24 +395,7 @@ export type {
   StockEvidenceChainItem,
   StockEvidenceMarketPoint,
   StockEvidenceMessage,
-  StrategyAttentionLevel,
-  StrategyBacktestMetric,
-  StrategyDashboard,
-  StrategyEventCredibility,
-  StrategyEventCredibilityLevel,
-  StrategyOpportunity,
-  StrategyQuery,
-  StrategyRelatedStock,
-  StrategySourceSignal,
-  StrategyStockCandle,
-  StrategyStockChart,
-  StrategyStockCandidate,
-  StrategyStockChartQuery,
-  StrategyStockDecisionBucket,
-  StrategyStockLifecycleState,
-  StrategyStockPricePosition,
-  StrategyThemeBrief,
-  StrategyValidationMetric,
-  StrategyValidationQuery,
-  StrategyValidationSummary,
+  StockEvidenceStockCandle,
+  StockEvidenceStockChart,
+  StockEvidenceStockChartQuery,
 } from "./types/strategy";

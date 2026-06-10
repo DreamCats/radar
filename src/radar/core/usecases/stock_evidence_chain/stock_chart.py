@@ -11,7 +11,7 @@ from radar.core.tushare import history
 from radar.core.tushare.exceptions import TushareError
 
 
-class StrategyStockCandle(BaseModel):
+class StockEvidenceStockCandle(BaseModel):
     trade_date: str
     open: float
     high: float
@@ -24,19 +24,19 @@ class StrategyStockCandle(BaseModel):
     amount: float | None = None
 
 
-class StrategyStockChart(BaseModel):
+class StockEvidenceStockChart(BaseModel):
     ts_code: str
-    candles: list[StrategyStockCandle] = Field(default_factory=list)
+    candles: list[StockEvidenceStockCandle] = Field(default_factory=list)
     latest_trade_date: str | None = None
     missing_reason: str | None = None
 
 
-def get_strategy_stock_chart(
+def get_stock_evidence_stock_chart(
     config: RadarConfig,
     *,
     ts_code: str,
     days: int = 120,
-) -> StrategyStockChart:
+) -> StockEvidenceStockChart:
     code = ts_code.strip().upper()
     if not code:
         raise ValueError("ts_code 不能为空")
@@ -52,7 +52,7 @@ def get_strategy_stock_chart(
     candles.sort(key=lambda item: item.trade_date)
     limited = candles[-days:]
 
-    return StrategyStockChart(
+    return StockEvidenceStockChart(
         ts_code=code,
         candles=limited,
         latest_trade_date=limited[-1].trade_date if limited else None,
@@ -92,7 +92,7 @@ def _lookback_start(days: int) -> str:
     return (dt.date.today() - dt.timedelta(days=lookback_days)).strftime("%Y%m%d")
 
 
-def _candle(row: dict[str, Any]) -> StrategyStockCandle | None:
+def _candle(row: dict[str, Any]) -> StockEvidenceStockCandle | None:
     trade_date = str(row.get("trade_date") or "")
     open_price = _float(row.get("open"))
     high = _float(row.get("high"))
@@ -100,7 +100,7 @@ def _candle(row: dict[str, Any]) -> StrategyStockCandle | None:
     close = _float(row.get("close"))
     if not trade_date or open_price is None or high is None or low is None or close is None:
         return None
-    return StrategyStockCandle(
+    return StockEvidenceStockCandle(
         trade_date=trade_date,
         open=open_price,
         high=high,

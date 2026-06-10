@@ -86,7 +86,7 @@ export function OrganizeAggregateView(props: {
                   evidence={themeEvidenceLines(props.selected)}
                   suggestedQuestions={[
                     "把这个主题总结成投资逻辑、催化、风险和跟踪问题。",
-                    "这个主题现在更像早期机会、发酵确认，还是过热复盘？",
+                    "这个主题现在更像早期线索、个股证据链候选，还是过热复盘？",
                     "相关标的里哪些需要优先验证？请说明依据和风险。",
                   ]}
                 />

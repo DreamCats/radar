@@ -34,16 +34,9 @@ import type {
   RecommendationBacktestSummary,
   RunItem,
   StockEvidenceChainDashboard,
-  StrategyDashboard,
   StockEvidenceChainJobRequest,
-  StrategySnapshotBackfillJobRequest,
-  StrategySnapshotSaveRequest,
-  StrategySnapshotSaveResult,
-  StrategyQuery,
-  StrategyStockChart,
-  StrategyStockChartQuery,
-  StrategyValidationQuery,
-  StrategyValidationSummary,
+  StockEvidenceStockChart,
+  StockEvidenceStockChartQuery,
 } from "../types";
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
@@ -235,20 +228,12 @@ export async function fetchRecommendationBacktestSummary(query: {
   return getJson(`/api/recommendation/backtest/summary?${params(query)}`);
 }
 
-export async function fetchStrategyOpportunities(query: StrategyQuery = {}): Promise<StrategyDashboard> {
-  return getJson(`/api/strategy/opportunities?${params(query)}`);
-}
-
 export async function fetchStockEvidenceChainLatest(query: { limit?: number } = {}): Promise<StockEvidenceChainDashboard> {
   return getJson(`/api/strategy/evidence-chain/latest?${params(query)}`);
 }
 
-export async function fetchStrategyStockChart(tsCode: string, query: StrategyStockChartQuery = {}): Promise<StrategyStockChart> {
+export async function fetchStockEvidenceStockChart(tsCode: string, query: StockEvidenceStockChartQuery = {}): Promise<StockEvidenceStockChart> {
   return getJson(`/api/strategy/stocks/${encodeURIComponent(tsCode)}/chart?${params(query)}`);
-}
-
-export async function fetchStrategyValidation(query: StrategyValidationQuery = {}): Promise<StrategyValidationSummary> {
-  return getJson(`/api/strategy/validation?${params(query)}`);
 }
 
 export async function ingestWechat(request: IngestRequest): Promise<IngestResultItem[]> {
@@ -318,31 +303,6 @@ export async function startAggregateRefineJob(request: AggregateRefineRequest): 
 
 export async function startRecommendationBacktestJob(request: RecommendationBacktestRequest): Promise<DerivedJobItem[]> {
   const response = await fetch(`${apiBase}/api/recommendation/backtest/jobs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    throw new Error(await errorText(response));
-  }
-  const data = (await response.json()) as { items: DerivedJobItem[] };
-  return data.items;
-}
-
-export async function saveStrategySnapshot(request: StrategySnapshotSaveRequest): Promise<StrategySnapshotSaveResult> {
-  const response = await fetch(`${apiBase}/api/strategy/snapshots`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    throw new Error(await errorText(response));
-  }
-  return (await response.json()) as StrategySnapshotSaveResult;
-}
-
-export async function startStrategyBackfillJob(request: StrategySnapshotBackfillJobRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/strategy/snapshots/backfill/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

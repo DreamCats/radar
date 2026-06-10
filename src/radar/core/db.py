@@ -276,80 +276,6 @@ MESSAGE_MIGRATIONS: list[Migration] = [
         """,
     ),
     (
-        "011_strategy_snapshots",
-        """
-        CREATE TABLE IF NOT EXISTS strategy_snapshots (
-            snapshot_id       TEXT PRIMARY KEY,
-            strategy_type     TEXT NOT NULL,
-            start_time        TEXT NOT NULL,
-            end_time          TEXT NOT NULL,
-            recent_start_time TEXT NOT NULL,
-            generated_at      TEXT NOT NULL,
-            created_at        TEXT NOT NULL,
-            opportunity_count INTEGER NOT NULL,
-            stock_count       INTEGER NOT NULL,
-            payload_json      TEXT NOT NULL
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_strategy_snapshots_generated
-            ON strategy_snapshots(strategy_type, generated_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_strategy_snapshots_window
-            ON strategy_snapshots(strategy_type, end_time DESC);
-
-        CREATE TABLE IF NOT EXISTS strategy_snapshot_stocks (
-            snapshot_id                  TEXT NOT NULL,
-            ts_code                      TEXT NOT NULL,
-            stock_name                   TEXT NOT NULL,
-            rank                         INTEGER NOT NULL,
-            decision_bucket              TEXT NOT NULL,
-            decision_reason              TEXT,
-            realtime_score               REAL NOT NULL,
-            credibility_level            TEXT,
-            lifecycle_state              TEXT,
-            price_position               TEXT,
-            first_seen_time              TEXT,
-            latest_message_time          TEXT,
-            event_count                  INTEGER NOT NULL,
-            source_count                 INTEGER NOT NULL,
-            win_rate_t5                  REAL,
-            average_excess_return_t5     REAL,
-            first_source_name            TEXT,
-            payload_json                 TEXT NOT NULL,
-            PRIMARY KEY (snapshot_id, ts_code),
-            FOREIGN KEY (snapshot_id) REFERENCES strategy_snapshots(snapshot_id) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_strategy_snapshot_stocks_bucket
-            ON strategy_snapshot_stocks(decision_bucket, realtime_score DESC);
-        CREATE INDEX IF NOT EXISTS idx_strategy_snapshot_stocks_code
-            ON strategy_snapshot_stocks(ts_code, snapshot_id);
-
-        CREATE TABLE IF NOT EXISTS strategy_snapshot_returns (
-            snapshot_id              TEXT NOT NULL,
-            ts_code                  TEXT NOT NULL,
-            window_days              INTEGER NOT NULL,
-            benchmark_ts_code        TEXT NOT NULL,
-            base_trade_date          TEXT,
-            target_trade_date        TEXT,
-            base_close               REAL,
-            target_close             REAL,
-            return_rate              REAL,
-            benchmark_return_rate    REAL,
-            excess_return_rate       REAL,
-            max_drawdown_rate        REAL,
-            status                   TEXT NOT NULL,
-            error_message            TEXT,
-            updated_at               TEXT NOT NULL,
-            PRIMARY KEY (snapshot_id, ts_code, window_days, benchmark_ts_code),
-            FOREIGN KEY (snapshot_id, ts_code)
-                REFERENCES strategy_snapshot_stocks(snapshot_id, ts_code) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_strategy_snapshot_returns_status
-            ON strategy_snapshot_returns(status, updated_at DESC);
-        """,
-    ),
-    (
         "012_view_cache",
         """
         CREATE TABLE IF NOT EXISTS view_cache (
@@ -501,7 +427,24 @@ MESSAGE_MIGRATIONS: list[Migration] = [
         WHERE kind IN ('source_extract', 'source_radar_snapshot');
         """,
     ),
-] + EVIDENCE_CHAIN_MIGRATIONS
+] + EVIDENCE_CHAIN_MIGRATIONS + [
+    (
+        "019_drop_deprecated_fermentation_strategy",
+        """
+        DROP TABLE IF EXISTS strategy_snapshot_returns;
+        DROP TABLE IF EXISTS strategy_snapshot_stocks;
+        DROP TABLE IF EXISTS strategy_snapshots;
+
+        DELETE FROM view_cache
+        WHERE cache_key LIKE 'strategy.opportunities%'
+           OR cache_key LIKE 'strategy.validation%';
+
+        DELETE FROM runs
+        WHERE kind = 'strategy_snapshot_backfill'
+           OR target LIKE 'opportunity_signal:%';
+        """,
+    ),
+]
 
 MARKET_MIGRATIONS: list[Migration] = [
     (

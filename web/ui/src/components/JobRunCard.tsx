@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Clock3, LoaderCircle } from "lucide-react";
 
 import type { RunItem } from "../types";
 
-type JobRunKind = "ingest" | "classify" | "anchor" | "refine" | "backtest" | "strategyBackfill" | "stockEvidenceChain";
+type JobRunKind = "ingest" | "classify" | "anchor" | "refine" | "backtest" | "stockEvidenceChain";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -74,7 +74,7 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "classify" || kind === "anchor") {
       return chunkProgress(run);
     }
-    if (kind === "backtest" || kind === "strategyBackfill") {
+    if (kind === "backtest") {
       return backtestProgress(run);
     }
     if (kind === "stockEvidenceChain") {
@@ -145,9 +145,6 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   }
   if (kind === "backtest") {
     return backtestMetrics(run);
-  }
-  if (kind === "strategyBackfill") {
-    return strategyBackfillMetrics(run);
   }
   if (kind === "stockEvidenceChain") {
     return evidenceChainMetrics(run);
@@ -249,25 +246,6 @@ function backtestMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
-function strategyBackfillMetrics(run?: RunItem): string[] {
-  const metadata = run?.metadata ?? {};
-  const snapshots = numberValue(metadata.snapshot_count);
-  const stocks = run?.raw_count || 0;
-  const refreshed = numberValue(metadata.refreshed_count) || run?.stored_count || 0;
-  const pending = numberValue(metadata.pending_count);
-  const missing = numberValue(metadata.missing_price_count);
-  const failed = numberValue(metadata.failed_count);
-  return [
-    `快照 ${snapshots} 份`,
-    `股票 ${stocks} 个`,
-    `已回填 ${refreshed}`,
-    `待成熟 ${pending}`,
-    `缺行情 ${missing}`,
-    `失败 ${failed}`,
-    durationText(run),
-  ].filter(Boolean);
-}
-
 function evidenceChainMetrics(run?: RunItem): string[] {
   const metadata = run?.metadata ?? {};
   const indexed = numberValue(metadata.indexed_messages) || run?.raw_count || 0;
@@ -335,9 +313,6 @@ function kindTitle(kind: JobRunKind): string {
   }
   if (kind === "backtest") {
     return "推荐回测补齐";
-  }
-  if (kind === "strategyBackfill") {
-    return "策略快照回填";
   }
   if (kind === "stockEvidenceChain") {
     return "个股证据链";

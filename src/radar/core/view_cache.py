@@ -113,21 +113,6 @@ def dashboard_dependency_key(config: RadarConfig) -> str:
     )
 
 
-def strategy_dependency_key(config: RadarConfig) -> str:
-    return dashboard_dependency_key(config)
-
-
-def strategy_validation_dependency_key(config: RadarConfig) -> str:
-    with connect(config.database_path) as conn:
-        migrate_message_db(conn)
-        parts = {
-            "strategy_snapshots": _table_signature(conn, "strategy_snapshots", "generated_at"),
-            "strategy_snapshot_stocks": _table_signature(conn, "strategy_snapshot_stocks", "latest_message_time"),
-            "strategy_snapshot_returns": _table_signature(conn, "strategy_snapshot_returns", "updated_at"),
-        }
-    return _hash_parts(parts)
-
-
 def cleanup_cache(database: Path, *, keep: int = 500) -> int:
     with connect(database) as conn:
         migrate_message_db(conn)

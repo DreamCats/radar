@@ -6,7 +6,6 @@ export type JobTemplateKey =
   | "anchor"
   | "refine"
   | "backtest"
-  | "strategyBackfill"
   | "stockEvidenceChain";
 
 export type TrackedJob = {
@@ -22,7 +21,6 @@ const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   message_anchor_range: "anchor",
   aggregate_refine: "refine",
   recommendation_backtest_refresh: "backtest",
-  strategy_snapshot_backfill: "strategyBackfill",
   stock_evidence_chain: "stockEvidenceChain",
 };
 
@@ -78,9 +76,6 @@ export function sourceLabel(value: IngestSource): string {
 }
 
 function sourceFromRun(run: RunItem): string {
-  if (run.kind === "strategy_snapshot_backfill") {
-    return "发酵确认";
-  }
   if (run.kind === "stock_evidence_chain") {
     return "全库证据";
   }

@@ -19,7 +19,7 @@ from radar.core.messages import (
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db
 from radar.core.usecases.recommendation_backtest import DEFAULT_BACKTEST_WINDOWS, summarize_recommendation_backtests
-from radar.core.usecases.strategy import build_strategy_dashboard
+from radar.core.usecases.stock_evidence_chain import latest_stock_evidence_chain
 
 
 class RadarBuiltinExtension:
@@ -37,7 +37,7 @@ class RadarBuiltinExtension:
             self._get_message_context_tool(),
             self._message_overview_tool(),
             *RadarTushareTools(self.config).tools(),
-            self._strategy_dashboard_tool(),
+            self._stock_evidence_chain_tool(),
             self._backtest_summary_tool(),
         ):
             context.register_tool(tool)
@@ -107,18 +107,16 @@ class RadarBuiltinExtension:
             handler=self._message_overview,
         )
 
-    def _strategy_dashboard_tool(self) -> ChatTool:
+    def _stock_evidence_chain_tool(self) -> ChatTool:
         return ChatTool(
-            name="radar_strategy_dashboard",
-            description="读取 radar 策略看板摘要，包括机会、源头质量和股票候选。",
+            name="radar_stock_evidence_chain",
+            description="读取 radar 最新个股证据链判断，包括股票阶段、证据、风险和市场证据摘要。",
             input_schema=_object_schema(
                 {
-                    "days": {"type": "integer", "minimum": 1, "maximum": 90},
-                    "recent_days": {"type": "integer", "minimum": 1, "maximum": 30},
-                    "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 50},
                 }
             ),
-            handler=self._strategy_dashboard,
+            handler=self._stock_evidence_chain,
         )
 
     def _backtest_summary_tool(self) -> ChatTool:
@@ -218,13 +216,8 @@ class RadarBuiltinExtension:
             conn.close()
         return overview.model_dump(mode="json")
 
-    def _strategy_dashboard(self, args: dict[str, Any]) -> dict[str, Any]:
-        dashboard = build_strategy_dashboard(
-            self.config,
-            days=_bounded_int(args.get("days"), default=30, maximum=90),
-            recent_days=_bounded_int(args.get("recent_days"), default=7, maximum=30),
-            limit=_bounded_int(args.get("limit"), default=8, maximum=20),
-        )
+    def _stock_evidence_chain(self, args: dict[str, Any]) -> dict[str, Any]:
+        dashboard = latest_stock_evidence_chain(self.config, limit=_bounded_int(args.get("limit"), default=20, maximum=50))
         return dashboard.model_dump(mode="json")
 
     def _backtest_summary(self, args: dict[str, Any]) -> dict[str, Any]:

@@ -14,7 +14,6 @@ from radar.core.usecases.recommendation_backtest import (
     RecommendationBacktestSummaryResult,
     summarize_recommendation_backtests,
 )
-from radar.core.usecases.strategy import StrategyDashboard, build_strategy_dashboard
 
 
 class DashboardSummaryPayload(BaseModel):
@@ -22,7 +21,6 @@ class DashboardSummaryPayload(BaseModel):
     classifications: OrganizeClassificationPage
     aggregates: OrganizeAggregatePage
     backtest: RecommendationBacktestSummaryResult
-    strategy: StrategyDashboard
 
 
 def build_dashboard_summary_payload(config: RadarConfig) -> DashboardSummaryPayload:
@@ -49,11 +47,9 @@ def build_dashboard_summary_payload(config: RadarConfig) -> DashboardSummaryPayl
         min_count=3,
         limit=200,
     )
-    strategy = build_strategy_dashboard(config, days=30, recent_days=7, limit=3)
     return DashboardSummaryPayload(
         overview=overview,
         classifications=classifications,
         aggregates=aggregates,
         backtest=backtest,
-        strategy=strategy,
     )

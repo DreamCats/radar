@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
-import {
-  fetchDashboardSummary,
-} from "../api/radarApi";
+import { fetchDashboardSummary } from "../api/radarApi";
 import { ChatLauncher } from "../components/ChatLauncher";
 import { ClassificationDistributionChart } from "../components/ClassificationDistributionChart";
 import { LeaderboardAlphaChart } from "../components/LeaderboardAlphaChart";
 import { AnchorHeatChart, ThemePriorityBubbleChart, TopGroupsChart, TrendChart } from "../components/OverviewCharts";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
-import { StrategyTopSummary } from "../components/StrategyTopSummary";
 import { formatTime } from "../lib/datetime";
 import type {
   MessageOverview,
@@ -17,7 +14,6 @@ import type {
   OrganizeClassificationPage,
   RecommendationBacktestSummary,
   RunItem,
-  StrategyDashboard,
 } from "../types";
 
 const emptyClassificationPage: OrganizeClassificationPage = {
@@ -47,12 +43,11 @@ const emptyBacktestSummary: RecommendationBacktestSummary = {
   rows: [],
 };
 
-export function DashboardPage({ onOpenStrategy }: { onOpenStrategy: () => void }) {
+export function DashboardPage() {
   const [overview, setOverview] = useState<MessageOverview | null>(null);
   const [classificationPage, setClassificationPage] = useState<OrganizeClassificationPage>(emptyClassificationPage);
   const [aggregatePage, setAggregatePage] = useState<OrganizeAggregatePage>(emptyAggregatePage);
   const [backtestSummary, setBacktestSummary] = useState<RecommendationBacktestSummary>(emptyBacktestSummary);
-  const [strategyData, setStrategyData] = useState<StrategyDashboard | null>(null);
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +61,6 @@ export function DashboardPage({ onOpenStrategy }: { onOpenStrategy: () => void }
       setClassificationPage(summary.classifications);
       setAggregatePage(summary.aggregates);
       setBacktestSummary(summary.backtest);
-      setStrategyData(summary.strategy);
       setRuns(summary.runs);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
@@ -110,10 +104,9 @@ export function DashboardPage({ onOpenStrategy }: { onOpenStrategy: () => void }
                 { label: "硬过滤", value: filteredTotal },
                 { label: "有效分类", value: classificationPage.summary.total_count },
                 { label: "聚类主题", value: aggregatePage.themes.length },
-                { label: "策略机会", value: strategyData?.opportunity_count ?? 0 },
                 { label: "最新消息", value: summary.latest_message_time ? formatTime(summary.latest_message_time) : null },
               ]}
-              evidence={dashboardBriefEvidence(overview, classificationPage, aggregatePage, strategyData, backtestSummary)}
+              evidence={dashboardBriefEvidence(overview, classificationPage, aggregatePage, backtestSummary)}
               suggestedQuestions={[
                 "今天最值得看的三个机会是什么？请给出证据、风险和下一步验证。",
                 "总览里哪些信号可能只是噪音，哪些值得进入策略页深挖？",
@@ -127,7 +120,7 @@ export function DashboardPage({ onOpenStrategy }: { onOpenStrategy: () => void }
           </button>
         </div>
       </div>
-      {initialLoading && <PageLoadingState label="正在聚合总览、榜单和策略信号" variant="dashboard" />}
+      {initialLoading && <PageLoadingState label="正在聚合总览、榜单和消息信号" variant="dashboard" />}
       {!initialLoading && (
         <>
       <div className="statbar metric-grid">
@@ -138,7 +131,6 @@ export function DashboardPage({ onOpenStrategy }: { onOpenStrategy: () => void }
       </div>
       {error && <p className="error-line">{error}</p>}
       <div className="overview-chart-grid">
-        <StrategyTopSummary data={strategyData} onOpenStrategy={onOpenStrategy} />
         <LeaderboardAlphaChart rows={backtestSummary.rows} dimension={backtestSummary.group_by} />
         <ThemePriorityBubbleChart themes={aggregatePage.themes} />
         <AnchorHeatChart data={overview?.anchor_heat ?? []} />
@@ -159,7 +151,6 @@ function dashboardBriefEvidence(
   overview: MessageOverview | null,
   classificationPage: OrganizeClassificationPage,
   aggregatePage: OrganizeAggregatePage,
-  strategyData: StrategyDashboard | null,
   backtestSummary: RecommendationBacktestSummary,
 ): string[] {
   return [
@@ -174,9 +165,6 @@ function dashboardBriefEvidence(
       : "",
     aggregatePage.themes.length
       ? `主题：${aggregatePage.themes.slice(0, 5).map((item) => `${item.theme_name} ${Math.round(item.priority_score)}`).join(" / ")}`
-      : "",
-    strategyData?.opportunities.length
-      ? `策略机会：${strategyData.opportunities.slice(0, 5).map((item) => `${item.name} ${item.attention_level} ${item.score.toFixed(0)}`).join(" / ")}`
       : "",
     backtestSummary.rows.length
       ? `回测榜：${backtestSummary.rows.slice(0, 5).map((item) => `${item.key} ${item.event_count}事件`).join(" / ")}`

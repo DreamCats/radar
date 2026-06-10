@@ -5,7 +5,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   cancelRun,
   fetchRuns,
-  saveStrategySnapshot,
 } from "../api/radarApi";
 import { DateField, SelectField, TextField } from "../components/FormFields";
 import { JobRunCard } from "../components/JobRunCard";
@@ -74,7 +73,7 @@ export function IngestPage() {
   const rangePresets = selectedJob === "ingest" ? INGEST_RANGE_PRESETS : RANGE_PRESETS;
   const configGridClass = [
     "job-config-grid",
-    selectedJob === "strategyBackfill" || selectedJob === "stockEvidenceChain" ? "strategy" : "",
+    selectedJob === "stockEvidenceChain" ? "strategy" : "",
   ].filter(Boolean).join(" ");
 
   useEffect(() => {
@@ -135,24 +134,11 @@ export function IngestPage() {
         window: { start_time, end_time },
       });
       setTrackedJobs((current) => mergeTrackedJobs(newJobs, current));
-      const snapshotError = selectedJob === "backtest" ? await saveFermentationSnapshot() : null;
       await refreshRunsAndResults();
-      if (snapshotError) {
-        setError(`回测任务已提交，但自动保存发酵确认快照失败：${snapshotError}`);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "作业提交失败");
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function saveFermentationSnapshot(): Promise<string | null> {
-    try {
-      await saveStrategySnapshot({ days: 30, recent_days: 7, limit: 12, force: false });
-      return null;
-    } catch (err) {
-      return err instanceof Error ? err.message : "未知错误";
     }
   }
 
@@ -201,7 +187,7 @@ export function IngestPage() {
 
   function selectJob(kind: JobTemplateKey) {
     setSelectedJob(kind);
-    const needsHistoryWindow = kind === "backtest" || kind === "strategyBackfill";
+    const needsHistoryWindow = kind === "backtest";
     if (!needsHistoryWindow && preset === "last30d") {
       const nextRange = buildYesterdayCloseRange();
       setPreset("yesterdayClose");
@@ -284,7 +270,7 @@ export function IngestPage() {
                 <PanelTitle title={selectedTemplate.title} meta={`${selectedTemplate.meta} · ${selectedTemplate.serves}`} />
               </div>
               <div className={configGridClass}>
-                {selectedJob !== "strategyBackfill" && selectedJob !== "stockEvidenceChain" && (
+                {selectedJob !== "stockEvidenceChain" && (
                   <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
                 )}
                 <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
@@ -292,12 +278,10 @@ export function IngestPage() {
                 {(selectedJob === "anchor" || selectedJob === "refine") && (
                   <TextField label="交易日" value={tradeDate} onChange={setTradeDate} />
                 )}
-                {selectedJob !== "strategyBackfill" && (
-                  <label className="toggle-field">
-                    <input checked={force} type="checkbox" onChange={(event) => setForce(event.target.checked)} />
-                    <span>{forceLabel(selectedJob)}</span>
-                  </label>
-                )}
+                <label className="toggle-field">
+                  <input checked={force} type="checkbox" onChange={(event) => setForce(event.target.checked)} />
+                  <span>{forceLabel(selectedJob)}</span>
+                </label>
                 <button
                   className="primary-button ingest-submit"
                   type="button"

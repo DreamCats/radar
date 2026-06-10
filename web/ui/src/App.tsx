@@ -77,7 +77,7 @@ export function App() {
           </button>
         </header>
         <div className="content">
-          {tab === "dashboard" && <DashboardPage onOpenStrategy={() => setTab("strategy")} />}
+          {tab === "dashboard" && <DashboardPage />}
           {tab === "wechat" && <WechatPage />}
           {tab === "messages" && <MessagesPage />}
           {tab === "organize" && <OrganizePage />}
@@ -97,7 +97,7 @@ function pageTitle(tab: TabKey): string {
     messages: "消息查询",
     organize: "消息整理",
     leaderboard: "推荐胜率榜",
-    strategy: "策略信号",
+    strategy: "个股证据链",
     ingest: "作业中心",
   };
   return titles[tab];

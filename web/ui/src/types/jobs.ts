@@ -93,20 +93,6 @@ export type RecommendationBacktestRequest = {
   force: boolean;
 };
 
-export type StrategySnapshotSaveRequest = {
-  days: number;
-  recent_days: number;
-  limit: number;
-  force: boolean;
-};
-
-export type StrategySnapshotBackfillJobRequest = {
-  start_time: string;
-  end_time: string;
-  windows: number[];
-  benchmark_ts_code: string;
-};
-
 export type StockEvidenceChainJobRequest = {
   start_time: string;
   end_time: string;

@@ -5,7 +5,6 @@ import {
   startIngestWechatJob,
   startRecommendationBacktestJob,
   startStockEvidenceChainJob,
-  startStrategyBackfillJob,
 } from "../api/radarApi";
 import type { IngestSource } from "../types";
 import { DEFAULT_CATEGORIES } from "./jobTemplates";
@@ -79,15 +78,6 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
       force,
     });
     return derivedJobs(kind, sourceLabel(source), items);
-  }
-  if (kind === "strategyBackfill") {
-    const items = await startStrategyBackfillJob({
-      start_time: window.start_time,
-      end_time: window.end_time,
-      windows: [1, 3, 5, 10],
-      benchmark_ts_code: "000300.SH",
-    });
-    return derivedJobs(kind, "发酵确认", items);
   }
   if (kind === "stockEvidenceChain") {
     const items = await startStockEvidenceChainJob({

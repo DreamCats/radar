@@ -1,4 +1,4 @@
-import { Anchor, Bot, ChartNoAxesCombined, Database, GitBranch, Search, Sparkles } from "lucide-react";
+import { Anchor, Bot, ChartNoAxesCombined, Database, GitBranch, Sparkles } from "lucide-react";
 
 import type { IngestSource, MessageCategory } from "../types";
 import type { JobTemplateKey } from "./jobRuns";
@@ -18,12 +18,9 @@ const ALL_JOB_TEMPLATES = [
   { key: "refine", title: "聚合 Refine", meta: "LLM 聚合", serves: "服务于总览 / 整理", icon: Sparkles },
   { key: "backtest", title: "推荐回测补齐", meta: "T+N 补齐", serves: "服务于榜单胜率回测", icon: ChartNoAxesCombined },
   { key: "stockEvidenceChain", title: "个股证据链", meta: "策略离线", serves: "服务于早期筛选 / 阶段判断", icon: GitBranch },
-  { key: "strategyBackfill", title: "策略快照回填", meta: "已有快照 T+N", serves: "服务于策略 tab / 策略验证", icon: Search },
 ] satisfies Array<{ key: JobTemplateKey; title: string; meta: string; serves: string; icon: typeof Database }>;
 
-const HIDDEN_JOB_TEMPLATE_KEYS = new Set<JobTemplateKey>(["strategyBackfill"]);
-
-export const JOB_TEMPLATES = ALL_JOB_TEMPLATES.filter((item) => !HIDDEN_JOB_TEMPLATE_KEYS.has(item.key));
+export const JOB_TEMPLATES = ALL_JOB_TEMPLATES;
 
 export const JOB_TEMPLATE_GROUPS = [
   {
@@ -32,7 +29,7 @@ export const JOB_TEMPLATE_GROUPS = [
   },
   {
     title: "策略作业",
-    items: JOB_TEMPLATES.filter((item) => ["stockEvidenceChain", "strategyBackfill"].includes(item.key)),
+    items: JOB_TEMPLATES.filter((item) => item.key === "stockEvidenceChain"),
   },
 ].filter((group) => group.items.length > 0);
 
@@ -48,9 +45,6 @@ export function configHints(kind: JobTemplateKey): string[] {
   }
   if (kind === "backtest") {
     return ["默认近 30 天", "补齐 T+1/T+2/T+3/T+5", "已完成窗口自动跳过", "未成熟下次继续补"];
-  }
-  if (kind === "strategyBackfill") {
-    return ["默认近 30 天快照", "只回填已有快照", "回填 T+1/T+3/T+5/T+10", "未成熟下次继续补"];
   }
   if (kind === "stockEvidenceChain") {
     return ["默认证据回看 40 天", "候选最多 120 只", "LLM 并发 16", "相同证据自动复用判断"];

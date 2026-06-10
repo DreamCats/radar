@@ -12,7 +12,7 @@ from radar.web.server.classify_jobs import mark_stale_classify_runs
 from radar.web.server.deps import get_config
 from radar.web.server.ingest_jobs import mark_stale_ingest_runs
 from radar.web.server.schemas import DashboardSummaryResponse
-from radar.web.server.strategy_jobs import mark_stale_strategy_runs
+from radar.web.server.strategy_jobs import mark_stale_stock_evidence_chain_runs
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -36,5 +36,5 @@ def _recent_runs(config: RadarConfig):
     mark_stale_classify_runs(config)
     mark_stale_aggregate_runs(config)
     mark_stale_backtest_runs(config)
-    mark_stale_strategy_runs(config)
+    mark_stale_stock_evidence_chain_runs(config)
     return list_runs(config.database_path, limit=20)
