@@ -4,12 +4,11 @@ import { Activity, BarChart3, Database, Layers3, ListOrdered, MessageCircle, Rad
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
-import { MessagesPage } from "./pages/MessagesPage";
 import { OrganizePage } from "./pages/OrganizePage";
 import { StrategyPage } from "./pages/StrategyPage";
 import { WechatPage } from "./pages/WechatPage";
 
-type TabKey = "dashboard" | "wechat" | "messages" | "organize" | "leaderboard" | "strategy" | "ingest";
+type TabKey = "dashboard" | "wechat" | "organize" | "leaderboard" | "strategy" | "ingest";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "总览", icon: Activity },
@@ -79,7 +78,6 @@ export function App() {
         <div className="content">
           {tab === "dashboard" && <DashboardPage />}
           {tab === "wechat" && <WechatPage />}
-          {tab === "messages" && <MessagesPage />}
           {tab === "organize" && <OrganizePage />}
           {tab === "leaderboard" && <LeaderboardPage />}
           {tab === "strategy" && <StrategyPage />}
@@ -94,7 +92,6 @@ function pageTitle(tab: TabKey): string {
   const titles: Record<TabKey, string> = {
     dashboard: "数据概览",
     wechat: "微信消息",
-    messages: "消息查询",
     organize: "消息整理",
     leaderboard: "证据胜率榜",
     strategy: "个股证据链",

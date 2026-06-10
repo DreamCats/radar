@@ -14,7 +14,6 @@ import "./leaderboard.css";
 import "./leaderboard-motion.css";
 import "./leaderboard-responsive.css";
 import "./loading.css";
-import "./messages.css";
 import "./organize.css";
 import "./organize-responsive.css";
 import "./strategy-evidence-chain.css";
