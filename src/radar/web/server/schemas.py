@@ -190,23 +190,10 @@ class ClassifyMessagesJobResponse(BaseModel):
     items: list[ClassifyMessagesJobItem]
 
 
-class AnchorMessagesRequest(BaseModel):
+class MarketAnchorUpdateRequest(BaseModel):
     trade_date: str
-    source: JobSourceKey = "all"
-    start_time: datetime
-    end_time: datetime
     force: bool = False
-    chunk_hours: int = Field(default=1, ge=1, le=24)
-    limit: int = Field(default=500, ge=1, le=5000)
-    categories: list[MessageCategory] = Field(default_factory=lambda: ["research", "recommendation", "industry"])
-    min_classification_confidence: float = Field(default=0.7, ge=0, le=1)
-    max_anchors: int = Field(default=7, ge=1, le=20)
-
-    @field_validator("categories")
-    @classmethod
-    def _reject_event_category(cls, value: list[MessageCategory]) -> list[MessageCategory]:
-        _ensure_no_event_category(value)
-        return value
+    min_anchor_count: int = Field(default=100, ge=1, le=100000)
 
 
 class AggregateRefineRequest(BaseModel):

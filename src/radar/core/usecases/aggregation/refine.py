@@ -24,8 +24,7 @@ from radar.core.usecases.aggregation.models import (
 from radar.core.usecases.aggregation.prompts import REFINE_PROMPT_VERSION
 from radar.core.usecases.aggregation.refine_llm import refine_batch_with_llm
 from radar.core.usecases.aggregation.storage import load_refine_result, store_refine_result
-from radar.core.usecases.aggregation.topics import aggregate_topics
-from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION
+from radar.core.usecases.aggregation.topics import AGGREGATE_EXTRACTOR_VERSION, aggregate_topics
 from radar.core.work_pool import run_work_pool
 
 REFINE_TASK = "aggregate_refine"
@@ -46,7 +45,7 @@ def refine_aggregate_topics(
     source: MessageSource | None = None,
     categories: list[MessageCategory] | None = None,
     min_classification_confidence: float = 0.7,
-    extractor_version: str = ANCHOR_EXTRACTOR_VERSION,
+    extractor_version: str = AGGREGATE_EXTRACTOR_VERSION,
     min_messages: int = 2,
     candidate_limit: int = REFINE_CANDIDATE_LIMIT,
     evidence_limit: int = 3,

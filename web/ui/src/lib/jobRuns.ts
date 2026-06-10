@@ -18,7 +18,7 @@ export type TrackedJob = {
 const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   wechat_ingest_range: "ingest",
   message_classify_range: "classify",
-  message_anchor_range: "anchor",
+  market_anchor_update: "anchor",
   aggregate_refine: "refine",
   recommendation_backtest_refresh: "backtest",
   stock_evidence_chain: "stockEvidenceChain",
@@ -78,6 +78,9 @@ export function sourceLabel(value: IngestSource): string {
 function sourceFromRun(run: RunItem): string {
   if (run.kind === "stock_evidence_chain") {
     return "全库证据";
+  }
+  if (run.kind === "market_anchor_update") {
+    return "市场词库";
   }
   const source = textValue(run.metadata.source);
   if (source && !isSourceKey(source)) {

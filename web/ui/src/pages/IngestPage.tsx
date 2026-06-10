@@ -56,7 +56,8 @@ export function IngestPage() {
   const startValue = toLocalIso(range.startDate, range.startTime);
   const endValue = toLocalIso(range.endDate, range.endTime);
   const validWindow = Boolean(startValue && endValue) && startValue <= endValue;
-  const canSubmit = validWindow;
+  const validTradeDate = /^\d{8}$/.test(tradeDate);
+  const canSubmit = selectedJob === "anchor" ? validTradeDate : validWindow;
   const selectedTemplate = JOB_TEMPLATES.find((item) => item.key === selectedJob) ?? JOB_TEMPLATES[0];
   const rows = runs
     .map((run) => {
@@ -270,11 +271,15 @@ export function IngestPage() {
                 <PanelTitle title={selectedTemplate.title} meta={`${selectedTemplate.meta} · ${selectedTemplate.serves}`} />
               </div>
               <div className={configGridClass}>
-                {selectedJob !== "stockEvidenceChain" && (
+                {selectedJob !== "stockEvidenceChain" && selectedJob !== "anchor" && (
                   <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
                 )}
-                <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
-                <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
+                {selectedJob !== "anchor" && (
+                  <>
+                    <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
+                    <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
+                  </>
+                )}
                 {(selectedJob === "anchor" || selectedJob === "refine") && (
                   <TextField label="交易日" value={tradeDate} onChange={setTradeDate} />
                 )}
@@ -292,7 +297,8 @@ export function IngestPage() {
                   {canceling ? "终止中" : submitting ? "提交中" : hasRunning ? "终止任务" : "开始执行"}
                 </button>
               </div>
-              {!validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}
+              {selectedJob !== "anchor" && !validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}
+              {selectedJob === "anchor" && !validTradeDate && <p className="error-line">交易日格式应为 YYYYMMDD。</p>}
               {error && <p className="error-line">{error}</p>}
               <div className="job-config-hints">
                 {configHints(selectedJob).map((item) => (
@@ -348,6 +354,9 @@ function dateToTradeDate(value: string): string {
 function forceLabel(kind: JobTemplateKey): string {
   if (kind === "ingest") {
     return "强制重拉";
+  }
+  if (kind === "anchor") {
+    return "强制刷新";
   }
   if (kind === "stockEvidenceChain") {
     return "强制重判 LLM";

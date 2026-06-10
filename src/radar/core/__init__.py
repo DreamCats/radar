@@ -10,7 +10,7 @@ from radar.core.market_anchors import (
     ensure_market_anchors,
     refresh_market_anchors,
 )
-from radar.core.models import MessageAnchor, MessageSource, RawMessage
+from radar.core.models import MessageSource, RawMessage
 from radar.core.organize import (
     OrganizeClassificationCluster,
     OrganizeClassificationFilters,
@@ -31,13 +31,11 @@ from radar.core.tushare import (
 )
 from radar.core.usecases import (
     AggregateTopicsResult,
-    AnchorRangeResult,
     IngestRangeResult,
     IngestWindowResult,
     RefineAggregateTopicsResult,
     SmokeResult,
     aggregate_topics,
-    anchor_messages_range,
     ingest_wechat_range,
     ingest_wechat_window,
     refine_aggregate_topics,
@@ -47,10 +45,8 @@ from radar.core.usecases import (
 
 __all__ = [
     "MessageFilters",
-    "MessageAnchor",
     "MessagePage",
     "MessageSource",
-    "AnchorRangeResult",
     "AggregateTopicsResult",
     "MarketAnchor",
     "EnsureMarketAnchorsResult",
@@ -73,7 +69,6 @@ __all__ = [
     "LlmConfigError",
     "SmokeResult",
     "aggregate_topics",
-    "anchor_messages_range",
     "chat",
     "chat_json",
     "chat_json_list",

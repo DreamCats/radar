@@ -10,7 +10,7 @@ from radar.cli.main import main
 from radar.core.models import RawMessage
 from radar.core.market_anchors import EnsureMarketAnchorsResult, RefreshMarketAnchorsResult
 from radar.core.store import connect, init_db, upsert_messages
-from radar.core.usecases import AnchorRangeResult, ClassifyRangeResult, IngestRangeResult, SmokeResult
+from radar.core.usecases import ClassifyRangeResult, IngestRangeResult, SmokeResult
 
 
 def test_query_reads_messages_from_config_database(tmp_path):
@@ -220,64 +220,29 @@ def test_classify_messages_command_invokes_core_usecase(monkeypatch, tmp_path):
     ]
 
 
-def test_anchor_messages_command_invokes_core_usecase(monkeypatch, tmp_path):
+def test_anchor_update_command_invokes_market_anchor_update(monkeypatch, tmp_path):
     config_dir = _config_dir(tmp_path)
     calls: list[dict] = []
 
-    def fake_anchor(
-        config,
-        *,
-        trade_date,
-        source,
-        categories,
-        min_classification_confidence,
-        start_time,
-        end_time,
-        chunk_hours,
-        limit,
-        force,
-        max_anchors_per_message,
-    ):
+    def fake_ensure(config, *, trade_date, min_anchor_count, force):
         calls.append(
             {
                 "database": config.database_path,
                 "market_database": config.market_database_path,
                 "trade_date": trade_date,
-                "source": source,
-                "categories": categories,
-                "min_classification_confidence": min_classification_confidence,
-                "start_time": start_time,
-                "end_time": end_time,
-                "chunk_hours": chunk_hours,
-                "limit": limit,
+                "min_anchor_count": min_anchor_count,
                 "force": force,
-                "max_anchors_per_message": max_anchors_per_message,
             }
         )
-        return AnchorRangeResult(
-            run_id="run-anchor",
-            source=source,
-            category=categories[0],
-            categories=categories,
-            min_classification_confidence=min_classification_confidence,
+        return EnsureMarketAnchorsResult(
             trade_date=trade_date,
-            start_time=start_time,
-            end_time=end_time,
-            chunk_count=1,
-            empty_chunk_count=0,
-            scanned_count=3,
-            anchored_message_count=2,
-            anchor_count=5,
-            dictionary_anchor_count=100,
-            type_distribution={"stock": 2, "concept": 3},
-            top_anchors={"算力": 2, "寒武纪": 1},
+            requested_trade_date=trade_date,
+            anchor_count=100,
+            member_count=900,
+            refreshed=True,
         )
 
-    monkeypatch.setattr(
-        "radar.cli.anchor.ensure_market_anchors",
-        lambda *args, **kwargs: EnsureMarketAnchorsResult(trade_date="20260604", anchor_count=100),
-    )
-    monkeypatch.setattr("radar.cli.anchor.anchor_messages_range", fake_anchor)
+    monkeypatch.setattr("radar.cli.anchor.ensure_market_anchors", fake_ensure)
 
     result = CliRunner().invoke(
         main,
@@ -285,86 +250,40 @@ def test_anchor_messages_command_invokes_core_usecase(monkeypatch, tmp_path):
             "--config-dir",
             str(config_dir),
             "anchor",
-            "messages",
+            "update",
             "--trade-date",
             "20260604",
-            "--source",
-            "group_message",
-            "--category",
-            "research",
-            "--category",
-            "recommendation",
-            "--min-classification-confidence",
-            "0.7",
-            "--start",
-            "2026-06-04 10:00:00",
-            "--end",
-            "2026-06-04 12:00:00",
-            "--chunk-hours",
-            "2",
-            "--limit",
-            "200",
-            "--max-anchors",
-            "8",
+            "--min-anchors",
+            "120",
             "--force",
         ],
     )
 
     assert result.exit_code == 0
-    assert "anchor/messages: chunks=1 empty=0 scanned=3 anchored=2 anchors=5" in result.output
-    assert "types: concept=3 stock=2" in result.output
-    assert "top: 算力=2 寒武纪=1" in result.output
+    assert "anchor/update: trade_date=20260604 requested=20260604 status=refreshed anchors=100 members=900" in result.output
     assert calls == [
         {
             "database": tmp_path / "radar.sqlite3",
             "market_database": tmp_path / "data" / "market.sqlite3",
             "trade_date": "20260604",
-            "source": "个人群",
-            "categories": ["research", "recommendation"],
-            "min_classification_confidence": 0.7,
-            "start_time": datetime.fromisoformat("2026-06-04T10:00:00"),
-            "end_time": datetime.fromisoformat("2026-06-04T12:00:00"),
-            "chunk_hours": 2,
-            "limit": 200,
+            "min_anchor_count": 120,
             "force": True,
-            "max_anchors_per_message": 8,
         }
     ]
 
 
-def test_anchor_messages_command_defaults_to_investment_categories(monkeypatch, tmp_path):
+def test_anchor_update_command_reports_skip_reason(monkeypatch, tmp_path):
     config_dir = _config_dir(tmp_path)
-    calls: list[dict] = []
-
-    def fake_anchor(
-        config,
-        *,
-        trade_date,
-        source,
-        categories,
-        min_classification_confidence,
-        start_time,
-        end_time,
-        chunk_hours,
-        limit,
-        force,
-        max_anchors_per_message,
-    ):
-        calls.append({"categories": categories, "min_conf": min_classification_confidence})
-        return AnchorRangeResult(
-            run_id="run-anchor",
-            source=source,
-            categories=categories,
-            trade_date=trade_date,
-            start_time=start_time,
-            end_time=end_time,
-        )
-
     monkeypatch.setattr(
         "radar.cli.anchor.ensure_market_anchors",
-        lambda *args, **kwargs: EnsureMarketAnchorsResult(trade_date="20260604", anchor_count=100),
+        lambda *args, **kwargs: EnsureMarketAnchorsResult(
+            trade_date="20260604",
+            requested_trade_date="20260604",
+            anchor_count=100,
+            member_count=900,
+            skipped_reason="anchor 词库已存在",
+        ),
     )
-    monkeypatch.setattr("radar.cli.anchor.anchor_messages_range", fake_anchor)
 
     result = CliRunner().invoke(
         main,
@@ -372,23 +291,15 @@ def test_anchor_messages_command_defaults_to_investment_categories(monkeypatch, 
             "--config-dir",
             str(config_dir),
             "anchor",
-            "messages",
+            "update",
             "--trade-date",
             "20260604",
-            "--start",
-            "2026-06-04",
-            "--end",
-            "2026-06-05",
         ],
     )
 
     assert result.exit_code == 0
-    assert calls == [
-        {
-            "categories": ["research", "recommendation", "industry"],
-            "min_conf": None,
-        }
-    ]
+    assert "status=skipped" in result.output
+    assert "reason=anchor 词库已存在" in result.output
 
 
 def test_llm_smoke_command_invokes_usecase(monkeypatch, tmp_path):

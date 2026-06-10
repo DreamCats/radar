@@ -810,49 +810,41 @@ def test_classify_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_p
     }
 
 
-def test_anchor_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path):
+def test_anchor_jobs_endpoint_updates_market_anchors_and_reuses_running_job(monkeypatch, tmp_path):
     config = _config(tmp_path)
     calls: list[dict] = []
     started = Event()
     release = Event()
 
-    def fake_anchor(config, *, trade_date, source, categories, min_classification_confidence, start_time, end_time,
-                    chunk_hours, limit, force, max_anchors_per_message, run_id):
+    def fake_ensure(config, *, trade_date, min_anchor_count, force):
         calls.append(
             {
                 "trade_date": trade_date,
-                "source": source,
-                "categories": categories,
-                "min_classification_confidence": min_classification_confidence,
-                "start_time": start_time,
-                "end_time": end_time,
-                "chunk_hours": chunk_hours,
-                "limit": limit,
+                "min_anchor_count": min_anchor_count,
                 "force": force,
-                "max_anchors_per_message": max_anchors_per_message,
-                "run_id": run_id,
             }
         )
         started.set()
         release.wait(timeout=2)
+        return SimpleNamespace(
+            trade_date=trade_date,
+            refreshed=True,
+            anchor_count=3020,
+            member_count=9000,
+            skipped_reason=None,
+            source_counts={},
+            failed_sources={},
+        )
 
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.ensure_market_anchors", lambda *args, **kwargs: None)
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.anchor_messages_range", fake_anchor)
+    monkeypatch.setattr("radar.web.server.aggregate_jobs.ensure_market_anchors", fake_ensure)
 
     client = TestClient(create_app(config))
     payload = {
         "trade_date": "20260604",
-        "source": "group_message",
-        "start_time": "2026-06-04T10:00:00",
-        "end_time": "2026-06-04T11:00:00",
         "force": True,
-        "chunk_hours": 1,
-        "limit": 200,
-        "categories": ["research", "recommendation"],
-        "min_classification_confidence": 0.75,
-        "max_anchors": 8,
+        "min_anchor_count": 120,
     }
-    response = client.post("/api/anchor/messages/jobs", json=payload)
+    response = client.post("/api/market/anchors/jobs", json=payload)
 
     assert response.status_code == 200
     first = response.json()["items"][0]
@@ -862,7 +854,7 @@ def test_anchor_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_pat
     assert first["reused_existing"] is False
     assert get_run(config.database_path, first["run_id"]) is not None
 
-    response = client.post("/api/anchor/messages/jobs", json=payload)
+    response = client.post("/api/market/anchors/jobs", json=payload)
     second = response.json()["items"][0]
 
     assert second["run_id"] == first["run_id"]
@@ -870,59 +862,40 @@ def test_anchor_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_pat
     release.set()
     assert calls[0] == {
         "trade_date": "20260604",
-        "source": "个人群",
-        "categories": ["research", "recommendation"],
-        "min_classification_confidence": 0.75,
-        "start_time": datetime.fromisoformat("2026-06-04T10:00:00"),
-        "end_time": datetime.fromisoformat("2026-06-04T11:00:00"),
-        "chunk_hours": 1,
-        "limit": 200,
+        "min_anchor_count": 120,
         "force": True,
-        "max_anchors_per_message": 8,
-        "run_id": first["run_id"],
     }
 
 
-def test_anchor_jobs_endpoint_uses_resolved_trade_date(monkeypatch, tmp_path):
+def test_anchor_jobs_endpoint_records_resolved_trade_date(monkeypatch, tmp_path):
     config = _config(tmp_path)
-    calls: list[dict] = []
-    started = Event()
-    release = Event()
-
-    def fake_anchor(config, *, trade_date, source, categories, min_classification_confidence, start_time, end_time,
-                    chunk_hours, limit, force, max_anchors_per_message, run_id):
-        calls.append(
-            {
-                "trade_date": trade_date,
-                "source": source,
-                "run_id": run_id,
-            }
-        )
-        started.set()
-        release.wait(timeout=2)
-
     monkeypatch.setattr(
         "radar.web.server.aggregate_jobs.ensure_market_anchors",
-        lambda *args, **kwargs: SimpleNamespace(trade_date="20260605", refreshed=False, anchor_count=3020),
+        lambda *args, **kwargs: SimpleNamespace(
+            trade_date="20260605",
+            refreshed=False,
+            anchor_count=3020,
+            member_count=9000,
+            skipped_reason="20260606 非交易日，使用最近交易日 20260605 的 anchor 词库",
+            source_counts={},
+            failed_sources={},
+        ),
     )
-    monkeypatch.setattr("radar.web.server.aggregate_jobs.anchor_messages_range", fake_anchor)
 
     client = TestClient(create_app(config))
     response = client.post(
-        "/api/anchor/messages/jobs",
+        "/api/market/anchors/jobs",
         json={
             "trade_date": "20260606",
-            "source": "group_message",
-            "start_time": "2026-06-06T10:00:00",
-            "end_time": "2026-06-06T11:00:00",
         },
     )
 
     assert response.status_code == 200
     run_id = response.json()["items"][0]["run_id"]
-    assert started.wait(timeout=1)
-    release.set()
-    assert calls == [{"trade_date": "20260605", "source": "个人群", "run_id": run_id}]
+    wait_for_run_status(config.database_path, run_id, "skipped")
+    run = get_run(config.database_path, run_id)
+    assert run is not None
+    assert run.metadata["trade_date"] == "20260605"
 
 
 def test_aggregate_refine_jobs_endpoint_starts_job(monkeypatch, tmp_path):

@@ -7,11 +7,11 @@ from threading import Lock
 from radar.core.config import RadarConfig
 from radar.core.market_anchors import ensure_market_anchors
 from radar.core.models import MessageSource
-from radar.core.runs import fail_run, fail_stale_runs, get_running_run, start_run, update_run_progress
-from radar.core.usecases import anchor_messages_range, refine_aggregate_topics
-from radar.web.server.schemas import AnchorMessagesRequest, AggregateRefineRequest, DerivedJobItem
+from radar.core.runs import fail_run, fail_stale_runs, finish_run, get_running_run, start_run, update_run_progress
+from radar.core.usecases import refine_aggregate_topics
+from radar.web.server.schemas import AggregateRefineRequest, DerivedJobItem, MarketAnchorUpdateRequest
 
-ANCHOR_RUN_KIND = "message_anchor_range"
+ANCHOR_RUN_KIND = "market_anchor_update"
 REFINE_RUN_KIND = "aggregate_refine"
 STALE_AFTER = timedelta(hours=4)
 
@@ -25,7 +25,7 @@ _EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="radar-aggregat
 _SUBMIT_LOCK = Lock()
 
 
-def submit_anchor_messages_job(config: RadarConfig, request: AnchorMessagesRequest) -> DerivedJobItem:
+def submit_market_anchor_update_job(config: RadarConfig, request: MarketAnchorUpdateRequest) -> DerivedJobItem:
     with _SUBMIT_LOCK:
         mark_stale_aggregate_runs(config)
         target = _anchor_target(request)
@@ -60,23 +60,35 @@ def mark_stale_aggregate_runs(config: RadarConfig) -> int:
     )
 
 
-def _run_anchor_job(config: RadarConfig, request: AnchorMessagesRequest, run_id: str) -> None:
+def _run_anchor_job(config: RadarConfig, request: MarketAnchorUpdateRequest, run_id: str) -> None:
     try:
-        update_run_progress(config.database_path, run_id, metadata={"stage": "准备 anchor 词库"})
-        anchor_trade_date = _ensure_job_anchor_trade_date(config, requested_trade_date=request.trade_date, run_id=run_id)
-        anchor_messages_range(
+        update_run_progress(config.database_path, run_id, metadata={"stage": "更新市场 anchor 词库"})
+        anchors = ensure_market_anchors(
             config,
-            trade_date=anchor_trade_date,
-            source=_SOURCE_MAP[request.source],
-            categories=request.categories,
-            min_classification_confidence=request.min_classification_confidence,
-            start_time=request.start_time,
-            end_time=request.end_time,
-            chunk_hours=request.chunk_hours,
-            limit=request.limit,
+            trade_date=request.trade_date,
+            min_anchor_count=request.min_anchor_count,
             force=request.force,
-            max_anchors_per_message=request.max_anchors,
-            run_id=run_id,
+        )
+        metadata = {
+            **request.model_dump(mode="json"),
+            "stage": "更新市场 anchor 词库",
+            "requested_trade_date": request.trade_date,
+            "trade_date": anchors.trade_date,
+            "market_anchor_refreshed": anchors.refreshed,
+            "dictionary_anchor_count": anchors.anchor_count,
+            "market_anchor_member_count": anchors.member_count,
+            "market_anchor_skipped_reason": anchors.skipped_reason,
+            "source_counts": anchors.source_counts,
+            "failed_sources": anchors.failed_sources,
+        }
+        finish_run(
+            config.database_path,
+            run_id,
+            status="skipped" if anchors.skipped_reason and not anchors.refreshed else "succeeded",
+            raw_count=anchors.member_count,
+            stored_count=anchors.anchor_count,
+            filtered_count=len(anchors.failed_sources),
+            metadata=metadata,
         )
     except Exception as exc:
         fail_run(config.database_path, run_id, exc)
@@ -126,11 +138,8 @@ def _ensure_job_anchor_trade_date(config: RadarConfig, *, requested_trade_date: 
     return anchor_trade_date
 
 
-def _anchor_target(request: AnchorMessagesRequest) -> str:
-    return (
-        f"{request.source}:{request.trade_date}:{','.join(request.categories)}:"
-        f"{request.start_time.isoformat()}..{request.end_time.isoformat()}"
-    )
+def _anchor_target(request: MarketAnchorUpdateRequest) -> str:
+    return f"{request.trade_date}:min={request.min_anchor_count}:force={request.force}"
 
 
 def _refine_target(request: AggregateRefineRequest) -> str:
@@ -141,7 +150,7 @@ def _refine_target(request: AggregateRefineRequest) -> str:
     )
 
 
-def _anchor_metadata(request: AnchorMessagesRequest) -> dict[str, object]:
+def _anchor_metadata(request: MarketAnchorUpdateRequest) -> dict[str, object]:
     return request.model_dump(mode="json")
 
 

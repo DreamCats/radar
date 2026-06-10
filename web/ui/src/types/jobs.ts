@@ -55,15 +55,8 @@ export type ClassifyJobItem = {
 
 export type AnchorRequest = {
   trade_date: string;
-  source: IngestSource;
-  start_time: string;
-  end_time: string;
   force: boolean;
-  chunk_hours: number;
-  limit: number;
-  categories: MessageCategory[];
-  min_classification_confidence: number;
-  max_anchors: number;
+  min_anchor_count: number;
 };
 
 export type AggregateRefineRequest = {
@@ -104,7 +97,7 @@ export type StockEvidenceChainJobRequest = {
 };
 
 export type DerivedJobItem = {
-  job_type: "anchor" | "aggregate_refine" | "recommendation_backtest" | "strategy_backfill" | "stock_evidence_chain";
+  job_type: "anchor" | "aggregate_refine" | "recommendation_backtest" | "stock_evidence_chain";
   run_id: string;
   reused_existing: boolean;
   status: "running";

@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from radar.core.models import MessageSource
-from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION
 from radar.core.usecases.recommendation_backtest.models import BacktestAction, RecommendationEvent
 
+RECOMMENDATION_EVENT_EXTRACTOR_VERSION = "market-anchor-v1"
 _TS_CODE_RE = re.compile(r"^stock:(\d{6}\.(?:SH|SZ|BJ))$", re.IGNORECASE)
 _BEARISH_TERMS = ("卖出", "减仓", "看空", "规避", "回避", "下调评级", "降低评级", "谨慎")
 _EMOJI_RE = re.compile("[\U0001f300-\U0001faff\u2600-\u27bf\ufe0f]")
@@ -44,33 +44,16 @@ def refresh_recommendation_events(
     end_time: datetime,
     source: MessageSource | None = None,
     min_classification_confidence: float = 0.7,
-    extractor_version: str = ANCHOR_EXTRACTOR_VERSION,
+    extractor_version: str = RECOMMENDATION_EVENT_EXTRACTOR_VERSION,
 ) -> tuple[list[RecommendationEvent], int]:
-    """把 recommendation+stock anchor 固化成回测事件，不保存消息原文。"""
+    """消息级 anchor 已移除，不再从消息库生成新的推荐事件。"""
 
+    _ = (conn, source, extractor_version)
     if end_time <= start_time:
         raise ValueError("end_time 必须晚于 start_time")
     if min_classification_confidence < 0 or min_classification_confidence > 1:
         raise ValueError("min_classification_confidence 必须在 0 到 1 之间")
-
-    now = datetime.now()
-    candidates = _candidate_rows(
-        conn,
-        start_time=start_time,
-        end_time=end_time,
-        source=source,
-        min_classification_confidence=min_classification_confidence,
-        extractor_version=extractor_version,
-    )
-    sectors = _primary_sectors(
-        conn,
-        message_ids=[str(row["message_id"]) for row in candidates],
-        extractor_version=extractor_version,
-    )
-    events = _dedupe_events(candidates, sectors=sectors, now=now, extractor_version=extractor_version)
-    _upsert_analysts(conn, events, now=now)
-    inserted = _upsert_events(conn, events)
-    return events, inserted
+    return [], 0
 
 
 def list_recommendation_events(
@@ -105,38 +88,8 @@ def _candidate_rows(
     min_classification_confidence: float,
     extractor_version: str,
 ) -> list[sqlite3.Row]:
-    where = [
-        "c.category = 'recommendation'",
-        "c.status != 'ignored'",
-        "c.confidence >= ?",
-        "a.anchor_type = 'stock'",
-        "a.extractor_version = ?",
-        "m.message_time >= ?",
-        "m.message_time < ?",
-    ]
-    params: list[Any] = [
-        min_classification_confidence,
-        extractor_version,
-        start_time.isoformat(),
-        end_time.isoformat(),
-    ]
-    if source:
-        where.append("m.source = ?")
-        params.append(source)
-    return conn.execute(
-        f"""
-        SELECT
-            m.message_id, m.source, m.sender, m.group_name, m.message_time, m.raw_content,
-            c.category, c.confidence AS classification_confidence,
-            a.anchor_id, a.name AS stock_name, a.confidence AS anchor_confidence
-        FROM messages m
-        JOIN message_classifications c ON c.message_id = m.message_id
-        JOIN message_anchors a ON a.message_id = m.message_id
-        WHERE {" AND ".join(where)}
-        ORDER BY m.message_time ASC, a.confidence DESC
-        """,
-        params,
-    ).fetchall()
+    _ = (conn, start_time, end_time, source, min_classification_confidence, extractor_version)
+    return []
 
 
 def _dedupe_events(
@@ -212,35 +165,8 @@ def _primary_sectors(
     message_ids: list[str],
     extractor_version: str,
 ) -> dict[str, _SectorAnchor]:
-    ids = sorted(set(message_ids))
-    if not ids:
-        return {}
-
-    sectors: dict[str, _SectorAnchor] = {}
-    type_placeholders = ", ".join("?" for _ in _SECTOR_ANCHOR_TYPES)
-    for chunk in _chunks(ids, _CHUNK_SIZE):
-        id_placeholders = ", ".join("?" for _ in chunk)
-        rows = conn.execute(
-            f"""
-            SELECT message_id, anchor_id, anchor_type, name, confidence
-            FROM message_anchors
-            WHERE extractor_version = ?
-              AND anchor_type IN ({type_placeholders})
-              AND message_id IN ({id_placeholders})
-            """,
-            [extractor_version, *_SECTOR_ANCHOR_TYPES, *chunk],
-        ).fetchall()
-        for row in rows:
-            sector = _SectorAnchor(
-                anchor_id=str(row["anchor_id"]),
-                anchor_type=str(row["anchor_type"]),
-                name=str(row["name"]),
-                confidence=float(row["confidence"]),
-            )
-            old = sectors.get(str(row["message_id"]))
-            if old is None or _sector_sort_key(sector) > _sector_sort_key(old):
-                sectors[str(row["message_id"])] = sector
-    return sectors
+    _ = (conn, message_ids, extractor_version)
+    return {}
 
 
 def _sector_sort_key(sector: _SectorAnchor) -> tuple[float, int, str]:

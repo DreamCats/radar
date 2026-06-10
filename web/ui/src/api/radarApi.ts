@@ -275,8 +275,8 @@ export async function startClassifyMessagesJob(request: ClassifyRequest): Promis
   return data.items;
 }
 
-export async function startAnchorMessagesJob(request: AnchorRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/anchor/messages/jobs`, {
+export async function startMarketAnchorUpdateJob(request: AnchorRequest): Promise<DerivedJobItem[]> {
+  const response = await fetch(`${apiBase}/api/market/anchors/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

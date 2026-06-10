@@ -5,25 +5,24 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from radar.core.config import RadarConfig
 from radar.core.store import connect, init_db
 from radar.core.usecases.aggregation.storage import list_refine_results
-from radar.web.server.aggregate_jobs import submit_aggregate_refine_job, submit_anchor_messages_job
+from radar.web.server.aggregate_jobs import submit_aggregate_refine_job, submit_market_anchor_update_job
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     AggregateRefineRequest,
     AggregateRefineResultListResponse,
-    AnchorMessagesRequest,
     DerivedJobResponse,
+    MarketAnchorUpdateRequest,
 )
 
 router = APIRouter(prefix="/api", tags=["aggregate"])
 
 
-@router.post("/anchor/messages/jobs", response_model=DerivedJobResponse)
-def start_anchor_messages_job(
-    request: AnchorMessagesRequest,
+@router.post("/market/anchors/jobs", response_model=DerivedJobResponse)
+def start_market_anchor_update_job(
+    request: MarketAnchorUpdateRequest,
     config: RadarConfig = Depends(get_config),
 ) -> DerivedJobResponse:
-    _validate_window(request.start_time, request.end_time)
-    return DerivedJobResponse(items=[submit_anchor_messages_job(config, request)])
+    return DerivedJobResponse(items=[submit_market_anchor_update_job(config, request)])
 
 
 @router.post("/aggregate/refine/jobs", response_model=DerivedJobResponse)

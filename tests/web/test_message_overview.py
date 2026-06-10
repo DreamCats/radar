@@ -6,12 +6,12 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
-from radar.core.models import MessageAnchor, MessageClassification, RawMessage
-from radar.core.store import connect, init_db, replace_message_anchors, upsert_message_classifications, upsert_messages
+from radar.core.models import MessageClassification, RawMessage
+from radar.core.store import connect, init_db, upsert_message_classifications, upsert_messages
 from radar.web.server.app import create_app
 
 
-def test_messages_overview_endpoint_returns_anchor_heat(tmp_path: Path):
+def test_messages_overview_endpoint_returns_empty_anchor_heat(tmp_path: Path):
     config = _config(tmp_path)
     messages = [
         _message("m1", "2026-06-04T10:00:00"),
@@ -30,17 +30,6 @@ def test_messages_overview_endpoint_returns_anchor_heat(tmp_path: Path):
                 _classification(messages[2], "research", 0.90, "旧研究"),
             ],
         )
-        replace_message_anchors(
-            conn,
-            message_ids=[message.message_id for message in messages],
-            anchors=[
-                _anchor(messages[0], name="人形机器人"),
-                _anchor(messages[1], name="人形机器人"),
-                _anchor(messages[2], name="旧主题"),
-            ],
-            trade_date="20260604",
-            extractor_version="test-anchor",
-        )
     finally:
         conn.close()
 
@@ -48,17 +37,7 @@ def test_messages_overview_endpoint_returns_anchor_heat(tmp_path: Path):
     response = client.get("/api/messages/overview", params={"days": 2, "anchor_limit": 5})
 
     assert response.status_code == 200
-    assert response.json()["anchor_heat"] == [
-        {
-            "name": "人形机器人",
-            "anchor_type": "concept",
-            "mention_count": 2,
-            "message_count": 2,
-            "high_value_count": 1,
-            "average_confidence": 0.8,
-            "latest_message_time": "2026-06-04T10:00:00",
-        }
-    ]
+    assert response.json()["anchor_heat"] == []
 
 
 def _config(tmp_path: Path) -> RadarConfig:
@@ -88,22 +67,6 @@ def _classification(message: RawMessage, category: str, confidence: float, reaso
         status="auto",
         classifier_type="llm",
         classifier_version="test",
-        created_at=now,
-        updated_at=now,
-    )
-
-
-def _anchor(message: RawMessage, *, name: str) -> MessageAnchor:
-    now = datetime.fromisoformat("2026-06-04T12:00:00")
-    return MessageAnchor(
-        message_id=message.message_id,
-        anchor_id=f"concept:{name}",
-        anchor_type="concept",
-        name=name,
-        confidence=0.8,
-        evidence=[],
-        extractor_version="test-anchor",
-        trade_date="20260604",
         created_at=now,
         updated_at=now,
     )

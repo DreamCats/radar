@@ -12,7 +12,8 @@ from radar.core.usecases.aggregation import (
     aggregate_topics,
     refine_aggregate_topics,
 )
-from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION, DEFAULT_ANCHOR_CATEGORIES
+from radar.core.usecases.aggregation.topics import AGGREGATE_EXTRACTOR_VERSION
+from radar.core.usecases.categories import DERIVED_INPUT_CATEGORIES
 
 _SOURCE_MAP: dict[str, MessageSource | None] = {
     "all": None,
@@ -24,12 +25,12 @@ _CATEGORY_CHOICES = ["research", "recommendation", "industry", "tool_ad", "chat"
 
 @click.group()
 def aggregate() -> None:
-    """聚合消息 anchor。"""
+    """聚合主题候选。"""
 
 
 @aggregate.command("topics")
 @click.option("--trade-date", required=True, help="anchor 词库交易日，格式 YYYYMMDD。")
-@click.option("--extractor-version", default=ANCHOR_EXTRACTOR_VERSION, show_default=True)
+@click.option("--extractor-version", default=AGGREGATE_EXTRACTOR_VERSION, show_default=True)
 @click.option(
     "--source",
     "source_key",
@@ -43,7 +44,7 @@ def aggregate() -> None:
     "categories",
     type=click.Choice(_CATEGORY_CHOICES),
     multiple=True,
-    help=f"分类，可重复；不传默认 {','.join(DEFAULT_ANCHOR_CATEGORIES)}。",
+    help=f"分类，可重复；不传默认 {','.join(DERIVED_INPUT_CATEGORIES)}。",
 )
 @click.option("--min-classification-confidence", type=click.FloatRange(0, 1), default=0.7, show_default=True)
 @click.option("--min-messages", type=click.IntRange(1, 100), default=2, show_default=True)
@@ -65,7 +66,7 @@ def aggregate_topics_command(
     start_text: str,
     end_text: str,
 ) -> None:
-    """按 topic anchor 聚合主题，并展示相关个股和证据。"""
+    """聚合主题候选；消息级 anchor 移除后当前返回空候选。"""
 
     start_time = parse_datetime(start_text)
     end_time = parse_datetime(end_text)
@@ -77,7 +78,7 @@ def aggregate_topics_command(
         trade_date=trade_date,
         extractor_version=extractor_version,
         source=_SOURCE_MAP[source_key],
-        categories=[cast(MessageCategory, item) for item in categories] or DEFAULT_ANCHOR_CATEGORIES,
+        categories=[cast(MessageCategory, item) for item in categories] or DERIVED_INPUT_CATEGORIES,
         min_classification_confidence=min_classification_confidence,
         min_messages=min_messages,
         limit=limit,
@@ -90,7 +91,7 @@ def aggregate_topics_command(
 
 @aggregate.command("refine")
 @click.option("--trade-date", required=True, help="anchor 词库交易日，格式 YYYYMMDD。")
-@click.option("--extractor-version", default=ANCHOR_EXTRACTOR_VERSION, show_default=True)
+@click.option("--extractor-version", default=AGGREGATE_EXTRACTOR_VERSION, show_default=True)
 @click.option(
     "--source",
     "source_key",
@@ -104,7 +105,7 @@ def aggregate_topics_command(
     "categories",
     type=click.Choice(_CATEGORY_CHOICES),
     multiple=True,
-    help=f"分类，可重复；不传默认 {','.join(DEFAULT_ANCHOR_CATEGORIES)}。",
+    help=f"分类，可重复；不传默认 {','.join(DERIVED_INPUT_CATEGORIES)}。",
 )
 @click.option("--min-classification-confidence", type=click.FloatRange(0, 1), default=0.7, show_default=True)
 @click.option("--min-messages", type=click.IntRange(1, 100), default=2, show_default=True)
@@ -150,7 +151,7 @@ def aggregate_refine_command(
         trade_date=trade_date,
         extractor_version=extractor_version,
         source=_SOURCE_MAP[source_key],
-        categories=[cast(MessageCategory, item) for item in categories] or DEFAULT_ANCHOR_CATEGORIES,
+        categories=[cast(MessageCategory, item) for item in categories] or DERIVED_INPUT_CATEGORIES,
         min_classification_confidence=min_classification_confidence,
         min_messages=min_messages,
         candidate_limit=candidate_limit,

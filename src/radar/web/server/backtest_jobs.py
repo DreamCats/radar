@@ -7,8 +7,8 @@ from threading import Lock
 from radar.core.config import RadarConfig
 from radar.core.models import MessageSource
 from radar.core.runs import fail_run, fail_stale_runs, get_running_run, start_run
-from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION
 from radar.core.usecases.recommendation_backtest import refresh_recommendation_backtests
+from radar.core.usecases.recommendation_backtest.events import RECOMMENDATION_EVENT_EXTRACTOR_VERSION
 from radar.core.usecases.recommendation_backtest.refresh import BACKTEST_RUN_KIND
 from radar.web.server.schemas import DerivedJobItem, RecommendationBacktestRequest
 
@@ -62,7 +62,7 @@ def _run_backtest_job(config: RadarConfig, request: RecommendationBacktestReques
             windows=request.windows,
             source=_SOURCE_MAP[request.source],
             min_classification_confidence=request.min_classification_confidence,
-            extractor_version=ANCHOR_EXTRACTOR_VERSION,
+            extractor_version=RECOMMENDATION_EVENT_EXTRACTOR_VERSION,
             benchmark_ts_code=request.benchmark_ts_code,
             force=request.force,
             run_id=run_id,

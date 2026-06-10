@@ -8,8 +8,8 @@ from radar.core.models import MessageSource
 from radar.core.runs import fail_run, finish_run, start_run, update_run_progress
 from radar.core.store import connect, init_db
 from radar.core.tushare.client import call
-from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION
 from radar.core.usecases.recommendation_backtest.events import (
+    RECOMMENDATION_EVENT_EXTRACTOR_VERSION,
     list_recommendation_events,
     refresh_recommendation_events,
 )
@@ -67,7 +67,7 @@ def refresh_recommendation_backtests(
     windows: list[int] | None = None,
     source: MessageSource | None = None,
     min_classification_confidence: float = 0.7,
-    extractor_version: str = ANCHOR_EXTRACTOR_VERSION,
+    extractor_version: str = RECOMMENDATION_EVENT_EXTRACTOR_VERSION,
     benchmark_ts_code: str = DEFAULT_BENCHMARK_TS_CODE,
     force: bool = False,
     run_id: str | None = None,

@@ -16,7 +16,7 @@ from radar.core.usecases.recommendation_backtest import (
     refresh_recommendation_backtests,
     summarize_recommendation_backtests,
 )
-from radar.core.usecases.anchoring import ANCHOR_EXTRACTOR_VERSION
+from radar.core.usecases.recommendation_backtest.events import RECOMMENDATION_EVENT_EXTRACTOR_VERSION
 
 _SOURCE_MAP: dict[str, MessageSource | None] = {
     "all": None,
@@ -35,7 +35,7 @@ def backtest() -> None:
 @click.option("--window-days", type=click.IntRange(1, 365), default=30, show_default=True)
 @click.option("--window", "windows", type=click.IntRange(1, 30), multiple=True, help="T+N 窗口，可重复。")
 @click.option("--benchmark", "benchmark_ts_code", default=DEFAULT_BENCHMARK_TS_CODE, show_default=True)
-@click.option("--extractor-version", default=ANCHOR_EXTRACTOR_VERSION, show_default=True)
+@click.option("--extractor-version", default=RECOMMENDATION_EVENT_EXTRACTOR_VERSION, show_default=True)
 @click.option(
     "--source",
     "source_key",

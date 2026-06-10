@@ -71,8 +71,11 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "ingest") {
       return ingestProgress(run);
     }
-    if (kind === "classify" || kind === "anchor") {
+    if (kind === "classify") {
       return chunkProgress(run);
+    }
+    if (kind === "anchor") {
+      return run?.stored_count || numberValue(run?.metadata.dictionary_anchor_count) ? 70 : 12;
     }
     if (kind === "backtest") {
       return backtestProgress(run);
@@ -194,17 +197,15 @@ function classifyMetrics(run?: RunItem): string[] {
 
 function anchorMetrics(run?: RunItem): string[] {
   const metadata = run?.metadata ?? {};
-  const scanned = run?.raw_count || numberValue(metadata.scanned_count);
-  const anchors = run?.stored_count || numberValue(metadata.anchor_count);
-  const anchored = numberValue(metadata.anchored_message_count);
-  const chunkCount = numberValue(metadata.chunk_count);
-  const completedChunks = numberValue(metadata.completed_chunk_count);
+  const anchors = run?.stored_count || numberValue(metadata.dictionary_anchor_count) || numberValue(metadata.anchor_count);
+  const members = run?.raw_count || numberValue(metadata.market_anchor_member_count) || numberValue(metadata.member_count);
+  const failedSources = recordKeys(metadata.failed_sources).length;
   return [
     anchorTradeDateText(metadata),
-    chunkCount ? `分片 ${completedChunks}/${chunkCount}` : "",
-    `扫描 ${scanned} 条`,
-    `命中消息 ${anchored} 条`,
-    `anchor ${anchors} 个`,
+    `词库 ${anchors} 个`,
+    `成分 ${members} 条`,
+    metadata.market_anchor_refreshed === false ? "已复用" : "",
+    failedSources ? `失败源 ${failedSources}` : "",
     durationText(run),
   ].filter(Boolean);
 }
@@ -309,7 +310,7 @@ function kindTitle(kind: JobRunKind): string {
     return "分类";
   }
   if (kind === "anchor") {
-    return "Anchor";
+    return "Anchor 更新";
   }
   if (kind === "backtest") {
     return "推荐回测补齐";
@@ -362,6 +363,10 @@ function boundedPercent(done: number, total: number): number {
 
 function numberValue(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function recordKeys(value: unknown): string[] {
+  return value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value) : [];
 }
 
 function textValue(value: unknown): string {

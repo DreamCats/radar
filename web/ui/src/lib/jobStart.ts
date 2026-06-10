@@ -1,8 +1,8 @@
 import {
   startAggregateRefineJob,
-  startAnchorMessagesJob,
   startClassifyMessagesJob,
   startIngestWechatJob,
+  startMarketAnchorUpdateJob,
   startRecommendationBacktestJob,
   startStockEvidenceChainJob,
 } from "../api/radarApi";
@@ -51,19 +51,12 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
     return items.map((item) => ({ kind, source: item.source, run_id: item.run_id, reused_existing: item.reused_existing }));
   }
   if (kind === "anchor") {
-    const items = await startAnchorMessagesJob({
+    const items = await startMarketAnchorUpdateJob({
       trade_date: tradeDate,
-      source,
-      start_time: window.start_time,
-      end_time: window.end_time,
       force,
-      chunk_hours: 1,
-      limit: 500,
-      categories: DEFAULT_CATEGORIES,
-      min_classification_confidence: 0.7,
-      max_anchors: 7,
+      min_anchor_count: 100,
     });
-    return derivedJobs(kind, sourceLabel(source), items);
+    return derivedJobs(kind, "市场词库", items);
   }
   if (kind === "backtest") {
     const items = await startRecommendationBacktestJob({
