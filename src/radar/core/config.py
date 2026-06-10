@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import Literal
@@ -9,6 +10,8 @@ from pydantic import BaseModel, Field, model_validator
 
 
 DEFAULT_CONFIG_DIR = Path.home() / ".config" / "radar"
+DEFAULT_BRAVE_SEARCH_BASE_URL = "https://api.search.brave.com"
+DEFAULT_BRAVE_SEARCH_TIMEOUT = 30.0
 
 
 class StorageConfig(BaseModel):
@@ -131,6 +134,17 @@ class MarketSecret(BaseModel):
     token: str | None = None
 
 
+class BraveSearchConfig(BaseModel):
+    provider: Literal["brave"] | None = None
+    secret_ref: str | None = None
+    base_url: str = DEFAULT_BRAVE_SEARCH_BASE_URL
+    timeout: float = DEFAULT_BRAVE_SEARCH_TIMEOUT
+
+
+class BraveSearchSecret(BaseModel):
+    api_key: str | None = None
+
+
 class FeatureFlags(BaseModel):
     llm_classify: bool = False
     signal_radar: bool = False
@@ -150,6 +164,7 @@ class RadarSecrets(BaseModel):
     wechat: WechatSecrets = Field(default_factory=WechatSecrets)
     llm: dict[str, LlmProviderSecret] = Field(default_factory=dict)
     market: dict[str, MarketSecret] = Field(default_factory=dict)
+    brave_search: dict[str, BraveSearchSecret] = Field(default_factory=dict)
 
 
 class RadarConfig(BaseModel):
@@ -161,6 +176,7 @@ class RadarConfig(BaseModel):
     llm: LlmConfig = Field(default_factory=LlmConfig)
     chat: ChatConfig = Field(default_factory=ChatConfig)
     market: MarketConfig = Field(default_factory=MarketConfig)
+    brave_search: BraveSearchConfig = Field(default_factory=BraveSearchConfig)
     features: FeatureFlags = Field(default_factory=FeatureFlags)
     filters: FiltersConfig = Field(default_factory=FiltersConfig)
     secrets: RadarSecrets = Field(default_factory=RadarSecrets)
@@ -254,4 +270,88 @@ def _apply_env_overrides(config: RadarConfig) -> RadarConfig:
     market_database = os.getenv("RADAR_MARKET_DATABASE")
     if market_database:
         config.market.database = Path(market_database).expanduser()
+
+    _apply_brave_search_overrides(config)
     return config
+
+
+def _apply_brave_search_overrides(config: RadarConfig) -> None:
+    brave_cli_config = _read_brave_search_cli_config()
+    brave_search_api_key = _brave_search_env_key() or _brave_search_cli_value(
+        brave_cli_config,
+        "api_key",
+    )
+    if brave_search_api_key and not _has_brave_search_secret(config):
+        _set_brave_search_secret(config, brave_search_api_key)
+
+    brave_search_base_url = os.getenv("RADAR_BRAVE_SEARCH_BASE_URL") or os.getenv(
+        "BRAVE_SEARCH_BASE_URL"
+    )
+    if brave_search_base_url:
+        config.brave_search.base_url = brave_search_base_url
+    elif config.brave_search.base_url == DEFAULT_BRAVE_SEARCH_BASE_URL:
+        cli_base_url = _brave_search_cli_value(brave_cli_config, "base_url")
+        if cli_base_url:
+            config.brave_search.base_url = cli_base_url
+
+    timeout = os.getenv("RADAR_BRAVE_SEARCH_TIMEOUT")
+    if timeout:
+        config.brave_search.timeout = float(timeout)
+    elif config.brave_search.timeout == DEFAULT_BRAVE_SEARCH_TIMEOUT:
+        cli_timeout = _brave_search_cli_value(brave_cli_config, "timeout")
+        if cli_timeout:
+            config.brave_search.timeout = float(cli_timeout)
+
+
+def _brave_search_env_key() -> str | None:
+    return (
+        os.getenv("RADAR_BRAVE_SEARCH_API_KEY")
+        or os.getenv("BRAVE_SEARCH_API_KEY")
+        or os.getenv("BRAVE_API_KEY")
+    )
+
+
+def _has_brave_search_secret(config: RadarConfig) -> bool:
+    secret_ref = config.brave_search.secret_ref
+    if not secret_ref:
+        return False
+    secret = config.secrets.brave_search.get(secret_ref)
+    return bool(secret and secret.api_key)
+
+
+def _set_brave_search_secret(config: RadarConfig, api_key: str) -> None:
+    secret_ref = config.brave_search.secret_ref or "brave_search_main"
+    config.brave_search.provider = "brave"
+    config.brave_search.secret_ref = secret_ref
+    config.secrets.brave_search[secret_ref] = BraveSearchSecret(api_key=api_key)
+
+
+def _read_brave_search_cli_config() -> dict:
+    for path in _brave_search_cli_config_paths():
+        data = _read_json_object(path)
+        if data:
+            return data
+    return {}
+
+
+def _brave_search_cli_config_paths() -> list[Path]:
+    home = Path.home()
+    return [
+        home / "Library" / "Application Support" / "brave-search" / "config.json",
+        home / ".config" / "brave-search" / "config.json",
+    ]
+
+
+def _read_json_object(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _brave_search_cli_value(config: dict, key: str) -> str | None:
+    value = config.get(key)
+    return str(value).strip() if value is not None and str(value).strip() else None
