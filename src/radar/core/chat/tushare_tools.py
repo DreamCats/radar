@@ -8,7 +8,6 @@ from radar.core.config import RadarConfig
 from radar.core.tushare import (
     get_billboard_trading,
     get_limit_pool,
-    get_realtime_daily_quote,
     get_sector_moneyflow,
     get_stock_factor,
     get_stock_limit,
@@ -16,7 +15,6 @@ from radar.core.tushare import (
     resolve_stock,
 )
 from radar.core.tushare import call as tushare_call
-from radar.core.tushare.exceptions import TushareApiError
 
 
 TUSHARE_PRICE_FIELDS = {
@@ -33,7 +31,6 @@ class RadarTushareTools:
     def tools(self) -> list[ChatTool]:
         return [
             self.resolve_stock_tool(),
-            self.realtime_daily_quote_tool(),
             self.stock_price_history_tool(),
             self.stock_moneyflow_tool(),
             self.sector_moneyflow_tool(),
@@ -54,7 +51,7 @@ class RadarTushareTools:
     def stock_price_history_tool(self) -> ChatTool:
         return ChatTool(
             name="radar_get_stock_price_history",
-            description="读取受控 Tushare 历史数据，支持 daily、daily_basic、adj_factor。",
+            description="读取受控 Tushare 日线/基础/复权历史数据，支持 daily、daily_basic、adj_factor；用于已收盘或已落库交易日，不承诺盘中实时数据。",
             input_schema=_object_schema(
                 {
                     "stock": {"type": "string"},
@@ -67,14 +64,6 @@ class RadarTushareTools:
                 required=["stock"],
             ),
             handler=self.stock_price_history,
-        )
-
-    def realtime_daily_quote_tool(self) -> ChatTool:
-        return ChatTool(
-            name="radar_get_realtime_daily_quote",
-            description="读取 Tushare rt_k 实时日线快照，适合查询盘中开盘价、最高价、最低价、最新价和成交。",
-            input_schema=_object_schema({"stock": {"type": "string"}, "use_cache": {"type": "boolean"}}, required=["stock"]),
-            handler=self.realtime_daily_quote,
         )
 
     def stock_moneyflow_tool(self) -> ChatTool:
@@ -187,24 +176,6 @@ class RadarTushareTools:
     def resolve_stock(self, args: dict[str, Any]) -> dict[str, Any]:
         value = str(args["value"]).strip()
         return {"value": value, "ts_code": resolve_stock(self.config, value)}
-
-    def realtime_daily_quote(self, args: dict[str, Any]) -> dict[str, Any]:
-        stock = str(args["stock"]).strip()
-        ts_code = resolve_stock(self.config, stock)
-        try:
-            quote = get_realtime_daily_quote(self.config, ts_code=ts_code, use_cache=bool(args.get("use_cache", True)))
-        except TushareApiError as exc:
-            message = str(exc)
-            if "rt_k" in message and "访问权限" in message:
-                raise TushareApiError(
-                    "实时行情快照不可用：当前 Tushare token 没有 rt_k 接口访问权限。"
-                    "请开通 rt_k 权限或更换 token；本次只能改用日线、技术因子等非实时数据。"
-                    f"原始错误：{message}"
-                ) from exc
-            raise
-        if quote is None:
-            return {"found": False, "stock": stock, "ts_code": ts_code}
-        return {"found": True, "stock": stock, **quote.model_dump(mode="json")}
 
     def stock_price_history(self, args: dict[str, Any]) -> dict[str, Any]:
         api_name = str(args.get("api_name") or "daily")

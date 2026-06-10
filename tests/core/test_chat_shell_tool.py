@@ -11,9 +11,10 @@ def test_chat_agent_registers_builtin_shell_tool(tmp_path):
     config = RadarConfig(storage={"data_dir": tmp_path}, chat={"shell": {"default_cwd": str(tmp_path)}})
     agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
 
-    tool_names = [tool.name for tool in agent.tools.list(read_only=True)]
+    tools = {tool.name: tool for tool in agent.tools.list(read_only=True)}
 
-    assert "radar_run_shell" in tool_names
+    assert "radar_run_shell" in tools
+    assert "读取系统时间" in tools["radar_run_shell"].description
 
 
 def test_chat_agent_can_disable_builtin_shell_tool(tmp_path):
