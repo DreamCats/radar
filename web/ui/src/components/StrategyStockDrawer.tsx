@@ -115,7 +115,9 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
           {!loading && !error && candles.length === 0 && (
             <p className="strategy-stock-chart-empty">{chart?.missing_reason ?? "本地暂无日线缓存"}</p>
           )}
-          {!loading && !error && candles.length > 0 && <StrategyStockCandlestickChart candles={candles} stock={stock} />}
+          {!loading && !error && candles.length > 0 && (
+            <StrategyStockCandlestickChart candles={candles} stock={stock} latestIsRealtime={chart?.latest_is_realtime ?? false} />
+          )}
 
           <div className="strategy-stock-decision-grid">
             {drawerMetrics(stock).map((metric) => (

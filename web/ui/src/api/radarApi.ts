@@ -53,7 +53,7 @@ export async function fetchMessageGroups(query: { source?: string; keyword?: str
 }
 
 export async function fetchMessageOverview(
-  query: { days?: number; top_limit?: number; anchor_limit?: number } = {},
+  query: { days?: number; top_limit?: number } = {},
 ): Promise<MessageOverview> {
   return getJson(`/api/messages/overview?${params(query)}`);
 }

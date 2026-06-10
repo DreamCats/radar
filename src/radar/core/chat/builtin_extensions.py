@@ -19,7 +19,8 @@ from radar.core.messages import (
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db
 from radar.core.usecases.recommendation_backtest import DEFAULT_BACKTEST_WINDOWS, summarize_recommendation_backtests
-from radar.core.usecases.stock_evidence_chain import latest_stock_evidence_chain
+from radar.core.tushare import resolve_stock
+from radar.core.usecases.stock_evidence_chain import get_stock_evidence_stock_chart, latest_stock_evidence_chain
 
 
 class RadarBuiltinExtension:
@@ -37,6 +38,7 @@ class RadarBuiltinExtension:
             self._get_message_context_tool(),
             self._message_overview_tool(),
             *RadarTushareTools(self.config).tools(),
+            self._stock_evidence_chart_tool(),
             self._stock_evidence_chain_tool(),
             self._backtest_summary_tool(),
         ):
@@ -96,12 +98,11 @@ class RadarBuiltinExtension:
     def _message_overview_tool(self) -> ChatTool:
         return ChatTool(
             name="radar_message_overview",
-            description="读取本地消息库总览、来源分布、热门群和 anchor 热力。",
+            description="读取本地消息库总览、来源分布、热门群和小时分布。",
             input_schema=_object_schema(
                 {
                     "days": {"type": "integer", "minimum": 1, "maximum": 60},
                     "top_limit": {"type": "integer", "minimum": 1, "maximum": 20},
-                    "anchor_limit": {"type": "integer", "minimum": 1, "maximum": 50},
                 }
             ),
             handler=self._message_overview,
@@ -110,13 +111,29 @@ class RadarBuiltinExtension:
     def _stock_evidence_chain_tool(self) -> ChatTool:
         return ChatTool(
             name="radar_stock_evidence_chain",
-            description="读取 radar 最新个股证据链判断，包括股票阶段、证据、风险和市场证据摘要。",
+            description="读取 radar 最新个股证据链判断；可按股票或阶段过滤，返回阶段、证据、风险和市场证据摘要。",
             input_schema=_object_schema(
                 {
-                    "limit": {"type": "integer", "minimum": 1, "maximum": 50},
+                    "stock": {"type": "string"},
+                    "stage": {"type": "string", "enum": ["lead", "seed", "formed", "spreading", "pricing", "crowded"]},
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 120},
                 }
             ),
             handler=self._stock_evidence_chain,
+        )
+
+    def _stock_evidence_chart_tool(self) -> ChatTool:
+        return ChatTool(
+            name="radar_stock_evidence_chart",
+            description="读取个股证据链策略同源的本地日 K 线和成交额证据，返回 candles 及价格/成交额摘要。",
+            input_schema=_object_schema(
+                {
+                    "stock": {"type": "string"},
+                    "days": {"type": "integer", "minimum": 1, "maximum": 260},
+                },
+                required=["stock"],
+            ),
+            handler=self._stock_evidence_chart,
         )
 
     def _backtest_summary_tool(self) -> ChatTool:
@@ -210,15 +227,47 @@ class RadarBuiltinExtension:
                 conn,
                 days=_bounded_int(args.get("days"), default=14, maximum=60),
                 top_limit=_bounded_int(args.get("top_limit"), default=8, maximum=20),
-                anchor_limit=_bounded_int(args.get("anchor_limit"), default=20, maximum=50),
             )
         finally:
             conn.close()
         return overview.model_dump(mode="json")
 
     def _stock_evidence_chain(self, args: dict[str, Any]) -> dict[str, Any]:
-        dashboard = latest_stock_evidence_chain(self.config, limit=_bounded_int(args.get("limit"), default=20, maximum=50))
+        stock = _optional_str(args.get("stock"))
+        stage = _optional_str(args.get("stage"))
+        limit = _bounded_int(args.get("limit"), default=20, maximum=120)
+        dashboard = latest_stock_evidence_chain(self.config, limit=500 if stock else limit)
+        items = dashboard.items
+        if stock:
+            stock_key = stock.upper()
+            items = [
+                item
+                for item in items
+                if stock_key in item.ts_code.upper() or stock in item.stock_name
+            ]
+        if stage:
+            items = [item for item in items if item.stage == stage]
+        limited_items = items[:limit]
+        dashboard = dashboard.model_copy(update={"items": limited_items, "item_count": len(limited_items), "stage_counts": _stock_stage_counts(limited_items)})
         return dashboard.model_dump(mode="json")
+
+    def _stock_evidence_chart(self, args: dict[str, Any]) -> dict[str, Any]:
+        stock = str(args["stock"]).strip()
+        ts_code = resolve_stock(self.config, stock)
+        chart = get_stock_evidence_stock_chart(
+            self.config,
+            ts_code=ts_code,
+            days=_bounded_int(args.get("days"), default=120, maximum=260),
+        )
+        result = chart.model_dump(mode="json")
+        result.update(
+            {
+                "found": bool(chart.candles),
+                "stock": stock,
+                "summary": _stock_chart_summary(chart.candles),
+            }
+        )
+        return result
 
     def _backtest_summary(self, args: dict[str, Any]) -> dict[str, Any]:
         end_time = _optional_datetime(args.get("end_time")) or datetime.now()
@@ -274,6 +323,58 @@ def _windows(value: object) -> list[int]:
     allowed = set(DEFAULT_BACKTEST_WINDOWS)
     parsed = sorted({int(item) for item in value if int(item) in allowed})
     return parsed or list(DEFAULT_BACKTEST_WINDOWS)
+
+
+def _stock_stage_counts(items: list[Any]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        stage = str(getattr(item, "stage", "") or "")
+        if stage:
+            counts[stage] = counts.get(stage, 0) + 1
+    return counts
+
+
+def _stock_chart_summary(candles: list[Any]) -> dict[str, Any]:
+    if not candles:
+        return {}
+
+    first = candles[0]
+    latest = candles[-1]
+    high_close = max(candles, key=lambda item: item.close)
+    low_close = min(candles, key=lambda item: item.close)
+    latest_amount = getattr(latest, "amount", None)
+    avg5_amount = _average_amount(candles[-5:])
+    avg20_amount = _average_amount(candles[-20:])
+    return {
+        "first_trade_date": first.trade_date,
+        "latest_trade_date": latest.trade_date,
+        "latest_close": latest.close,
+        "latest_pct_chg": getattr(latest, "pct_chg", None),
+        "return_from_first": _rate(latest.close, first.close),
+        "return_from_low_close": _rate(latest.close, low_close.close),
+        "drawdown_from_high_close": _rate(latest.close, high_close.close),
+        "high_close_trade_date": high_close.trade_date,
+        "high_close": high_close.close,
+        "low_close_trade_date": low_close.trade_date,
+        "low_close": low_close.close,
+        "latest_amount": latest_amount,
+        "avg5_amount": avg5_amount,
+        "avg20_amount": avg20_amount,
+        "latest_amount_vs_avg20": _rate(latest_amount, avg20_amount),
+    }
+
+
+def _average_amount(candles: list[Any]) -> float | None:
+    values = [float(item.amount) for item in candles if getattr(item, "amount", None) is not None]
+    if not values:
+        return None
+    return round(sum(values) / len(values), 4)
+
+
+def _rate(current: float | None, base: float | None) -> float | None:
+    if current is None or base is None or base == 0:
+        return None
+    return round((current - base) / base, 4)
 
 
 def _message_summary(message: RawMessage) -> dict[str, Any]:

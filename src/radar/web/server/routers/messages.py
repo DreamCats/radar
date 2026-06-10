@@ -74,13 +74,12 @@ def messages(
 def messages_overview(
     days: int = Query(default=14, ge=1, le=90),
     top_limit: int = Query(default=8, ge=3, le=20),
-    anchor_limit: int = Query(default=20, ge=1, le=50),
     config: RadarConfig = Depends(get_config),
 ) -> MessageOverviewResponse:
     conn = connect(config.database_path)
     try:
         init_db(conn)
-        overview = get_message_overview(conn, days=days, top_limit=top_limit, anchor_limit=anchor_limit)
+        overview = get_message_overview(conn, days=days, top_limit=top_limit)
     finally:
         conn.close()
     return MessageOverviewResponse(**overview.model_dump())

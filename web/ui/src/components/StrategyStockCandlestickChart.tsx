@@ -5,7 +5,15 @@ type ChartStock = {
   first_seen_time?: string | null;
   latest_message_time?: string | null;
 };
-export function StrategyStockCandlestickChart({ candles, stock }: { candles: StockEvidenceStockCandle[]; stock: ChartStock }) {
+export function StrategyStockCandlestickChart({
+  candles,
+  stock,
+  latestIsRealtime = false,
+}: {
+  candles: StockEvidenceStockCandle[];
+  stock: ChartStock;
+  latestIsRealtime?: boolean;
+}) {
   const chart = useMemo(() => buildChart(candles), [candles]);
   const markers = useMemo(() => signalMarkers(candles, stock), [candles, stock]);
   const quote = useMemo(() => quoteSummary(candles), [candles]);
@@ -33,7 +41,7 @@ export function StrategyStockCandlestickChart({ candles, stock }: { candles: Sto
       </div>
 
       <div className="strategy-stock-chart-title">
-        <strong>日K · {candles.length}交易日</strong>
+        <strong>日K · {candles.length}交易日{latestIsRealtime ? " · 盘中快照" : ""}</strong>
         <span className="strategy-ma-legend">
           <em className="ma5">MA5:{formatPrice(chart.maLatest[5])}</em>
           <em className="ma10">10:{formatPrice(chart.maLatest[10])}</em>

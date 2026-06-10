@@ -15,6 +15,8 @@ export type StockEvidenceStockChart = {
   ts_code: string;
   candles: StockEvidenceStockCandle[];
   latest_trade_date?: string | null;
+  latest_source?: string | null;
+  latest_is_realtime: boolean;
   missing_reason?: string | null;
 };
 

@@ -17,6 +17,8 @@ from radar.core.llm import LlmChatDelta, LlmChatDone, LlmChatResponse, LlmReason
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db, upsert_messages
 from radar.core.tushare import RealtimeDailyQuote
+from radar.core.usecases.stock_evidence_chain.stock_chart import StockEvidenceStockCandle, StockEvidenceStockChart
+from radar.core.usecases.stock_evidence_chain.views import StockEvidenceChainDashboard, StockEvidenceChainItem
 
 
 class CountingSearchExtension:
@@ -369,6 +371,7 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     assert "radar_get_stock_moneyflow" in tool_names
     assert "radar_get_stock_technical_factors" in tool_names
     assert "radar_get_limit_pool" in tool_names
+    assert "radar_stock_evidence_chart" in tool_names
     assert "radar_backtest_summary" in tool_names
     assert "radar_source_signals" not in tool_names
 
@@ -394,11 +397,67 @@ def test_builtin_message_tools_read_local_database(tmp_path):
     search_result = agent.tools.get("radar_search_messages").execute({"keyword": "AI", "limit": 5})
     context_result = agent.tools.get("radar_get_message_context").execute({"message_id": "m2", "radius": 2})
     conversations_result = agent.tools.get("radar_list_conversations").execute({"limit": 5})
+    overview_result = agent.tools.get("radar_message_overview").execute({"days": 2, "top_limit": 5})
 
     assert [item["message_id"] for item in search_result["items"]] == ["m2", "m1"]
     assert context_result["target"]["message_id"] == "m2"
     assert [item["message_id"] for item in context_result["before"]] == ["m1"]
     assert [item["title"] for item in conversations_result["items"]] == ["其他群", "东财策略"]
+    assert overview_result["summary"]["total_count"] == 3
+    assert "anchor_heat" not in overview_result
+
+
+def test_stock_evidence_chain_tool_filters_by_stock(tmp_path, monkeypatch):
+    config = RadarConfig(storage={"data_dir": tmp_path})
+    now = datetime.fromisoformat("2026-06-10T10:00:00")
+    dashboard = StockEvidenceChainDashboard(
+        as_of_time=now,
+        generated_at=now,
+        item_count=2,
+        stage_counts={"pricing": 1, "seed": 1},
+        items=[
+            _stock_evidence_item("002138.SZ", "顺络电子", "pricing", now),
+            _stock_evidence_item("600188.SH", "兖矿能源", "seed", now),
+        ],
+    )
+    monkeypatch.setattr("radar.core.chat.builtin_extensions.latest_stock_evidence_chain", lambda config, *, limit: dashboard)
+
+    agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
+    result = agent.tools.get("radar_stock_evidence_chain").execute({"stock": "顺络", "limit": 5})
+
+    assert result["item_count"] == 1
+    assert result["stage_counts"] == {"pricing": 1}
+    assert result["items"][0]["ts_code"] == "002138.SZ"
+
+
+def test_stock_evidence_chart_tool_returns_strategy_chart_summary(tmp_path, monkeypatch):
+    config = RadarConfig(storage={"data_dir": tmp_path})
+    captured = {}
+    monkeypatch.setattr("radar.core.chat.builtin_extensions.resolve_stock", lambda config, value: "002138.SZ")
+
+    def fake_chart(config, *, ts_code, days):
+        captured.update({"ts_code": ts_code, "days": days})
+        return StockEvidenceStockChart(
+            ts_code=ts_code,
+            candles=[
+                _candle("20260605", 10.0, 10.8, 9.8, 10.5, amount=10000),
+                _candle("20260606", 10.5, 12.0, 10.4, 11.5, amount=30000),
+            ],
+            latest_trade_date="20260606",
+        )
+
+    monkeypatch.setattr("radar.core.chat.builtin_extensions.get_stock_evidence_stock_chart", fake_chart)
+
+    agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
+    result = agent.tools.get("radar_stock_evidence_chart").execute({"stock": "顺络电子", "days": 2})
+
+    assert captured == {"ts_code": "002138.SZ", "days": 2}
+    assert result["found"] is True
+    assert result["stock"] == "顺络电子"
+    assert result["ts_code"] == "002138.SZ"
+    assert [item["trade_date"] for item in result["candles"]] == ["20260605", "20260606"]
+    assert result["summary"]["return_from_first"] == 0.0952
+    assert result["summary"]["latest_amount_vs_avg20"] == 0.5
 
 
 def test_builtin_tushare_tool_is_whitelisted(tmp_path, monkeypatch):
@@ -494,4 +553,35 @@ def _message(message_id: str, message_time: str, group_name: str, content: str) 
         group_name=group_name,
         fetch_time=datetime.fromisoformat("2026-06-04T10:00:00"),
         fetch_window="20260604090000-20260604100000",
+    )
+
+
+def _stock_evidence_item(ts_code: str, stock_name: str, stage: str, now: datetime) -> StockEvidenceChainItem:
+    return StockEvidenceChainItem(
+        ts_code=ts_code,
+        stock_name=stock_name,
+        stage=stage,
+        stage_label=stage,
+        summary=f"{stock_name} 证据链",
+        trigger_count=1,
+        unique_trigger_count=1,
+        sender_count=1,
+        conversation_count=1,
+        evidence_count=1,
+        updated_at=now,
+    )
+
+
+def _candle(trade_date: str, open_price: float, high: float, low: float, close: float, *, amount: float) -> StockEvidenceStockCandle:
+    return StockEvidenceStockCandle(
+        trade_date=trade_date,
+        open=open_price,
+        high=high,
+        low=low,
+        close=close,
+        pre_close=open_price,
+        change=close - open_price,
+        pct_chg=round(((close - open_price) / open_price) * 100, 2),
+        vol=1000,
+        amount=amount,
     )

@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
 from radar.core.store import connect, init_db
+from radar.core.tushare import RealtimeDailyQuote
 from radar.core.tushare import history
 from radar.web.server.app import create_app
 
@@ -161,6 +162,51 @@ def test_strategy_stock_chart_endpoint_refreshes_latest_daily_after_close(monkey
     assert calls == [{"ts_code": "300024.SZ", "start_date": "20260606", "end_date": "20260608"}]
     assert data["latest_trade_date"] == "20260608"
     assert [item["trade_date"] for item in data["candles"]] == ["20260605", "20260608"]
+
+
+def test_strategy_stock_chart_endpoint_appends_intraday_realtime_candle(monkeypatch, tmp_path: Path):
+    config = _config(tmp_path)
+    daily = history.spec_for("daily")
+    assert daily is not None
+    history.put_rows(
+        config.market_database_path,
+        daily,
+        [_daily("300503.SZ", "20260605", 80.0, 82.0, 78.0, 81.0, pct_chg=1.25)],
+    )
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._refresh_recent_daily_cache", lambda *args, **kwargs: None)
+    monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: date(2026, 6, 8))
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._now_time", lambda: time(10, 30))
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._is_trading_day", lambda *args, **kwargs: True)
+
+    def fake_quote(config_arg, *, ts_code, use_cache):
+        assert ts_code == "300503.SZ"
+        assert use_cache is True
+        return RealtimeDailyQuote(
+            ts_code=ts_code,
+            name="昊志机电",
+            pre_close=81.0,
+            open=83.0,
+            high=88.0,
+            low=82.5,
+            close=86.0,
+            vol=2000,
+            amount=30000,
+            num=120,
+        )
+
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart.get_realtime_daily_quote", fake_quote)
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/strategy/stocks/300503.SZ/chart", params={"days": 5})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["latest_trade_date"] == "20260608"
+    assert data["latest_source"] == "rt_k"
+    assert data["latest_is_realtime"] is True
+    assert [item["trade_date"] for item in data["candles"]] == ["20260605", "20260608"]
+    assert data["candles"][-1]["close"] == 86.0
+    assert data["candles"][-1]["amount"] == 30000
 
 
 def _config(tmp_path: Path) -> RadarConfig:
