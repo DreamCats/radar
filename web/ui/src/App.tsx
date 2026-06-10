@@ -11,7 +11,7 @@ import { WechatPage } from "./pages/WechatPage";
 type TabKey = "dashboard" | "wechat" | "organize" | "leaderboard" | "strategy" | "ingest";
 
 const NAV_ITEMS = [
-  { key: "dashboard", label: "总览", icon: Activity },
+  { key: "dashboard", label: "洞察", icon: Activity },
   { key: "wechat", label: "微信", icon: MessageCircle },
   { key: "organize", label: "整理", icon: Layers3 },
   { key: "leaderboard", label: "榜单", icon: ListOrdered },
@@ -90,7 +90,7 @@ export function App() {
 
 function pageTitle(tab: TabKey): string {
   const titles: Record<TabKey, string> = {
-    dashboard: "Agent 总览",
+    dashboard: "洞察",
     wechat: "微信消息",
     organize: "消息整理",
     leaderboard: "证据胜率榜",

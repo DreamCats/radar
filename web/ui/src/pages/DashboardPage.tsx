@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BriefcaseBusiness, Clock3, Database, RefreshCw, Sparkles } from "lucide-react";
 
-import { fetchDashboardSummary } from "../api/radarApi";
+import { fetchMessageOverview, fetchRuns } from "../api/radarApi";
 import { OverviewChatWorkspace } from "../components/OverviewChatWorkspace";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { useChatController } from "../components/useChatController";
@@ -11,7 +11,7 @@ import type { MessageOverview, RunItem } from "../types";
 const SUGGESTED_QUESTIONS = [
   { label: "今日简报", prompt: "生成今日简报：从本地消息流里找 3 个值得看的方向，说明证据、风险和下一步。" },
   { label: "未定价异动", prompt: "找出可能还没被行情充分定价的异动线索。" },
-  { label: "噪音过滤", prompt: "从总览里过滤低价值噪音，告诉我哪些内容不值得看，哪些值得进入策略页深挖。" },
+  { label: "噪音过滤", prompt: "从本地消息流里过滤低价值噪音，告诉我哪些内容不值得看，哪些值得进入策略页深挖。" },
   { label: "复盘作业", prompt: "复盘最近作业：哪些结果值得看，哪些只是噪音？" },
 ];
 
@@ -26,9 +26,12 @@ export function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const summary = await fetchDashboardSummary();
-      setOverview(summary.overview);
-      setRuns(summary.runs);
+      const [messageOverview, recentRuns] = await Promise.all([
+        fetchMessageOverview({ days: 14, top_limit: 8 }),
+        fetchRuns({ limit: 20 }),
+      ]);
+      setOverview(messageOverview);
+      setRuns(recentRuns);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
     } finally {
@@ -43,7 +46,7 @@ export function DashboardPage() {
   const summary = overview?.summary;
   const filteredTotal = runs.reduce((sum, run) => sum + run.filtered_count, 0);
   const initialLoading = loading && !overview;
-  const subtitle = summary?.latest_message_time ? `最新消息 ${formatTime(summary.latest_message_time)}` : "本地数据总览";
+  const subtitle = summary?.latest_message_time ? `最新消息 ${formatTime(summary.latest_message_time)}` : "本地消息洞察";
   const chatContext = useMemo(
     () => [
       { label: "总消息", value: summary?.total_count ?? null },
@@ -57,9 +60,9 @@ export function DashboardPage() {
   const evidence = useMemo(() => dashboardBriefEvidence(overview, filteredTotal), [overview, filteredTotal]);
   const controller = useChatController(
     {
-      title: "总览 Agent",
+      title: "洞察 Agent",
       subtitle,
-      surface: "总览",
+      surface: "洞察",
       entityId: summary?.latest_message_time ?? "dashboard",
       context: chatContext,
       evidence,
@@ -70,12 +73,12 @@ export function DashboardPage() {
 
   return (
     <section className="dashboard-page dashboard-agent-page">
-      {initialLoading ? <PageLoadingState label="正在聚合总览、榜单和消息信号" variant="dashboard" /> : null}
+      {initialLoading ? <PageLoadingState label="正在读取本地消息概览" variant="dashboard" /> : null}
       <OverviewChatWorkspace
         controller={controller}
-        title="总览 Agent"
+        title="洞察 Agent"
         subtitle={subtitle}
-        surface="总览"
+        surface="洞察"
         evidence={evidence}
         composerPlaceholder="输入股票、产业链、消息线索，或让 radar 生成今日简报"
         quickPrompts={SUGGESTED_QUESTIONS}
@@ -104,14 +107,14 @@ function OverviewIntro(props: {
       <div>
         <span className="overview-agent-kicker">
           <Sparkles size={14} />
-          总览上下文
+          洞察上下文
         </span>
         <h1>从本地消息流开始</h1>
         <p>下面输入框负责发送问题；左下快捷入口可以快速填入常用问题。</p>
       </div>
       <div className="overview-agent-tools">
-        {props.loading ? <PageRefreshProgress label="正在刷新总览" /> : null}
-        <button className="btn btn-sm" type="button" onClick={props.onRefresh} disabled={props.loading} title="刷新总览">
+        {props.loading ? <PageRefreshProgress label="正在刷新洞察" /> : null}
+        <button className="btn btn-sm" type="button" onClick={props.onRefresh} disabled={props.loading} title="刷新洞察">
           <RefreshCw size={15} />
           刷新
         </button>
@@ -154,7 +157,7 @@ function contextRail(summary: MessageOverview["summary"] | undefined, runs: RunI
           <strong>当前上下文</strong>
         </div>
         <p>{summary?.latest_message_time ? `最新消息 ${formatTime(summary.latest_message_time)}` : "暂无消息数据"}</p>
-        <p>{loading ? "正在刷新本地总览。" : "上下文栏只展示系统状态，不解析模型回答。"}</p>
+        <p>{loading ? "正在刷新本地洞察。" : "上下文栏只展示系统状态，不解析模型回答。"}</p>
         {error ? <p className="overview-rail-error">{error}</p> : null}
       </section>
       <section className="overview-rail-card">
