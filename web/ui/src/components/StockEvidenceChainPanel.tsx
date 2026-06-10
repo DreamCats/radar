@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { formatTime } from "../lib/datetime";
 import type { StockEvidenceChainDashboard, StockEvidenceChainItem, StockEvidenceMarketPoint } from "../types";
+import { ChatLauncher } from "./ChatLauncher";
 import { PanelTitle } from "./PanelTitle";
 
 const STAGE_ORDER = ["线索期", "种子期", "论证期", "扩散期", "定价期", "拥挤期"];
@@ -162,6 +163,28 @@ function StockEvidenceDetail({
               看K线
             </button>
           )}
+          <ChatLauncher
+            title={`${item.stock_name} 证据链`}
+            subtitle={`${item.ts_code} · ${item.stage_label}`}
+            surface="个股证据链"
+            entityId={item.ts_code}
+            buttonLabel="AI"
+            buttonClassName="btn btn-primary btn-sm stock-evidence-ai-btn"
+            context={[
+              { label: "股票", value: item.stock_name },
+              { label: "代码", value: item.ts_code },
+              { label: "阶段", value: item.stage_label },
+              { label: "置信", value: formatConfidence(item.confidence) },
+              { label: "触发", value: `${item.trigger_count}条 / 去重${item.unique_trigger_count}` },
+              { label: "扩散", value: `${item.sender_count}人 / ${item.conversation_count}会话` },
+            ]}
+            evidence={stockEvidenceChatLines(item)}
+            suggestedQuestions={[
+              "用人话解释一下这个阶段判断，哪些证据最关键？",
+              "结合市场证据和消息证据，现在主要风险是什么？",
+              "如果继续跟踪，下一步应该盯哪些消息、价格和催化？",
+            ]}
+          />
         </div>
       </header>
       <p className="stock-evidence-summary">{item.summary || "暂无一句话判断"}</p>
@@ -179,6 +202,22 @@ function StockEvidenceDetail({
       <DetailSection title="下一步盯什么" items={item.watch_next} />
     </aside>
   );
+}
+
+function stockEvidenceChatLines(item: StockEvidenceChainItem): string[] {
+  return [
+    `一句话判断：${item.summary || "暂无"}`,
+    `阶段：${item.stage_label}；置信度：${formatConfidence(item.confidence)}`,
+    ...item.why.slice(0, 4).map((line) => `阶段依据：${line}`),
+    ...item.evidence_chain.slice(0, 6).map((evidence) => {
+      const source = [evidence.sender, evidence.group_name].filter(Boolean).join(" · ");
+      return `证据：${evidence.time ?? "-"} ${evidence.type ?? "证据"} ${evidence.evidence ?? evidence.raw_content ?? "无摘要"}${source ? `（${source}）` : ""}`;
+    }),
+    ...item.market_points.slice(-4).map((point) => `市场：${point.trade_date} 收盘 ${point.close ?? "-"} 涨跌 ${formatPercent(point.pct_chg, true)} 量能 ${point.amount_ratio_5d ? `${point.amount_ratio_5d.toFixed(1)}x` : "-"}`),
+    item.pricing_risk ? `定价风险：${item.pricing_risk}` : "",
+    item.crowding_risk ? `拥挤风险：${item.crowding_risk}` : "",
+    ...item.watch_next.slice(0, 4).map((line) => `下一步：${line}`),
+  ].filter((line): line is string => Boolean(line));
 }
 
 function EvidenceTimeline({ item }: { item: StockEvidenceChainItem }) {

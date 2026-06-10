@@ -235,6 +235,13 @@
   cursor: pointer;
 }
 
+.stock-evidence-ai-btn {
+  min-width: 52px;
+  height: 30px;
+  justify-content: center;
+  padding-inline: 10px;
+}
+
 .stock-evidence-detail {
   display: grid;
   align-content: start;
