@@ -1,6 +1,8 @@
 .strategy-page {
   display: grid;
   gap: 12px;
+  min-height: calc(100vh - 26px);
+  grid-template-rows: auto auto minmax(0, 1fr);
 }
 
 .strategy-mode-tabs {
@@ -32,9 +34,14 @@
 .stock-evidence-workbench {
   display: grid;
   gap: 12px;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .stock-evidence-panel {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: auto auto minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -143,13 +150,12 @@
 .stock-evidence-layout {
   display: grid;
   grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.4fr);
-  min-height: 620px;
+  min-height: 0;
 }
 
 .stock-evidence-list {
   display: grid;
   align-content: start;
-  max-height: 720px;
   overflow: auto;
   border-right: 1px solid var(--color-hairline);
 }
@@ -246,7 +252,6 @@
   display: grid;
   align-content: start;
   gap: 12px;
-  max-height: 720px;
   overflow: auto;
   padding: 14px;
 }

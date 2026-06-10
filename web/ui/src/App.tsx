@@ -22,6 +22,7 @@ const NAV_ITEMS = [
 export function App() {
   const [tab, setTab] = useState<TabKey>("dashboard");
   const isDashboard = tab === "dashboard";
+  const isImmersive = isDashboard || tab === "strategy";
 
   return (
     <main className="app workspace-shell">
@@ -61,8 +62,8 @@ export function App() {
           </button>
         </div>
       </aside>
-      <section className={isDashboard ? "main workspace-main dashboard-main" : "main workspace-main"}>
-        {!isDashboard ? (
+      <section className={isImmersive ? "main workspace-main immersive-main" : "main workspace-main"}>
+        {!isImmersive ? (
           <header className="topbar">
             <div className="topbar-title">
               <span className="title">{pageTitle(tab)}</span>
@@ -78,7 +79,7 @@ export function App() {
             </button>
           </header>
         ) : null}
-        <div className={isDashboard ? "content dashboard-content" : "content"}>
+        <div className={isImmersive ? "content immersive-content" : "content"}>
           {tab === "dashboard" && <DashboardPage />}
           {tab === "wechat" && <WechatPage />}
           {tab === "organize" && <OrganizePage />}
