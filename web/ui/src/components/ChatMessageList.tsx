@@ -10,6 +10,7 @@ type ChatMessageListProps = {
   endRef: RefObject<HTMLDivElement | null>;
   listRef: RefObject<HTMLDivElement | null>;
   messages: ChatMessageItem[];
+  emptyState?: "overview";
   showJumpToBottom: boolean;
   onJumpToBottom: () => void;
   onScrollStateChange: (isNearBottom: boolean) => void;
@@ -27,6 +28,12 @@ export function ChatMessageList(props: ChatMessageListProps) {
         ref={props.listRef}
         onScroll={handleScroll}
       >
+        {props.messages.length === 0 && props.emptyState === "overview" ? (
+          <div className="chat-empty-state">
+            <strong>本地消息已就绪</strong>
+            <span>等待一个股票、产业链或消息线索。</span>
+          </div>
+        ) : null}
         <AnimatePresence initial={false}>
           {props.messages.map((message) => {
             const status = typeof message.metadata.status === "string" ? message.metadata.status : "";

@@ -23,6 +23,8 @@ type ChatComposerProps = {
   messages: ChatMessageItem[];
   contextItems: ChatContextItem[];
   evidence?: string[];
+  placeholder?: string;
+  quickPrompts?: { label: string; prompt: string }[];
   onDraftChange: (value: string) => void;
   onProviderChange: (value: string | null) => void;
   onSubmit: () => void;
@@ -37,6 +39,8 @@ export function ChatComposer({
   messages,
   contextItems,
   evidence,
+  placeholder,
+  quickPrompts,
   onDraftChange,
   onProviderChange,
   onSubmit,
@@ -74,7 +78,7 @@ export function ChatComposer({
   }, [modelMenuOpen]);
 
   return (
-    <div className="chat-composer">
+    <div className={quickPrompts && quickPrompts.length > 0 ? "chat-composer with-shortcuts" : "chat-composer"}>
       <textarea
         value={draft}
         onChange={(event) => onDraftChange(event.target.value)}
@@ -85,7 +89,7 @@ export function ChatComposer({
           isComposingRef.current = false;
         }}
         rows={3}
-        placeholder="输入你的问题..."
+        placeholder={placeholder ?? "输入你的问题..."}
         onKeyDown={(event) => {
           const nativeEvent = event.nativeEvent as KeyboardEvent;
           if (isComposingRef.current || nativeEvent.isComposing || nativeEvent.keyCode === 229) {
@@ -101,6 +105,15 @@ export function ChatComposer({
           }
         }}
       />
+      {quickPrompts && quickPrompts.length > 0 ? (
+        <div className="chat-composer-shortcuts" aria-label="快捷问题">
+          {quickPrompts.map((item) => (
+            <button key={item.label} type="button" onClick={() => onDraftChange(item.prompt)}>
+              {item.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="chat-composer-actions">
         <div className="chat-context-meter" tabIndex={0} aria-label={contextTooltip}>
           <span

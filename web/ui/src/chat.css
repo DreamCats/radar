@@ -17,15 +17,23 @@
 .chat-launcher-panel {
   position: relative;
   z-index: 1;
-  display: grid;
+  display: block;
   width: min(920px, calc(100vw - 48px));
   height: min(820px, calc(100vh - 48px));
-  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid var(--color-hairline-strong);
   border-radius: var(--radius-md);
   background: var(--color-surface-1);
   box-shadow: 0 24px 80px rgb(0 0 0 / 0.42);
+}
+
+.chat-workspace {
+  display: grid;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .chat-launcher-head {
@@ -71,8 +79,9 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
-  padding: 14px 16px 18px;
   min-height: 0;
+  overflow: hidden;
+  padding: 14px 16px 18px;
 }
 
 .chat-launcher-body.with-history {
@@ -83,7 +92,9 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: 12px;
+  height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
 .chat-launcher-reference {
@@ -177,6 +188,28 @@
 
 .chat-message-list.with-jump-to-bottom {
   padding-bottom: 52px;
+}
+
+.chat-empty-state {
+  display: grid;
+  width: min(100%, 420px);
+  place-self: center;
+  gap: 6px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-surface-2) 46%, transparent);
+  color: var(--color-ink-subtle);
+  padding: 18px;
+  text-align: center;
+}
+
+.chat-empty-state strong {
+  color: var(--color-ink);
+  font-size: 14px;
+}
+
+.chat-empty-state span {
+  font-size: 12px;
 }
 
 .chat-jump-to-bottom {

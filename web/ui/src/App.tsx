@@ -90,7 +90,7 @@ export function App() {
 
 function pageTitle(tab: TabKey): string {
   const titles: Record<TabKey, string> = {
-    dashboard: "数据概览",
+    dashboard: "Agent 总览",
     wechat: "微信消息",
     organize: "消息整理",
     leaderboard: "证据胜率榜",

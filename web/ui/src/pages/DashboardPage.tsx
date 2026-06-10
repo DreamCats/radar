@@ -1,17 +1,26 @@
-import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BriefcaseBusiness, Clock3, Database, RefreshCw, Sparkles } from "lucide-react";
 
 import { fetchDashboardSummary } from "../api/radarApi";
-import { ChatLauncher } from "../components/ChatLauncher";
+import { OverviewChatWorkspace } from "../components/OverviewChatWorkspace";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
+import { useChatController } from "../components/useChatController";
 import { formatTime } from "../lib/datetime";
 import type { MessageOverview, RunItem } from "../types";
+
+const SUGGESTED_QUESTIONS = [
+  { label: "今日简报", prompt: "生成今日简报：从本地消息流里找 3 个值得看的方向，说明证据、风险和下一步。" },
+  { label: "未定价异动", prompt: "找出可能还没被行情充分定价的异动线索。" },
+  { label: "噪音过滤", prompt: "从总览里过滤低价值噪音，告诉我哪些内容不值得看，哪些值得进入策略页深挖。" },
+  { label: "复盘作业", prompt: "复盘最近作业：哪些结果值得看，哪些只是噪音？" },
+];
 
 export function DashboardPage() {
   const [overview, setOverview] = useState<MessageOverview | null>(null);
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contextRailOpen, setContextRailOpen] = useState(true);
 
   async function refresh() {
     setLoading(true);
@@ -34,61 +43,140 @@ export function DashboardPage() {
   const summary = overview?.summary;
   const filteredTotal = runs.reduce((sum, run) => sum + run.filtered_count, 0);
   const initialLoading = loading && !overview;
+  const subtitle = summary?.latest_message_time ? `最新消息 ${formatTime(summary.latest_message_time)}` : "本地数据总览";
+  const chatContext = useMemo(
+    () => [
+      { label: "总消息", value: summary?.total_count ?? null },
+      { label: "个人群", value: summary ? `${summary.group_message_count} 条 / ${summary.group_count} 个群` : null },
+      { label: "个人消息", value: summary ? `${summary.personal_message_count} 条 / ${summary.sender_count} 位发送人` : null },
+      { label: "硬过滤", value: filteredTotal || null },
+      { label: "最新消息", value: summary?.latest_message_time ? formatTime(summary.latest_message_time) : null },
+    ],
+    [filteredTotal, summary],
+  );
+  const evidence = useMemo(() => dashboardBriefEvidence(overview, filteredTotal), [overview, filteredTotal]);
+  const controller = useChatController(
+    {
+      title: "总览 Agent",
+      subtitle,
+      surface: "总览",
+      entityId: summary?.latest_message_time ?? "dashboard",
+      context: chatContext,
+      evidence,
+      suggestedQuestions: SUGGESTED_QUESTIONS.map((item) => item.prompt),
+    },
+    true,
+  );
 
   return (
-    <section className="dashboard-page">
-      <div className="dashboard-actions">
-        <p>
-          {initialLoading
-            ? "正在加载总览数据"
-            : summary?.latest_message_time
-              ? `最新消息 ${formatTime(summary.latest_message_time)}`
-              : "暂无消息数据"}
-        </p>
-        <div>
-          {loading && !initialLoading && <PageRefreshProgress label="正在刷新总览" />}
-          {summary && (
-            <ChatLauncher
-              title="总览简报"
-              subtitle={summary.latest_message_time ? `最新消息 ${formatTime(summary.latest_message_time)}` : "本地数据总览"}
-              surface="总览"
-              entityId={summary.latest_message_time ?? "dashboard"}
-              buttonLabel="今日简报"
-              buttonClassName="btn btn-sm chat-inline-action"
-              context={[
-                { label: "总消息", value: summary.total_count },
-                { label: "个人群", value: `${summary.group_message_count} 条 / ${summary.group_count} 个群` },
-                { label: "个人消息", value: `${summary.personal_message_count} 条 / ${summary.sender_count} 位发送人` },
-                { label: "硬过滤", value: filteredTotal },
-                { label: "最新消息", value: summary.latest_message_time ? formatTime(summary.latest_message_time) : null },
-              ]}
-              evidence={dashboardBriefEvidence(overview, filteredTotal)}
-              suggestedQuestions={[
-                "今天最值得看的三个机会是什么？请给出证据、风险和下一步验证。",
-                "总览里哪些信号可能只是噪音，哪些值得进入策略页深挖？",
-                "相比普通行情看板，今天本地消息流给了哪些新增信息？",
-              ]}
+    <section className="dashboard-page dashboard-agent-page">
+      {initialLoading ? <PageLoadingState label="正在聚合总览、榜单和消息信号" variant="dashboard" /> : null}
+      <OverviewChatWorkspace
+        controller={controller}
+        title="总览 Agent"
+        subtitle={subtitle}
+        surface="总览"
+        evidence={evidence}
+        composerPlaceholder="输入股票、产业链、消息线索，或让 radar 生成今日简报"
+        quickPrompts={SUGGESTED_QUESTIONS}
+        intro={
+          controller.messages.length === 0 ? (
+            <OverviewIntro
+              loading={loading}
+              onRefresh={() => void refresh()}
             />
-          )}
-          <button className="btn btn-sm" type="button" onClick={() => void refresh()} disabled={loading} title="刷新总览">
-            <RefreshCw size={15} />
-            刷新
-          </button>
-        </div>
-      </div>
-      {initialLoading && <PageLoadingState label="正在聚合总览、榜单和消息信号" variant="dashboard" />}
-      {!initialLoading && (
-        <>
-      <div className="statbar metric-grid">
-        <Metric label="总消息" value={summary?.total_count ?? 0} detail="全库" />
-        <Metric label="个人群" value={summary?.group_message_count ?? 0} detail={`${summary?.group_count ?? 0} 个群`} />
-        <Metric label="个人消息" value={summary?.personal_message_count ?? 0} detail={`${summary?.sender_count ?? 0} 位发送人`} />
-        <Metric label="硬过滤" value={filteredTotal} detail="最近 20 次作业" />
-      </div>
-      {error && <p className="error-line">{error}</p>}
-        </>
-      )}
+          ) : undefined
+        }
+        rightRail={contextRail(summary, runs, filteredTotal, loading, error)}
+        rightRailOpen={contextRailOpen}
+        onToggleRightRail={() => setContextRailOpen((value) => !value)}
+      />
     </section>
+  );
+}
+
+function OverviewIntro(props: {
+  loading: boolean;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className="overview-agent-intro">
+      <div>
+        <span className="overview-agent-kicker">
+          <Sparkles size={14} />
+          总览上下文
+        </span>
+        <h1>从本地消息流开始</h1>
+        <p>下面输入框负责发送问题；左下快捷入口可以快速填入常用问题。</p>
+      </div>
+      <div className="overview-agent-tools">
+        {props.loading ? <PageRefreshProgress label="正在刷新总览" /> : null}
+        <button className="btn btn-sm" type="button" onClick={props.onRefresh} disabled={props.loading} title="刷新总览">
+          <RefreshCw size={15} />
+          刷新
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function contextRail(summary: MessageOverview["summary"] | undefined, runs: RunItem[], filteredTotal: number, loading: boolean, error: string | null) {
+  const recentRuns = runs.slice(0, 3);
+  return (
+    <>
+      <section className="overview-rail-card">
+        <div className="overview-rail-title">
+          <Database size={15} />
+          <strong>可用数据</strong>
+        </div>
+        <dl className="overview-rail-metrics">
+          <div>
+            <dt>总消息</dt>
+            <dd>{formatCompact(summary?.total_count)}</dd>
+          </div>
+          <div>
+            <dt>个人群</dt>
+            <dd>{formatCompact(summary?.group_message_count)}</dd>
+          </div>
+          <div>
+            <dt>个人消息</dt>
+            <dd>{formatCompact(summary?.personal_message_count)}</dd>
+          </div>
+          <div>
+            <dt>硬过滤</dt>
+            <dd>{formatCompact(filteredTotal)}</dd>
+          </div>
+        </dl>
+      </section>
+      <section className="overview-rail-card">
+        <div className="overview-rail-title">
+          <Clock3 size={15} />
+          <strong>当前上下文</strong>
+        </div>
+        <p>{summary?.latest_message_time ? `最新消息 ${formatTime(summary.latest_message_time)}` : "暂无消息数据"}</p>
+        <p>{loading ? "正在刷新本地总览。" : "上下文栏只展示系统状态，不解析模型回答。"}</p>
+        {error ? <p className="overview-rail-error">{error}</p> : null}
+      </section>
+      <section className="overview-rail-card">
+        <div className="overview-rail-title">
+          <BriefcaseBusiness size={15} />
+          <strong>最近任务</strong>
+        </div>
+        {recentRuns.length > 0 ? (
+          <ul className="overview-run-list">
+            {recentRuns.map((run) => (
+              <li key={run.run_id}>
+                <span className={`status ${run.status}`}>{run.status}</span>
+                <strong>{run.kind}</strong>
+                <em>{run.finished_at ? formatTime(run.finished_at) : "进行中"}</em>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>暂无最近作业。</p>
+        )}
+      </section>
+    </>
   );
 }
 
@@ -100,16 +188,9 @@ function dashboardBriefEvidence(overview: MessageOverview | null, filteredTotal:
   ].filter((line): line is string => Boolean(line));
 }
 
-function Metric(props: {
-  label: string;
-  value: number | string;
-  detail: string;
-}) {
-  return (
-    <article className="stat metric-card">
-      <p className="k">{props.label}</p>
-      <strong className="v">{props.value}</strong>
-      <span className="sub">{props.detail}</span>
-    </article>
-  );
+function formatCompact(value: number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return "--";
+  }
+  return new Intl.NumberFormat("zh-CN").format(value);
 }
