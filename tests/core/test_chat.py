@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import pytest
+
 from radar.core.chat import (
     COMMON_CHAT_SYSTEM_PROMPT,
     DEFAULT_CHAT_SYSTEM_PROMPT,
@@ -19,6 +21,7 @@ from radar.core.llm import LlmChatDelta, LlmChatDone, LlmChatResponse, LlmReason
 from radar.core.models import RawMessage
 from radar.core.store import connect, init_db, upsert_messages
 from radar.core.tushare import RealtimeDailyQuote
+from radar.core.tushare.exceptions import TushareApiError
 from radar.core.usecases.stock_evidence_chain.stock_chart import StockEvidenceStockCandle, StockEvidenceStockChart
 from radar.core.usecases.stock_evidence_chain.views import StockEvidenceChainDashboard, StockEvidenceChainItem
 
@@ -543,6 +546,21 @@ def test_builtin_realtime_daily_quote_tool_uses_rt_k_helper(tmp_path, monkeypatc
     assert result["open"] == 83.5
     assert result["close"] == 84.75
     assert captured == {"ts_code": "300503.SZ", "use_cache": False}
+
+
+def test_builtin_realtime_daily_quote_tool_explains_rt_k_permission_error(tmp_path, monkeypatch):
+    config = RadarConfig(storage={"data_dir": tmp_path})
+
+    monkeypatch.setattr("radar.core.chat.tushare_tools.resolve_stock", lambda config, value: "300503.SZ")
+
+    def fake_realtime_quote(config, *, ts_code, use_cache):
+        raise TushareApiError("rt_k: 抱歉，您没有接口(rt_k)访问权限")
+
+    monkeypatch.setattr("radar.core.chat.tushare_tools.get_realtime_daily_quote", fake_realtime_quote)
+
+    agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
+    with pytest.raises(TushareApiError, match="当前 Tushare token 没有 rt_k 接口访问权限"):
+        agent.tools.get("radar_get_realtime_daily_quote").execute({"stock": "300503.SZ"})
 
 
 def test_chat_agent_records_unknown_tool_as_error(tmp_path, monkeypatch):

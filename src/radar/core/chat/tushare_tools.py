@@ -16,6 +16,7 @@ from radar.core.tushare import (
     resolve_stock,
 )
 from radar.core.tushare import call as tushare_call
+from radar.core.tushare.exceptions import TushareApiError
 
 
 TUSHARE_PRICE_FIELDS = {
@@ -190,7 +191,17 @@ class RadarTushareTools:
     def realtime_daily_quote(self, args: dict[str, Any]) -> dict[str, Any]:
         stock = str(args["stock"]).strip()
         ts_code = resolve_stock(self.config, stock)
-        quote = get_realtime_daily_quote(self.config, ts_code=ts_code, use_cache=bool(args.get("use_cache", True)))
+        try:
+            quote = get_realtime_daily_quote(self.config, ts_code=ts_code, use_cache=bool(args.get("use_cache", True)))
+        except TushareApiError as exc:
+            message = str(exc)
+            if "rt_k" in message and "访问权限" in message:
+                raise TushareApiError(
+                    "实时行情快照不可用：当前 Tushare token 没有 rt_k 接口访问权限。"
+                    "请开通 rt_k 权限或更换 token；本次只能改用日线、技术因子等非实时数据。"
+                    f"原始错误：{message}"
+                ) from exc
+            raise
         if quote is None:
             return {"found": False, "stock": stock, "ts_code": ts_code}
         return {"found": True, "stock": stock, **quote.model_dump(mode="json")}
