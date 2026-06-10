@@ -27,7 +27,7 @@
 
 .wechat-conversation-panel,
 .wechat-thread-panel {
-  height: calc(100vh - 178px);
+  height: calc(100vh - 106px);
   min-height: 0;
   min-width: 0;
 }

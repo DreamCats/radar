@@ -46,11 +46,21 @@
   gap: 12px;
   border-bottom: 1px solid var(--color-hairline);
   background: color-mix(in srgb, var(--color-surface-1) 82%, transparent);
-  padding: 16px;
+  padding: 12px 16px;
+}
+
+.chat-launcher-head-main {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  min-width: 0;
 }
 
 .chat-launcher-title {
   display: grid;
+  flex: 1 1 240px;
   gap: 4px;
   min-width: 0;
 }
@@ -94,7 +104,7 @@
 
 .chat-main-panel {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: minmax(0, 1fr) auto auto;
   gap: 12px;
   height: 100%;
   min-height: 0;
@@ -103,25 +113,42 @@
 
 .chat-launcher-reference {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
 }
 
 .chat-launcher-reference details {
-  min-width: min(280px, 100%);
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-2);
-  padding: 8px 10px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-surface-2) 68%, transparent);
+  padding: 0;
+}
+
+.chat-launcher-reference details:first-child {
+  width: min(230px, 28vw);
+}
+
+.chat-launcher-reference details + details {
+  width: 112px;
 }
 
 .chat-launcher-reference summary {
   display: flex;
+  min-width: 0;
+  min-height: 28px;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   color: var(--color-ink-muted);
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 9px;
   cursor: pointer;
 }
 
@@ -131,9 +158,34 @@
 }
 
 .chat-launcher-reference summary em {
+  overflow: hidden;
   color: var(--color-ink-subtle);
   font-size: 12px;
   font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-launcher-reference details[open] {
+  z-index: 10;
+}
+
+.chat-launcher-reference details[open] .chat-context-grid,
+.chat-launcher-reference details[open] .chat-evidence-list {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  width: min(360px, calc(100vw - 64px));
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-1) 96%, black);
+  box-shadow: 0 16px 44px rgb(0 0 0 / 0.34);
+  padding: 10px;
+}
+
+.chat-launcher-reference details + details[open] .chat-evidence-list {
+  right: 0;
+  left: auto;
 }
 
 .chat-context-grid {
@@ -349,10 +401,12 @@
 }
 
 .chat-workspace .chat-composer textarea {
-  min-height: 94px;
+  height: 64px;
+  min-height: 64px;
   border-color: transparent;
   background: color-mix(in srgb, var(--color-canvas) 52%, transparent);
   font-size: 14px;
+  padding: 10px 150px 10px 12px;
 }
 
 .chat-typing {

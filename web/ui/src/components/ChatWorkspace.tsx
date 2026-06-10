@@ -27,10 +27,41 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
   return (
     <div className="chat-workspace">
       <header className="chat-launcher-head">
-        <div className="chat-launcher-title">
-          <span>{props.surface}</span>
-          <strong>{props.title}</strong>
-          <em>{props.subtitle}</em>
+        <div className="chat-launcher-head-main">
+          <div className="chat-launcher-title">
+            <span>{props.surface}</span>
+            <strong>{props.title}</strong>
+            <em>{props.subtitle}</em>
+          </div>
+          <div className="chat-launcher-reference">
+            <details>
+              <summary>
+                <span>上下文</span>
+                <em>{props.entityId}</em>
+              </summary>
+              <div className="chat-context-grid">
+                {controller.visibleContext.map((item) => (
+                  <article key={item.label}>
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </article>
+                ))}
+              </div>
+            </details>
+            {props.evidence && props.evidence.length > 0 ? (
+              <details>
+                <summary>
+                  <span>证据</span>
+                  <em>{props.evidence.length} 条</em>
+                </summary>
+                <ul className="chat-evidence-list">
+                  {props.evidence.slice(0, 5).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+          </div>
         </div>
         <div className="chat-launcher-actions">
           <button className="icon-btn" type="button" aria-label="历史对话" onClick={() => controller.setHistoryOpen((value) => !value)}>
@@ -62,35 +93,6 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
           />
         ) : null}
         <div className="chat-main-panel">
-          <div className="chat-launcher-reference">
-            <details>
-              <summary>
-                <span>上下文</span>
-                <em>{props.entityId}</em>
-              </summary>
-              <div className="chat-context-grid">
-                {controller.visibleContext.map((item) => (
-                  <article key={item.label}>
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
-                  </article>
-                ))}
-              </div>
-            </details>
-            {props.evidence && props.evidence.length > 0 ? (
-              <details>
-                <summary>
-                  <span>证据</span>
-                  <em>{props.evidence.length} 条</em>
-                </summary>
-                <ul className="chat-evidence-list">
-                  {props.evidence.slice(0, 5).map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </details>
-            ) : null}
-          </div>
           <ChatMessageList
             messages={controller.messages}
             endRef={controller.messagesEndRef}
