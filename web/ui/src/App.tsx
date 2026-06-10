@@ -21,6 +21,7 @@ const NAV_ITEMS = [
 
 export function App() {
   const [tab, setTab] = useState<TabKey>("dashboard");
+  const isDashboard = tab === "dashboard";
 
   return (
     <main className="app workspace-shell">
@@ -60,22 +61,24 @@ export function App() {
           </button>
         </div>
       </aside>
-      <section className="main workspace-main">
-        <header className="topbar">
-          <div className="topbar-title">
-            <span className="title">{pageTitle(tab)}</span>
-            <span className="caption">· local dashboard</span>
-          </div>
-          <div className="system-pill">
-            <span className="pulse-dot" />
-            本地数据核
-          </div>
-          <button className="btn btn-primary btn-sm" type="button" onClick={() => setTab("ingest")}>
-            <RefreshCw size={14} />
-            作业
-          </button>
-        </header>
-        <div className="content">
+      <section className={isDashboard ? "main workspace-main dashboard-main" : "main workspace-main"}>
+        {!isDashboard ? (
+          <header className="topbar">
+            <div className="topbar-title">
+              <span className="title">{pageTitle(tab)}</span>
+              <span className="caption">· local dashboard</span>
+            </div>
+            <div className="system-pill">
+              <span className="pulse-dot" />
+              本地数据核
+            </div>
+            <button className="btn btn-primary btn-sm" type="button" onClick={() => setTab("ingest")}>
+              <RefreshCw size={14} />
+              作业
+            </button>
+          </header>
+        ) : null}
+        <div className={isDashboard ? "content dashboard-content" : "content"}>
           {tab === "dashboard" && <DashboardPage />}
           {tab === "wechat" && <WechatPage />}
           {tab === "organize" && <OrganizePage />}

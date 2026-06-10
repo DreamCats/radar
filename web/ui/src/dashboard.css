@@ -34,6 +34,10 @@
   padding: 20px 24px;
 }
 
+.dashboard-content {
+  padding: 12px 18px 14px;
+}
+
 .brand-block {
   display: flex;
   align-items: center;
@@ -135,12 +139,12 @@
 }
 
 .dashboard-agent-page {
-  min-height: calc(100vh - 98px);
+  min-height: calc(100vh - 26px);
 }
 
 .overview-chat-workspace {
   display: grid;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 26px);
   min-height: 640px;
   min-width: 0;
   overflow: hidden;
