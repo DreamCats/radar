@@ -1,8 +1,9 @@
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Check, Copy } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState, type RefObject, type UIEvent } from "react";
 
 import type { ChatMessageItem } from "../types";
+import { copyText } from "../lib/clipboard";
 import { toolActivities, type ToolActivityItem } from "./chatHelpers";
 import { DrawerMarkdownContent } from "./DrawerMarkdownContent";
 import { MarkdownContent } from "./MarkdownContent";
@@ -20,9 +21,22 @@ type ChatMessageListProps = {
 
 export function ChatMessageList(props: ChatMessageListProps) {
   const Content = props.markdownSurface === "drawer" ? DrawerMarkdownContent : MarkdownContent;
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     props.onScrollStateChange(isNearBottom(event.currentTarget));
+  }
+
+  async function handleCopyMessage(message: ChatMessageItem) {
+    try {
+      await copyText(message.content);
+      setCopiedMessageId(message.message_id);
+      window.setTimeout(() => {
+        setCopiedMessageId((current) => (current === message.message_id ? null : current));
+      }, 1400);
+    } catch {
+      setCopiedMessageId(null);
+    }
   }
 
   return (
@@ -43,6 +57,8 @@ export function ChatMessageList(props: ChatMessageListProps) {
             const status = typeof message.metadata.status === "string" ? message.metadata.status : "";
             const reasoning = typeof message.metadata.reasoning === "string" ? message.metadata.reasoning : "";
             const activities = toolActivities(message.metadata.tool_activities);
+            const canCopy = message.role === "assistant" && Boolean(message.content) && !message.metadata.streaming;
+            const isCopied = copiedMessageId === message.message_id;
             return (
               <motion.article
                 className={`chat-message chat-message-${message.role}`}
@@ -73,6 +89,22 @@ export function ChatMessageList(props: ChatMessageListProps) {
                     <em />
                   </div>
                 )}
+                {canCopy ? (
+                  <div className="chat-message-actions">
+                    <button
+                      className={isCopied ? "chat-message-copy is-copied" : "chat-message-copy"}
+                      type="button"
+                      aria-label={isCopied ? "已复制回复" : "复制回复"}
+                      title={isCopied ? "已复制" : "复制"}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleCopyMessage(message);
+                      }}
+                    >
+                      {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                ) : null}
               </motion.article>
             );
           })}

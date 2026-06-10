@@ -295,6 +295,51 @@
   padding: 4px 2px;
 }
 
+.chat-message-actions {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-message-copy {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 72%, transparent);
+  color: var(--color-ink-subtle);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease,
+    opacity 140ms ease;
+}
+
+.chat-message-assistant:hover .chat-message-copy,
+.chat-message-assistant:focus-within .chat-message-copy,
+.chat-message-copy:focus-visible,
+.chat-message-copy.is-copied {
+  opacity: 1;
+}
+
+.chat-message-copy:hover,
+.chat-message-copy:focus-visible {
+  border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-hairline-strong));
+  background: color-mix(in srgb, var(--color-surface-3) 82%, transparent);
+  color: var(--color-ink);
+  outline: none;
+}
+
+.chat-message-copy.is-copied {
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-hairline-strong));
+  color: var(--color-primary);
+}
+
 .chat-workspace .chat-composer {
   border: 1px solid color-mix(in srgb, var(--color-hairline-strong) 84%, transparent);
   border-radius: var(--radius-lg);
