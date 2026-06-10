@@ -1,9 +1,9 @@
 import { ArrowDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import type { RefObject, UIEvent } from "react";
+import { useState, type RefObject, type UIEvent } from "react";
 
 import type { ChatMessageItem } from "../types";
-import { toolActivities } from "./chatHelpers";
+import { toolActivities, type ToolActivityItem } from "./chatHelpers";
 import { MarkdownContent } from "./MarkdownContent";
 
 type ChatMessageListProps = {
@@ -53,15 +53,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
                   <details className="chat-reasoning" open={Boolean(message.metadata.streaming)}>
                     <summary>推理过程</summary>
                     {reasoning ? <MarkdownContent content={reasoning} /> : null}
-                    {activities.length > 0 ? (
-                      <ul className="chat-tool-activity-list">
-                        {activities.map((activity) => (
-                          <li className={`chat-tool-activity-${activity.status}`} key={activity.key}>
-                            {activity.label}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
+                    {activities.length > 0 ? <ChatToolActivityList activities={activities} /> : null}
                   </details>
                 ) : null}
                 {message.content ? (
@@ -91,6 +83,55 @@ export function ChatMessageList(props: ChatMessageListProps) {
       ) : null}
     </div>
   );
+}
+
+const TOOL_ACTIVITY_COLLAPSE_LIMIT = 6;
+
+type ToolActivityDisplayItem = ToolActivityItem & {
+  count: number;
+};
+
+function ChatToolActivityList({ activities }: { activities: ToolActivityItem[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const groupedActivities = groupConsecutiveToolActivities(activities);
+  const hasHiddenGroups = groupedActivities.length > TOOL_ACTIVITY_COLLAPSE_LIMIT;
+  const hasGroupedItems = groupedActivities.some((activity) => activity.count > 1);
+  const canExpand = hasHiddenGroups || hasGroupedItems;
+  const displayActivities =
+    expanded ? activities.map((activity) => ({ ...activity, count: 1 })) : groupedActivities.slice(0, TOOL_ACTIVITY_COLLAPSE_LIMIT);
+  const hiddenCount = hasHiddenGroups
+    ? groupedActivities.slice(TOOL_ACTIVITY_COLLAPSE_LIMIT).reduce((total, activity) => total + activity.count, 0)
+    : 0;
+
+  return (
+    <div className="chat-tool-activity-block">
+      <ul className="chat-tool-activity-list">
+        {displayActivities.map((activity) => (
+          <li className={`chat-tool-activity-${activity.status}`} key={activity.key}>
+            {activity.label}
+            {activity.count > 1 ? <span className="chat-tool-activity-count">x{activity.count}</span> : null}
+          </li>
+        ))}
+      </ul>
+      {canExpand ? (
+        <button className="chat-tool-activity-toggle" type="button" onClick={() => setExpanded((value) => !value)}>
+          {expanded ? "收起工具调用" : hiddenCount > 0 ? `还有 ${hiddenCount} 个工具调用` : `展开 ${activities.length} 个工具调用`}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function groupConsecutiveToolActivities(activities: ToolActivityItem[]): ToolActivityDisplayItem[] {
+  return activities.reduce<ToolActivityDisplayItem[]>((groups, activity) => {
+    const last = groups[groups.length - 1];
+    if (last && last.label === activity.label && last.status === activity.status) {
+      last.count += 1;
+      return groups;
+    }
+    groups.push({ ...activity, count: 1 });
+    return groups;
+  }, []);
 }
 
 function isNearBottom(element: HTMLDivElement): boolean {
