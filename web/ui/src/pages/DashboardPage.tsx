@@ -3,44 +3,12 @@ import { RefreshCw } from "lucide-react";
 
 import { fetchDashboardSummary } from "../api/radarApi";
 import { ChatLauncher } from "../components/ChatLauncher";
-import { ClassificationDistributionChart } from "../components/ClassificationDistributionChart";
-import { LeaderboardAlphaChart } from "../components/LeaderboardAlphaChart";
-import { TopGroupsChart, TrendChart } from "../components/OverviewCharts";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { formatTime } from "../lib/datetime";
-import type {
-  MessageOverview,
-  OrganizeClassificationPage,
-  RecommendationBacktestSummary,
-  RunItem,
-} from "../types";
-
-const emptyClassificationPage: OrganizeClassificationPage = {
-  summary: {
-    classified_count: 0,
-    total_count: 0,
-    cluster_count: 0,
-    low_confidence_count: 0,
-    noise_count: 0,
-    hidden_count: 0,
-    average_confidence: 0,
-  },
-  clusters: [],
-};
-
-const emptyBacktestSummary: RecommendationBacktestSummary = {
-  start_time: "",
-  end_time: "",
-  group_by: "analyst_sector",
-  windows: [1, 2, 3, 5],
-  row_count: 0,
-  rows: [],
-};
+import type { MessageOverview, RunItem } from "../types";
 
 export function DashboardPage() {
   const [overview, setOverview] = useState<MessageOverview | null>(null);
-  const [classificationPage, setClassificationPage] = useState<OrganizeClassificationPage>(emptyClassificationPage);
-  const [backtestSummary, setBacktestSummary] = useState<RecommendationBacktestSummary>(emptyBacktestSummary);
   const [runs, setRuns] = useState<RunItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,8 +19,6 @@ export function DashboardPage() {
     try {
       const summary = await fetchDashboardSummary();
       setOverview(summary.overview);
-      setClassificationPage(summary.classifications);
-      setBacktestSummary(summary.backtest);
       setRuns(summary.runs);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
@@ -94,10 +60,9 @@ export function DashboardPage() {
                 { label: "个人群", value: `${summary.group_message_count} 条 / ${summary.group_count} 个群` },
                 { label: "个人消息", value: `${summary.personal_message_count} 条 / ${summary.sender_count} 位发送人` },
                 { label: "硬过滤", value: filteredTotal },
-                { label: "有效分类", value: classificationPage.summary.total_count },
                 { label: "最新消息", value: summary.latest_message_time ? formatTime(summary.latest_message_time) : null },
               ]}
-              evidence={dashboardBriefEvidence(overview, classificationPage, backtestSummary)}
+              evidence={dashboardBriefEvidence(overview, filteredTotal)}
               suggestedQuestions={[
                 "今天最值得看的三个机会是什么？请给出证据、风险和下一步验证。",
                 "总览里哪些信号可能只是噪音，哪些值得进入策略页深挖？",
@@ -121,36 +86,17 @@ export function DashboardPage() {
         <Metric label="硬过滤" value={filteredTotal} detail="最近 20 次作业" />
       </div>
       {error && <p className="error-line">{error}</p>}
-      <div className="overview-chart-grid">
-        <LeaderboardAlphaChart rows={backtestSummary.rows} dimension={backtestSummary.group_by} />
-        <TrendChart overview={overview} />
-        <TopGroupsChart data={overview?.top_groups ?? []} />
-        <ClassificationDistributionChart
-          clusters={classificationPage.clusters}
-          totalCount={classificationPage.summary.total_count}
-        />
-      </div>
         </>
       )}
     </section>
   );
 }
 
-function dashboardBriefEvidence(
-  overview: MessageOverview | null,
-  classificationPage: OrganizeClassificationPage,
-  backtestSummary: RecommendationBacktestSummary,
-): string[] {
+function dashboardBriefEvidence(overview: MessageOverview | null, filteredTotal: number): string[] {
   return [
-    overview?.top_groups.length
-      ? `活跃群：${overview.top_groups.slice(0, 5).map((item) => `${item.group_name} ${item.count}`).join(" / ")}`
-      : "",
-    classificationPage.clusters.length
-      ? `有效分类：${classificationPage.clusters.slice(0, 5).map((item) => `${item.label} ${item.count}`).join(" / ")}`
-      : "",
-    backtestSummary.rows.length
-      ? `回测榜：${backtestSummary.rows.slice(0, 5).map((item) => `${item.key} ${item.event_count}事件`).join(" / ")}`
-      : "",
+    overview?.summary.latest_message_time ? `最新消息：${formatTime(overview.summary.latest_message_time)}` : "",
+    overview?.summary.total_count ? `全库消息：${overview.summary.total_count} 条` : "",
+    filteredTotal ? `最近作业硬过滤：${filteredTotal} 条` : "",
   ].filter((line): line is string => Boolean(line));
 }
 
