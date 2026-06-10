@@ -4,6 +4,8 @@ import sqlite3
 import threading
 from collections.abc import Sequence
 
+from radar.core.db_evidence_chain import EVIDENCE_CHAIN_MIGRATIONS
+
 Migration = tuple[str, str]
 _MIGRATION_LOCK = threading.Lock()
 
@@ -499,7 +501,7 @@ MESSAGE_MIGRATIONS: list[Migration] = [
         WHERE kind IN ('source_extract', 'source_radar_snapshot');
         """,
     ),
-]
+] + EVIDENCE_CHAIN_MIGRATIONS
 
 MARKET_MIGRATIONS: list[Migration] = [
     (
