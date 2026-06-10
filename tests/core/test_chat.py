@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from radar.core.chat import (
+    COMMON_CHAT_SYSTEM_PROMPT,
     DEFAULT_CHAT_SYSTEM_PROMPT,
     ChatAgent,
     ChatMessage,
@@ -10,6 +11,7 @@ from radar.core.chat import (
     ChatTool,
     ExtensionContext,
     ToolRegistry,
+    build_chat_system_prompt,
 )
 from radar.core.chat.events import new_id, now_iso
 from radar.core.config import RadarConfig
@@ -184,6 +186,20 @@ def test_chat_agent_uses_default_system_prompt(tmp_path, monkeypatch):
 
     assert seen["messages"][0] == {"role": "system", "content": f"{DEFAULT_CHAT_SYSTEM_PROMPT}\n\n当日日期：2026-06-09"}
     assert seen["messages"][1] == {"role": "user", "content": "今天有什么机会？"}
+
+
+def test_chat_system_prompt_layers_surface_rules():
+    common_prompt = build_chat_system_prompt()
+    wechat_prompt = build_chat_system_prompt("微信会话")
+    stock_prompt = build_chat_system_prompt("个股深挖")
+
+    assert common_prompt == COMMON_CHAT_SYSTEM_PROMPT
+    assert DEFAULT_CHAT_SYSTEM_PROMPT == COMMON_CHAT_SYSTEM_PROMPT
+    assert "radar_get_conversation_window" not in common_prompt
+    assert "radar_get_conversation_window" in wechat_prompt
+    assert "页面传入的最近 evidence" in wechat_prompt
+    assert "radar_stock_evidence_chart" in stock_prompt
+    assert "当前入口：个股深挖" in stock_prompt
 
 
 def test_chat_agent_streams_and_persists_final_message(tmp_path, monkeypatch):
@@ -366,6 +382,7 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     tool_names = [tool.name for tool in agent.tools.list(read_only=True)]
 
     assert "radar_search_messages" in tool_names
+    assert "radar_get_conversation_window" in tool_names
     assert "radar_get_stock_price_history" in tool_names
     assert "radar_get_realtime_daily_quote" in tool_names
     assert "radar_get_stock_moneyflow" in tool_names
@@ -387,6 +404,7 @@ def test_builtin_message_tools_read_local_database(tmp_path):
                 _message("m1", "2026-06-04T09:00:00", "东财策略", "AI 算力"),
                 _message("m2", "2026-06-04T09:02:00", "东财策略", "AI 继续发酵"),
                 _message("m3", "2026-06-04T09:03:00", "其他群", "固态电池"),
+                _personal_message("p1", "2026-06-04T09:04:00", "张三", "私聊提到光模块"),
             ],
         )
     finally:
@@ -395,15 +413,25 @@ def test_builtin_message_tools_read_local_database(tmp_path):
     agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
 
     search_result = agent.tools.get("radar_search_messages").execute({"keyword": "AI", "limit": 5})
+    group_window_result = agent.tools.get("radar_get_conversation_window").execute(
+        {"source": "个人群", "group_name": "东财策略", "limit": 5}
+    )
+    personal_window_result = agent.tools.get("radar_get_conversation_window").execute(
+        {"source": "个人消息", "sender": "张三", "limit": 5}
+    )
     context_result = agent.tools.get("radar_get_message_context").execute({"message_id": "m2", "radius": 2})
     conversations_result = agent.tools.get("radar_list_conversations").execute({"limit": 5})
     overview_result = agent.tools.get("radar_message_overview").execute({"days": 2, "top_limit": 5})
 
     assert [item["message_id"] for item in search_result["items"]] == ["m2", "m1"]
+    assert [item["message_id"] for item in group_window_result["items"]] == ["m2", "m1"]
+    assert group_window_result["items"][0]["content"] == "AI 继续发酵"
+    assert [item["message_id"] for item in personal_window_result["items"]] == ["p1"]
+    assert personal_window_result["items"][0]["content"] == "私聊提到光模块"
     assert context_result["target"]["message_id"] == "m2"
     assert [item["message_id"] for item in context_result["before"]] == ["m1"]
-    assert [item["title"] for item in conversations_result["items"]] == ["其他群", "东财策略"]
-    assert overview_result["summary"]["total_count"] == 3
+    assert [item["title"] for item in conversations_result["items"]] == ["张三", "其他群", "东财策略"]
+    assert overview_result["summary"]["total_count"] == 4
     assert "anchor_heat" not in overview_result
 
 
@@ -551,6 +579,19 @@ def _message(message_id: str, message_time: str, group_name: str, content: str) 
         message_time=datetime.fromisoformat(message_time),
         raw_content=content,
         group_name=group_name,
+        fetch_time=datetime.fromisoformat("2026-06-04T10:00:00"),
+        fetch_window="20260604090000-20260604100000",
+    )
+
+
+def _personal_message(message_id: str, message_time: str, sender: str, content: str) -> RawMessage:
+    return RawMessage(
+        message_id=message_id,
+        source="个人消息",
+        sender=sender,
+        message_time=datetime.fromisoformat(message_time),
+        raw_content=content,
+        group_name=None,
         fetch_time=datetime.fromisoformat("2026-06-04T10:00:00"),
         fetch_window="20260604090000-20260604100000",
     )

@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from radar.core.chat import ChatAgent, ChatMessage, ChatSession, ChatSessionStore
+from radar.core.chat import ChatAgent, ChatMessage, ChatSession, ChatSessionStore, build_chat_system_prompt
 from radar.core.config import RadarConfig
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
@@ -94,6 +94,7 @@ def chat_turn(
             session_id,
             request.content,
             llm_content=_content_with_context(request.content, request.context),
+            system_prompt=build_chat_system_prompt(_surface_from_context(request.context)),
             provider_name=request.provider_name,
         )
     except FileNotFoundError as error:
@@ -137,6 +138,7 @@ def _stream_chat_turn(request: ChatTurnRequest, config: RadarConfig) -> Iterator
             session_id,
             request.content,
             llm_content=content,
+            system_prompt=build_chat_system_prompt(_surface_from_context(request.context)),
             provider_name=request.provider_name,
         ):
             if item.message is not None:
@@ -222,3 +224,8 @@ def _content_with_context(content: str, context: dict[str, Any]) -> str:
         "页面上下文：\n"
         f"{json.dumps(context, ensure_ascii=False, separators=(',', ':'))}"
     )
+
+
+def _surface_from_context(context: dict[str, Any]) -> str | None:
+    surface = context.get("surface")
+    return surface if isinstance(surface, str) else None

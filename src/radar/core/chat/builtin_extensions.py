@@ -34,6 +34,7 @@ class RadarBuiltinExtension:
     def register(self, context: ExtensionContext) -> None:
         for tool in (
             self._search_messages_tool(),
+            self._get_conversation_window_tool(),
             self._list_conversations_tool(),
             self._get_message_context_tool(),
             self._message_overview_tool(),
@@ -62,6 +63,27 @@ class RadarBuiltinExtension:
                 }
             ),
             handler=self._search_messages,
+        )
+
+    def _get_conversation_window_tool(self) -> ChatTool:
+        return ChatTool(
+            name="radar_get_conversation_window",
+            description="按群聊或个人私聊读取一个时间窗口内的完整消息，用于理解当前会话上下文并支持向前翻页。",
+            input_schema=_object_schema(
+                {
+                    "source": {"type": "string", "enum": ["个人消息", "个人群"]},
+                    "group_name": {"type": "string"},
+                    "sender": {"type": "string"},
+                    "conversation": {"type": "string"},
+                    "start_time": {"type": "string"},
+                    "end_time": {"type": "string"},
+                    "cursor_time": {"type": "string"},
+                    "cursor_id": {"type": "string"},
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 80},
+                },
+                required=["source"],
+            ),
+            handler=self._get_conversation_window,
         )
 
     def _list_conversations_tool(self) -> ChatTool:
@@ -176,6 +198,49 @@ class RadarBuiltinExtension:
             conn.close()
         return {
             "items": [_message_summary(item) for item in page.items],
+            "next_cursor_time": _json_value(page.next_cursor_time),
+            "next_cursor_id": page.next_cursor_id,
+        }
+
+    def _get_conversation_window(self, args: dict[str, Any]) -> dict[str, Any]:
+        source = str(args["source"])
+        conversation = _optional_str(args.get("conversation"))
+        group_name = _optional_str(args.get("group_name"))
+        sender = _optional_str(args.get("sender"))
+        if source == "个人群":
+            group_name = group_name or conversation
+            if not group_name:
+                raise ValueError("读取个人群窗口需要 group_name 或 conversation")
+        elif source == "个人消息":
+            sender = sender or conversation
+            if not sender:
+                raise ValueError("读取个人消息窗口需要 sender 或 conversation")
+        else:
+            raise ValueError("source 必须是 个人群 或 个人消息")
+
+        filters = MessageFilters.model_validate(
+            {
+                "source": source,
+                "group_name": group_name if source == "个人群" else None,
+                "sender": sender if source == "个人消息" else None,
+                "start_time": _optional_datetime(args.get("start_time")),
+                "end_time": _optional_datetime(args.get("end_time")),
+                "cursor_time": _optional_datetime(args.get("cursor_time")),
+                "cursor_id": _optional_str(args.get("cursor_id")),
+                "limit": _bounded_int(args.get("limit"), default=50, maximum=80),
+            }
+        )
+        conn = connect(self.config.database_path)
+        try:
+            init_db(conn)
+            page = list_messages(conn, filters)
+        finally:
+            conn.close()
+        return {
+            "source": source,
+            "group_name": group_name,
+            "sender": sender,
+            "items": [_message_window_item(item) for item in page.items],
             "next_cursor_time": _json_value(page.next_cursor_time),
             "next_cursor_id": page.next_cursor_id,
         }
@@ -392,6 +457,20 @@ def _message_detail(message: RawMessage) -> dict[str, Any]:
     item = _message_summary(message)
     item["content"] = _clip(message.raw_content, 1000)
     return item
+
+
+def _message_window_item(message: RawMessage) -> dict[str, Any]:
+    content = _clip(message.raw_content, 2000)
+    return {
+        "message_id": message.message_id,
+        "source": message.source,
+        "sender": message.sender,
+        "group_name": message.group_name,
+        "message_time": message.message_time.isoformat(),
+        "content": content,
+        "content_length": len(message.raw_content),
+        "content_truncated": content != message.raw_content,
+    }
 
 
 def _clip(text: str, limit: int) -> str:
