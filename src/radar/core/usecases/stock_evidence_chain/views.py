@@ -10,6 +10,13 @@ from pydantic import BaseModel, Field
 from radar.core.config import RadarConfig
 from radar.core.store import connect, init_db
 from radar.core.usecases.stock_evidence_chain.llm import STAGE_LABELS
+from radar.core.usecases.stock_evidence_chain.recognition import (
+    StockEvidenceRecognitionContext,
+    StockEvidenceThemeContext,
+    build_recognition_context,
+    load_stock_theme_contexts,
+    primary_theme,
+)
 
 STAGE_ACTION_PRIORITY = {
     "seed": 60,
@@ -71,6 +78,9 @@ class StockEvidenceChainItem(BaseModel):
     evidence_chain: list[StockEvidenceMessage] = Field(default_factory=list)
     market_summary: dict[str, Any] = Field(default_factory=dict)
     market_points: list[StockEvidenceMarketPoint] = Field(default_factory=list)
+    themes: list[StockEvidenceThemeContext] = Field(default_factory=list)
+    primary_theme: StockEvidenceThemeContext | None = None
+    recognition: StockEvidenceRecognitionContext = Field(default_factory=StockEvidenceRecognitionContext)
     updated_at: datetime
 
 
@@ -109,7 +119,12 @@ def latest_stock_evidence_chain(config: RadarConfig, *, limit: int = 120) -> Sto
         ).fetchall()
         rows = sorted(rows, key=_actionable_sort_key)[:limit]
         messages = _load_messages(conn, rows)
-        items = [_row_to_item(row, messages) for row in rows]
+        theme_contexts = load_stock_theme_contexts(
+            config,
+            [str(row["ts_code"]) for row in rows],
+            as_of=datetime.fromisoformat(as_of),
+        )
+        items = [_row_to_item(row, messages, theme_contexts.get(str(row["ts_code"]), [])) for row in rows]
         return StockEvidenceChainDashboard(
             as_of_time=datetime.fromisoformat(as_of),
             window_start_time=_datetime(rows[0]["window_start_time"]) if rows else None,
@@ -155,11 +170,18 @@ def _load_messages(conn: sqlite3.Connection, rows: list[sqlite3.Row]) -> dict[st
     return result
 
 
-def _row_to_item(row: sqlite3.Row, messages: dict[str, sqlite3.Row]) -> StockEvidenceChainItem:
+def _row_to_item(
+    row: sqlite3.Row,
+    messages: dict[str, sqlite3.Row],
+    themes: list[StockEvidenceThemeContext],
+) -> StockEvidenceChainItem:
     result = _result(row)
     stage = str(row["stage"])
     incremental = result.get("incremental") if isinstance(result.get("incremental"), dict) else {}
     market = result.get("market_evidence") if isinstance(result.get("market_evidence"), dict) else {}
+    market_summary = market.get("summary") if isinstance(market.get("summary"), dict) else {}
+    market_points = [StockEvidenceMarketPoint(**point) for point in _json_list(market.get("points")) if isinstance(point, dict)]
+    raw_market_points = [point.model_dump() for point in market_points]
     return StockEvidenceChainItem(
         ts_code=str(row["ts_code"]),
         stock_name=str(row["stock_name"]),
@@ -182,8 +204,16 @@ def _row_to_item(row: sqlite3.Row, messages: dict[str, sqlite3.Row]) -> StockEvi
         crowding_risk=_optional_text(result.get("crowding_risk")),
         watch_next=[str(item) for item in _json_list(result.get("watch_next"))],
         evidence_chain=_evidence_chain(result, row, messages),
-        market_summary=market.get("summary") if isinstance(market.get("summary"), dict) else {},
-        market_points=[StockEvidenceMarketPoint(**point) for point in _json_list(market.get("points")) if isinstance(point, dict)],
+        market_summary=market_summary,
+        market_points=market_points,
+        themes=themes,
+        primary_theme=primary_theme(themes),
+        recognition=build_recognition_context(
+            unique_trigger_count=int(row["unique_trigger_count"] or 0),
+            market_summary=market_summary,
+            market_points=raw_market_points,
+            themes=themes,
+        ),
         updated_at=datetime.fromisoformat(str(row["updated_at"])),
     )
 

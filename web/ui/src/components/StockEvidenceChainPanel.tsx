@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, CircleAlert, Clock3, MessageSquareText, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleAlert, Clock3, Gauge, MessageSquareText, Network, TrendingUp, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -126,6 +126,12 @@ function StockEvidenceRow({
             <CheckCircle2 size={13} />
             {formatConfidence(item.confidence)}
           </span>
+          {item.primary_theme && (
+            <span>
+              <Network size={13} />
+              {item.primary_theme.theme_name}
+            </span>
+          )}
         </div>
       </button>
       {onOpenChart && (
@@ -177,12 +183,14 @@ function StockEvidenceDetail({
               { label: "置信", value: formatConfidence(item.confidence) },
               { label: "触发", value: `${item.trigger_count}条 / 去重${item.unique_trigger_count}` },
               { label: "扩散", value: `${item.sender_count}人 / ${item.conversation_count}会话` },
+              { label: "主题", value: item.primary_theme?.theme_name ?? "未确认" },
+              { label: "市场认可", value: item.recognition.state_label },
             ]}
             evidence={stockEvidenceChatLines(item)}
             suggestedQuestions={[
               "用人话解释一下这个阶段判断，哪些证据最关键？",
-              "结合市场证据和消息证据，现在主要风险是什么？",
-              "如果继续跟踪，下一步应该盯哪些消息、价格和催化？",
+              "结合主题位置、市场证据和消息证据，现在主要风险是什么？",
+              "如果继续跟踪，下一步应该盯哪些主题、价格和催化？",
             ]}
           />
         </div>
@@ -194,6 +202,7 @@ function StockEvidenceDetail({
         <Fact icon={<CheckCircle2 size={14} />} label="置信" value={formatConfidence(item.confidence)} />
         <Fact icon={<Clock3 size={14} />} label="证据" value={`${item.evidence_count}条`} />
       </div>
+      <ThemeRecognition item={item} />
       <DetailSection title="为什么是这个阶段" items={item.why} />
       <EvidenceTimeline item={item} />
       <MarketEvidence item={item} />
@@ -208,6 +217,9 @@ function stockEvidenceChatLines(item: StockEvidenceChainItem): string[] {
   return [
     `一句话判断：${item.summary || "暂无"}`,
     `阶段：${item.stage_label}；置信度：${formatConfidence(item.confidence)}`,
+    `主题：${item.primary_theme?.theme_name ?? "未确认"}；市场认可：${item.recognition.state_label}`,
+    ...item.recognition.reasons.slice(0, 4).map((line) => `认可依据：${line}`),
+    ...item.recognition.missing_evidence.slice(0, 4).map((line) => `证据缺口：${line}`),
     ...item.why.slice(0, 4).map((line) => `阶段依据：${line}`),
     ...item.evidence_chain.slice(0, 6).map((evidence) => {
       const source = [evidence.sender, evidence.group_name].filter(Boolean).join(" · ");
@@ -218,6 +230,53 @@ function stockEvidenceChatLines(item: StockEvidenceChainItem): string[] {
     item.crowding_risk ? `拥挤风险：${item.crowding_risk}` : "",
     ...item.watch_next.slice(0, 4).map((line) => `下一步：${line}`),
   ].filter((line): line is string => Boolean(line));
+}
+
+function ThemeRecognition({ item }: { item: StockEvidenceChainItem }) {
+  const theme = item.primary_theme ?? item.themes[0] ?? null;
+  return (
+    <section className="stock-evidence-recognition">
+      <div className="stock-evidence-recognition-head">
+        <span>
+          <Network size={14} />
+          主题位置
+        </span>
+        <span className={`stock-evidence-recognition-state ${recognitionToneClass(item.recognition.state)}`}>
+          <Gauge size={14} />
+          {item.recognition.state_label}
+        </span>
+      </div>
+      {theme ? (
+        <div className="stock-evidence-theme-primary">
+          <strong>{theme.theme_name}</strong>
+          <span>{typeLabel(theme.theme_type)}</span>
+          <span>{roleLabel(theme.role)}</span>
+          <span>{theme.source_count} 源</span>
+          {theme.return_rank_5d && theme.member_count && <span>5日强弱 {theme.return_rank_5d}/{theme.member_count}</span>}
+        </div>
+      ) : (
+        <p className="stock-evidence-empty">暂无自动主题归属。</p>
+      )}
+      {!!item.themes.length && (
+        <div className="stock-evidence-theme-list">
+          {item.themes.slice(0, 5).map((candidate) => (
+            <span key={candidate.theme_id}>
+              {candidate.theme_name}
+              <small>{roleLabel(candidate.role)}</small>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="stock-evidence-recognition-grid">
+        <MetricLite label="5日涨幅" value={formatPercent(theme?.stock_return_5d, true)} />
+        <MetricLite label="20日涨幅" value={formatPercent(theme?.stock_return_20d, true)} />
+        <MetricLite label="量能" value={theme?.amount_ratio_5d ? `${theme.amount_ratio_5d.toFixed(1)}x` : "-"} />
+        <MetricLite label="覆盖" value={coverageText(theme)} />
+      </div>
+      <DetailSection title="认可依据" items={item.recognition.reasons} />
+      <DetailSection title="证据缺口" items={item.recognition.missing_evidence} />
+    </section>
+  );
 }
 
 function EvidenceTimeline({ item }: { item: StockEvidenceChainItem }) {
@@ -320,6 +379,15 @@ function Metric(props: { label: string; value: number | string; detail: string }
   );
 }
 
+function MetricLite(props: { label: string; value: string }) {
+  return (
+    <article>
+      <span>{props.label}</span>
+      <strong>{props.value}</strong>
+    </article>
+  );
+}
+
 function Fact(props: { icon: ReactNode; label: string; value: string }) {
   return (
     <article>
@@ -371,4 +439,47 @@ function toneClass(value?: number | null): string {
     return "return-flat";
   }
   return value > 0 ? "return-up" : "return-down";
+}
+
+function recognitionToneClass(state: string): string {
+  if (state === "confirmed" || state === "just_confirmed") {
+    return "confirmed";
+  }
+  if (state === "overheated" || state === "pullback_after_pricing") {
+    return "risk";
+  }
+  if (state === "rejected") {
+    return "rejected";
+  }
+  return "unknown";
+}
+
+function roleLabel(role: string): string {
+  if (role === "core") {
+    return "核心";
+  }
+  if (role === "elastic") {
+    return "弹性";
+  }
+  return "待确认";
+}
+
+function typeLabel(type: string): string {
+  if (type === "industry") {
+    return "行业";
+  }
+  if (type === "concept") {
+    return "概念";
+  }
+  if (type === "theme") {
+    return "题材";
+  }
+  return type || "主题";
+}
+
+function coverageText(theme: StockEvidenceChainItem["primary_theme"]): string {
+  if (!theme?.covered_member_count || !theme.member_count) {
+    return "-";
+  }
+  return `${theme.covered_member_count}/${theme.member_count}`;
 }

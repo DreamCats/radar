@@ -351,6 +351,121 @@
   gap: 8px;
 }
 
+.stock-evidence-recognition {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  padding: 10px;
+}
+
+.stock-evidence-recognition-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stock-evidence-recognition-head span,
+.stock-evidence-recognition-state,
+.stock-evidence-theme-primary,
+.stock-evidence-theme-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.stock-evidence-recognition-head > span:first-child {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stock-evidence-recognition-state {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stock-evidence-recognition-state.confirmed {
+  border-color: color-mix(in srgb, var(--color-market-up) 44%, var(--color-hairline));
+  color: var(--color-market-up);
+}
+
+.stock-evidence-recognition-state.risk,
+.stock-evidence-recognition-state.rejected {
+  border-color: color-mix(in srgb, var(--color-market-down) 44%, var(--color-hairline));
+  color: var(--color-market-down);
+}
+
+.stock-evidence-recognition-state.unknown {
+  color: var(--color-ink-tertiary);
+}
+
+.stock-evidence-theme-primary {
+  flex-wrap: wrap;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.stock-evidence-theme-primary strong {
+  color: var(--color-ink);
+  font-size: 14px;
+}
+
+.stock-evidence-theme-primary span,
+.stock-evidence-theme-list span {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-1);
+  padding: 2px 7px;
+}
+
+.stock-evidence-theme-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stock-evidence-theme-list span {
+  color: var(--color-ink-subtle);
+  font-size: 11px;
+}
+
+.stock-evidence-theme-list small {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.stock-evidence-recognition-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stock-evidence-recognition-grid article {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-1);
+  padding: 8px;
+}
+
+.stock-evidence-recognition-grid span {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.stock-evidence-recognition-grid strong {
+  color: var(--color-ink);
+  font-size: 13px;
+}
+
 .stock-evidence-section-title {
   font-weight: 700;
 }
@@ -462,7 +577,8 @@
 
 @media (max-width: 720px) {
   .stock-evidence-facts,
-  .stock-evidence-market-points {
+  .stock-evidence-market-points,
+  .stock-evidence-recognition-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

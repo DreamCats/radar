@@ -298,7 +298,9 @@ export type {
   StockEvidenceChainItem,
   StockEvidenceMarketPoint,
   StockEvidenceMessage,
+  StockEvidenceRecognitionContext,
   StockEvidenceStockCandle,
   StockEvidenceStockChart,
   StockEvidenceStockChartQuery,
+  StockEvidenceThemeContext,
 } from "./types/strategy";

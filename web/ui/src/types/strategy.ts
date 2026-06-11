@@ -29,6 +29,36 @@ export type StockEvidenceMarketPoint = {
   tag?: string | null;
 };
 
+export type StockEvidenceThemeContext = {
+  theme_id: string;
+  theme_name: string;
+  theme_type: string;
+  role: string;
+  confidence: number;
+  source_count: number;
+  reasons: string[];
+  first_seen_date?: string | null;
+  last_seen_date?: string | null;
+  latest_trade_date?: string | null;
+  member_count?: number | null;
+  covered_member_count?: number | null;
+  return_rank_5d?: number | null;
+  stock_return_5d?: number | null;
+  stock_return_20d?: number | null;
+  amount_ratio_5d?: number | null;
+  theme_return_median_5d?: number | null;
+  is_theme_leader: boolean;
+  is_theme_laggard: boolean;
+  missing_evidence: string[];
+};
+
+export type StockEvidenceRecognitionContext = {
+  state: string;
+  state_label: string;
+  reasons: string[];
+  missing_evidence: string[];
+};
+
 export type StockEvidenceMessage = {
   message_id?: string | null;
   time?: string | null;
@@ -63,6 +93,9 @@ export type StockEvidenceChainItem = {
   evidence_chain: StockEvidenceMessage[];
   market_summary: Record<string, unknown>;
   market_points: StockEvidenceMarketPoint[];
+  themes: StockEvidenceThemeContext[];
+  primary_theme?: StockEvidenceThemeContext | null;
+  recognition: StockEvidenceRecognitionContext;
   updated_at: string;
 };
 

@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
+from radar.core.db import migrate_market_db
 from radar.core.store import connect, init_db
 from radar.core.tushare import RealtimeDailyQuote
 from radar.core.tushare import history
@@ -87,6 +88,69 @@ def test_stock_evidence_chain_latest_orders_by_actionable_priority(tmp_path: Pat
     data = response.json()
     assert [item["stock_name"] for item in data["items"]] == ["早期股份", "拥挤股份"]
     assert data["items"][0]["rank"] == 2
+
+
+def test_stock_evidence_chain_latest_includes_theme_recognition_context(tmp_path: Path):
+    config = _config(tmp_path)
+    as_of = datetime(2026, 6, 8, 15, 0)
+    window_start = datetime(2026, 6, 5, 15, 0)
+    evidence_start = datetime(2026, 5, 1, 15, 0)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        _insert_candidate(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="300394.SZ",
+            stock_name="天孚通信",
+            rank=1,
+            evidence_score=16,
+            family_counts={"catalyst": 2, "research": 1},
+        )
+        _insert_judgement(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="300394.SZ",
+            stock_name="天孚通信",
+            stage="seed",
+            confidence=0.78,
+            return_since_first_point=0.13,
+        )
+    finally:
+        conn.close()
+
+    _insert_theme_context(config)
+    daily = history.spec_for("daily")
+    assert daily is not None
+    history.put_rows(
+        config.market_database_path,
+        daily,
+        [
+            _daily("300394.SZ", "20260601", 10.0, 10.1, 9.9, 10.0, amount=10000),
+            _daily("300394.SZ", "20260602", 10.0, 10.3, 9.9, 10.2, amount=10000),
+            _daily("300394.SZ", "20260603", 10.2, 10.5, 10.1, 10.4, amount=10000),
+            _daily("300394.SZ", "20260604", 10.4, 10.7, 10.3, 10.6, amount=10000),
+            _daily("300394.SZ", "20260605", 10.6, 10.9, 10.5, 10.8, amount=10000),
+            _daily("300394.SZ", "20260608", 10.8, 11.5, 10.7, 11.3, amount=30000),
+            _daily("000001.SZ", "20260601", 10.0, 10.1, 9.9, 10.0, amount=10000),
+            _daily("000001.SZ", "20260608", 10.0, 10.3, 9.9, 10.2, amount=12000),
+        ],
+    )
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/strategy/evidence-chain/latest", params={"limit": 1})
+
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["primary_theme"]["theme_name"] == "CPO概念"
+    assert item["themes"][0]["return_rank_5d"] == 1
+    assert item["themes"][0]["member_count"] == 2
+    assert item["recognition"]["state"] == "confirmed"
+    assert "CPO概念" in item["recognition"]["reasons"][0]
 
 
 def test_strategy_stock_chart_endpoint_reads_local_market_history(monkeypatch, tmp_path: Path):
@@ -213,7 +277,50 @@ def _config(tmp_path: Path) -> RadarConfig:
     return RadarConfig(storage={"data_dir": tmp_path / "data", "database": tmp_path / "radar.sqlite3"})
 
 
-def _daily(ts_code: str, trade_date: str, open_price: float, high: float, low: float, close: float, *, pct_chg: float | None = None):
+def _insert_theme_context(config: RadarConfig) -> None:
+    conn = connect(config.market_database_path)
+    try:
+        migrate_market_db(conn)
+        now = "2026-06-08T15:00:00"
+        conn.execute(
+            """
+            INSERT INTO theme_nodes (
+                theme_id, theme_name, theme_type, parent_theme_id, aliases_json,
+                policy_tags_json, status, created_at, updated_at
+            ) VALUES (?, ?, ?, NULL, ?, '[]', 'active', ?, ?)
+            """,
+            ("theme:auto:cpo", "CPO概念", "concept", json.dumps(["CPO概念"], ensure_ascii=False), now, now),
+        )
+        rows = [
+            ("theme:auto:cpo", "300394.SZ", "天孚通信"),
+            ("theme:auto:cpo", "000001.SZ", "平安银行"),
+        ]
+        conn.executemany(
+            """
+            INSERT INTO stock_theme_memberships (
+                theme_id, ts_code, stock_name, role, confidence, source_count,
+                sources_json, reasons_json, first_seen_date, last_seen_date,
+                latest_trade_date, updated_at
+            ) VALUES (?, ?, ?, 'elastic', 0.82, 2, '[]', ?, '20260601', '20260608', '20260608', ?)
+            """,
+            [(theme_id, ts_code, name, json.dumps(["多源主题归属"], ensure_ascii=False), now) for theme_id, ts_code, name in rows],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _daily(
+    ts_code: str,
+    trade_date: str,
+    open_price: float,
+    high: float,
+    low: float,
+    close: float,
+    *,
+    pct_chg: float | None = None,
+    amount: float = 10000,
+):
     return {
         "ts_code": ts_code,
         "trade_date": trade_date,
@@ -225,7 +332,7 @@ def _daily(ts_code: str, trade_date: str, open_price: float, high: float, low: f
         "change": close - open_price,
         "pct_chg": pct_chg,
         "vol": 1000,
-        "amount": 10000,
+        "amount": amount,
     }
 
 

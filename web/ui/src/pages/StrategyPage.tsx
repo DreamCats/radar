@@ -87,6 +87,10 @@ function drawerStock(item: StockEvidenceChainItem): StrategyStockDrawerStock {
     evidence_title: "证据链判断",
     evidence_lines: [
       item.summary,
+      item.primary_theme ? `主题位置：${item.primary_theme.theme_name} / ${item.primary_theme.role}` : "主题位置：未确认",
+      `市场认可：${item.recognition.state_label}`,
+      ...item.recognition.reasons,
+      ...item.recognition.missing_evidence.map((line) => `缺口：${line}`),
       ...item.why,
       item.pricing_risk ? `定价风险：${item.pricing_risk}` : "",
       item.crowding_risk ? `拥挤风险：${item.crowding_risk}` : "",
