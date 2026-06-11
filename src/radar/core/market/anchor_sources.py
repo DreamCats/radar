@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TypeAlias
 
 from radar.core.config import RadarConfig
-from radar.core.market_anchors import (
+from radar.core.market.anchors import (
     MarketAnchor,
     MarketAnchorMember,
     TushareCallFn,

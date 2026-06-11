@@ -5,8 +5,11 @@ from datetime import datetime, timedelta
 from threading import Lock
 
 from radar.core.config import RadarConfig
-from radar.core.market_anchors import ensure_market_anchors, refresh_market_anchor_derivatives
-from radar.core.market_themes import refresh_market_theme_normalization
+from radar.core.market import (
+    ensure_market_anchors,
+    refresh_market_anchor_derivatives,
+    refresh_market_theme_normalization,
+)
 from radar.core.runs import fail_run, fail_stale_runs, finish_run, get_running_run, start_run, update_run_progress
 from radar.web.server.schemas import DerivedJobItem, MarketAnchorUpdateRequest
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from radar.core.config import RadarConfig, RadarSecrets
 from radar.core.db import migrate_market_db
-from radar.core.market_themes import refresh_market_theme_normalization
+from radar.core.market import refresh_market_theme_normalization
 
 
 def test_refresh_market_theme_normalization_merges_clean_source_names(tmp_path: Path):

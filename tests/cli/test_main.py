@@ -8,12 +8,12 @@ from click.testing import CliRunner
 
 from radar.cli.main import main
 from radar.core.models import RawMessage
-from radar.core.market_anchors import (
+from radar.core.market import (
     EnsureMarketAnchorsResult,
     RefreshMarketAnchorDerivativesResult,
     RefreshMarketAnchorsResult,
 )
-from radar.core.market_themes import RefreshMarketThemeNormalizationResult
+from radar.core.market import RefreshMarketThemeNormalizationResult
 from radar.core.store import connect, init_db, upsert_messages
 from radar.core.usecases import ClassifyRangeResult, IngestRangeResult, SmokeResult
 

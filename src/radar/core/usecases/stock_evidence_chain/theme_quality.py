@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from radar.core.market_theme_rules import is_generic_theme_name, is_specific_theme_name
+from radar.core.market.theme_rules import is_generic_theme_name, is_specific_theme_name
 
 ROLE_PRIORITY = {"core": 3, "elastic": 2, "unknown": 1}
 TYPE_PRIORITY = {"theme": 4, "concept": 3, "industry": 2, "stock": 1}

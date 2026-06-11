@@ -227,7 +227,7 @@ def refresh_market_anchors(
     source_counts: dict[str, int] = {}
     failed_sources: dict[str, str] = {}
 
-    from radar.core.market_anchor_sources import LOADERS
+    from radar.core.market.anchor_sources import LOADERS
 
     for loader in LOADERS:
         try:
@@ -356,7 +356,7 @@ def _replace_sources(
             ],
         )
         _rebuild_market_anchor_derivatives(conn)
-        from radar.core.market_themes import rebuild_market_theme_normalization_from_conn
+        from radar.core.market.themes import rebuild_market_theme_normalization_from_conn
 
         rebuild_market_theme_normalization_from_conn(conn, commit=False)
         conn.commit()

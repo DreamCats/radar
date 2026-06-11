@@ -3,12 +3,12 @@ from __future__ import annotations
 import click
 
 from radar.cli.context import load_cli_config
-from radar.core.market_anchors import (
+from radar.core.market import (
     ensure_market_anchors,
     refresh_market_anchor_derivatives,
     refresh_market_anchors,
 )
-from radar.core.market_themes import refresh_market_theme_normalization
+from radar.core.market import refresh_market_theme_normalization
 
 
 @click.group("market")

@@ -11,8 +11,8 @@ from pydantic import BaseModel
 
 from radar.core.config import RadarConfig
 from radar.core.db import migrate_market_db
-from radar.core.market_anchors import refresh_market_anchor_derivatives
-from radar.core.market_theme_rules import ThemeNormalization, normalize_theme_anchor
+from radar.core.market.anchors import refresh_market_anchor_derivatives
+from radar.core.market.theme_rules import ThemeNormalization, normalize_theme_anchor
 
 
 class RefreshMarketThemeNormalizationResult(BaseModel):

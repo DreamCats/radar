@@ -10,6 +10,7 @@
 - 第一阶段先做原数据看板和硬降噪：拉取、标准化、去重、入库、窗口缓存、查询、筛选。
 - `core/llm/` 只提供 OpenAI-compatible / Anthropic Messages 协议客户端；LLM 分类、信号雷达、行情回测、推送都属于后续阶段，未明确要求时不要提前实现。
 - `core/tushare/` 只提供 Tushare Pro 协议客户端、缓存、低风险历史行缓存和股票代码解析；行情分析、策略、回测仍属于后续 usecase。
+- `core/market/` 放市场 anchor、来源适配和主题归一化规则；它消费 `core/tushare/` 能力，但不承载策略回测或消息 usecase。
 
 ## 2. 开始前先读
 
@@ -39,6 +40,7 @@ src/radar/
 │   ├── filtering.py  硬过滤规则
 │   ├── llm/          LLM provider 解析和协议客户端
 │   ├── tushare/      Tushare provider、HTTP、缓存、历史行存、股票解析
+│   ├── market/       市场 anchor、来源适配、主题归一化
 │   ├── config.py     本地配置和数据目录
 │   └── usecases/     跨 fetch/store/filtering 的业务编排
 ├── cli/           click 命令，只调用 core/usecases
@@ -58,6 +60,7 @@ web/ui/            React/Vite 前端，只调用 Web API
 - `core/messages/` 放消息和会话的分页查询模型；CLI/Web 从这里取查询能力。
 - `core/llm/` 只放 provider 解析、协议请求、JSON 解析等通用能力；prompt、任务语义和分类规则应放在后续 usecase。
 - `core/tushare/` 不依赖 tushare-cli 的独立配置、click、formatter 或安装脚本；配置统一走 radar 的 `market` 和 `secrets.market`。
+- `core/market/` 只放市场 anchor、来源适配、主题归一化规则和派生表刷新；策略解释、信号排序、review 仍留在对应 usecase。
 - Tushare API 地址使用 `market.api_url`；为兼容 stock-news 旧配置，可接受 `market.tushare_api_url` 作为别名。
 - Tushare 历史行缓存只纳入一维时间序列接口；有额外维度且主键无法表达的接口先走短期 KV，避免本地缓存覆盖。
 - CLI 只负责参数解析、输出格式、退出码，不直接写 SQL、不直接请求微信 API。
@@ -165,7 +168,7 @@ web/ui/            React/Vite 前端，只调用 Web API
 - 新增或放宽主题规则时，必须固定当前最新个股证据链样本做 before/after：至少记录 `primary_theme_missing`、`theme_missing`、`mainline_confirmed`，并人工抽看 Top 20 和变更样本。
 - 主题规则不能只看关键词命中；尤其是 `AI硬件`、`半导体`、`芯片`、`涨价概念`、`专用设备`、`通用设备` 这类泛标签要默认降权，只有 reason 中出现足够具体的投资叙事时才允许派生更细主题。
 - 如果指标变好但样本出现明显错归类，例如把公司边缘业务、客户描述或单句 reason 强行映射成主线，应优先收紧规则并补回归测试。
-- 主题质量、市场认可和 review 标签是联动的；改 `market_theme_rules.py`、`theme_quality.py`、`recognition.py` 后，至少跑主题归一化、主题质量、review、排序和 web strategy 相关最小测试。
+- 主题质量、市场认可和 review 标签是联动的；改 `core/market/theme_rules.py`、`theme_quality.py`、`recognition.py` 后，至少跑主题归一化、主题质量、review、排序和 web strategy 相关最小测试。
 
 ## 14. 保护已有改动
 

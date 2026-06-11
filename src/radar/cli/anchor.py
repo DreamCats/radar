@@ -3,7 +3,7 @@ from __future__ import annotations
 import click
 
 from radar.cli.context import load_cli_config
-from radar.core.market_anchors import ensure_market_anchors
+from radar.core.market import ensure_market_anchors
 
 
 @click.group()

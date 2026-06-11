@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from radar.core.config import RadarConfig, RadarSecrets
-from radar.core.market_anchors import (
+from radar.core.market import (
     ensure_market_anchors,
     list_market_anchors,
     refresh_market_anchor_derivatives,
@@ -242,7 +242,7 @@ def test_ensure_market_anchors_retries_without_cache_before_fallback(monkeypatch
             return original_refresh(config, trade_date=trade_date, tushare_call=lambda *_: [])
         return original_refresh(config, trade_date=trade_date, tushare_call=lambda *_: _rows("dc_concept"))
 
-    monkeypatch.setattr("radar.core.market_anchors.refresh_market_anchors", fake_refresh)
+    monkeypatch.setattr("radar.core.market.anchors.refresh_market_anchors", fake_refresh)
 
     result = ensure_market_anchors(
         config,

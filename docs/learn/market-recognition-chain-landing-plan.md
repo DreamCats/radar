@@ -246,8 +246,8 @@ P0 的目标是：
 | --- | --- | --- |
 | 市场 anchor | `market.sqlite3:market_anchors` | 概念、行业、题材锚点 |
 | 股票成员 | `market.sqlite3:market_anchor_members` | 股票属于哪些概念/行业/题材 |
-| 拉取代码 | `src/radar/core/market_anchors.py` | 刷新和兜底逻辑 |
-| 数据源适配 | `src/radar/core/market_anchor_sources.py` | 当前接入东财概念、KPL、通达信概念 |
+| 拉取代码 | `src/radar/core/market/anchors.py` | 刷新和兜底逻辑 |
+| 数据源适配 | `src/radar/core/market/anchor_sources.py` | 当前接入东财概念、KPL、通达信概念 |
 
 Tushare 侧也有可用接口：
 
