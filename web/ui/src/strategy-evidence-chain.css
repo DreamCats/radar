@@ -5,6 +5,14 @@
   grid-template-rows: auto auto minmax(0, 1fr);
 }
 
+@media (min-width: 901px) {
+  .strategy-page {
+    height: calc(100vh - 26px);
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
 .strategy-mode-tabs {
   display: inline-flex;
   width: fit-content;
@@ -36,6 +44,15 @@
   gap: 14px;
   min-height: 0;
   grid-template-rows: auto minmax(0, 1fr);
+}
+
+@media (min-width: 901px) {
+  .stock-evidence-workbench,
+  .stock-evidence-panel,
+  .stock-evidence-layout {
+    height: 100%;
+    overflow: hidden;
+  }
 }
 
 .stock-evidence-workbench .metric-card {
@@ -199,7 +216,11 @@
 .stock-evidence-list {
   display: grid;
   align-content: start;
+  min-height: 0;
   overflow: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   border-right: 1px solid var(--color-hairline);
 }
 
@@ -373,8 +394,17 @@
   }
 
   .stock-evidence-list {
-    max-height: none;
     border-right: 0;
   }
 
+}
+
+@media (min-width: 901px) and (max-width: 1180px) {
+  .stock-evidence-layout {
+    grid-template-rows: minmax(220px, 34vh) minmax(0, 1fr);
+  }
+
+  .stock-evidence-list {
+    border-bottom: 1px solid var(--color-hairline);
+  }
 }

@@ -6,7 +6,11 @@
   display: grid;
   align-content: start;
   gap: 14px;
+  min-height: 0;
   overflow: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 16px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--color-surface-2) 36%, transparent), transparent 220px),
