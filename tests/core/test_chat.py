@@ -196,9 +196,14 @@ def test_chat_system_prompt_layers_surface_rules():
 
     assert common_prompt == COMMON_CHAT_SYSTEM_PROMPT
     assert DEFAULT_CHAT_SYSTEM_PROMPT == COMMON_CHAT_SYSTEM_PROMPT
+    assert "只做研究辅助和证据整理" in common_prompt
+    assert "不输出买入、卖出、持有、仓位、目标价" in common_prompt
+    assert "投资价值排序" in common_prompt
+    assert "证据完整度、跟踪优先级" in common_prompt
     assert "radar_get_conversation_window" not in common_prompt
     assert "radar_get_conversation_window" in wechat_prompt
     assert "页面传入的最近 evidence" in wechat_prompt
+    assert "暂缓跟踪条件" in wechat_prompt
     assert "radar_stock_evidence_chart" in stock_prompt
     assert "当前入口：个股深挖" in stock_prompt
 
