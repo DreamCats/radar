@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from radar.core.models import ClassificationRetryMode, MessageCategory, MessageSource, RawMessage
 from radar.core.dashboard import DashboardSummaryPayload
 from radar.core.organize import OrganizeClassificationCluster, OrganizeClassificationSummary, OrganizeEvidenceMessage
-from radar.core.runs import RunRecord
+from radar.core.storage import RunRecord
 from radar.core.usecases.recommendation_backtest import (
     DEFAULT_BENCHMARK_TS_CODE,
     DEFAULT_BACKTEST_WINDOWS,

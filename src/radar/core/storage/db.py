@@ -4,7 +4,7 @@ import sqlite3
 import threading
 from collections.abc import Sequence
 
-from radar.core.db_evidence_chain import EVIDENCE_CHAIN_MIGRATIONS
+from radar.core.storage.db_evidence_chain import EVIDENCE_CHAIN_MIGRATIONS
 
 Migration = tuple[str, str]
 _MIGRATION_LOCK = threading.Lock()

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from radar.core.config import RadarConfig
 from radar.core.messages.overview import MessageOverview, get_message_overview
 from radar.core.organize import OrganizeClassificationFilters, OrganizeClassificationPage, list_classification_clusters
-from radar.core.store import connect, init_db
+from radar.core.storage import connect, init_db
 from radar.core.usecases.recommendation_backtest import (
     DEFAULT_BACKTEST_WINDOWS,
     RecommendationBacktestSummaryResult,

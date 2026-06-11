@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from radar.core.db import applied_migrations, migrate_market_db, migrate_message_db
+from radar.core.storage.db import applied_migrations, migrate_market_db, migrate_message_db
 
 
 def test_message_db_migrations_create_expected_tables(tmp_path):
@@ -27,6 +27,7 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "stock_lifecycle_candidates",
             "stock_lifecycle_judgements",
             "stock_mention_status",
+            "opportunity_lifecycle_digests",
         } <= tables
         assert "strategy_snapshots" not in tables
         assert "strategy_snapshot_stocks" not in tables
@@ -57,6 +58,8 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "019_drop_deprecated_fermentation_strategy",
             "020_drop_message_anchor_tables",
             "021_drop_deprecated_aggregate_and_anchor_backtests",
+            "022_opportunity_lifecycle_digests",
+            "023_opportunity_lifecycle_digest_hash_parts",
         }
     finally:
         conn.close()
@@ -98,7 +101,7 @@ def test_migrations_are_idempotent(tmp_path):
         migrate_message_db(conn)
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 19
+        assert count == 22
     finally:
         conn.close()
 

@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 
 from radar.core.config import RadarConfig, RadarSecrets
-from radar.core.db import migrate_market_db
+from radar.core.storage.db import migrate_market_db
 from radar.core.market import refresh_market_theme_normalization
 
 

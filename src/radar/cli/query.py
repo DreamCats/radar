@@ -7,7 +7,7 @@ import click
 from radar.cli.context import load_cli_config, parse_optional_datetime
 from radar.core.messages import MessageFilters, list_messages
 from radar.core.models import MessageSource
-from radar.core.store import connect, init_db
+from radar.core.storage import connect, init_db
 
 SOURCE_LABELS: dict[str, MessageSource] = {
     "personal_message": "个人消息",

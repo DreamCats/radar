@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from threading import Lock
 
 from radar.core.config import RadarConfig
-from radar.core.runs import fail_run, fail_stale_runs, get_running_run, start_run
+from radar.core.storage import fail_run, fail_stale_runs, get_running_run, start_run
 from radar.core.usecases.ingest_wechat import ingest_range_metadata, ingest_range_target, ingest_wechat_range
 from radar.web.server.schemas import IngestWechatJobItem, IngestWechatRequest
 

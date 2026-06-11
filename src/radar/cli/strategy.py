@@ -5,7 +5,7 @@ from datetime import datetime
 import click
 
 from radar.cli.context import load_cli_config
-from radar.core.store import connect, init_db
+from radar.core.storage import connect, init_db
 from radar.core.usecases.stock_evidence_chain import build_stock_evidence_chain, index_stock_mentions
 
 

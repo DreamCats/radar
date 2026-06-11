@@ -14,7 +14,7 @@ from radar.core.market import (
     RefreshMarketAnchorsResult,
 )
 from radar.core.market import RefreshMarketThemeNormalizationResult
-from radar.core.store import connect, init_db, upsert_messages
+from radar.core.storage import connect, init_db, upsert_messages
 from radar.core.usecases import ClassifyRangeResult, IngestRangeResult, SmokeResult
 
 

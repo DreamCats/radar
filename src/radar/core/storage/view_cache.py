@@ -12,8 +12,8 @@ from typing import TypeVar
 from pydantic import BaseModel
 
 from radar.core.config import RadarConfig
-from radar.core.db import migrate_market_db, migrate_message_db
-from radar.core.store import connect
+from radar.core.storage.db import migrate_market_db, migrate_message_db
+from radar.core.storage.store import connect
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 

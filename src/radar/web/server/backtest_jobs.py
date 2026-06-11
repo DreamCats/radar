@@ -6,7 +6,7 @@ from threading import Lock
 
 from radar.core.config import RadarConfig
 from radar.core.models import MessageSource
-from radar.core.runs import fail_run, fail_stale_runs, get_running_run, start_run
+from radar.core.storage import fail_run, fail_stale_runs, get_running_run, start_run
 from radar.core.usecases.recommendation_backtest import refresh_recommendation_backtests
 from radar.core.usecases.recommendation_backtest.events import RECOMMENDATION_EVENT_EXTRACTOR_VERSION
 from radar.core.usecases.recommendation_backtest.refresh import BACKTEST_RUN_KIND

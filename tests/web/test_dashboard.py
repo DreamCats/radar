@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
 from radar.core.models import RawMessage
-from radar.core.store import connect, init_db, upsert_messages
+from radar.core.storage import connect, init_db, upsert_messages
 from radar.web.server.app import create_app
 
 

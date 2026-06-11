@@ -11,7 +11,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from radar.core.config import RadarConfig
-from radar.core.db import migrate_market_db
+from radar.core.storage.db import migrate_market_db
 from radar.core.usecases.stock_evidence_chain.theme_quality import (
     apply_theme_quality,
     is_primary_theme_candidate,

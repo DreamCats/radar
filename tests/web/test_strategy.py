@@ -8,8 +8,8 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
-from radar.core.db import migrate_market_db
-from radar.core.store import connect, init_db
+from radar.core.storage.db import migrate_market_db
+from radar.core.storage import connect, init_db
 from radar.core.tushare import RealtimeDailyQuote
 from radar.core.tushare import history
 from radar.core.usecases.stock_evidence_chain import (

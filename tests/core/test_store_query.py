@@ -4,7 +4,7 @@ from datetime import datetime
 
 from radar.core.models import RawMessage
 from radar.core.messages import MessageFilters, get_message_context, get_message_overview, list_message_groups, list_messages
-from radar.core.store import (
+from radar.core.storage import (
     fetch_window_covered,
     fetch_window_exists,
     init_db,

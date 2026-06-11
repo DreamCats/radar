@@ -9,7 +9,7 @@ from typing import Any, Callable, Literal
 from pydantic import BaseModel, Field
 
 from radar.core.config import RadarConfig
-from radar.core.db import migrate_market_db
+from radar.core.storage.db import migrate_market_db
 from radar.core.tushare import call as call_tushare
 
 AnchorType = Literal["stock", "concept", "industry", "theme"]

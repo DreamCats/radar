@@ -10,7 +10,7 @@ from radar.core.market import (
     refresh_market_anchor_derivatives,
     refresh_market_theme_normalization,
 )
-from radar.core.runs import fail_run, fail_stale_runs, finish_run, get_running_run, start_run, update_run_progress
+from radar.core.storage import fail_run, fail_stale_runs, finish_run, get_running_run, start_run, update_run_progress
 from radar.web.server.schemas import DerivedJobItem, MarketAnchorUpdateRequest
 
 ANCHOR_RUN_KIND = "market_anchor_update"

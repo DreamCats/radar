@@ -6,7 +6,7 @@ from threading import Lock
 
 from radar.core.config import RadarConfig
 from radar.core.models import MessageSource
-from radar.core.runs import RunRecord, fail_run, fail_stale_runs, list_runs, start_run
+from radar.core.storage import RunRecord, fail_run, fail_stale_runs, list_runs, start_run
 from radar.core.usecases import classify_messages_range
 from radar.web.server.schemas import ClassifyMessagesJobItem, ClassifyMessagesRequest
 

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from threading import Lock
 
 from radar.core.config import RadarConfig
-from radar.core.runs import fail_run, fail_stale_runs, finish_run, get_running_run, start_run, update_run_progress
+from radar.core.storage import fail_run, fail_stale_runs, finish_run, get_running_run, start_run, update_run_progress
 from radar.core.usecases.stock_evidence_chain import build_stock_evidence_chain, refresh_lifecycle_digests
 from radar.web.server.schemas import DerivedJobItem, LifecycleDigestJobRequest, StockEvidenceChainJobRequest
 

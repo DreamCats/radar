@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 
 from radar.core.config import RadarConfig
-from radar.core.store import connect, init_db
+from radar.core.storage import connect, init_db
 from radar.core.usecases.stock_evidence_chain.lifecycle_models import (
     LIFECYCLE_DIGEST_SCOPE_TYPE,
     StockEvidenceLifecycleDigestContext,

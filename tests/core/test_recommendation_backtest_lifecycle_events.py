@@ -7,7 +7,7 @@ from pathlib import Path
 
 from radar.core.config import RadarConfig
 from radar.core.models import MessageClassification, RawMessage
-from radar.core.store import connect, init_db, upsert_message_classifications, upsert_messages
+from radar.core.storage import connect, init_db, upsert_message_classifications, upsert_messages
 from radar.core.usecases.recommendation_backtest.events import (
     RECOMMENDATION_EVENT_EXTRACTOR_VERSION,
     refresh_recommendation_events,

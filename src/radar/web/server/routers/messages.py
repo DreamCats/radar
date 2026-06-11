@@ -14,7 +14,7 @@ from radar.core.messages import (
     get_message_overview,
 )
 from radar.core.models import MessageSource
-from radar.core.store import connect, init_db
+from radar.core.storage import connect, init_db
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     ConversationPageResponse,

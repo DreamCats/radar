@@ -6,7 +6,7 @@ from datetime import datetime
 
 from radar.core.config import RadarConfig
 from radar.core.models import MessageSource
-from radar.core.store import connect, init_db
+from radar.core.storage import connect, init_db
 from radar.core.usecases.recommendation_backtest.events import RECOMMENDATION_EVENT_EXTRACTOR_VERSION
 from radar.core.usecases.recommendation_backtest.models import (
     DEFAULT_BACKTEST_WINDOWS,

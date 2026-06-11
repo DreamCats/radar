@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from radar.core.db import migrate_market_db
+from radar.core.storage.db import migrate_market_db
 
 
 DEFAULT_TTL = 86_400

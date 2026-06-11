@@ -10,9 +10,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from radar.core.config import RadarConfig
-from radar.core.db import migrate_market_db
+from radar.core.storage.db import migrate_market_db
 from radar.core.models import MessageSource
-from radar.core.store import connect
+from radar.core.storage import connect
 from radar.core.usecases.recommendation_backtest.models import BacktestAction, RecommendationEvent
 
 RECOMMENDATION_EVENT_EXTRACTOR_VERSION = "lifecycle-evidence-v1"

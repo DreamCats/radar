@@ -19,7 +19,7 @@ from radar.core.messages import (
     list_messages,
 )
 from radar.core.models import RawMessage
-from radar.core.store import connect, init_db
+from radar.core.storage import connect, init_db
 from radar.core.usecases.recommendation_backtest import DEFAULT_BACKTEST_WINDOWS, summarize_recommendation_backtests
 
 

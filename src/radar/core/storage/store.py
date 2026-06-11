@@ -4,7 +4,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from radar.core.db import migrate_message_db
+from radar.core.storage.db import migrate_message_db
 from radar.core.models import (
     ClassificationRetryMode,
     MessageCategory,

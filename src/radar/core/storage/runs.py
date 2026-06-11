@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from radar.core.db import migrate_message_db
+from radar.core.storage.db import migrate_message_db
 
 RunStatus = Literal["running", "succeeded", "skipped", "failed"]
 _SQLITE_TIMEOUT_SECONDS = 15.0

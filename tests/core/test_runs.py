@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime, timedelta
 
-from radar.core.runs import (
+from radar.core.storage import (
     fail_run,
     fail_stale_runs,
     finish_run,
@@ -117,8 +117,8 @@ def test_get_running_run_and_fail_stale_runs(tmp_path):
 def test_fail_stale_runs_skips_when_database_locked(monkeypatch, tmp_path):
     db = tmp_path / "radar.sqlite3"
     run_id = start_run(db, kind="wechat_ingest_range", target="group_message:day")
-    monkeypatch.setattr("radar.core.runs._SQLITE_TIMEOUT_SECONDS", 0.01)
-    monkeypatch.setattr("radar.core.runs._SQLITE_BUSY_TIMEOUT_MS", 10)
+    monkeypatch.setattr("radar.core.storage.runs._SQLITE_TIMEOUT_SECONDS", 0.01)
+    monkeypatch.setattr("radar.core.storage.runs._SQLITE_BUSY_TIMEOUT_MS", 10)
 
     locker = sqlite3.connect(db, timeout=0.01)
     try:

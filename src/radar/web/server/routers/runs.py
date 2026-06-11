@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from radar.core.config import RadarConfig
-from radar.core.runs import RunRecord, RunStatus, cancel_run, list_runs
+from radar.core.storage import RunRecord, RunStatus, cancel_run, list_runs
 from radar.web.server.backtest_jobs import mark_stale_backtest_runs
 from radar.web.server.classify_jobs import mark_stale_classify_runs
 from radar.web.server.deps import get_config

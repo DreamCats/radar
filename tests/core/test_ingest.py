@@ -4,8 +4,8 @@ from datetime import datetime
 
 from radar.core.config import RadarConfig, RadarSecrets, WechatEndpointSecret, WechatSecrets
 from radar.core.models import MessageSource, RawMessage
-from radar.core.runs import get_run
-from radar.core.store import connect, init_db, record_fetch_window
+from radar.core.storage import get_run
+from radar.core.storage import connect, init_db, record_fetch_window
 from radar.core.usecases import ingest_wechat_range, ingest_wechat_window
 
 

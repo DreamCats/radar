@@ -10,7 +10,7 @@ from radar.core.organize import (
     list_classification_clusters,
     list_classification_evidence,
 )
-from radar.core.store import connect, init_db, upsert_message_classifications, upsert_messages
+from radar.core.storage import connect, init_db, upsert_message_classifications, upsert_messages
 
 
 def test_list_classification_clusters_groups_with_evidence(tmp_path):

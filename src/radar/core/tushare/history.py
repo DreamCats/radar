@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from radar.core.db import migrate_market_db
+from radar.core.storage.db import migrate_market_db
 from radar.core.tushare.models import HistorySpec
 
 

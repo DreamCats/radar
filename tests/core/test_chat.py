@@ -21,7 +21,7 @@ from radar.core.chat.events import new_id, now_iso
 from radar.core.config import RadarConfig
 from radar.core.llm import LlmChatDelta, LlmChatDone, LlmChatResponse, LlmReasoningDelta, LlmToolCall
 from radar.core.models import RawMessage
-from radar.core.store import connect, init_db, upsert_messages
+from radar.core.storage import connect, init_db, upsert_messages
 
 
 class CountingSearchExtension:
