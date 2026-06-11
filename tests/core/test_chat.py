@@ -200,6 +200,8 @@ def test_chat_system_prompt_layers_surface_rules():
     assert "不输出买入、卖出、持有、仓位、目标价" in common_prompt
     assert "投资价值排序" in common_prompt
     assert "证据完整度、跟踪优先级" in common_prompt
+    assert "输出 Markdown 时使用标准语法" in common_prompt
+    assert "不要写 `##标题` 或 `-内容`" in common_prompt
     assert "radar_get_conversation_window" not in common_prompt
     assert "radar_get_conversation_window" in wechat_prompt
     assert "页面传入的最近 evidence" in wechat_prompt
