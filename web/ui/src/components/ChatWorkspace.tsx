@@ -105,6 +105,7 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
           />
           <ChatComposer
             draft={controller.draft}
+            canContinue={controller.canContinue}
             modelOptions={controller.modelOptions}
             selectedProviderName={controller.selectedProviderName}
             messages={controller.messages}
@@ -113,6 +114,7 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
             sending={controller.sending}
             onDraftChange={controller.setDraft}
             onProviderChange={controller.changeProvider}
+            onContinue={() => void controller.continueTurn()}
             onStop={controller.stopStreaming}
             onSubmit={() => void controller.submitTurn()}
           />

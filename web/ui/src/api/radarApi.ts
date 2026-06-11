@@ -2,6 +2,7 @@ import type {
   ClassifyJobItem,
   ClassifyRequest,
   AnchorRequest,
+  ChatContinueRequest,
   ChatMessageItem,
   ChatModelOptions,
   ChatSessionDetail,
@@ -104,6 +105,25 @@ export async function streamChatTurn(
     body: JSON.stringify(request),
     signal: options.signal,
   });
+  await readChatEventStream(response, onEvent);
+}
+
+export async function continueChatTurn(
+  sessionId: string,
+  request: ChatContinueRequest,
+  onEvent: (event: ChatStreamEvent) => void,
+  options: { signal?: AbortSignal } = {},
+): Promise<void> {
+  const response = await fetch(`${apiBase}/api/chat/sessions/${encodeURIComponent(sessionId)}/continue/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+    signal: options.signal,
+  });
+  await readChatEventStream(response, onEvent);
+}
+
+async function readChatEventStream(response: Response, onEvent: (event: ChatStreamEvent) => void): Promise<void> {
   if (!response.ok) {
     throw new Error(await errorText(response));
   }

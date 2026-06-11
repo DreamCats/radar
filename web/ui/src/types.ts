@@ -101,6 +101,10 @@ export type ChatTurnRequest = {
   metadata?: Record<string, unknown>;
 };
 
+export type ChatContinueRequest = {
+  provider_name?: string | null;
+};
+
 export type ChatMessageItem = {
   message_id: string;
   role: "system" | "user" | "assistant" | "tool";
@@ -124,6 +128,7 @@ export type ChatSessionItem = {
   metadata: Record<string, unknown>;
   message_count: number;
   preview: string;
+  can_continue: boolean;
 };
 
 export type ChatSessionList = {

@@ -249,6 +249,10 @@ class ChatTurnRequest(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class ChatContinueRequest(BaseModel):
+    provider_name: str | None = None
+
+
 class ChatMessageResponse(BaseModel):
     message_id: str
     role: str
@@ -265,6 +269,7 @@ class ChatSessionResponse(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     message_count: int = 0
     preview: str = ""
+    can_continue: bool = False
 
 
 class ChatSessionListResponse(BaseModel):

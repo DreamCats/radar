@@ -305,6 +305,7 @@ def test_chat_sessions_endpoint_lists_file_backed_sessions(tmp_path):
     assert item["metadata"] == {"surface": "总览"}
     assert item["message_count"] == 2
     assert item["preview"] == "先看半导体和 MLCC。"
+    assert item["can_continue"] is False
 
 
 def test_chat_session_detail_endpoint_restores_messages(tmp_path):
@@ -341,6 +342,48 @@ def test_chat_session_detail_endpoint_restores_messages(tmp_path):
     assert data["session"]["session_id"] == session.session_id
     assert data["session"]["preview"] == "查风华高科"
     assert [message["content"] for message in data["messages"]] == ["查风华高科"]
+
+
+def test_chat_session_detail_marks_interrupted_turn_continuable(tmp_path):
+    from radar.core.chat import ChatEvent, ChatMessage, ChatSessionStore
+    from radar.core.chat.events import new_id, now_iso
+
+    config = _config(tmp_path)
+    store = ChatSessionStore.from_config(config)
+    session = store.create_session(title="洞察", metadata={"surface": "洞察"})
+    user_message = ChatMessage(
+        message_id=new_id(),
+        role="user",
+        content="我的个股证据链策略前 5 个",
+        created_at="2026-06-08T10:00:00",
+    )
+    store.append_message(session.session_id, user_message)
+    store.append_event(
+        ChatEvent(
+            event_id=new_id(),
+            session_id=session.session_id,
+            type="turn_started",
+            created_at=now_iso(),
+            payload={"user_message_id": user_message.message_id},
+        )
+    )
+    store.append_message(
+        session.session_id,
+        ChatMessage(
+            message_id=new_id(),
+            role="tool",
+            content='{"items":[{"ts_code":"002371.SZ"}]}',
+            created_at="2026-06-08T10:00:01",
+        ),
+    )
+
+    client = TestClient(create_app(config))
+    response = client.get(f"/api/chat/sessions/{session.session_id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["session"]["can_continue"] is True
+    assert [message["content"] for message in data["messages"]] == ["我的个股证据链策略前 5 个"]
 
 
 def test_organize_classifications_endpoint_returns_clusters(tmp_path):

@@ -20,6 +20,7 @@ export type ChatSurfaceProps = {
 export type ChatController = {
   activeSessionId: string | null;
   autoFollowBottom: boolean;
+  canContinue: boolean;
   draft: string;
   error: string | null;
   hasNewMessagesBelow: boolean;
@@ -35,6 +36,7 @@ export type ChatController = {
   sessions: ChatSessionItem[];
   visibleContext: ChatContextItem[];
   changeProvider: (providerName: string | null) => void;
+  continueTurn: () => Promise<void>;
   copySessionContent: (nextSessionId: string) => Promise<void>;
   copySessionId: (nextSessionId: string) => Promise<void>;
   copySessionTitle: (session: ChatSessionItem) => Promise<void>;

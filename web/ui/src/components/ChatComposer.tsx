@@ -1,4 +1,4 @@
-import { ArrowUp, Brain, ChevronDown, Square } from "lucide-react";
+import { ArrowUp, Brain, ChevronDown, RotateCcw, Square } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 
@@ -17,6 +17,7 @@ type ContextUsage = {
 
 type ChatComposerProps = {
   draft: string;
+  canContinue: boolean;
   sending: boolean;
   modelOptions: ChatModelOption[];
   selectedProviderName: string | null;
@@ -28,11 +29,13 @@ type ChatComposerProps = {
   onDraftChange: (value: string) => void;
   onProviderChange: (value: string | null) => void;
   onSubmit: () => void;
+  onContinue: () => void;
   onStop: () => void;
 };
 
 export function ChatComposer({
   draft,
+  canContinue,
   sending,
   modelOptions,
   selectedProviderName,
@@ -44,6 +47,7 @@ export function ChatComposer({
   onDraftChange,
   onProviderChange,
   onSubmit,
+  onContinue,
   onStop,
 }: ChatComposerProps) {
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
@@ -59,6 +63,7 @@ export function ChatComposer({
     totalTokens: selectedOption?.context_window_tokens ?? 256_000,
   });
   const visualUsedPercent = contextUsage.usedTokens > 0 ? Math.max(1, contextUsage.usedPercent) : 0;
+  const shouldContinue = canContinue && !draft.trim();
   const usedPercentLabel = formatUsedPercent(contextUsage);
   const remainingPercentLabel = formatRemainingPercent(contextUsage);
   const contextTooltip = [
@@ -102,6 +107,8 @@ export function ChatComposer({
             event.preventDefault();
             if (sending) {
               onStop();
+            } else if (shouldContinue) {
+              onContinue();
             } else {
               onSubmit();
             }
@@ -170,11 +177,11 @@ export function ChatComposer({
         <button
           className="chat-send-button"
           type="button"
-          disabled={!sending && !draft.trim()}
-          onClick={() => (sending ? onStop() : onSubmit())}
-          aria-label={sending ? "停止生成" : "发送"}
+          disabled={!sending && !draft.trim() && !canContinue}
+          onClick={() => (sending ? onStop() : shouldContinue ? onContinue() : onSubmit())}
+          aria-label={sending ? "停止生成" : shouldContinue ? "继续生成" : "发送"}
         >
-          {sending ? <Square size={14} /> : <ArrowUp size={18} />}
+          {sending ? <Square size={14} /> : shouldContinue ? <RotateCcw size={15} /> : <ArrowUp size={18} />}
         </button>
       </div>
     </div>
