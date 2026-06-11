@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 import { fetchStockEvidenceStockChart } from "../api/radarApi";
 import { ChatLauncher } from "./ChatLauncher";
-import { StrategyStockCandlestickChart } from "./StrategyStockCandlestickChart";
 import type { StockEvidenceStockChart } from "../types";
 
 export type StrategyStockDrawerMetric = {
@@ -37,6 +36,10 @@ export type StrategyStockDrawerStock = {
 };
 
 type StrategyStock = StrategyStockDrawerStock;
+
+const StrategyStockCandlestickChart = lazy(() =>
+  import("./StrategyStockCandlestickChart").then((module) => ({ default: module.StrategyStockCandlestickChart })),
+);
 
 type Props = {
   stock: StrategyStock | null;
@@ -157,7 +160,9 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
             <p className="strategy-stock-chart-empty">{chart?.missing_reason ?? "本地暂无日线缓存"}</p>
           )}
           {!loading && !error && candles.length > 0 && (
-            <StrategyStockCandlestickChart candles={candles} stock={stock} latestIsRealtime={chart?.latest_is_realtime ?? false} />
+            <Suspense fallback={<p className="strategy-stock-chart-empty">正在加载图表</p>}>
+              <StrategyStockCandlestickChart candles={candles} stock={stock} latestIsRealtime={chart?.latest_is_realtime ?? false} />
+            </Suspense>
           )}
 
           <div className="strategy-stock-decision-grid">

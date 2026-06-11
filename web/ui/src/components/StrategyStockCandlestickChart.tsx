@@ -1,10 +1,51 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  CandlestickSeries,
+  ColorType,
+  CrosshairMode,
+  HistogramSeries,
+  LineSeries,
+  LineStyle,
+  createChart,
+  createSeriesMarkers,
+  type CandlestickData,
+  type HistogramData,
+  type LineData,
+  type MouseEventParams,
+  type SeriesMarker,
+  type Time,
+} from "lightweight-charts";
+
 import type { StockEvidenceStockCandle } from "../types";
+
 type ChartStock = {
   stock_name: string;
   first_seen_time?: string | null;
   latest_message_time?: string | null;
 };
+
+type HoverState = {
+  candle: StockEvidenceStockCandle;
+  x: number;
+  y: number;
+};
+
+type ChartTime = string;
+
+const chartColors = {
+  background: "#0b0c0e",
+  grid: "rgba(47, 52, 61, 0.52)",
+  text: "#858b98",
+  up: "#e85f5c",
+  upSoft: "rgba(232, 95, 92, 0.34)",
+  down: "#26a69a",
+  downSoft: "rgba(38, 166, 154, 0.34)",
+  ma5: "#f0b84f",
+  ma10: "#a578ff",
+  ma20: "#4e8bff",
+  marker: "#f0b84f",
+};
+
 export function StrategyStockCandlestickChart({
   candles,
   stock,
@@ -14,18 +55,149 @@ export function StrategyStockCandlestickChart({
   stock: ChartStock;
   latestIsRealtime?: boolean;
 }) {
-  const chart = useMemo(() => buildChart(candles), [candles]);
-  const markers = useMemo(() => signalMarkers(candles, stock), [candles, stock]);
-  const quote = useMemo(() => quoteSummary(candles), [candles]);
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const [hover, setHover] = useState<HoverState | null>(null);
+  const chartData = useMemo(() => buildLightweightChartData(candles, stock), [candles, stock]);
+  const activeCandle = hover?.candle ?? candles[candles.length - 1];
+  const quote = useMemo(() => quoteSummary(activeCandle), [activeCandle]);
+  const latestQuote = useMemo(() => quoteSummary(candles[candles.length - 1]), [candles]);
+
+  useEffect(() => {
+    setHover(null);
+  }, [candles]);
+
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container || chartData.candles.length === 0) {
+      return;
+    }
+
+    const chart = createChart(container, {
+      autoSize: true,
+      height: 420,
+      layout: {
+        background: { type: ColorType.Solid, color: chartColors.background },
+        attributionLogo: false,
+        fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+        textColor: chartColors.text,
+      },
+      grid: {
+        horzLines: { color: chartColors.grid },
+        vertLines: { color: "rgba(47, 52, 61, 0.28)" },
+      },
+      crosshair: {
+        mode: CrosshairMode.Normal,
+        vertLine: {
+          color: "rgba(240, 184, 79, 0.32)",
+          labelBackgroundColor: chartColors.marker,
+          style: LineStyle.Solid,
+          width: 1,
+        },
+        horzLine: {
+          color: "rgba(240, 184, 79, 0.45)",
+          labelBackgroundColor: chartColors.marker,
+        },
+      },
+      localization: {
+        priceFormatter: (price: number) => price.toFixed(2),
+      },
+      rightPriceScale: {
+        borderColor: "rgba(68, 74, 84, 0.54)",
+        scaleMargins: { top: 0.08, bottom: 0.32 },
+      },
+      timeScale: {
+        borderColor: "rgba(68, 74, 84, 0.54)",
+        rightOffset: 4,
+        barSpacing: 8,
+        fixLeftEdge: true,
+        timeVisible: false,
+      },
+      handleScale: {
+        axisPressedMouseMove: true,
+        mouseWheel: true,
+        pinch: true,
+      },
+      handleScroll: {
+        horzTouchDrag: true,
+        mouseWheel: true,
+        pressedMouseMove: true,
+        vertTouchDrag: false,
+      },
+    });
+
+    const candleSeries = chart.addSeries(CandlestickSeries, {
+      upColor: chartColors.up,
+      downColor: chartColors.down,
+      wickUpColor: chartColors.up,
+      wickDownColor: chartColors.down,
+      borderVisible: false,
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+    candleSeries.setData(chartData.candles);
+    candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.32 } });
+
+    const volumeSeries = chart.addSeries(HistogramSeries, {
+      color: "rgba(133, 139, 152, 0.26)",
+      lastValueVisible: false,
+      priceFormat: { type: "volume" },
+      priceLineVisible: false,
+      priceScaleId: "",
+    });
+    volumeSeries.setData(chartData.volume);
+    volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.76, bottom: 0 } });
+
+    chartData.maLines.forEach((line) => {
+      const series = chart.addSeries(LineSeries, {
+        color: line.color,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+        lineWidth: 1,
+        priceLineVisible: false,
+      });
+      series.setData(line.data);
+    });
+
+    createSeriesMarkers(candleSeries, chartData.markers, { autoScale: true });
+    chart.timeScale().fitContent();
+
+    const handleCrosshairMove = (param: MouseEventParams<Time>) => {
+      if (!param.time || !param.point || param.point.x < 0 || param.point.y < 0) {
+        setHover(null);
+        return;
+      }
+      const key = String(param.time);
+      const candle = chartData.candleByTime.get(key);
+      if (!candle) {
+        setHover(null);
+        return;
+      }
+      const rect = container.getBoundingClientRect();
+      setHover({
+        candle,
+        x: Math.min(param.point.x + 16, Math.max(rect.width - 190, 0)),
+        y: Math.min(param.point.y + 14, Math.max(rect.height - 122, 0)),
+      });
+    };
+
+    chart.subscribeCrosshairMove(handleCrosshairMove);
+    return () => {
+      chart.unsubscribeCrosshairMove(handleCrosshairMove);
+      chart.remove();
+    };
+  }, [chartData]);
 
   return (
     <section className="strategy-stock-chart-panel">
       <div className="strategy-stock-quote-strip">
         <div className="strategy-stock-last-price">
+          <span className="strategy-stock-last-price-label">{hover ? "指向交易日" : "最新收盘"}</span>
           <strong className={quote.toneClass}>{quote.close}</strong>
           <span className="strategy-stock-change-row">
             <em>较昨收</em>
-            <b className={quote.toneClass}>{quote.change} {quote.pct}</b>
+            <b className={quote.toneClass}>
+              {quote.change} {quote.pct}
+            </b>
           </span>
         </div>
         <dl className="strategy-stock-quote-grid">
@@ -41,96 +213,28 @@ export function StrategyStockCandlestickChart({
       </div>
 
       <div className="strategy-stock-chart-title">
-        <strong>日K · {candles.length}交易日{latestIsRealtime ? " · 盘中快照" : ""}</strong>
+        <strong>
+          证据K线 · {candles.length}交易日{latestIsRealtime ? " · 盘中快照" : ""}
+        </strong>
         <span className="strategy-ma-legend">
-          <em className="ma5">MA5:{formatPrice(chart.maLatest[5])}</em>
-          <em className="ma10">10:{formatPrice(chart.maLatest[10])}</em>
-          <em className="ma20">20:{formatPrice(chart.maLatest[20])}</em>
-          <em>成交量</em>
+          <em className="ma5">MA5:{formatPrice(chartData.maLatest[5])}</em>
+          <em className="ma10">MA10:{formatPrice(chartData.maLatest[10])}</em>
+          <em className="ma20">MA20:{formatPrice(chartData.maLatest[20])}</em>
+          <em>拖动缩放看位置</em>
         </span>
       </div>
 
-      <svg className="strategy-stock-chart" viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label={`${stock.stock_name} 日K`}>
-        {chart.grid.map((line) => (
-          <g key={line.y}>
-            <line className="strategy-chart-grid" x1={chart.left} x2={chart.right} y1={line.y} y2={line.y} />
-            <text className="strategy-chart-axis" x={chart.left - 8} y={line.y + 4} textAnchor="end">
-              {line.label}
-            </text>
-          </g>
-        ))}
+      <div className="strategy-stock-chart-shell">
+        <div ref={chartContainerRef} className="strategy-stock-chart" aria-label={`${stock.stock_name} 证据K线`} />
+        {hover ? <ChartHoverCard hover={hover} /> : null}
+      </div>
 
-        <line className="strategy-current-price-line" x1={chart.left} x2={chart.right} y1={chart.currentPriceY} y2={chart.currentPriceY} />
-        <rect className={`strategy-current-price-pill ${quote.priceClass}`} x={chart.right - 52} y={chart.currentPriceY - 10} width="50" height="18" rx="4" />
-        <text className="strategy-current-price-text" x={chart.right - 27} y={chart.currentPriceY + 4} textAnchor="middle">
-          {quote.close}
-        </text>
-
-        {chart.candles.map((item) => (
-          <g key={item.candle.trade_date}>
-            <line
-              className={item.up ? "strategy-candle-wick strategy-candle-up" : "strategy-candle-wick strategy-candle-down"}
-              x1={item.x}
-              x2={item.x}
-              y1={item.highY}
-              y2={item.lowY}
-            />
-            <rect
-              className={item.up ? "strategy-candle-body strategy-candle-up" : "strategy-candle-body strategy-candle-down"}
-              x={item.x - chart.candleWidth / 2}
-              y={item.bodyY}
-              width={chart.candleWidth}
-              height={item.bodyHeight}
-              rx={1}
-            >
-              <title>
-                {formatTradeDate(item.candle.trade_date)} 开 {item.candle.open.toFixed(2)} 高 {item.candle.high.toFixed(2)} 低{" "}
-                {item.candle.low.toFixed(2)} 收 {item.candle.close.toFixed(2)}
-              </title>
-            </rect>
-            <rect
-              className={item.up ? "strategy-volume-up" : "strategy-volume-down"}
-              x={item.x - chart.candleWidth / 2}
-              y={item.volumeY}
-              width={chart.candleWidth}
-              height={item.volumeHeight}
-              rx={1}
-            />
-          </g>
-        ))}
-
-        {chart.maLines.map((line) => (
-          <polyline className={`strategy-ma-line strategy-ma-line-${line.period}`} key={line.period} points={line.points} />
-        ))}
-        {chart.volumeMaLines.map((line) => (
-          <polyline className={`strategy-volume-ma-line strategy-volume-ma-line-${line.period}`} key={`vol-${line.period}`} points={line.points} />
-        ))}
-
-        {markers.map((marker, index) => {
-          const x = chart.xForIndex(marker.index);
-          const isRightEdge = x > chart.right - 118;
-          const labelX = isRightEdge ? x - 6 : x + 6;
-          return (
-            <g key={marker.label}>
-              <line className="strategy-signal-marker-line" x1={x} x2={x} y1={chart.top} y2={chart.volumeBottom} />
-              <text
-                className="strategy-signal-marker-label"
-                x={labelX}
-                y={chart.top + 14 + index * 18}
-                textAnchor={isRightEdge ? "end" : "start"}
-              >
-                {marker.label}
-              </text>
-            </g>
-          );
-        })}
-
-        {chart.dateTicks.map((tick) => (
-          <text className="strategy-chart-axis" key={tick.label} x={tick.x} y={chart.height - 10} textAnchor={tick.anchor}>
-            {tick.label}
-          </text>
-        ))}
-      </svg>
+      <div className="strategy-stock-chart-foot">
+        <span>首现/最近消息已标在图上</span>
+        <span>
+          最新 {latestQuote.date} {latestQuote.close} · {latestQuote.change} {latestQuote.pct}
+        </span>
+      </div>
     </section>
   );
 }
@@ -144,109 +248,71 @@ function QuoteItem({ label, value, toneClass }: { label: string; value: string; 
   );
 }
 
-function buildChart(candles: StockEvidenceStockCandle[]) {
-  const width = 860;
-  const height = 438;
-  const left = 58;
-  const right = width - 22;
-  const top = 18;
-  const priceBottom = 286;
-  const volumeTop = 328;
-  const volumeBottom = 404;
-  const high = Math.max(...candles.map((item) => item.high));
-  const low = Math.min(...candles.map((item) => item.low));
-  const pad = Math.max((high - low) * 0.1, high * 0.006, 0.01);
-  const maxPrice = high + pad;
-  const minPrice = low - pad;
-  const priceSpan = Math.max(maxPrice - minPrice, 0.01);
-  const maxVol = Math.max(...candles.map((item) => item.vol ?? 0), 1);
-  const step = candles.length > 1 ? (right - left) / (candles.length - 1) : 0;
-  const candleWidth = Math.max(3, Math.min(10, ((right - left) / Math.max(candles.length, 1)) * 0.62));
-  const yForPrice = (price: number) => priceBottom - ((price - minPrice) / priceSpan) * (priceBottom - top);
-  const yForVolume = (volume: number) => volumeBottom - (volume / maxVol) * (volumeBottom - volumeTop);
-  const xForIndex = (index: number) => left + step * index;
-  const renderedCandles = candles.map((candle, index) => {
-    const openY = yForPrice(candle.open);
-    const closeY = yForPrice(candle.close);
-    const volumeHeight = ((candle.vol ?? 0) / maxVol) * (volumeBottom - volumeTop);
+function ChartHoverCard({ hover }: { hover: HoverState }) {
+  const quote = quoteSummary(hover.candle);
+  return (
+    <div className="strategy-chart-hover-card" style={{ left: hover.x, top: hover.y }}>
+      <strong>{quote.date}</strong>
+      <span>
+        开 {quote.open} · 收 <b className={quote.toneClass}>{quote.close}</b>
+      </span>
+      <span>
+        高 {quote.high} · 低 {quote.low}
+      </span>
+      <span>
+        量 {quote.volume} · 额 {quote.amount}
+      </span>
+    </div>
+  );
+}
+
+function buildLightweightChartData(candles: StockEvidenceStockCandle[], stock: ChartStock) {
+  const candleByTime = new Map<ChartTime, StockEvidenceStockCandle>();
+  const candleData: CandlestickData<ChartTime>[] = candles.map((candle) => {
+    const time = chartTime(candle.trade_date);
+    candleByTime.set(time, candle);
     return {
-      candle,
-      x: xForIndex(index),
-      up: candle.close >= candle.open,
-      highY: yForPrice(candle.high),
-      lowY: yForPrice(candle.low),
-      bodyY: Math.min(openY, closeY),
-      bodyHeight: Math.max(Math.abs(closeY - openY), 1.4),
-      volumeY: volumeBottom - volumeHeight,
-      volumeHeight,
+      close: candle.close,
+      high: candle.high,
+      low: candle.low,
+      open: candle.open,
+      time,
     };
   });
-  const grid = [0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-    const price = maxPrice - ratio * priceSpan;
-    return {
-      y: top + ratio * (priceBottom - top),
-      label: price.toFixed(2),
-    };
-  });
-  const maLines = [5, 10, 20].map((period) => ({ period, points: maPoints(candles, period, xForIndex, yForPrice) }));
-  const volumeMaLines = [5, 10].map((period) => ({ period, points: volumeMaPoints(candles, period, xForIndex, yForVolume) }));
-  const last = candles[candles.length - 1];
+  const volume: HistogramData<ChartTime>[] = candles.map((candle) => ({
+    color: candle.close >= candle.open ? chartColors.upSoft : chartColors.downSoft,
+    time: chartTime(candle.trade_date),
+    value: candle.vol ?? 0,
+  }));
+  const maLines = [
+    { color: chartColors.ma5, data: maData(candles, 5), period: 5 },
+    { color: chartColors.ma10, data: maData(candles, 10), period: 10 },
+    { color: chartColors.ma20, data: maData(candles, 20), period: 20 },
+  ];
   return {
-    width,
-    height,
-    left,
-    right,
-    top,
-    volumeBottom,
-    candleWidth,
-    candles: renderedCandles,
-    currentPriceY: yForPrice(last.close),
-    dateTicks: dateTicks(candles, xForIndex),
-    grid,
-    xForIndex,
+    candleByTime,
+    candles: candleData,
     maLatest: {
       5: maLatest(candles, 5),
       10: maLatest(candles, 10),
       20: maLatest(candles, 20),
     },
     maLines,
-    volumeMaLines,
+    markers: signalMarkers(candles, stock),
+    volume,
   };
 }
 
-function maPoints(
-  candles: StockEvidenceStockCandle[],
-  period: number,
-  xForIndex: (index: number) => number,
-  yForPrice: (price: number) => number,
-): string {
-  const points: string[] = [];
-  candles.forEach((_, index) => {
+function maData(candles: StockEvidenceStockCandle[], period: number): LineData<ChartTime>[] {
+  const points: LineData<ChartTime>[] = [];
+  candles.forEach((candle, index) => {
     const average = maAt(candles, period, index);
     if (average === null) {
       return;
     }
-    points.push(`${xForIndex(index).toFixed(1)},${yForPrice(average).toFixed(1)}`);
+    points.push({ time: chartTime(candle.trade_date), value: average });
   });
-  return points.join(" ");
-}
-
-function volumeMaPoints(
-  candles: StockEvidenceStockCandle[],
-  period: number,
-  xForIndex: (index: number) => number,
-  yForVolume: (volume: number) => number,
-): string {
-  const points: string[] = [];
-  candles.forEach((_, index) => {
-    if (index + 1 < period) {
-      return;
-    }
-    const slice = candles.slice(index + 1 - period, index + 1);
-    const average = slice.reduce((sum, item) => sum + (item.vol ?? 0), 0) / period;
-    points.push(`${xForIndex(index).toFixed(1)},${yForVolume(average).toFixed(1)}`);
-  });
-  return points.join(" ");
+  return points;
 }
 
 function maLatest(candles: StockEvidenceStockCandle[], period: number): number | null {
@@ -261,77 +327,79 @@ function maAt(candles: StockEvidenceStockCandle[], period: number, index: number
   return slice.reduce((sum, item) => sum + item.close, 0) / period;
 }
 
-function signalMarkers(candles: StockEvidenceStockCandle[], stock: ChartStock) {
-  const markers: Array<{ label: string; index: number }> = [];
+function signalMarkers(candles: StockEvidenceStockCandle[], stock: ChartStock): SeriesMarker<ChartTime>[] {
+  const markers: SeriesMarker<ChartTime>[] = [];
   const firstSeen = dateKey(stock.first_seen_time);
   const latest = dateKey(stock.latest_message_time);
   if (firstSeen) {
-    const label = markerLabel("首现", stock.first_seen_time);
-    markers.push({ label, index: nearestCandleIndex(candles, firstSeen) });
+    const candle = nearestCandle(candles, firstSeen);
+    markers.push({
+      color: chartColors.marker,
+      position: "belowBar",
+      shape: "arrowUp",
+      text: markerLabel("首现", stock.first_seen_time),
+      time: chartTime(candle.trade_date),
+    });
   }
   if (latest && latest !== firstSeen) {
-    const label = markerLabel("最近", stock.latest_message_time);
-    markers.push({ label, index: nearestCandleIndex(candles, latest) });
+    const candle = nearestCandle(candles, latest);
+    markers.push({
+      color: "#7aa2ff",
+      position: "aboveBar",
+      shape: "circle",
+      text: markerLabel("最近", stock.latest_message_time),
+      time: chartTime(candle.trade_date),
+    });
   }
   return markers;
 }
 
-function nearestCandleIndex(candles: StockEvidenceStockCandle[], key: string): number {
-  const index = candles.findIndex((item) => item.trade_date >= key);
-  return index >= 0 ? index : candles.length - 1;
+function nearestCandle(candles: StockEvidenceStockCandle[], key: string): StockEvidenceStockCandle {
+  return candles.find((item) => item.trade_date >= key) ?? candles[candles.length - 1];
 }
 
-function quoteSummary(candles: StockEvidenceStockCandle[]) {
-  const last = candles[candles.length - 1];
-  const change = last.change ?? (last.pre_close ? last.close - last.pre_close : last.close - last.open);
-  const pct = last.pct_chg ?? (last.pre_close ? (change / last.pre_close) * 100 : null);
-  const intradayChange = last.close - last.open;
-  const intradayPct = last.open ? (intradayChange / last.open) * 100 : null;
+function quoteSummary(candle: StockEvidenceStockCandle) {
+  const change = candle.change ?? (candle.pre_close ? candle.close - candle.pre_close : candle.close - candle.open);
+  const pct = candle.pct_chg ?? (candle.pre_close ? (change / candle.pre_close) * 100 : null);
+  const intradayChange = candle.close - candle.open;
+  const intradayPct = candle.open ? (intradayChange / candle.open) * 100 : null;
   const toneClass = priceToneClass(change);
   return {
-    amount: formatAmount(last.amount),
+    amount: formatAmount(candle.amount),
     change: formatSignedPrice(change),
-    close: last.close.toFixed(2),
-    date: formatTradeDate(last.trade_date),
-    high: last.high.toFixed(2),
-    highTone: priceToneClass(last.high - (last.pre_close ?? last.open)),
-    low: last.low.toFixed(2),
-    lowTone: priceToneClass(last.low - (last.pre_close ?? last.open)),
-    open: last.open.toFixed(2),
-    openTone: priceToneClass(last.open - (last.pre_close ?? last.open)),
+    close: candle.close.toFixed(2),
+    date: formatTradeDate(candle.trade_date),
+    high: candle.high.toFixed(2),
+    highTone: priceToneClass(candle.high - (candle.pre_close ?? candle.open)),
+    low: candle.low.toFixed(2),
+    lowTone: priceToneClass(candle.low - (candle.pre_close ?? candle.open)),
+    open: candle.open.toFixed(2),
+    openTone: priceToneClass(candle.open - (candle.pre_close ?? candle.open)),
     intraday: `${formatSignedPrice(intradayChange)} ${formatPercentPoint(intradayPct)}`,
     intradayTone: priceToneClass(intradayChange),
-    preClose: formatPrice(last.pre_close ?? null),
+    preClose: formatPrice(candle.pre_close ?? null),
     pct: formatPercentPoint(pct),
-    priceClass: change >= 0 ? "is-up" : "is-down",
     toneClass,
-    volume: formatVolume(last.vol),
+    volume: formatVolume(candle.vol),
   };
 }
 
-function dateTicks(candles: StockEvidenceStockCandle[], xForIndex: (index: number) => number) {
-  const indexes = Array.from(new Set([0, Math.floor((candles.length - 1) / 2), candles.length - 1]));
-  return indexes.map((index, position) => ({
-    anchor: tickAnchor(position, indexes.length),
-    label: formatTradeDate(candles[index].trade_date),
-    x: xForIndex(index),
-  }));
-}
-
-function tickAnchor(position: number, total: number): "start" | "middle" | "end" {
-  if (position === 0) {
-    return "start";
+function chartTime(value: string): ChartTime {
+  if (value.length !== 8) {
+    return value;
   }
-  return position === total - 1 ? "end" : "middle";
+  return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
 }
 
 function dateKey(value?: string | null): string | null {
   return dateParts(value)?.key ?? null;
 }
+
 function markerLabel(prefix: string, value?: string | null): string {
   const label = dateParts(value)?.label;
   return label ? `${prefix} ${label}` : prefix;
 }
+
 function dateParts(value?: string | null): { key: string; label: string } | null {
   if (!value) {
     return null;
@@ -360,6 +428,9 @@ function dateParts(value?: string | null): { key: string; label: string } | null
 }
 
 function formatTradeDate(value: string): string {
+  if (value.length === 10) {
+    return `${value.slice(5, 7)}/${value.slice(8, 10)}`;
+  }
   if (value.length !== 8) {
     return value;
   }
