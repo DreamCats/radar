@@ -154,7 +154,7 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
             ))}
           </div>
 
-          {loading && <p className="strategy-stock-chart-empty">正在加载本地行情</p>}
+          {loading && <MarketChartLoading stockName={stock.stock_name} />}
           {!loading && error && <p className="error-line">{error}</p>}
           {!loading && !error && candles.length === 0 && (
             <p className="strategy-stock-chart-empty">{chart?.missing_reason ?? "本地暂无日线缓存"}</p>
@@ -193,6 +193,47 @@ function DecisionMetric({ label, value, tone }: StrategyStockDrawerMetric) {
       <span>{label}</span>
       <strong className={metricToneClass(value, tone)}>{formatted}</strong>
     </article>
+  );
+}
+
+function MarketChartLoading({ stockName }: { stockName: string }) {
+  const candleBars = [
+    { className: "is-down", height: 46 },
+    { className: "is-up", height: 72 },
+    { className: "is-up", height: 58 },
+    { className: "is-down", height: 88 },
+    { className: "is-up", height: 104 },
+    { className: "is-down", height: 64 },
+    { className: "is-up", height: 92 },
+    { className: "is-up", height: 76 },
+    { className: "is-down", height: 52 },
+  ];
+  const volumeBars = [34, 58, 42, 76, 94, 62, 84, 48, 66];
+
+  return (
+    <section className="strategy-market-loading" role="status" aria-live="polite" aria-label={`正在同步${stockName}本地行情`}>
+      <div className="strategy-market-loading-head">
+        <span className="strategy-market-loading-dot" />
+        <div>
+          <strong>正在同步本地行情</strong>
+          <span>读取日线缓存与盘中快照</span>
+        </div>
+      </div>
+      <div className="strategy-market-loading-chart" aria-hidden="true">
+        <div className="strategy-market-loading-grid" />
+        <div className="strategy-market-loading-price-line" />
+        <div className="strategy-market-loading-candles">
+          {candleBars.map((bar, index) => (
+            <span className={`strategy-market-loading-candle ${bar.className}`} style={{ height: `${bar.height}px` }} key={index} />
+          ))}
+        </div>
+        <div className="strategy-market-loading-volumes">
+          {volumeBars.map((height, index) => (
+            <span style={{ height: `${height}%` }} key={index} />
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
