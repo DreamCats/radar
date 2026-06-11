@@ -115,3 +115,56 @@ def test_recognition_accepts_high_quality_theme_with_clear_trend():
     )
 
     assert recognition.state == "confirmed"
+
+
+def test_recognition_marks_volume_start_before_market_rejection():
+    theme = StockEvidenceThemeContext(
+        theme_id="theme:auto:tungsten",
+        theme_name="钨/小金属",
+        theme_type="theme",
+        role="core",
+        confidence=0.87,
+        source_count=3,
+        return_rank_5d=5,
+        stock_return_5d=0.0448,
+        stock_return_20d=-0.0109,
+        amount_ratio_5d=2.0333,
+        quality_score=1.0,
+        quality_label="主线候选",
+    )
+
+    recognition = build_recognition_context(
+        unique_trigger_count=8,
+        market_summary={"return_since_first_point": 0.0078, "drawdown_from_selected_high": 0.0},
+        market_points=[{"pct_chg": 3.7595, "amount_ratio_5d": 2.0333}],
+        themes=[theme],
+    )
+
+    assert recognition.state == "just_started"
+    assert recognition.state_label == "刚启动"
+
+
+def test_recognition_keeps_weak_price_as_rejected():
+    theme = StockEvidenceThemeContext(
+        theme_id="theme:auto:tungsten",
+        theme_name="钨/小金属",
+        theme_type="theme",
+        role="core",
+        confidence=0.87,
+        source_count=3,
+        return_rank_5d=12,
+        stock_return_5d=-0.03,
+        stock_return_20d=-0.08,
+        amount_ratio_5d=0.9,
+        quality_score=0.86,
+        quality_label="主线候选",
+    )
+
+    recognition = build_recognition_context(
+        unique_trigger_count=8,
+        market_summary={"return_since_first_point": -0.03, "drawdown_from_selected_high": -0.04},
+        market_points=[{"pct_chg": 0.8, "amount_ratio_5d": 0.9}],
+        themes=[theme],
+    )
+
+    assert recognition.state == "rejected"

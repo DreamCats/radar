@@ -10,6 +10,7 @@ const STAGE_ORDER = ["线索期", "种子期", "论证期", "扩散期", "定价
 const REVIEW_FILTERS = [
   { key: "全部", label: "全部", states: null },
   { key: "机会", label: "主线确认", states: ["mainline_confirmed", "market_first"] },
+  { key: "初动", label: "初动", states: ["volume_start_validation"] },
   { key: "补主题", label: "补主题", states: ["theme_missing"] },
   { key: "补市场", label: "补市场", states: ["needs_market_validation", "one_day_pulse", "evidence_gap"] },
   { key: "市场不认", label: "市场不认", states: ["price_rejected_diffusion", "narrative_rejected"] },

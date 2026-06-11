@@ -13,6 +13,7 @@ STAGE_ACTION_PRIORITY = {
 REVIEW_PRIORITY = {
     "mainline_confirmed": 0,
     "market_first": 1,
+    "volume_start_validation": 6,
     "needs_market_validation": 8,
     "theme_missing": 12,
     "one_day_pulse": 16,
@@ -25,7 +26,8 @@ REVIEW_PRIORITY = {
 RECOGNITION_PRIORITY = {
     "confirmed": 0,
     "just_confirmed": 1,
-    "unknown": 2,
+    "just_started": 2,
+    "unknown": 3,
     "pullback_after_pricing": 4,
     "rejected": 5,
     "overheated": 6,

@@ -356,6 +356,9 @@ function recognitionToneClass(state: string): string {
   if (state === "confirmed" || state === "just_confirmed") {
     return "confirmed";
   }
+  if (state === "just_started") {
+    return "risk";
+  }
   if (state === "overheated" || state === "pullback_after_pricing") {
     return "risk";
   }

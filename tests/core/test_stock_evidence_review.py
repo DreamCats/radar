@@ -52,6 +52,24 @@ def test_review_distinguishes_market_first_and_one_day_pulse():
     assert pulse.label == "单日脉冲待验证"
 
 
+def test_review_marks_volume_start_validation():
+    review = build_review_context(
+        stage="formed",
+        stage_label="论证期",
+        confidence=0.74,
+        summary="逻辑开始成型，当天放量上涨。",
+        unique_trigger_count=8,
+        market_summary={"return_since_first_point": 0.0078, "drawdown_from_selected_high": 0.0},
+        market_points=[{"pct_chg": 3.76, "amount_ratio_5d": 2.0}],
+        primary_theme=_theme(),
+        recognition=StockEvidenceRecognitionContext(state="just_started", state_label="刚启动"),
+    )
+
+    assert review.state == "volume_start_validation"
+    assert review.label == "放量初动待验证"
+    assert review.action_label == "等承接"
+
+
 def test_review_flags_price_rejected_diffusion_and_mainline_confirmed():
     rejected = build_review_context(
         stage="spreading",

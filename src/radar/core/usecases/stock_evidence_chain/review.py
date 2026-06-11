@@ -88,6 +88,15 @@ def build_review_context(
             "市场已经明显反映，优先看风险而不是追新机会。",
             ["短期涨幅、拥挤或回撤风险已经变成主要矛盾。"],
         )
+    if recognition.state == "just_started":
+        return _review(
+            "volume_start_validation",
+            "放量初动待验证",
+            "warning",
+            "等承接",
+            "单日放量启动，但还需要 2-3 个交易日确认。",
+            ["消息触发和当天量价开始共振，先看后续是否持续放量承接。"],
+        )
     if recognition.state in {"confirmed", "just_confirmed"} and primary_theme is not None:
         return _review(
             "mainline_confirmed",

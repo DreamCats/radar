@@ -158,6 +158,14 @@ def build_recognition_context(
             reasons=reasons,
             missing_evidence=_dedupe(missing),
         )
+    if _is_just_started(unique_trigger_count, return_since_first, drawdown, market_points, theme):
+        reasons.append("消息触发不低，最新交易日价格和量能刚开始启动")
+        return StockEvidenceRecognitionContext(
+            state="just_started",
+            state_label="刚启动",
+            reasons=reasons,
+            missing_evidence=_dedupe(missing),
+        )
     if _is_rejected(unique_trigger_count, return_20d, return_since_first, theme):
         reasons.append("消息热度不低，但价格或主题内强弱没有跟上")
         return StockEvidenceRecognitionContext(
@@ -414,6 +422,24 @@ def _is_just_confirmed(
     volume_ok = amount_ratio is not None and amount_ratio >= 1.3
     not_laggard = not theme.is_theme_laggard if theme else True
     return short_return and volume_ok and not_laggard
+
+
+def _is_just_started(
+    unique_trigger_count: int,
+    return_since_first: float | None,
+    drawdown: float | None,
+    market_points: list[dict[str, Any]],
+    theme: StockEvidenceThemeContext | None,
+) -> bool:
+    latest = market_points[-1] if market_points else {}
+    latest_pct = _float(latest.get("pct_chg")) if isinstance(latest, dict) else None
+    latest_amount_ratio = _float(latest.get("amount_ratio_5d")) if isinstance(latest, dict) else None
+    if unique_trigger_count < 6 or latest_pct is None or latest_amount_ratio is None:
+        return False
+    early_move = return_since_first is None or return_since_first < 0.08
+    controlled_drawdown = drawdown is None or drawdown > -0.08
+    not_laggard = not theme.is_theme_laggard if theme else True
+    return latest_pct >= 3.0 and latest_amount_ratio >= 1.5 and early_move and controlled_drawdown and not_laggard
 
 
 def _is_rejected(
