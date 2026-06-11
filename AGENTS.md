@@ -161,6 +161,11 @@ web/ui/            React/Vite 前端，只调用 Web API
 - 当派生表重建超过 30 秒，或 `market_anchor_members` 超过 100 万行时，优先把全量重建改成正确的增量刷新。
 - 正确增量必须在替换某个交易日/source 的 raw 数据前后分别收集受影响的 `(anchor_key, member_source, ts_code)`，用旧 key 和新 key 的并集删除并重算派生行，避免成员删除、force 刷新、补历史数据时留下旧关系。
 - 增量刷新必须补小样本测试，至少覆盖新增成员、删除成员、主题热度/reason 更新、历史日回填和 skipped raw 但重建派生表的场景。
+- 主题归一化规则只作为“主线识别辅助”，不是业务真相；新增规则必须保守，宁可保留“补主题”，不要把弱关联包装成主线。
+- 新增或放宽主题规则时，必须固定当前最新个股证据链样本做 before/after：至少记录 `primary_theme_missing`、`theme_missing`、`mainline_confirmed`，并人工抽看 Top 20 和变更样本。
+- 主题规则不能只看关键词命中；尤其是 `AI硬件`、`半导体`、`芯片`、`涨价概念`、`专用设备`、`通用设备` 这类泛标签要默认降权，只有 reason 中出现足够具体的投资叙事时才允许派生更细主题。
+- 如果指标变好但样本出现明显错归类，例如把公司边缘业务、客户描述或单句 reason 强行映射成主线，应优先收紧规则并补回归测试。
+- 主题质量、市场认可和 review 标签是联动的；改 `market_theme_rules.py`、`theme_quality.py`、`recognition.py` 后，至少跑主题归一化、主题质量、review、排序和 web strategy 相关最小测试。
 
 ## 14. 保护已有改动
 

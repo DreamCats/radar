@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from radar.core.market_theme_rules import is_generic_theme_name, is_specific_theme_name
+
 ROLE_PRIORITY = {"core": 3, "elastic": 2, "unknown": 1}
 TYPE_PRIORITY = {"theme": 4, "concept": 3, "industry": 2, "stock": 1}
 
@@ -38,11 +40,14 @@ def is_primary_theme_candidate(item: Any) -> bool:
     score = float(getattr(item, "quality_score", 0) or 0)
     source_count = int(getattr(item, "source_count", 0) or 0)
     confidence = float(getattr(item, "confidence", 0) or 0)
+    theme_name = str(getattr(item, "theme_name", ""))
     is_broad = bool(getattr(item, "is_broad_theme", False))
     is_leader = bool(getattr(item, "is_theme_leader", False))
     if score >= 0.72:
         return True
     if score >= 0.62 and source_count >= 2 and (not is_broad or is_leader):
+        return True
+    if score >= 0.58 and is_specific_theme_name(theme_name) and is_leader and not is_broad:
         return True
     return score >= 0.58 and confidence >= 0.78 and is_leader
 
@@ -78,6 +83,7 @@ def _quality_parts(item: Any, *, as_of: datetime | None) -> tuple[float, list[st
     source_count = int(getattr(item, "source_count", 0) or 0)
     confidence = float(getattr(item, "confidence", 0) or 0)
     theme_type = str(getattr(item, "theme_type", ""))
+    theme_name = str(getattr(item, "theme_name", ""))
     member_count = _int_or_none(getattr(item, "member_count", None))
     covered_count = _int_or_none(getattr(item, "covered_member_count", None))
     return_rank = _int_or_none(getattr(item, "return_rank_5d", None))
@@ -87,6 +93,13 @@ def _quality_parts(item: Any, *, as_of: datetime | None) -> tuple[float, list[st
     score += min(source_count, 4) * 0.08
     score += min(confidence, 1.0) * 0.22
     score += {"theme": 0.08, "concept": 0.06, "industry": 0.04}.get(theme_type, 0.0)
+
+    if is_specific_theme_name(theme_name):
+        score += 0.08
+        reasons.append("主题名是具体可投资叙事")
+    elif is_generic_theme_name(theme_name):
+        score -= 0.08
+        warnings.append("主题名称偏泛，不能单独当主线")
 
     if source_count >= 2:
         reasons.append(f"跨来源归属：{source_count} 个来源")
@@ -109,8 +122,11 @@ def _quality_parts(item: Any, *, as_of: datetime | None) -> tuple[float, list[st
         elif member_count >= BROAD_THEME_MEMBERS:
             score -= 0.08
             warnings.append(f"主题偏宽：约 {member_count} 只成分")
-        elif 8 <= member_count <= 160:
-            score += 0.06
+        elif 8 <= member_count <= 80:
+            score += 0.08
+            reasons.append(f"主题成分规模可比：{member_count} 只")
+        elif member_count <= 160:
+            score += 0.03
             reasons.append(f"主题成分规模可比：{member_count} 只")
         elif member_count <= 3:
             warnings.append("主题成分太少，可能只是临时组合")

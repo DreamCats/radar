@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 import sqlite3
-import unicodedata
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Iterable
@@ -14,6 +12,7 @@ from pydantic import BaseModel
 from radar.core.config import RadarConfig
 from radar.core.db import migrate_market_db
 from radar.core.market_anchors import refresh_market_anchor_derivatives
+from radar.core.market_theme_rules import ThemeNormalization, normalize_theme_anchor
 
 
 class RefreshMarketThemeNormalizationResult(BaseModel):
@@ -97,11 +96,15 @@ def rebuild_market_theme_normalization_from_conn(
     memberships: dict[tuple[str, str], _Membership] = {}
 
     for row in rows:
-        theme_key = _canonical_theme_key(str(row["anchor_name"]))
-        if not theme_key:
+        normalized = normalize_theme_anchor(
+            str(row["anchor_name"]),
+            str(row["anchor_type"]),
+            str(row["latest_reason"] or ""),
+        )
+        if normalized is None or not normalized.theme_key:
             continue
-        theme_id = _theme_id(theme_key)
-        _add_node(nodes, theme_id, row)
+        theme_id = _theme_id(normalized.theme_key)
+        _add_node(nodes, theme_id, row, normalized)
         _add_source_link(links, theme_id, row)
         _add_membership(memberships, theme_id, row)
 
@@ -125,22 +128,27 @@ def _connect(config: RadarConfig) -> sqlite3.Connection:
     return conn
 
 
-def _add_node(nodes: dict[str, _ThemeNode], theme_id: str, row: sqlite3.Row) -> None:
-    name = str(row["anchor_name"])
+def _add_node(
+    nodes: dict[str, _ThemeNode],
+    theme_id: str,
+    row: sqlite3.Row,
+    normalized: ThemeNormalization,
+) -> None:
+    name = normalized.theme_name
     node = nodes.get(theme_id)
     if node is None:
         nodes[theme_id] = _ThemeNode(
             theme_id=theme_id,
             theme_name=name,
-            theme_type=str(row["anchor_type"]),
-            aliases={name},
+            theme_type=normalized.theme_type,
+            aliases=set(normalized.aliases),
             first_seen_date=str(row["first_seen_date"]),
             last_seen_date=str(row["last_seen_date"]),
         )
         return
 
-    node.aliases.add(name)
-    node.theme_type = _preferred_theme_type(node.theme_type, str(row["anchor_type"]))
+    node.aliases.update(normalized.aliases)
+    node.theme_type = _preferred_theme_type(node.theme_type, normalized.theme_type)
     if str(row["last_seen_date"]) >= node.last_seen_date:
         node.theme_name = name
         node.last_seen_date = str(row["last_seen_date"])
@@ -316,18 +324,6 @@ def _summarize(conn: sqlite3.Connection) -> RefreshMarketThemeNormalizationResul
         coverage_ratio=(covered_stock_count / current_stock_count if current_stock_count else 0.0),
         ambiguous_stock_count=ambiguous_stock_count,
     )
-
-
-def _canonical_theme_key(name: str) -> str:
-    text = unicodedata.normalize("NFKC", name).strip().lower()
-    text = re.sub(r"[（(][^）)]*[）)]", "", text)
-    parts = re.findall(r"[a-z0-9\u4e00-\u9fff]+", text)
-    compact = "".join(parts)
-    for suffix in ("概念板块", "行业板块", "概念", "板块", "指数"):
-        if compact.endswith(suffix) and len(compact) > len(suffix):
-            compact = compact[: -len(suffix)]
-            break
-    return compact
 
 
 def _theme_id(theme_key: str) -> str:

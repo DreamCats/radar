@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -280,8 +281,8 @@ def _attach_theme_rank_context(
             if item.return_rank_5d is None:
                 item.missing_evidence.append("主题内可比股票行情覆盖不足")
                 continue
-            item.is_theme_leader = item.return_rank_5d <= max(3, int(len(ranking) * 0.2))
-            item.is_theme_laggard = item.return_rank_5d > max(1, int(len(ranking) * 0.7))
+            item.is_theme_leader = item.return_rank_5d <= max(3, math.ceil(len(ranking) * 0.2))
+            item.is_theme_laggard = item.return_rank_5d > max(1, math.ceil(len(ranking) * 0.7))
 
 
 def _members_by_theme(conn: sqlite3.Connection, theme_ids: list[str]) -> dict[str, set[str]]:
@@ -392,7 +393,11 @@ def _is_confirmed(
         return_since_first is not None and return_since_first >= 0.18
     )
     controlled_drawdown = drawdown is None or drawdown > -0.12
-    strong_theme = theme.is_theme_leader if theme else False
+    strong_theme = False
+    if theme is not None:
+        strong_theme = theme.is_theme_leader or (
+            float(getattr(theme, "quality_score", 0) or 0) >= 0.78 and not theme.is_theme_laggard
+        )
     volume_ok = amount_ratio is not None and amount_ratio >= 1.5
     return trend and controlled_drawdown and (strong_theme or volume_ok)
 

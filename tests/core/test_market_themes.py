@@ -53,6 +53,89 @@ def test_refresh_market_theme_normalization_merges_clean_source_names(tmp_path: 
     assert json.loads(membership[4]) == ["dc_concept:CPO概念: 光模块", "kpl_list:CPO: AI硬件"]
 
 
+def test_refresh_market_theme_normalization_derives_specific_theme_from_reason(tmp_path: Path):
+    config = _config(tmp_path)
+    conn = sqlite3.connect(tmp_path / "market.sqlite3")
+    try:
+        migrate_market_db(conn)
+        _insert_current(conn, "kpl:AI硬件", "theme", "AI硬件", "kpl_concept_cons", "000025.KP", "kpl_concept_cons")
+        _insert_span(
+            conn,
+            "kpl:AI硬件",
+            "theme",
+            "AI硬件",
+            "kpl_concept_cons",
+            "000025.KP",
+            "kpl_concept_cons",
+            4,
+            reason="旗下贝思科主要从事MLCC用钛酸钡及配方粉研发生产",
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    result = refresh_market_theme_normalization(config, rebuild_anchor_derivatives=False)
+
+    conn = sqlite3.connect(tmp_path / "market.sqlite3")
+    try:
+        node = conn.execute("SELECT theme_name, theme_type, aliases_json FROM theme_nodes").fetchone()
+        link = conn.execute("SELECT source_name FROM theme_source_links").fetchone()
+    finally:
+        conn.close()
+
+    assert result.theme_count == 1
+    assert node[0] == "MLCC"
+    assert node[1] == "theme"
+    assert json.loads(node[2]) == ["AI硬件", "MLCC"]
+    assert link[0] == "AI硬件"
+
+
+def test_refresh_market_theme_normalization_merges_cpo_light_communication_aliases(tmp_path: Path):
+    config = _config(tmp_path)
+    conn = sqlite3.connect(tmp_path / "market.sqlite3")
+    try:
+        migrate_market_db(conn)
+        _insert_current(conn, "kpl:CPO", "theme", "CPO", "kpl_list", "CPO", "kpl_list")
+        _insert_current(
+            conn,
+            "kpl:光通信设备",
+            "theme",
+            "光通信设备",
+            "kpl_concept_cons",
+            "000065.KP",
+            "kpl_concept_cons",
+        )
+        _insert_span(conn, "kpl:CPO", "theme", "CPO", "kpl_list", "CPO", "kpl_list", 1, reason="通信")
+        _insert_span(
+            conn,
+            "kpl:光通信设备",
+            "theme",
+            "光通信设备",
+            "kpl_concept_cons",
+            "000065.KP",
+            "kpl_concept_cons",
+            2,
+            reason="100G PAM4 EML 光芯片正在送样",
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    result = refresh_market_theme_normalization(config, rebuild_anchor_derivatives=False)
+
+    conn = sqlite3.connect(tmp_path / "market.sqlite3")
+    try:
+        node = conn.execute("SELECT theme_name, aliases_json FROM theme_nodes").fetchone()
+        membership = conn.execute("SELECT source_count FROM stock_theme_memberships").fetchone()
+    finally:
+        conn.close()
+
+    assert result.theme_count == 1
+    assert node[0] == "CPO/光通信"
+    assert json.loads(node[1]) == ["CPO", "CPO/光通信", "光通信设备"]
+    assert membership[0] == 2
+
+
 def _config(tmp_path: Path) -> RadarConfig:
     return RadarConfig(
         config_dir=tmp_path,
@@ -92,8 +175,9 @@ def _insert_span(
     source_code: str,
     member_source: str,
     seen_days: int,
+    reason: str | None = None,
 ) -> None:
-    reason = "光模块" if anchor_source == "dc_concept" else "AI硬件"
+    reason = reason or ("光模块" if anchor_source == "dc_concept" else "AI硬件")
     conn.execute(
         """
         INSERT INTO market_anchor_member_spans (
