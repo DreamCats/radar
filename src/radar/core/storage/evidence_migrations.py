@@ -122,3 +122,57 @@ EVIDENCE_CHAIN_MIGRATIONS: list[Migration] = [
         """,
     ),
 ]
+
+
+LIFECYCLE_DIGEST_MIGRATIONS: list[Migration] = [
+    (
+        "022_opportunity_lifecycle_digests",
+        """
+        CREATE TABLE IF NOT EXISTS opportunity_lifecycle_digests (
+            digest_id          TEXT PRIMARY KEY,
+            as_of_time         TEXT NOT NULL,
+            scope_type         TEXT NOT NULL,
+            scope_key          TEXT NOT NULL,
+            ts_code            TEXT NOT NULL,
+            stock_name         TEXT NOT NULL,
+            theme_id           TEXT,
+            theme_name         TEXT,
+            stage              TEXT NOT NULL,
+            recognition_state  TEXT NOT NULL,
+            evidence_signature TEXT NOT NULL,
+            prompt_version     TEXT NOT NULL,
+            llm_provider       TEXT,
+            model              TEXT,
+            digest_json        TEXT NOT NULL,
+            created_at         TEXT NOT NULL,
+            updated_at         TEXT NOT NULL,
+            UNIQUE (as_of_time, scope_type, scope_key, prompt_version)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_opportunity_lifecycle_digests_latest
+            ON opportunity_lifecycle_digests(as_of_time DESC, scope_type, scope_key);
+        CREATE INDEX IF NOT EXISTS idx_opportunity_lifecycle_digests_signature
+            ON opportunity_lifecycle_digests(scope_type, scope_key, prompt_version, evidence_signature, updated_at);
+        CREATE INDEX IF NOT EXISTS idx_opportunity_lifecycle_digests_stock
+            ON opportunity_lifecycle_digests(ts_code, as_of_time DESC);
+        """,
+    ),
+    (
+        "023_opportunity_lifecycle_digest_hash_parts",
+        """
+        ALTER TABLE opportunity_lifecycle_digests ADD COLUMN message_hash TEXT;
+        ALTER TABLE opportunity_lifecycle_digests ADD COLUMN market_hash TEXT;
+        ALTER TABLE opportunity_lifecycle_digests ADD COLUMN theme_hash TEXT;
+        ALTER TABLE opportunity_lifecycle_digests ADD COLUMN recognition_hash TEXT;
+        ALTER TABLE opportunity_lifecycle_digests ADD COLUMN backtest_hash TEXT;
+        ALTER TABLE opportunity_lifecycle_digests ADD COLUMN lifecycle_package_hash TEXT;
+
+        UPDATE opportunity_lifecycle_digests
+        SET lifecycle_package_hash = evidence_signature
+        WHERE lifecycle_package_hash IS NULL;
+
+        CREATE INDEX IF NOT EXISTS idx_opportunity_lifecycle_digests_package_hash
+            ON opportunity_lifecycle_digests(scope_type, scope_key, prompt_version, lifecycle_package_hash, updated_at);
+        """,
+    ),
+]

@@ -20,6 +20,18 @@ from radar.core.usecases.recommendation_backtest import (
 from radar.web.server.app import create_app
 
 
+def wait_for_run_status(database: Path, run_id: str, status: str, *, timeout: float = 2.0) -> None:
+    deadline = datetime.now() + timedelta(seconds=timeout)
+    while datetime.now() < deadline:
+        run = get_run(database, run_id)
+        if run is not None and run.status == status:
+            return
+        sleep(0.01)
+    run = get_run(database, run_id)
+    actual = run.status if run is not None else None
+    raise AssertionError(f"run {run_id} status did not become {status!r}; actual={actual!r}")
+
+
 def test_messages_endpoint_reads_paged_messages(tmp_path):
     config = _config(tmp_path)
     conn = connect(config.database_path)
@@ -255,6 +267,7 @@ def test_chat_model_options_endpoint_uses_shared_llm_config(tmp_path):
             "label": "fast · gpt-fast",
             "protocol": "openai",
             "model": "gpt-fast",
+            "context_window_tokens": 256000,
             "is_default": False,
             "thinking_enabled": True,
         },
@@ -263,6 +276,7 @@ def test_chat_model_options_endpoint_uses_shared_llm_config(tmp_path):
             "label": "默认 · claude-deep",
             "protocol": "anthropic",
             "model": "claude-deep",
+            "context_window_tokens": 256000,
             "is_default": True,
             "thinking_enabled": True,
         },
@@ -828,6 +842,7 @@ def test_anchor_jobs_endpoint_updates_market_anchors_and_reuses_running_job(monk
     assert second["run_id"] == first["run_id"]
     assert second["reused_existing"] is True
     release.set()
+    wait_for_run_status(config.database_path, first["run_id"], "succeeded")
     assert calls[0] == {
         "trade_date": "20260604",
         "min_anchor_count": 120,
