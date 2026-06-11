@@ -8,7 +8,13 @@ import type { StockEvidenceStockChart } from "../types";
 
 export type StrategyStockDrawerMetric = {
   label: string;
-  value?: number | null;
+  value?: number | string | null;
+  tone?: "up" | "down" | "flat";
+};
+
+export type StrategyStockDrawerContextItem = {
+  label: string;
+  value?: string | number | null;
 };
 
 export type StrategyStockDrawerStock = {
@@ -25,6 +31,7 @@ export type StrategyStockDrawerStock = {
   realtime_score?: number | null;
   drawer_badge?: string;
   drawer_metrics?: StrategyStockDrawerMetric[];
+  drawer_context?: StrategyStockDrawerContextItem[];
   evidence_title?: string;
   evidence_lines?: string[];
 };
@@ -90,6 +97,7 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
   }
 
   const candles = chart?.candles ?? [];
+  const evidenceLines = stockEvidenceLines(stock);
 
   return (
     <div className="strategy-stock-drawer-shell" role="dialog" aria-modal="true" aria-label={`${stock.stock_name} K线`}>
@@ -103,23 +111,23 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
           <div className="strategy-stock-drawer-head-actions">
             <ChatLauncher
               title={stock.stock_name}
-              subtitle={evidenceSummary(stock) || stock.ts_code}
+              subtitle={drawerSubtitle(stock) || stock.ts_code}
               surface="个股深挖"
               entityId={stock.ts_code}
               buttonLabel="AI"
               buttonClassName="btn btn-primary btn-sm strategy-stock-ai-action"
               context={[
                 { label: "代码", value: stock.ts_code },
-                { label: "阶段", value: stock.drawer_badge },
+                { label: "视图", value: stock.drawer_badge ?? "K线复盘" },
                 { label: "首现", value: stock.first_seen_time },
                 { label: "最近", value: stock.latest_message_time },
-                { label: "样本", value: evidenceSummary(stock) },
+                { label: "样本", value: drawerSubtitle(stock) },
               ]}
-              evidence={stockEvidenceLines(stock)}
+              evidence={evidenceLines}
               suggestedQuestions={[
-                "这个标的现在还能不能看？请结合消息证据、价格位置和风险。",
-                "首提来源可靠吗？这条股票信号有没有过热或反证？",
-                "如果不追高，后续应该盯哪些价格、消息和来源变化？",
+                "只看这张K线，当前价格位置和量能有什么风险？",
+                "从首现到最近消息，股价是提前反映、刚启动，还是已经兑现？",
+                "后续应该盯哪些均线、成交量和回撤位置？",
               ]}
             />
             <button className="icon-btn" type="button" aria-label="关闭" onClick={onClose}>
@@ -130,9 +138,19 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
 
         <div className="strategy-stock-drawer-tags">
           {stock.drawer_badge && <span className="strategy-stock-context-tag">{stock.drawer_badge}</span>}
+          <span>行情面板</span>
         </div>
 
         <div className="strategy-stock-drawer-body">
+          <div className="strategy-stock-context-grid">
+            {drawerContext(stock).map((item) => (
+              <article key={item.label}>
+                <span>{item.label}</span>
+                <strong>{formatContextValue(item.value)}</strong>
+              </article>
+            ))}
+          </div>
+
           {loading && <p className="strategy-stock-chart-empty">正在加载本地行情</p>}
           {!loading && error && <p className="error-line">{error}</p>}
           {!loading && !error && candles.length === 0 && (
@@ -144,28 +162,31 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
 
           <div className="strategy-stock-decision-grid">
             {drawerMetrics(stock).map((metric) => (
-              <DecisionMetric label={metric.label} value={metric.value} key={metric.label} />
+              <DecisionMetric label={metric.label} tone={metric.tone} value={metric.value} key={metric.label} />
             ))}
           </div>
 
-          <section className="strategy-stock-evidence-panel">
-            <strong>{stock.evidence_title ?? "策略证据"}</strong>
-            {evidenceSummary(stock) && <span>{evidenceSummary(stock)}</span>}
-            {stock.evidence_lines?.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </section>
+          {evidenceLines.length > 0 && (
+            <section className="strategy-stock-evidence-panel">
+              <strong>{stock.evidence_title ?? "策略证据"}</strong>
+              {drawerSubtitle(stock) && <span>{drawerSubtitle(stock)}</span>}
+              {evidenceLines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </section>
+          )}
         </div>
       </aside>
     </div>
   );
 }
 
-function DecisionMetric({ label, value }: { label: string; value?: number | null }) {
+function DecisionMetric({ label, value, tone }: StrategyStockDrawerMetric) {
+  const formatted = formatMetricValue(value);
   return (
     <article>
       <span>{label}</span>
-      <strong className={returnToneClass(value)}>{formatPercent(value, true)}</strong>
+      <strong className={metricToneClass(value, tone)}>{formatted}</strong>
     </article>
   );
 }
@@ -185,7 +206,19 @@ function drawerMetrics(stock: StrategyStock): StrategyStockDrawerMetric[] {
       ];
 }
 
-function evidenceSummary(stock: StrategyStock): string {
+function drawerContext(stock: StrategyStock): StrategyStockDrawerContextItem[] {
+  if (stock.drawer_context?.length) {
+    return stock.drawer_context;
+  }
+  return [
+    { label: "首现", value: stock.first_seen_time },
+    { label: "最近", value: stock.latest_message_time },
+    { label: "事件", value: stock.event_count },
+    { label: "来源", value: stock.source_count },
+  ];
+}
+
+function drawerSubtitle(stock: StrategyStock): string {
   return [
     stock.source_count !== undefined ? `${stock.source_count} 来源` : "",
     stock.event_count !== undefined ? `${stock.event_count} 事件` : "",
@@ -193,6 +226,32 @@ function evidenceSummary(stock: StrategyStock): string {
   ]
     .filter(Boolean)
     .join(" · ");
+}
+
+function formatContextValue(value?: string | number | null): string {
+  if (value === undefined || value === null || value === "") {
+    return "-";
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? String(value) : "-";
+  }
+  return compactDateTime(value);
+}
+
+function compactDateTime(value: string): string {
+  const match = value.match(/^(\d{4})[-/](\d{2})[-/](\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
+  if (!match) {
+    return value;
+  }
+  const [, , month, day, hour, minute] = match;
+  return hour && minute ? `${month}/${day} ${hour}:${minute}` : `${month}/${day}`;
+}
+
+function formatMetricValue(value?: number | string | null): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  return formatPercent(value, true);
 }
 
 function formatPercent(value?: number | null, signed = false): string {
@@ -203,7 +262,13 @@ function formatPercent(value?: number | null, signed = false): string {
   return signed && value > 0 ? `+${text}` : text;
 }
 
-function returnToneClass(value?: number | null): string {
+function metricToneClass(value?: number | string | null, tone?: StrategyStockDrawerMetric["tone"]): string {
+  if (tone) {
+    return tone === "up" ? "return-up" : tone === "down" ? "return-down" : "return-flat";
+  }
+  if (typeof value === "string") {
+    return "return-flat";
+  }
   if (value === undefined || value === null || value === 0) {
     return "return-flat";
   }

@@ -74,34 +74,35 @@ function drawerStock(item: StockEvidenceChainItem): StrategyStockDrawerStock {
     stock_name: item.stock_name,
     ts_code: item.ts_code,
     event_count: item.trigger_count,
-    source_count: item.conversation_count,
+    source_count: item.sender_count,
+    first_seen_time: firstEvidenceTime(item),
     latest_message_time: item.updated_at,
     price_return_since_first_seen: numberValue(item.market_summary.return_since_first_point),
     drawdown_from_high_since_first_seen: numberValue(item.market_summary.drawdown_from_selected_high),
-    drawer_badge: item.stage_label,
+    drawer_context: [
+      { label: "首现", value: firstEvidenceTime(item) },
+      { label: "最近", value: item.updated_at },
+      { label: "发送人", value: item.sender_count },
+      { label: "会话", value: item.conversation_count },
+    ],
     drawer_metrics: [
       { label: "区间收益", value: numberValue(item.market_summary.return_since_first_point) },
       { label: "高点回撤", value: numberValue(item.market_summary.drawdown_from_selected_high) },
-      { label: "置信度", value: item.confidence },
+      { label: "5日强弱", value: numberValue(item.primary_theme?.stock_return_5d) },
+      { label: "量能", value: volumeRatioText(item.primary_theme?.amount_ratio_5d) },
     ],
-    evidence_title: "证据链判断",
-    evidence_lines: [
-      item.summary,
-      item.primary_theme ? `主题位置：${item.primary_theme.theme_name} / ${item.primary_theme.role}` : "主题位置：未确认",
-      `市场认可：${item.recognition.state_label}`,
-      item.lifecycle_digest ? `生命周期：${item.lifecycle_digest.one_line}` : "",
-      ...(item.lifecycle_digest?.stage_reason ?? []).map((line) => `生命周期依据：${line}`),
-      ...(item.lifecycle_digest?.missing_evidence ?? []).map((line) => `生命周期缺口：${line}`),
-      ...item.recognition.reasons,
-      ...item.recognition.missing_evidence.map((line) => `缺口：${line}`),
-      ...item.why,
-      item.pricing_risk ? `定价风险：${item.pricing_risk}` : "",
-      item.crowding_risk ? `拥挤风险：${item.crowding_risk}` : "",
-      ...item.evidence_chain.slice(0, 5).map((point) => `${point.time ?? "-"} ${point.type ?? "证据"}：${point.evidence ?? ""}`),
-    ].filter((line) => line),
   };
+}
+
+function firstEvidenceTime(item: StockEvidenceChainItem): string | null {
+  return item.evidence_chain[0]?.time ?? null;
 }
 
 function numberValue(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function volumeRatioText(value: unknown): string | null {
+  const ratio = numberValue(value);
+  return ratio === null ? null : `${ratio.toFixed(1)}x`;
 }

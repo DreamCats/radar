@@ -20,7 +20,7 @@
   position: relative;
   z-index: 1;
   display: grid;
-  width: min(920px, calc(100vw - 44px));
+  width: min(1060px, calc(100vw - 44px));
   max-height: calc(100vh - 44px);
   grid-template-rows: auto auto minmax(0, 1fr);
   overflow: hidden;
@@ -100,24 +100,60 @@
   padding: 10px 16px;
 }
 
-.strategy-stock-context-tag {
+.strategy-stock-drawer-tags span {
   display: inline-flex;
   width: fit-content;
   align-items: center;
-  border: 1px solid color-mix(in srgb, var(--color-signal-hot) 45%, var(--color-hairline));
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
-  color: var(--color-signal-hot);
+  color: var(--color-ink-subtle);
+  background: color-mix(in srgb, var(--color-surface-2) 82%, transparent);
   padding: 3px 8px;
   font-size: 12px;
   font-weight: 600;
 }
 
+.strategy-stock-context-tag {
+  border: 1px solid color-mix(in srgb, var(--color-signal-hot) 45%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+
 .strategy-stock-drawer-body {
   display: grid;
-  gap: 12px;
+  gap: 14px;
   min-height: 0;
   overflow: auto;
   padding: 14px 16px 20px;
+}
+
+.strategy-stock-context-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.strategy-stock-context-grid article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--color-hairline) 82%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 72%, transparent);
+  padding: 9px 10px;
+}
+
+.strategy-stock-context-grid span {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.strategy-stock-context-grid strong {
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .strategy-stock-evidence-panel {
@@ -153,7 +189,7 @@
   gap: 4px;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-sm);
-  background: var(--color-surface-2);
+  background: color-mix(in srgb, var(--color-surface-2) 86%, transparent);
   padding: 10px;
 }
 
@@ -174,6 +210,7 @@
 }
 
 @media (max-width: 980px) {
+  .strategy-stock-context-grid,
   .strategy-stock-decision-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -190,6 +227,7 @@
     border-radius: 0;
   }
 
+  .strategy-stock-context-grid,
   .strategy-stock-decision-grid {
     grid-template-columns: 1fr;
   }
