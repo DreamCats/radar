@@ -31,6 +31,16 @@ def test_stock_evidence_chain_latest_endpoint_returns_empty_dashboard(tmp_path: 
     assert data["stage_counts"] == {}
 
 
+def test_lifecycle_digest_preview_allows_default_job_limit(tmp_path: Path):
+    client = TestClient(create_app(_config(tmp_path)))
+    response = client.get("/api/strategy/lifecycle-digests/preview", params={"limit": 120, "force": False})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["items"] == []
+    assert data["pending_count"] == 0
+
+
 def test_stock_evidence_chain_latest_orders_by_actionable_priority(tmp_path: Path):
     config = _config(tmp_path)
     as_of = datetime(2026, 6, 9, 15, 0)

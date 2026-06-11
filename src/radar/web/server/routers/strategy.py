@@ -55,7 +55,7 @@ def start_stock_evidence_chain_job(
 
 @router.get("/lifecycle-digests/preview", response_model=LifecycleDigestPreviewResponse)
 def lifecycle_digest_preview(
-    limit: int = Query(default=20, ge=1, le=100),
+    limit: int = Query(default=20, ge=1, le=500),
     force: bool = Query(default=False),
     config: RadarConfig = Depends(get_config),
 ) -> LifecycleDigestPreviewResponse:
