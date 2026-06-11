@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { ChatWorkspace } from "./ChatWorkspace";
@@ -16,10 +16,27 @@ export function ChatLauncher(props: ChatLauncherProps) {
   const [open, setOpen] = useState(false);
   const controller = useChatController(props, open);
 
-  function closeLauncher() {
+  const closeLauncher = useCallback(() => {
     controller.stopStreaming();
     setOpen(false);
-  }
+  }, [controller]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.isComposing) {
+        return;
+      }
+      event.preventDefault();
+      closeLauncher();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeLauncher, open]);
 
   const overlay = (
     <AnimatePresence>
