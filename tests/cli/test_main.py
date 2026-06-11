@@ -8,7 +8,11 @@ from click.testing import CliRunner
 
 from radar.cli.main import main
 from radar.core.models import RawMessage
-from radar.core.market_anchors import EnsureMarketAnchorsResult, RefreshMarketAnchorsResult
+from radar.core.market_anchors import (
+    EnsureMarketAnchorsResult,
+    RefreshMarketAnchorDerivativesResult,
+    RefreshMarketAnchorsResult,
+)
 from radar.core.store import connect, init_db, upsert_messages
 from radar.core.usecases import ClassifyRangeResult, IngestRangeResult, SmokeResult
 
@@ -492,6 +496,36 @@ def test_market_anchor_ensure_command_invokes_core(monkeypatch, tmp_path):
             "use_cache": True,
         }
     ]
+
+
+def test_market_anchor_rebuild_derived_command_invokes_core(monkeypatch, tmp_path):
+    config_dir = _config_dir(tmp_path)
+    calls: list[dict] = []
+
+    def fake_rebuild(config):
+        calls.append({"market_database": config.market_database_path})
+        return RefreshMarketAnchorDerivativesResult(
+            latest_trade_date="20260605",
+            current_count=10,
+            span_count=8,
+        )
+
+    monkeypatch.setattr("radar.cli.market.refresh_market_anchor_derivatives", fake_rebuild)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "--config-dir",
+            str(config_dir),
+            "market",
+            "anchors",
+            "rebuild-derived",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "market/anchors/derived: latest_trade_date=20260605 current=10 spans=8" in result.output
+    assert calls == [{"market_database": tmp_path / "data" / "market.sqlite3"}]
 
 
 def test_dashboard_command_starts_uvicorn(monkeypatch, tmp_path):

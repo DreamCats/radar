@@ -6,8 +6,10 @@ from radar.core.messages import MessageFilters, MessagePage, list_messages
 from radar.core.market_anchors import (
     EnsureMarketAnchorsResult,
     MarketAnchor,
+    RefreshMarketAnchorDerivativesResult,
     RefreshMarketAnchorsResult,
     ensure_market_anchors,
+    refresh_market_anchor_derivatives,
     refresh_market_anchors,
 )
 from radar.core.models import MessageSource, RawMessage
@@ -52,6 +54,7 @@ __all__ = [
     "OrganizeEvidenceMessage",
     "RadarConfig",
     "RawMessage",
+    "RefreshMarketAnchorDerivativesResult",
     "RefreshMarketAnchorsResult",
     "RunRecord",
     "TushareApiError",
@@ -77,6 +80,7 @@ __all__ = [
     "list_classification_clusters",
     "resolve_stock",
     "ensure_market_anchors",
+    "refresh_market_anchor_derivatives",
     "refresh_market_anchors",
     "start_run",
     "test_llm",

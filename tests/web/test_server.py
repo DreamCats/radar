@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from pathlib import Path
 from types import SimpleNamespace
 from threading import Event
 from time import sleep
@@ -793,6 +794,7 @@ def test_anchor_jobs_endpoint_updates_market_anchors_and_reuses_running_job(monk
 
 def test_anchor_jobs_endpoint_records_resolved_trade_date(monkeypatch, tmp_path):
     config = _config(tmp_path)
+    derivative_calls: list[Path] = []
     monkeypatch.setattr(
         "radar.web.server.market_anchor_jobs.ensure_market_anchors",
         lambda *args, **kwargs: SimpleNamespace(
@@ -804,6 +806,11 @@ def test_anchor_jobs_endpoint_records_resolved_trade_date(monkeypatch, tmp_path)
             source_counts={},
             failed_sources={},
         ),
+    )
+    monkeypatch.setattr(
+        "radar.web.server.market_anchor_jobs.refresh_market_anchor_derivatives",
+        lambda config: derivative_calls.append(config.market_database_path)
+        or SimpleNamespace(latest_trade_date="20260605", current_count=10, span_count=8),
     )
 
     client = TestClient(create_app(config))
@@ -820,6 +827,10 @@ def test_anchor_jobs_endpoint_records_resolved_trade_date(monkeypatch, tmp_path)
     run = get_run(config.database_path, run_id)
     assert run is not None
     assert run.metadata["trade_date"] == "20260605"
+    assert run.metadata["derived_latest_trade_date"] == "20260605"
+    assert run.metadata["derived_current_count"] == 10
+    assert run.metadata["derived_span_count"] == 8
+    assert derivative_calls == [config.market_database_path]
 
 
 def test_aggregate_refine_endpoints_are_removed(tmp_path):

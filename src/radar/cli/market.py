@@ -3,7 +3,11 @@ from __future__ import annotations
 import click
 
 from radar.cli.context import load_cli_config
-from radar.core.market_anchors import ensure_market_anchors, refresh_market_anchors
+from radar.core.market_anchors import (
+    ensure_market_anchors,
+    refresh_market_anchor_derivatives,
+    refresh_market_anchors,
+)
 
 
 @click.group("market")
@@ -77,3 +81,21 @@ def ensure_anchors_command(
         click.echo(f"sources={result.source_counts}")
     if result.failed_sources:
         click.echo(f"failed_sources={result.failed_sources}")
+
+
+@anchors.command("rebuild-derived")
+@click.pass_context
+def rebuild_anchor_derivatives_command(ctx: click.Context) -> None:
+    """从本地 raw anchor 快照重建 latest/current 和区间压缩表。"""
+
+    config = load_cli_config(ctx)
+    try:
+        result = refresh_market_anchor_derivatives(config)
+    except Exception as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    click.echo(
+        "market/anchors/derived: "
+        f"latest_trade_date={result.latest_trade_date or '-'} "
+        f"current={result.current_count} spans={result.span_count}"
+    )

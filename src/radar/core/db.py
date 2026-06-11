@@ -440,6 +440,58 @@ MARKET_MIGRATIONS: list[Migration] = [
             ON market_anchor_members(ts_code, trade_date);
         """,
     ),
+    (
+        "003_market_anchor_derivatives",
+        """
+        CREATE TABLE IF NOT EXISTS market_anchor_current_members (
+            anchor_key           TEXT NOT NULL,
+            anchor_type          TEXT NOT NULL,
+            anchor_name          TEXT NOT NULL,
+            anchor_source        TEXT NOT NULL,
+            source_code          TEXT NOT NULL DEFAULT '',
+            member_source        TEXT NOT NULL,
+            ts_code              TEXT NOT NULL,
+            stock_name           TEXT NOT NULL,
+            reason               TEXT,
+            latest_trade_date    TEXT NOT NULL,
+            hot_score            REAL,
+            anchor_metadata_json TEXT NOT NULL DEFAULT '{}',
+            member_metadata_json TEXT NOT NULL DEFAULT '{}',
+            updated_at           TEXT NOT NULL,
+            PRIMARY KEY (anchor_key, member_source, ts_code)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_market_anchor_current_members_stock
+            ON market_anchor_current_members(ts_code, latest_trade_date);
+        CREATE INDEX IF NOT EXISTS idx_market_anchor_current_members_anchor
+            ON market_anchor_current_members(anchor_key, latest_trade_date);
+
+        CREATE TABLE IF NOT EXISTS market_anchor_member_spans (
+            anchor_key           TEXT NOT NULL,
+            anchor_type          TEXT NOT NULL,
+            anchor_name          TEXT NOT NULL,
+            anchor_source        TEXT NOT NULL,
+            source_code          TEXT NOT NULL DEFAULT '',
+            member_source        TEXT NOT NULL,
+            ts_code              TEXT NOT NULL,
+            stock_name           TEXT NOT NULL,
+            first_seen_date      TEXT NOT NULL,
+            last_seen_date       TEXT NOT NULL,
+            seen_days            INTEGER NOT NULL,
+            latest_reason        TEXT,
+            latest_hot_score     REAL,
+            anchor_metadata_json TEXT NOT NULL DEFAULT '{}',
+            member_metadata_json TEXT NOT NULL DEFAULT '{}',
+            updated_at           TEXT NOT NULL,
+            PRIMARY KEY (anchor_key, member_source, ts_code)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_market_anchor_member_spans_stock
+            ON market_anchor_member_spans(ts_code, last_seen_date);
+        CREATE INDEX IF NOT EXISTS idx_market_anchor_member_spans_anchor
+            ON market_anchor_member_spans(anchor_key, last_seen_date);
+        """,
+    ),
 ]
 
 

@@ -55,6 +55,12 @@ class EnsureMarketAnchorsResult(RefreshMarketAnchorsResult):
     skipped_reason: str | None = None
 
 
+class RefreshMarketAnchorDerivativesResult(BaseModel):
+    latest_trade_date: str | None = None
+    current_count: int = 0
+    span_count: int = 0
+
+
 def ensure_market_anchors(
     config: RadarConfig,
     *,
@@ -270,6 +276,13 @@ def list_market_anchors(config: RadarConfig, *, trade_date: str, limit: int = 50
     return [_row_to_anchor(row) for row in rows]
 
 
+def refresh_market_anchor_derivatives(config: RadarConfig) -> RefreshMarketAnchorDerivativesResult:
+    """从原始每日 anchor 快照重建 latest/current 和区间压缩派生表。"""
+
+    with _connect(config) as conn:
+        return _rebuild_market_anchor_derivatives(conn)
+
+
 def _replace_sources(
     config: RadarConfig,
     trade_date: str,
@@ -342,7 +355,127 @@ def _replace_sources(
                 if item.anchor_id in anchor_ids
             ],
         )
+        _rebuild_market_anchor_derivatives(conn)
         conn.commit()
+
+
+def _rebuild_market_anchor_derivatives(conn: sqlite3.Connection) -> RefreshMarketAnchorDerivativesResult:
+    now = datetime.now().isoformat(timespec="seconds")
+    conn.execute("DELETE FROM market_anchor_current_members")
+    conn.execute("DELETE FROM market_anchor_member_spans")
+    conn.execute(
+        """
+        INSERT INTO market_anchor_current_members (
+            anchor_key, anchor_type, anchor_name, anchor_source, source_code,
+            member_source, ts_code, stock_name, reason, latest_trade_date,
+            hot_score, anchor_metadata_json, member_metadata_json, updated_at
+        )
+        WITH joined AS (
+            SELECT
+                a.source || ':' || a.source_code AS anchor_key,
+                a.anchor_type,
+                a.name AS anchor_name,
+                a.source AS anchor_source,
+                a.source_code,
+                m.source AS member_source,
+                m.ts_code,
+                m.stock_name,
+                m.reason,
+                m.trade_date,
+                a.hot_score,
+                a.metadata_json AS anchor_metadata_json,
+                m.metadata_json AS member_metadata_json,
+                ROW_NUMBER() OVER (
+                    PARTITION BY a.source, a.source_code, a.anchor_type, m.source, m.ts_code
+                    ORDER BY m.trade_date DESC, m.stock_name
+                ) AS row_rank
+            FROM market_anchor_members m
+            JOIN market_anchors a ON a.anchor_id = m.anchor_id
+        )
+        SELECT
+            anchor_key, anchor_type, anchor_name, anchor_source, source_code,
+            member_source, ts_code, stock_name, reason, trade_date,
+            hot_score, anchor_metadata_json, member_metadata_json, ?
+        FROM joined
+        WHERE row_rank = 1
+        """,
+        (now,),
+    )
+    conn.execute(
+        """
+        INSERT INTO market_anchor_member_spans (
+            anchor_key, anchor_type, anchor_name, anchor_source, source_code,
+            member_source, ts_code, stock_name, first_seen_date, last_seen_date,
+            seen_days, latest_reason, latest_hot_score, anchor_metadata_json,
+            member_metadata_json, updated_at
+        )
+        WITH joined AS (
+            SELECT
+                a.source || ':' || a.source_code AS anchor_key,
+                a.anchor_type,
+                a.name AS anchor_name,
+                a.source AS anchor_source,
+                a.source_code,
+                m.source AS member_source,
+                m.ts_code,
+                m.stock_name,
+                m.reason,
+                m.trade_date,
+                a.hot_score,
+                a.metadata_json AS anchor_metadata_json,
+                m.metadata_json AS member_metadata_json,
+                ROW_NUMBER() OVER (
+                    PARTITION BY a.source, a.source_code, a.anchor_type, m.source, m.ts_code
+                    ORDER BY m.trade_date DESC, m.stock_name
+                ) AS row_rank
+            FROM market_anchor_members m
+            JOIN market_anchors a ON a.anchor_id = m.anchor_id
+        ),
+        grouped AS (
+            SELECT
+                anchor_key,
+                member_source,
+                ts_code,
+                MIN(trade_date) AS first_seen_date,
+                MAX(trade_date) AS last_seen_date,
+                COUNT(DISTINCT trade_date) AS seen_days
+            FROM joined
+            GROUP BY anchor_key, member_source, ts_code
+        )
+        SELECT
+            latest.anchor_key,
+            latest.anchor_type,
+            latest.anchor_name,
+            latest.anchor_source,
+            latest.source_code,
+            latest.member_source,
+            latest.ts_code,
+            latest.stock_name,
+            grouped.first_seen_date,
+            grouped.last_seen_date,
+            grouped.seen_days,
+            latest.reason,
+            latest.hot_score,
+            latest.anchor_metadata_json,
+            latest.member_metadata_json,
+            ?
+        FROM joined latest
+        JOIN grouped
+          ON grouped.anchor_key = latest.anchor_key
+         AND grouped.member_source = latest.member_source
+         AND grouped.ts_code = latest.ts_code
+        WHERE latest.row_rank = 1
+        """,
+        (now,),
+    )
+    latest_row = conn.execute("SELECT MAX(latest_trade_date) FROM market_anchor_current_members").fetchone()
+    current_count = conn.execute("SELECT COUNT(*) FROM market_anchor_current_members").fetchone()[0]
+    span_count = conn.execute("SELECT COUNT(*) FROM market_anchor_member_spans").fetchone()[0]
+    return RefreshMarketAnchorDerivativesResult(
+        latest_trade_date=str(latest_row[0]) if latest_row and latest_row[0] else None,
+        current_count=int(current_count),
+        span_count=int(span_count),
+    )
 
 
 def _stored_counts(config: RadarConfig, trade_date: str) -> tuple[int, int]:

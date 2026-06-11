@@ -155,14 +155,21 @@ web/ui/            React/Vite 前端，只调用 Web API
 - 不要声称测试通过，除非实际运行过对应命令。
 - 如果跳过测试/构建，在最终回复中明确说明原因。
 
-## 13. 保护已有改动
+## 13. Market anchor 后续 TODO
+
+- `market_anchor_current_members` 和 `market_anchor_member_spans` 当前允许全量重建；当前本机 22 万级 `market_anchor_members` 实测约 5 秒，不要为了提前优化牺牲正确性。
+- 当派生表重建超过 30 秒，或 `market_anchor_members` 超过 100 万行时，优先把全量重建改成正确的增量刷新。
+- 正确增量必须在替换某个交易日/source 的 raw 数据前后分别收集受影响的 `(anchor_key, member_source, ts_code)`，用旧 key 和新 key 的并集删除并重算派生行，避免成员删除、force 刷新、补历史数据时留下旧关系。
+- 增量刷新必须补小样本测试，至少覆盖新增成员、删除成员、主题热度/reason 更新、历史日回填和 skipped raw 但重建派生表的场景。
+
+## 14. 保护已有改动
 
 - 工作区可能有用户或其他 agent 的未提交改动；编辑前先看 `git status --short`。
 - 不要回滚自己没改的文件。
 - 如果同一文件已有不相关修改，保留它们，只做当前任务需要的最小 patch。
 - 发现文档与代码不一致时，先以代码和用户最新要求为准，并指出差异。
 
-## 14. 最终回复
+## 15. 最终回复
 
 最终回复保持简洁，至少包含：
 

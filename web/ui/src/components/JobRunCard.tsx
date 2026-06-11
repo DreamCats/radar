@@ -189,11 +189,15 @@ function anchorMetrics(run?: RunItem): string[] {
   const metadata = run?.metadata ?? {};
   const anchors = run?.stored_count || numberValue(metadata.dictionary_anchor_count) || numberValue(metadata.anchor_count);
   const members = run?.raw_count || numberValue(metadata.market_anchor_member_count) || numberValue(metadata.member_count);
+  const current = optionalNumberValue(metadata.derived_current_count);
+  const spans = optionalNumberValue(metadata.derived_span_count);
   const failedSources = recordKeys(metadata.failed_sources).length;
   return [
     anchorTradeDateText(metadata),
     `词库 ${anchors} 个`,
     `成分 ${members} 条`,
+    current !== undefined ? `current ${current}` : "",
+    spans !== undefined ? `spans ${spans}` : "",
     metadata.market_anchor_refreshed === false ? "已复用" : "",
     failedSources ? `失败源 ${failedSources}` : "",
     durationText(run),
@@ -337,6 +341,10 @@ function boundedPercent(done: number, total: number): number {
 
 function numberValue(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function optionalNumberValue(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function recordKeys(value: unknown): string[] {

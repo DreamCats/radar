@@ -5,7 +5,12 @@ from pathlib import Path
 from typing import Any
 
 from radar.core.config import RadarConfig, RadarSecrets
-from radar.core.market_anchors import ensure_market_anchors, list_market_anchors, refresh_market_anchors
+from radar.core.market_anchors import (
+    ensure_market_anchors,
+    list_market_anchors,
+    refresh_market_anchor_derivatives,
+    refresh_market_anchors,
+)
 
 
 def test_refresh_market_anchors_builds_dictionary(tmp_path: Path):
@@ -52,6 +57,53 @@ def test_refresh_market_anchors_builds_dictionary(tmp_path: Path):
         conn.close()
     assert ("603915.SH", "国茂股份", "减速器") in member_rows
     assert ("002164.SZ", "宁波东力", "行星减速器") in member_rows
+
+
+def test_refresh_market_anchors_rebuilds_current_and_spans(tmp_path: Path):
+    config = _config(tmp_path)
+    refresh_market_anchors(config, trade_date="20260604", tushare_call=lambda _config, api, _params, _fields: _rows(api))
+    refresh_market_anchors(config, trade_date="20260605", tushare_call=lambda _config, api, _params, _fields: _rows(api))
+
+    conn = sqlite3.connect(tmp_path / "market.sqlite3")
+    try:
+        current = conn.execute(
+            """
+            SELECT anchor_key, anchor_name, member_source, ts_code, latest_trade_date, reason
+            FROM market_anchor_current_members
+            WHERE anchor_key = 'dc_concept:000084.DC' AND ts_code = '603915.SH'
+            """
+        ).fetchone()
+        span = conn.execute(
+            """
+            SELECT anchor_key, ts_code, first_seen_date, last_seen_date, seen_days, latest_reason
+            FROM market_anchor_member_spans
+            WHERE anchor_key = 'dc_concept:000084.DC' AND ts_code = '603915.SH'
+            """
+        ).fetchone()
+    finally:
+        conn.close()
+
+    assert current == ("dc_concept:000084.DC", "人形机器人", "dc_concept_cons", "603915.SH", "20260605", "减速器")
+    assert span == ("dc_concept:000084.DC", "603915.SH", "20260604", "20260605", 2, "减速器")
+
+
+def test_refresh_market_anchor_derivatives_can_rebuild_existing_raw(tmp_path: Path):
+    config = _config(tmp_path)
+    refresh_market_anchors(config, trade_date="20260604", tushare_call=lambda _config, api, _params, _fields: _rows(api))
+
+    conn = sqlite3.connect(tmp_path / "market.sqlite3")
+    try:
+        conn.execute("DELETE FROM market_anchor_current_members")
+        conn.execute("DELETE FROM market_anchor_member_spans")
+        conn.commit()
+    finally:
+        conn.close()
+
+    result = refresh_market_anchor_derivatives(config)
+
+    assert result.latest_trade_date == "20260604"
+    assert result.current_count == 7
+    assert result.span_count == 7
 
 
 def test_refresh_market_anchors_replaces_same_trade_date(tmp_path: Path):

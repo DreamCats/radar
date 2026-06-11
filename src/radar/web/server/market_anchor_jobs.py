@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from threading import Lock
 
 from radar.core.config import RadarConfig
-from radar.core.market_anchors import ensure_market_anchors
+from radar.core.market_anchors import ensure_market_anchors, refresh_market_anchor_derivatives
 from radar.core.runs import fail_run, fail_stale_runs, finish_run, get_running_run, start_run, update_run_progress
 from radar.web.server.schemas import DerivedJobItem, MarketAnchorUpdateRequest
 
@@ -43,9 +43,11 @@ def _run_anchor_job(config: RadarConfig, request: MarketAnchorUpdateRequest, run
             min_anchor_count=request.min_anchor_count,
             force=request.force,
         )
+        update_run_progress(config.database_path, run_id, metadata={"stage": "重建 anchor 派生表"})
+        derivatives = refresh_market_anchor_derivatives(config)
         metadata = {
             **request.model_dump(mode="json"),
-            "stage": "更新市场 anchor 词库",
+            "stage": "完成",
             "requested_trade_date": request.trade_date,
             "trade_date": anchors.trade_date,
             "market_anchor_refreshed": anchors.refreshed,
@@ -54,6 +56,9 @@ def _run_anchor_job(config: RadarConfig, request: MarketAnchorUpdateRequest, run
             "market_anchor_skipped_reason": anchors.skipped_reason,
             "source_counts": anchors.source_counts,
             "failed_sources": anchors.failed_sources,
+            "derived_latest_trade_date": derivatives.latest_trade_date,
+            "derived_current_count": derivatives.current_count,
+            "derived_span_count": derivatives.span_count,
         }
         finish_run(
             config.database_path,
