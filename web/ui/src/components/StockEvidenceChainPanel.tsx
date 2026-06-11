@@ -7,6 +7,17 @@ import { StockEvidenceDetailPanel } from "./StockEvidenceDetailPanel";
 import { PanelTitle } from "./PanelTitle";
 
 const STAGE_ORDER = ["线索期", "种子期", "论证期", "扩散期", "定价期", "拥挤期"];
+const REVIEW_FILTERS = [
+  { key: "全部", label: "全部", states: null },
+  { key: "机会", label: "主线确认", states: ["mainline_confirmed", "market_first"] },
+  { key: "补主题", label: "补主题", states: ["theme_missing"] },
+  { key: "补市场", label: "补市场", states: ["needs_market_validation", "one_day_pulse", "evidence_gap"] },
+  { key: "市场不认", label: "市场不认", states: ["price_rejected_diffusion", "narrative_rejected"] },
+  { key: "已过热", label: "已过热", states: ["overheated_review"] },
+  { key: "异常", label: "异常", states: ["llm_error"] },
+] as const;
+
+type ReviewFilterKey = (typeof REVIEW_FILTERS)[number]["key"];
 
 type Props = {
   data: StockEvidenceChainDashboard | null;
@@ -17,8 +28,11 @@ type Props = {
 export function StockEvidenceChainPanel({ data, error, onSelectStock }: Props) {
   const items = data?.items ?? [];
   const [stage, setStage] = useState("全部");
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilterKey>("全部");
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
-  const filteredItems = stage === "全部" ? items : items.filter((item) => item.stage_label === stage);
+  const stageFilteredItems = stage === "全部" ? items : items.filter((item) => item.stage_label === stage);
+  const filteredItems = filterByReview(stageFilteredItems, reviewFilter);
+  const reviewCounts = useMemo(() => reviewFilterCounts(stageFilteredItems), [stageFilteredItems]);
   const selected = filteredItems.find((item) => item.ts_code === selectedCode) ?? filteredItems[0] ?? null;
   const stageTabs = useMemo(() => ["全部", ...STAGE_ORDER.filter((label) => data?.stage_counts[label])], [data?.stage_counts]);
 
@@ -34,26 +48,49 @@ export function StockEvidenceChainPanel({ data, error, onSelectStock }: Props) {
     }
   }, [data?.stage_counts, stage]);
 
+  useEffect(() => {
+    if (reviewFilter !== "全部" && !reviewCounts[reviewFilter]) {
+      setReviewFilter("全部");
+    }
+  }, [reviewCounts, reviewFilter]);
+
   return (
     <div className="stock-evidence-workbench">
       <div className="statbar metric-grid">
         <Metric label="候选股票" value={data?.item_count ?? 0} detail="最新证据链判断" />
-        <Metric label="观察池" value={earlyCount(items)} detail="线索 / 种子 / 论证" />
-        <Metric label="正在定价" value={stageCount(data, "定价期")} detail="需要结合价格风险" />
-        <Metric label="拥挤风险" value={stageCount(data, "拥挤期")} detail="优先复盘不追高" />
+        <Metric label="主线确认" value={reviewCount(items, "机会")} detail="主题和市场互相支撑" />
+        <Metric label="补证据" value={reviewCount(items, "补主题") + reviewCount(items, "补市场")} detail="先补主题或市场验证" />
+        <Metric label="风险复盘" value={reviewCount(items, "市场不认") + reviewCount(items, "已过热") + reviewCount(items, "异常")} detail="优先看反证和避坑" />
       </div>
       {error && <p className="error-line">{error}</p>}
       {!error && !items.length && <p className="empty-line">暂无个股证据链判断。先在作业中心运行「个股证据链」。</p>}
       {!!items.length && (
         <section className="panel stock-evidence-panel">
           <PanelTitle title="个股证据链" meta={windowMeta(data)} titleExtra={<SortRuleHelp />} />
-          <div className="stock-evidence-stage-tabs" role="tablist" aria-label="证据链阶段">
-            {stageTabs.map((label) => (
-              <button className={stage === label ? "active" : ""} type="button" key={label} onClick={() => setStage(label)}>
-                {label}
-                <span>{label === "全部" ? items.length : data?.stage_counts[label]}</span>
-              </button>
-            ))}
+          <div className="stock-evidence-filter-stack">
+            <div className="stock-evidence-filter-row stock-evidence-stage-tabs" role="tablist" aria-label="证据链阶段">
+              <span className="stock-evidence-filter-label">阶段</span>
+              {stageTabs.map((label) => (
+                <button className={stage === label ? "active" : ""} type="button" key={label} onClick={() => setStage(label)}>
+                  {label}
+                  <span>{label === "全部" ? items.length : data?.stage_counts[label]}</span>
+                </button>
+              ))}
+            </div>
+            <div className="stock-evidence-filter-row stock-evidence-stage-tabs stock-evidence-review-tabs" role="tablist" aria-label="证据链状态">
+              <span className="stock-evidence-filter-label">状态</span>
+              {REVIEW_FILTERS.map((filter) => (
+                <button
+                  className={reviewFilter === filter.key ? "active" : ""}
+                  type="button"
+                  key={filter.key}
+                  onClick={() => setReviewFilter(filter.key)}
+                >
+                  {filter.label}
+                  <span>{reviewCounts[filter.key] ?? 0}</span>
+                </button>
+              ))}
+            </div>
           </div>
           <div className="stock-evidence-layout">
             <div className="stock-evidence-list" aria-label="股票候选">
@@ -66,6 +103,7 @@ export function StockEvidenceChainPanel({ data, error, onSelectStock }: Props) {
                   onOpenChart={onSelectStock}
                 />
               ))}
+              {!filteredItems.length && <p className="stock-evidence-empty">当前筛选暂无股票。</p>}
             </div>
             <StockEvidenceDetailPanel item={selected} onOpenChart={onSelectStock} />
           </div>
@@ -83,10 +121,10 @@ function SortRuleHelp() {
       </button>
       <span className="stock-evidence-sort-tooltip" role="tooltip">
         <strong>默认按可行动优先级排序</strong>
-        <span>先看阶段：种子 / 论证 / 线索 / 早扩散优先。</span>
-        <span>再看证据：催化、调研、研报、推票、市场验证。</span>
-        <span>然后看新增变化、多人多群扩散、置信度。</span>
-        <span>涨幅过大或拥挤期会后置，主要用于复盘避坑。</span>
+        <span>先看 review：主线确认、市场先行、补市场验证。</span>
+        <span>再看主题质量、市场认可、阶段和证据强度。</span>
+        <span>消息扩散被价格否决、过热、LLM异常会后置。</span>
+        <span>筛选状态用于单独复盘风险或补证据。</span>
       </span>
     </span>
   );
@@ -162,12 +200,23 @@ function ReviewBadge({ item }: { item: StockEvidenceChainItem }) {
   return <span className={`stock-evidence-review-badge ${item.review.tone}`}>{item.review.label}</span>;
 }
 
-function stageCount(data: StockEvidenceChainDashboard | null, label: string): number {
-  return data?.stage_counts[label] ?? 0;
+function filterByReview(items: StockEvidenceChainItem[], key: ReviewFilterKey): StockEvidenceChainItem[] {
+  const filter = REVIEW_FILTERS.find((item) => item.key === key);
+  if (!filter?.states) {
+    return items;
+  }
+  return items.filter((item) => filter.states.some((state) => state === item.review.state));
 }
 
-function earlyCount(items: StockEvidenceChainItem[]): number {
-  return items.filter((item) => ["线索期", "种子期", "论证期"].includes(item.stage_label)).length;
+function reviewFilterCounts(items: StockEvidenceChainItem[]): Record<ReviewFilterKey, number> {
+  return REVIEW_FILTERS.reduce(
+    (counts, filter) => ({ ...counts, [filter.key]: filterByReview(items, filter.key).length }),
+    {} as Record<ReviewFilterKey, number>,
+  );
+}
+
+function reviewCount(items: StockEvidenceChainItem[], key: ReviewFilterKey): number {
+  return filterByReview(items, key).length;
 }
 
 function windowMeta(data: StockEvidenceChainDashboard | null): string {

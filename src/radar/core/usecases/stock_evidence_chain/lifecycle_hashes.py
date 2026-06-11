@@ -28,11 +28,12 @@ def evidence_hashes(package: dict[str, Any]) -> LifecycleDigestHashes:
     return LifecycleDigestHashes(
         message_hash=hash_part(package.get("message_evidence")),
         market_hash=hash_part(package.get("market_evidence")),
-        theme_hash=hash_part(package.get("theme")),
+        theme_hash=hash_part({"primary": package.get("theme"), "candidates": package.get("theme_candidates")}),
         recognition_hash=hash_part(
             {
                 "stage": package.get("stage"),
                 "recognition": package.get("recognition"),
+                "review": package.get("review"),
                 "risks": package.get("risks"),
             }
         ),

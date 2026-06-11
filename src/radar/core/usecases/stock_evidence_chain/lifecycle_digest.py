@@ -27,9 +27,9 @@ from radar.core.usecases.stock_evidence_chain.lifecycle_models import (
     LifecycleDigestPreviewItem,
     LifecycleDigestRunResult,
 )
+from radar.core.usecases.stock_evidence_chain.lifecycle_package import PROMPT_VERSION, evidence_package
 from radar.core.usecases.stock_evidence_chain.views import StockEvidenceChainItem, latest_stock_evidence_chain
 
-PROMPT_VERSION = "opportunity-lifecycle-digest-v1"
 DEFAULT_LIMIT = 120
 DEFAULT_SCAN_LIMIT = 120
 
@@ -156,7 +156,7 @@ def _load_tasks(config: RadarConfig, *, limit: int, force: bool) -> _TaskSet:
             if processable_count >= limit:
                 break
             processable_count += 1
-            package = _evidence_package(item, as_of_time=dashboard.as_of_time)
+            package = evidence_package(item, as_of_time=dashboard.as_of_time)
             hashes = evidence_hashes(package)
             signature = hashes.lifecycle_package_hash
             scope_key = f"{theme.theme_id}:{item.ts_code}" if theme is not None else f"stock:{item.ts_code}"
@@ -220,35 +220,6 @@ def _preview_item(task: _DigestTask) -> LifecycleDigestPreviewItem:
         hashes=task.hashes,
         changed_hashes=list(task.changed_hashes),
     )
-
-
-def _evidence_package(item: StockEvidenceChainItem, *, as_of_time: datetime | None) -> dict[str, Any]:
-    theme = item.primary_theme
-    return {
-        "prompt_version": PROMPT_VERSION,
-        "as_of_time": as_of_time.isoformat() if as_of_time else None,
-        "stock": {"ts_code": item.ts_code, "stock_name": item.stock_name},
-        "theme": theme.model_dump(mode="json") if theme else None,
-        "stage": {"code": item.stage, "label": item.stage_label, "confidence": item.confidence, "why": item.why},
-        "recognition": item.recognition.model_dump(mode="json"),
-        "message_evidence": {
-            "trigger_count": item.trigger_count,
-            "unique_trigger_count": item.unique_trigger_count,
-            "sender_count": item.sender_count,
-            "conversation_count": item.conversation_count,
-            "family_counts": item.family_counts,
-            "timeline": [point.model_dump(mode="json") for point in item.evidence_chain[:8]],
-        },
-        "market_evidence": {
-            "summary": item.market_summary,
-            "points": [point.model_dump(mode="json") for point in item.market_points[-6:]],
-        },
-        "risks": {
-            "pricing_risk": item.pricing_risk,
-            "crowding_risk": item.crowding_risk,
-            "watch_next": item.watch_next,
-        },
-    }
 
 
 def _rerun_reason_counts(tasks: list[_DigestTask]) -> dict[str, int]:
@@ -347,8 +318,8 @@ def _user_prompt(package: dict[str, Any]) -> str:
     return "\n".join(
         [
             "请把下面证据包梳理成机会生命周期摘要。",
-            "重点回答：这个个股机会走到哪一步、为什么、缺什么、下一步看什么；如果缺主题归属，要把它作为证据缺口。",
-            "不要改变证据包里已有的阶段和市场认可结论，只解释它们之间的关系。",
+            "重点回答：这个个股机会走到哪一步、为什么、缺什么、下一步看什么；如果缺主题归属或 review 已标记风险，要显式写进缺口或风险。",
+            "不要改变证据包里已有的阶段、市场认可和 review 结论，只解释它们之间的关系。",
             "",
             "输出 JSON schema：",
             "{",

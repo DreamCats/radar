@@ -59,6 +59,16 @@
   overflow: hidden;
 }
 
+.stock-evidence-filter-stack {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--color-hairline);
+  border-bottom: 1px solid var(--color-hairline);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-2) 44%, transparent), transparent),
+    color-mix(in srgb, var(--color-canvas) 86%, black);
+}
+
 .stock-evidence-sort-help {
   position: relative;
   display: inline-flex;
@@ -131,9 +141,20 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  border-top: 1px solid var(--color-hairline);
-  border-bottom: 1px solid var(--color-hairline);
-  padding: 12px 14px;
+  padding: 10px 14px;
+}
+
+.stock-evidence-filter-row + .stock-evidence-filter-row {
+  border-top: 1px solid color-mix(in srgb, var(--color-hairline) 72%, transparent);
+}
+
+.stock-evidence-filter-label {
+  display: inline-flex;
+  min-width: 34px;
+  align-items: center;
+  color: var(--color-ink-tertiary);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .stock-evidence-stage-tabs button {
@@ -156,6 +177,11 @@
   background: var(--color-market-up-soft);
 }
 
+.stock-evidence-review-tabs button.active {
+  border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-hairline));
+  background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface-2));
+}
+
 .stock-evidence-stage-tabs span {
   color: var(--color-ink-tertiary);
   font-size: 11px;
@@ -175,6 +201,14 @@
   align-content: start;
   overflow: auto;
   border-right: 1px solid var(--color-hairline);
+}
+
+.stock-evidence-list > .stock-evidence-empty {
+  margin: 14px;
+  border: 1px dashed var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-1) 72%, transparent);
+  padding: 14px;
 }
 
 .stock-evidence-row {

@@ -22,28 +22,13 @@ from radar.core.usecases.stock_evidence_chain.review import (
     build_review_context,
     is_llm_output_invalid,
 )
+from radar.core.usecases.stock_evidence_chain.sorting import stock_evidence_item_sort_key
 from radar.core.usecases.stock_evidence_chain.view_models import (
     StockEvidenceChainDashboard,
     StockEvidenceChainItem,
     StockEvidenceMarketPoint,
     StockEvidenceMessage,
 )
-
-STAGE_ACTION_PRIORITY = {
-    "seed": 60,
-    "formed": 60,
-    "lead": 50,
-    "spreading": 45,
-    "pricing": 25,
-    "crowded": 5,
-}
-FAMILY_WEIGHTS = {
-    "catalyst": 5,
-    "roadshow": 4,
-    "research": 3,
-    "push": 3,
-    "price": 1,
-}
 
 
 def latest_stock_evidence_chain(config: RadarConfig, *, limit: int = 120) -> StockEvidenceChainDashboard:
@@ -69,7 +54,6 @@ def latest_stock_evidence_chain(config: RadarConfig, *, limit: int = 120) -> Sto
             """,
             (as_of,),
         ).fetchall()
-        rows = sorted(rows, key=_actionable_sort_key)[:limit]
         messages = _load_messages(conn, rows)
         theme_contexts = load_stock_theme_contexts(
             config,
@@ -86,6 +70,7 @@ def latest_stock_evidence_chain(config: RadarConfig, *, limit: int = 120) -> Sto
             )
             for row in rows
         ]
+        items = sorted(items, key=stock_evidence_item_sort_key)[:limit]
         return StockEvidenceChainDashboard(
             as_of_time=datetime.fromisoformat(as_of),
             window_start_time=_datetime(rows[0]["window_start_time"]) if rows else None,
@@ -302,100 +287,6 @@ def _stage_counts(items: list[StockEvidenceChainItem]) -> dict[str, int]:
         key = item.stage_label or item.stage
         counts[key] = counts.get(key, 0) + 1
     return counts
-
-
-def _actionable_sort_key(row: sqlite3.Row) -> tuple[int, int, int, int, int, int, str]:
-    result = _result(row)
-    stage = str(row["stage"])
-    family_counts = _json_dict(row["candidate_family_counts_json"])
-    market = result.get("market_evidence") if isinstance(result.get("market_evidence"), dict) else {}
-    summary = market.get("summary") if isinstance(market.get("summary"), dict) else {}
-    return_rate = _float(summary.get("return_since_first_point"))
-    drawdown = _float(summary.get("drawdown_from_selected_high"))
-    confidence = _float(row["confidence"]) or 0
-    rank = _int(row["candidate_rank"]) or 999999
-    updated_at = str(row["updated_at"])
-    return (
-        -STAGE_ACTION_PRIORITY.get(stage, 30),
-        -_stage_specific_score(row, stage=stage, family_counts=family_counts, return_rate=return_rate, drawdown=drawdown),
-        -_incremental_score(result),
-        -_diffusion_score(row),
-        -int(confidence * 100),
-        rank,
-        _reverse_time_key(updated_at),
-    )
-
-
-def _stage_specific_score(
-    row: sqlite3.Row,
-    *,
-    stage: str,
-    family_counts: dict[str, Any],
-    return_rate: float | None,
-    drawdown: float | None,
-) -> int:
-    evidence = _evidence_strength(row, family_counts)
-    if stage == "crowded":
-        return _priced_risk_score(return_rate, drawdown) + _diffusion_score(row)
-    if stage == "pricing":
-        return evidence + _market_confirmation_score(return_rate, drawdown)
-    return evidence + _underpriced_score(return_rate)
-
-
-def _evidence_strength(row: sqlite3.Row, family_counts: dict[str, Any]) -> int:
-    score = _int(row["candidate_evidence_score"]) or 0
-    for family, weight in FAMILY_WEIGHTS.items():
-        score += (_int(family_counts.get(family)) or 0) * weight
-    return score
-
-
-def _incremental_score(result: dict[str, Any]) -> int:
-    incremental = result.get("incremental") if isinstance(result.get("incremental"), dict) else {}
-    points = _json_list(incremental.get("points"))
-    return (8 if incremental.get("valid") is True else 0) + min(len(points), 4)
-
-
-def _diffusion_score(row: sqlite3.Row) -> int:
-    unique = int(row["unique_trigger_count"] or 0)
-    senders = int(row["sender_count"] or 0)
-    conversations = int(row["conversation_count"] or 0)
-    return min(unique, 12) + min(senders, 6) * 2 + min(conversations, 6) * 2
-
-
-def _underpriced_score(return_rate: float | None) -> int:
-    if return_rate is None:
-        return 4
-    if return_rate < 0.05:
-        return 16
-    if return_rate < 0.15:
-        return 12
-    if return_rate < 0.30:
-        return 5
-    if return_rate < 0.50:
-        return -4
-    return -12
-
-
-def _market_confirmation_score(return_rate: float | None, drawdown: float | None) -> int:
-    score = 0
-    if return_rate is not None:
-        score += min(max(int(return_rate * 100), 0), 40)
-    if drawdown is not None and drawdown > -0.12:
-        score += 6
-    return score
-
-
-def _priced_risk_score(return_rate: float | None, drawdown: float | None) -> int:
-    score = 0
-    if return_rate is not None:
-        score += min(max(int(return_rate * 100), 0), 80)
-    if drawdown is not None and drawdown < -0.12:
-        score += 8
-    return score
-
-
-def _reverse_time_key(value: str) -> str:
-    return "".join(chr(255 - ord(char)) for char in value)
 
 
 def _json_dict(value: object) -> dict[str, Any]:
