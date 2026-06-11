@@ -5,8 +5,6 @@ import sqlite3
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
-
 from radar.core.config import RadarConfig
 from radar.core.store import connect, init_db
 from radar.core.usecases.stock_evidence_chain.lifecycle_models import (
@@ -15,11 +13,20 @@ from radar.core.usecases.stock_evidence_chain.lifecycle_models import (
 )
 from radar.core.usecases.stock_evidence_chain.llm import STAGE_LABELS
 from radar.core.usecases.stock_evidence_chain.recognition import (
-    StockEvidenceRecognitionContext,
     StockEvidenceThemeContext,
     build_recognition_context,
     load_stock_theme_contexts,
     primary_theme,
+)
+from radar.core.usecases.stock_evidence_chain.review import (
+    build_review_context,
+    is_llm_output_invalid,
+)
+from radar.core.usecases.stock_evidence_chain.view_models import (
+    StockEvidenceChainDashboard,
+    StockEvidenceChainItem,
+    StockEvidenceMarketPoint,
+    StockEvidenceMessage,
 )
 
 STAGE_ACTION_PRIORITY = {
@@ -37,66 +44,6 @@ FAMILY_WEIGHTS = {
     "push": 3,
     "price": 1,
 }
-
-
-class StockEvidenceMarketPoint(BaseModel):
-    trade_date: str
-    close: float | None = None
-    pct_chg: float | None = None
-    amount: float | None = None
-    amount_ratio_5d: float | None = None
-    tag: str | None = None
-
-
-class StockEvidenceMessage(BaseModel):
-    message_id: str | None = None
-    time: str | None = None
-    type: str | None = None
-    evidence: str | None = None
-    sender: str | None = None
-    group_name: str | None = None
-    raw_content: str | None = None
-
-
-class StockEvidenceChainItem(BaseModel):
-    ts_code: str
-    stock_name: str
-    stage: str
-    stage_label: str
-    confidence: float | None = None
-    rank: int | None = None
-    summary: str
-    trigger_count: int
-    unique_trigger_count: int
-    sender_count: int
-    conversation_count: int
-    evidence_count: int
-    channels: list[str] = Field(default_factory=list)
-    family_counts: dict[str, int] = Field(default_factory=dict)
-    why: list[str] = Field(default_factory=list)
-    incremental_valid: bool | None = None
-    incremental_points: list[str] = Field(default_factory=list)
-    pricing_risk: str | None = None
-    crowding_risk: str | None = None
-    watch_next: list[str] = Field(default_factory=list)
-    evidence_chain: list[StockEvidenceMessage] = Field(default_factory=list)
-    market_summary: dict[str, Any] = Field(default_factory=dict)
-    market_points: list[StockEvidenceMarketPoint] = Field(default_factory=list)
-    themes: list[StockEvidenceThemeContext] = Field(default_factory=list)
-    primary_theme: StockEvidenceThemeContext | None = None
-    recognition: StockEvidenceRecognitionContext = Field(default_factory=StockEvidenceRecognitionContext)
-    lifecycle_digest: StockEvidenceLifecycleDigestContext | None = None
-    updated_at: datetime
-
-
-class StockEvidenceChainDashboard(BaseModel):
-    as_of_time: datetime | None = None
-    window_start_time: datetime | None = None
-    evidence_start_time: datetime | None = None
-    generated_at: datetime
-    item_count: int = 0
-    stage_counts: dict[str, int] = Field(default_factory=dict)
-    items: list[StockEvidenceChainItem] = Field(default_factory=list)
 
 
 def latest_stock_evidence_chain(config: RadarConfig, *, limit: int = 120) -> StockEvidenceChainDashboard:
@@ -197,14 +144,35 @@ def _row_to_item(
     market_summary = market.get("summary") if isinstance(market.get("summary"), dict) else {}
     market_points = [StockEvidenceMarketPoint(**point) for point in _json_list(market.get("points")) if isinstance(point, dict)]
     raw_market_points = [point.model_dump() for point in market_points]
+    primary = primary_theme(themes)
+    confidence = _float(row["confidence"])
+    raw_summary = str(result.get("one_line") or result.get("summary") or "")
+    summary = _display_summary(raw_summary, confidence=confidence)
+    recognition = build_recognition_context(
+        unique_trigger_count=int(row["unique_trigger_count"] or 0),
+        market_summary=market_summary,
+        market_points=raw_market_points,
+        themes=themes,
+    )
+    review = build_review_context(
+        stage=stage,
+        stage_label=str(result.get("stage_label") or STAGE_LABELS.get(stage, stage)),
+        confidence=confidence,
+        summary=raw_summary,
+        unique_trigger_count=int(row["unique_trigger_count"] or 0),
+        market_summary=market_summary,
+        market_points=raw_market_points,
+        primary_theme=primary,
+        recognition=recognition,
+    )
     return StockEvidenceChainItem(
         ts_code=str(row["ts_code"]),
         stock_name=str(row["stock_name"]),
         stage=stage,
         stage_label=str(result.get("stage_label") or STAGE_LABELS.get(stage, stage)),
-        confidence=_float(row["confidence"]),
+        confidence=confidence,
         rank=_int(row["candidate_rank"]),
-        summary=str(result.get("one_line") or result.get("summary") or ""),
+        summary=summary,
         trigger_count=int(row["trigger_count"] or 0),
         unique_trigger_count=int(row["unique_trigger_count"] or 0),
         sender_count=int(row["sender_count"] or 0),
@@ -222,13 +190,9 @@ def _row_to_item(
         market_summary=market_summary,
         market_points=market_points,
         themes=themes,
-        primary_theme=primary_theme(themes),
-        recognition=build_recognition_context(
-            unique_trigger_count=int(row["unique_trigger_count"] or 0),
-            market_summary=market_summary,
-            market_points=raw_market_points,
-            themes=themes,
-        ),
+        primary_theme=primary,
+        recognition=recognition,
+        review=review,
         lifecycle_digest=lifecycle_digest,
         updated_at=datetime.fromisoformat(str(row["updated_at"])),
     )
@@ -320,6 +284,12 @@ def _evidence_chain(result: dict[str, Any], row: sqlite3.Row, messages: dict[str
             )
         )
     return items
+
+
+def _display_summary(summary: str, *, confidence: float | None) -> str:
+    if is_llm_output_invalid(summary=summary, confidence=confidence):
+        return "LLM 生成异常，需重跑证据链后再判断。"
+    return summary
 
 
 def _result(row: sqlite3.Row) -> dict[str, Any]:

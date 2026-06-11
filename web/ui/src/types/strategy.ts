@@ -59,6 +59,15 @@ export type StockEvidenceRecognitionContext = {
   missing_evidence: string[];
 };
 
+export type StockEvidenceReviewContext = {
+  state: string;
+  label: string;
+  tone: "success" | "warning" | "danger" | "info" | "muted";
+  action_label: string;
+  headline: string;
+  reasons: string[];
+};
+
 export type StockEvidenceLifecycleDigestContext = {
   scope_key: string;
   theme_id?: string | null;
@@ -152,6 +161,7 @@ export type StockEvidenceChainItem = {
   themes: StockEvidenceThemeContext[];
   primary_theme?: StockEvidenceThemeContext | null;
   recognition: StockEvidenceRecognitionContext;
+  review: StockEvidenceReviewContext;
   lifecycle_digest?: StockEvidenceLifecycleDigestContext | null;
   updated_at: string;
 };

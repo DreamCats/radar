@@ -84,6 +84,19 @@
   line-height: 1.68;
 }
 
+.stock-evidence-review-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-evidence-review-line p {
+  margin: 0;
+  color: var(--stock-copy);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
 .stock-evidence-verdict-pills,
 .stock-evidence-family-chips,
 .stock-evidence-market-status {
@@ -257,6 +270,16 @@
   color: var(--stock-copy);
   font-size: 13px;
   line-height: 1.72;
+}
+
+.stock-evidence-detail-list.compact {
+  gap: 5px;
+}
+
+.stock-evidence-detail-list.compact li {
+  color: var(--stock-copy-soft);
+  font-size: 12.5px;
+  line-height: 1.55;
 }
 
 .stock-evidence-detail-list li::marker,

@@ -110,6 +110,7 @@ function StockEvidenceRow({
           <strong>{item.stock_name}</strong>
           <span>{item.ts_code}</span>
           <StagePill item={item} />
+          <ReviewBadge item={item} />
         </div>
         <p>{item.summary || "暂无一句话判断"}</p>
         <div className="stock-evidence-row-metrics">
@@ -155,6 +156,10 @@ function Metric(props: { label: string; value: number | string; detail: string }
 
 function StagePill({ item }: { item: StockEvidenceChainItem }) {
   return <span className={`stock-evidence-stage stock-evidence-stage-${item.stage}`}>{item.stage_label}</span>;
+}
+
+function ReviewBadge({ item }: { item: StockEvidenceChainItem }) {
+  return <span className={`stock-evidence-review-badge ${item.review.tone}`}>{item.review.label}</span>;
 }
 
 function stageCount(data: StockEvidenceChainDashboard | null, label: string): number {

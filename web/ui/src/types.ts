@@ -301,6 +301,7 @@ export type {
   StockEvidenceMarketPoint,
   StockEvidenceMessage,
   StockEvidenceRecognitionContext,
+  StockEvidenceReviewContext,
   StockEvidenceStockCandle,
   StockEvidenceStockChart,
   StockEvidenceStockChartQuery,

@@ -226,7 +226,7 @@
   line-height: 1.25;
 }
 
-.stock-evidence-row-head span:not(.stock-evidence-stage),
+.stock-evidence-row-head span:not(.stock-evidence-stage, .stock-evidence-review-badge),
 .stock-evidence-row p,
 .stock-evidence-row-metrics,
 .stock-evidence-empty {
@@ -301,6 +301,35 @@
 .stock-evidence-stage-pricing,
 .stock-evidence-stage-crowded {
   border-color: color-mix(in srgb, var(--color-market-down) 45%, var(--color-hairline));
+  color: var(--color-market-down);
+}
+
+.stock-evidence-review-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-surface-2) 78%, black);
+  color: var(--color-ink-subtle);
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.stock-evidence-review-badge.success {
+  border-color: color-mix(in srgb, var(--color-market-up) 48%, var(--color-hairline));
+  color: var(--color-market-up);
+}
+
+.stock-evidence-review-badge.warning,
+.stock-evidence-review-badge.info {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 44%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+
+.stock-evidence-review-badge.danger {
+  border-color: color-mix(in srgb, var(--color-market-down) 46%, var(--color-hairline));
   color: var(--color-market-down);
 }
 

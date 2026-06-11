@@ -63,6 +63,7 @@ function DetailHeader({ item, onOpenChart }: { item: StockEvidenceChainItem; onO
             { label: "股票", value: item.stock_name },
             { label: "代码", value: item.ts_code },
             { label: "阶段", value: item.stage_label },
+            { label: "复盘标签", value: item.review.label },
             { label: "置信", value: formatConfidence(item.confidence) },
             { label: "触发", value: `${item.trigger_count}条 / 去重${item.unique_trigger_count}` },
             { label: "扩散", value: `${item.sender_count}人 / ${item.conversation_count}会话` },
@@ -84,7 +85,11 @@ function DetailHeader({ item, onOpenChart }: { item: StockEvidenceChainItem; onO
 
 function VerdictCard({ item }: { item: StockEvidenceChainItem }) {
   return (
-    <section className={`stock-evidence-verdict ${recognitionToneClass(item.recognition.state)}`}>
+    <section className={`stock-evidence-verdict ${reviewToneClass(item.review.tone)}`}>
+      <div className="stock-evidence-review-line">
+        <span className={`stock-evidence-review-badge ${item.review.tone}`}>{item.review.label}</span>
+        <p>{item.review.headline}</p>
+      </div>
       <div className="stock-evidence-verdict-main">
         <span className="stock-evidence-verdict-k">当前结论</span>
         <h3>{item.summary || "暂无一句话判断"}</h3>
@@ -98,8 +103,9 @@ function VerdictCard({ item }: { item: StockEvidenceChainItem }) {
           <Gauge size={14} />
           {item.recognition.state_label}
         </span>
-        <span>{actionLabel(item)}</span>
+        <span>{item.review.action_label}</span>
       </div>
+      <DetailList items={item.review.reasons} empty="暂无复盘提示。" compact />
     </section>
   );
 }
@@ -284,9 +290,9 @@ function FamilyChips({ counts }: { counts: Record<string, number> }) {
   );
 }
 
-function DetailList({ items, empty }: { items: string[]; empty: string }) {
+function DetailList({ items, empty, compact = false }: { items: string[]; empty: string; compact?: boolean }) {
   return items.length ? (
-    <ul className="stock-evidence-detail-list">
+    <ul className={compact ? "stock-evidence-detail-list compact" : "stock-evidence-detail-list"}>
       {items.map((item) => (
         <li key={item}>{item}</li>
       ))}
@@ -328,6 +334,7 @@ function stockEvidenceChatLines(item: StockEvidenceChainItem): string[] {
   return [
     `一句话判断：${item.summary || "暂无"}`,
     `阶段：${item.stage_label}；置信度：${formatConfidence(item.confidence)}`,
+    `复盘标签：${item.review.label}；${item.review.headline}`,
     `主题：${item.primary_theme?.theme_name ?? "未确认"}；市场认可：${item.recognition.state_label}`,
     item.lifecycle_digest ? `生命周期摘要：${item.lifecycle_digest.one_line}` : "",
     ...(item.lifecycle_digest?.stage_reason ?? []).slice(0, 4).map((line) => `生命周期依据：${line}`),
@@ -344,19 +351,6 @@ function stockEvidenceChatLines(item: StockEvidenceChainItem): string[] {
     item.crowding_risk ? `拥挤风险：${item.crowding_risk}` : "",
     ...item.watch_next.slice(0, 4).map((line) => `下一步：${line}`),
   ].filter((line): line is string => Boolean(line));
-}
-
-function actionLabel(item: StockEvidenceChainItem): string {
-  if (item.recognition.state === "overheated" || item.stage === "crowded") {
-    return "偏复盘";
-  }
-  if (item.recognition.state === "confirmed" || item.recognition.state === "just_confirmed") {
-    return "重点跟踪";
-  }
-  if (item.recognition.state === "rejected") {
-    return "先降权";
-  }
-  return "补证据";
 }
 
 function StagePill({ item }: { item: StockEvidenceChainItem }) {
@@ -396,6 +390,19 @@ function recognitionToneClass(state: string): string {
   }
   if (state === "rejected") {
     return "rejected";
+  }
+  return "unknown";
+}
+
+function reviewToneClass(tone: StockEvidenceChainItem["review"]["tone"]): string {
+  if (tone === "success") {
+    return "confirmed";
+  }
+  if (tone === "danger") {
+    return "rejected";
+  }
+  if (tone === "warning") {
+    return "risk";
   }
   return "unknown";
 }
