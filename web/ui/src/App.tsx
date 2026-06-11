@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Activity, BarChart3, Database, Layers3, ListOrdered, MessageCircle, RadioTower, Search } from "lucide-react";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
@@ -21,31 +22,58 @@ const NAV_ITEMS = [
 
 export function App() {
   const [tab, setTab] = useState<TabKey>("dashboard");
+  const shouldReduceMotion = useReducedMotion();
+
+  const pageMotion = shouldReduceMotion
+    ? {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.12 },
+      }
+    : {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.24, ease: [0.16, 1, 0.3, 1] as const },
+      };
 
   return (
     <main className="app workspace-shell">
+      <AmbientBackground shouldReduceMotion={shouldReduceMotion} />
       <aside className="sidebar">
         <div className="brand brand-block">
-          <span className="dot brand-dot" />
+          <motion.span
+            className="dot brand-dot"
+            animate={shouldReduceMotion ? { opacity: 0.9 } : { opacity: [0.72, 1, 0.72], scale: [1, 1.16, 1] }}
+            transition={shouldReduceMotion ? { duration: 0.12 } : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          />
           <span>radar</span>
         </div>
-        <nav className="nav-group side-nav" aria-label="workspace sections">
+        <LayoutGroup id="workspace-nav">
+          <nav className="nav-group side-nav" aria-label="workspace sections">
           <div className="eyebrow">看板</div>
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
-              <button
+              <motion.button
                 className={tab === item.key ? "nav-item active" : "nav-item"}
                 key={item.key}
                 type="button"
                 onClick={() => setTab(item.key)}
+                whileHover={shouldReduceMotion ? undefined : { x: 2 }}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
               >
-                <Icon size={16} />
-                {item.label}
-              </button>
+                {tab === item.key && <motion.span className="nav-active-pill" layoutId="nav-active-pill" />}
+                <span className="nav-item-content">
+                  <Icon size={16} />
+                  <span>{item.label}</span>
+                </span>
+              </motion.button>
             );
           })}
-        </nav>
+          </nav>
+        </LayoutGroup>
         <div className="nav-group module-stack">
           <div className="eyebrow">下一阶段</div>
           <button className="nav-item disabled" type="button" disabled>
@@ -62,14 +90,48 @@ export function App() {
       </aside>
       <section className="main workspace-main">
         <div className="content">
-          {tab === "dashboard" && <DashboardPage />}
-          {tab === "wechat" && <WechatPage />}
-          {tab === "organize" && <OrganizePage />}
-          {tab === "leaderboard" && <LeaderboardPage />}
-          {tab === "strategy" && <StrategyPage />}
-          {tab === "ingest" && <IngestPage />}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div className="page-motion" key={tab} {...pageMotion}>
+              {tab === "dashboard" && <DashboardPage />}
+              {tab === "wechat" && <WechatPage />}
+              {tab === "organize" && <OrganizePage />}
+              {tab === "leaderboard" && <LeaderboardPage />}
+              {tab === "strategy" && <StrategyPage />}
+              {tab === "ingest" && <IngestPage />}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </section>
     </main>
+  );
+}
+
+function AmbientBackground({ shouldReduceMotion }: { shouldReduceMotion: boolean | null }) {
+  const slowDrift = shouldReduceMotion
+    ? { opacity: 0.24 }
+    : { opacity: [0.18, 0.32, 0.22], x: ["-3%", "2%", "-1%"], y: ["0%", "4%", "-2%"] };
+  const lowerDrift = shouldReduceMotion
+    ? { opacity: 0.18 }
+    : { opacity: [0.12, 0.24, 0.16], x: ["2%", "-2%", "3%"], y: ["2%", "-3%", "1%"] };
+
+  return (
+    <div className="ambient-background" aria-hidden="true">
+      <div className="ambient-grid" />
+      <motion.div
+        className="ambient-sweep"
+        animate={slowDrift}
+        transition={shouldReduceMotion ? { duration: 0.12 } : { duration: 18, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="ambient-ribbon ambient-ribbon-primary"
+        animate={slowDrift}
+        transition={shouldReduceMotion ? { duration: 0.12 } : { duration: 14, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="ambient-ribbon ambient-ribbon-secondary"
+        animate={lowerDrift}
+        transition={shouldReduceMotion ? { duration: 0.12 } : { duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </div>
   );
 }

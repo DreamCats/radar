@@ -8,6 +8,7 @@ import "./chat-composer.css";
 import "./chat-history.css";
 import "./chat-markdown.css";
 import "./dashboard.css";
+import "./ambient.css";
 import "./ingest.css";
 import "./job-center.css";
 import "./leaderboard.css";
