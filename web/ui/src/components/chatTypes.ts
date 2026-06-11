@@ -25,6 +25,7 @@ export type ChatController = {
   error: string | null;
   hasNewMessagesBelow: boolean;
   historyOpen: boolean;
+  followUpSuggestion: string | null;
   loadingSessions: boolean;
   messageListRef: RefObject<HTMLDivElement | null>;
   messages: ChatMessageItem[];
@@ -44,6 +45,8 @@ export type ChatController = {
   refreshSessions: () => Promise<void>;
   removeSession: (nextSessionId: string) => Promise<void>;
   restoreSession: (nextSessionId: string) => Promise<void>;
+  acceptFollowUpSuggestion: () => void;
+  dismissFollowUpSuggestion: () => void;
   setDraft: (value: string) => void;
   setHistoryOpen: (value: boolean | ((current: boolean) => boolean)) => void;
   startNewSession: () => void;

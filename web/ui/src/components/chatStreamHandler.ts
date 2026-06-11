@@ -9,6 +9,7 @@ type ChatStreamHandlerOptions = {
   clearIdleTimer: () => void;
   scheduleIdleStatus: (status?: string) => void;
   onSession: (sessionId: string) => void;
+  onFollowUpSuggestion?: (suggestion: string | null) => void;
 };
 
 export function createChatStreamHandler({
@@ -17,6 +18,7 @@ export function createChatStreamHandler({
   clearIdleTimer,
   scheduleIdleStatus,
   onSession,
+  onFollowUpSuggestion,
 }: ChatStreamHandlerOptions): (event: ChatStreamEvent) => void {
   let assistantRoundClosed = false;
 
@@ -79,6 +81,10 @@ export function createChatStreamHandler({
         return;
       }
       setMessages((current) => current.map((item) => (item.message_id === assistantDraftId ? mergeAssistantMetadata(item, message) : item)));
+      const suggestion = readFollowUpSuggestion(message.metadata.follow_up_suggestion);
+      if (suggestion) {
+        onFollowUpSuggestion?.(suggestion);
+      }
       assistantRoundClosed = true;
       scheduleIdleStatus("正在继续处理");
       return;
@@ -137,4 +143,12 @@ export function createChatStreamHandler({
       scheduleIdleStatus("正在准备查询");
     }
   };
+}
+
+function readFollowUpSuggestion(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const suggestion = value.trim();
+  return suggestion ? suggestion : null;
 }

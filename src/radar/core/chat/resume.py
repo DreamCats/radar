@@ -75,7 +75,12 @@ def stream_continue_turn(
             if response is None:
                 response = LlmChatResponse(content="", tool_calls=[])
 
-            assistant_message = agent._append_assistant_message(session_id, response, llm_metadata=llm_metadata)
+            assistant_message = agent._append_assistant_message(
+                session_id,
+                response,
+                llm_metadata=llm_metadata,
+                user_content=user_message.content,
+            )
             yield ChatTurnStreamEvent(type="assistant_message", message=assistant_message)
             if not response.tool_calls:
                 completed = agent._append_event(
