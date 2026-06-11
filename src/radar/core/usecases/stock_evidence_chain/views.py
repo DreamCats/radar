@@ -9,6 +9,10 @@ from pydantic import BaseModel, Field
 
 from radar.core.config import RadarConfig
 from radar.core.store import connect, init_db
+from radar.core.usecases.stock_evidence_chain.lifecycle_models import (
+    LIFECYCLE_DIGEST_SCOPE_TYPE,
+    StockEvidenceLifecycleDigestContext,
+)
 from radar.core.usecases.stock_evidence_chain.llm import STAGE_LABELS
 from radar.core.usecases.stock_evidence_chain.recognition import (
     StockEvidenceRecognitionContext,
@@ -81,6 +85,7 @@ class StockEvidenceChainItem(BaseModel):
     themes: list[StockEvidenceThemeContext] = Field(default_factory=list)
     primary_theme: StockEvidenceThemeContext | None = None
     recognition: StockEvidenceRecognitionContext = Field(default_factory=StockEvidenceRecognitionContext)
+    lifecycle_digest: StockEvidenceLifecycleDigestContext | None = None
     updated_at: datetime
 
 
@@ -124,7 +129,16 @@ def latest_stock_evidence_chain(config: RadarConfig, *, limit: int = 120) -> Sto
             [str(row["ts_code"]) for row in rows],
             as_of=datetime.fromisoformat(as_of),
         )
-        items = [_row_to_item(row, messages, theme_contexts.get(str(row["ts_code"]), [])) for row in rows]
+        lifecycle_digests = _load_lifecycle_digests(conn, rows, theme_contexts)
+        items = [
+            _row_to_item(
+                row,
+                messages,
+                theme_contexts.get(str(row["ts_code"]), []),
+                lifecycle_digests.get(str(row["ts_code"])),
+            )
+            for row in rows
+        ]
         return StockEvidenceChainDashboard(
             as_of_time=datetime.fromisoformat(as_of),
             window_start_time=_datetime(rows[0]["window_start_time"]) if rows else None,
@@ -174,6 +188,7 @@ def _row_to_item(
     row: sqlite3.Row,
     messages: dict[str, sqlite3.Row],
     themes: list[StockEvidenceThemeContext],
+    lifecycle_digest: StockEvidenceLifecycleDigestContext | None,
 ) -> StockEvidenceChainItem:
     result = _result(row)
     stage = str(row["stage"])
@@ -214,6 +229,71 @@ def _row_to_item(
             market_points=raw_market_points,
             themes=themes,
         ),
+        lifecycle_digest=lifecycle_digest,
+        updated_at=datetime.fromisoformat(str(row["updated_at"])),
+    )
+
+
+def _load_lifecycle_digests(
+    conn: sqlite3.Connection,
+    rows: list[sqlite3.Row],
+    theme_contexts: dict[str, list[StockEvidenceThemeContext]],
+) -> dict[str, StockEvidenceLifecycleDigestContext]:
+    if not rows:
+        return {}
+    as_of = str(rows[0]["as_of_time"])
+    scope_by_code: dict[str, str] = {}
+    for row in rows:
+        ts_code = str(row["ts_code"])
+        theme = primary_theme(theme_contexts.get(ts_code, []))
+        scope_by_code[ts_code] = f"{theme.theme_id}:{ts_code}" if theme is not None else f"stock:{ts_code}"
+    if not scope_by_code:
+        return {}
+    scopes = sorted(scope_by_code.values())
+    placeholders = ", ".join("?" for _ in scopes)
+    digest_rows = conn.execute(
+        f"""
+        SELECT *
+        FROM opportunity_lifecycle_digests
+        WHERE as_of_time = ?
+          AND scope_type = ?
+          AND scope_key IN ({placeholders})
+        ORDER BY updated_at DESC
+        """,
+        [as_of, LIFECYCLE_DIGEST_SCOPE_TYPE, *scopes],
+    ).fetchall()
+    by_scope: dict[str, sqlite3.Row] = {}
+    for row in digest_rows:
+        by_scope.setdefault(str(row["scope_key"]), row)
+    result: dict[str, StockEvidenceLifecycleDigestContext] = {}
+    for ts_code, scope_key in scope_by_code.items():
+        row = by_scope.get(scope_key)
+        if row is not None:
+            result[ts_code] = _digest_context(row)
+    return result
+
+
+def _digest_context(row: sqlite3.Row) -> StockEvidenceLifecycleDigestContext:
+    payload = _json_dict(row["digest_json"])
+    return StockEvidenceLifecycleDigestContext(
+        scope_key=str(row["scope_key"]),
+        theme_id=_optional_text(row["theme_id"]),
+        theme_name=_optional_text(row["theme_name"]),
+        stage_label=STAGE_LABELS.get(str(row["stage"]), str(row["stage"])),
+        recognition_label=_optional_text(row["recognition_state"]),
+        one_line=str(payload.get("one_line") or ""),
+        timeline=[str(item) for item in _json_list(payload.get("timeline"))],
+        stage_reason=[str(item) for item in _json_list(payload.get("stage_reason"))],
+        missing_evidence=[str(item) for item in _json_list(payload.get("missing_evidence"))],
+        risk=[str(item) for item in _json_list(payload.get("risk"))],
+        next_watch=[str(item) for item in _json_list(payload.get("next_watch"))],
+        evidence_signature=str(row["evidence_signature"]),
+        message_hash=_optional_text(row["message_hash"]),
+        market_hash=_optional_text(row["market_hash"]),
+        theme_hash=_optional_text(row["theme_hash"]),
+        recognition_hash=_optional_text(row["recognition_hash"]),
+        backtest_hash=_optional_text(row["backtest_hash"]),
+        lifecycle_package_hash=_optional_text(row["lifecycle_package_hash"]),
         updated_at=datetime.fromisoformat(str(row["updated_at"])),
     )
 

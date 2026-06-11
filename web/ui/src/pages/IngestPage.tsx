@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import {
   cancelRun,
+  fetchLifecycleDigestPreview,
   fetchRuns,
 } from "../api/radarApi";
 import { DateField, SelectField, TextField } from "../components/FormFields";
@@ -30,7 +31,7 @@ import {
   type LocalRange,
   type RangePreset,
 } from "../lib/timeRange";
-import type { IngestSource, RunItem } from "../types";
+import type { IngestSource, LifecycleDigestPreview, RunItem } from "../types";
 
 const INGEST_RANGE_PRESETS: Array<[RangePreset, string]> = [["yesterdayClose", "昨日 15:00"], ...RANGE_PRESETS];
 const RECENT_RUN_LIMIT = 50;
@@ -49,6 +50,8 @@ export function IngestPage() {
   const [force, setForce] = useState(false);
   const [trackedJobs, setTrackedJobs] = useState<TrackedJob[]>([]);
   const [runs, setRuns] = useState<RunItem[]>([]);
+  const [lifecyclePreview, setLifecyclePreview] = useState<LifecycleDigestPreview | null>(null);
+  const [lifecyclePreviewLoading, setLifecyclePreviewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [canceling, setCanceling] = useState(false);
@@ -57,7 +60,7 @@ export function IngestPage() {
   const endValue = toLocalIso(range.endDate, range.endTime);
   const validWindow = Boolean(startValue && endValue) && startValue <= endValue;
   const validTradeDate = /^\d{8}$/.test(tradeDate);
-  const canSubmit = selectedJob === "anchor" ? validTradeDate : validWindow;
+  const canSubmit = selectedJob === "anchor" ? validTradeDate : selectedJob === "lifecycleDigest" ? true : validWindow;
   const selectedTemplate = JOB_TEMPLATES.find((item) => item.key === selectedJob) ?? JOB_TEMPLATES[0];
   const rows = runs
     .map((run) => {
@@ -75,6 +78,7 @@ export function IngestPage() {
   const configGridClass = [
     "job-config-grid",
     selectedJob === "stockEvidenceChain" ? "strategy" : "",
+    selectedJob === "lifecycleDigest" ? "strategy" : "",
   ].filter(Boolean).join(" ");
 
   useEffect(() => {
@@ -96,6 +100,36 @@ export function IngestPage() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (selectedJob !== "lifecycleDigest") {
+      setLifecyclePreview(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+    setLifecyclePreviewLoading(true);
+    fetchLifecycleDigestPreview({ limit: 120, force })
+      .then((preview) => {
+        if (!cancelled) {
+          setLifecyclePreview(preview);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "加载生命周期预览失败");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLifecyclePreviewLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [force, selectedJob]);
 
   async function refreshRunsAndResults(): Promise<boolean> {
     setError(null);
@@ -271,10 +305,10 @@ export function IngestPage() {
                 <PanelTitle title={selectedTemplate.title} meta={`${selectedTemplate.meta} · ${selectedTemplate.serves}`} />
               </div>
               <div className={configGridClass}>
-                {selectedJob !== "stockEvidenceChain" && selectedJob !== "anchor" && (
+                {selectedJob !== "stockEvidenceChain" && selectedJob !== "lifecycleDigest" && selectedJob !== "anchor" && (
                   <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
                 )}
-                {selectedJob !== "anchor" && (
+                {selectedJob !== "anchor" && selectedJob !== "lifecycleDigest" && (
                   <>
                     <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
                     <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
@@ -297,7 +331,10 @@ export function IngestPage() {
                   {canceling ? "终止中" : submitting ? "提交中" : hasRunning ? "终止任务" : "开始执行"}
                 </button>
               </div>
-              {selectedJob !== "anchor" && !validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}
+              {selectedJob !== "anchor" && selectedJob !== "lifecycleDigest" && !validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}
+              {selectedJob === "lifecycleDigest" && (
+                <LifecyclePreviewCard preview={lifecyclePreview} loading={lifecyclePreviewLoading} />
+              )}
               {selectedJob === "anchor" && !validTradeDate && <p className="error-line">交易日格式应为 YYYYMMDD。</p>}
               {error && <p className="error-line">{error}</p>}
               <div className="job-config-hints">
@@ -351,6 +388,48 @@ function dateToTradeDate(value: string): string {
   return value.replace(/-/g, "");
 }
 
+function LifecyclePreviewCard({ preview, loading }: { preview: LifecycleDigestPreview | null; loading: boolean }) {
+  if (loading) {
+    return <p className="job-preview-muted">正在预览待处理机会。</p>;
+  }
+  if (!preview) {
+    return <p className="job-preview-muted">暂无预览数据。</p>;
+  }
+  return (
+    <section className="job-preview-card">
+      <div className="job-preview-metrics">
+        <span>扫描 {preview.scanned_count}</span>
+        <span>可处理 {preview.processable_count}</span>
+        <span>需调用 {preview.estimated_llm_calls}</span>
+        <span>跳过 {preview.skipped_count}</span>
+      </div>
+      <div className="job-preview-list">
+        {preview.items.slice(0, 5).map((item) => (
+          <article key={item.scope_key}>
+            <strong>{item.stock_name}</strong>
+            <span>{item.theme_name ?? "未确认主题"}</span>
+            <small>{item.stage_label} · {item.recognition_label} · {actionLabel(item.action)} · {item.reason}</small>
+          </article>
+        ))}
+        {preview.items.length === 0 && <p className="job-preview-muted">暂无可处理对象，请先运行个股证据链。</p>}
+      </div>
+    </section>
+  );
+}
+
+function actionLabel(value: string): string {
+  if (value === "generate") {
+    return "待生成";
+  }
+  if (value === "reuse") {
+    return "可复用";
+  }
+  if (value === "skip") {
+    return "跳过";
+  }
+  return value;
+}
+
 function forceLabel(kind: JobTemplateKey): string {
   if (kind === "ingest") {
     return "强制重拉";
@@ -360,6 +439,9 @@ function forceLabel(kind: JobTemplateKey): string {
   }
   if (kind === "stockEvidenceChain") {
     return "强制重判 LLM";
+  }
+  if (kind === "lifecycleDigest") {
+    return "强制重写摘要";
   }
   return "强制重跑";
 }

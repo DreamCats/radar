@@ -59,6 +59,62 @@ export type StockEvidenceRecognitionContext = {
   missing_evidence: string[];
 };
 
+export type StockEvidenceLifecycleDigestContext = {
+  scope_key: string;
+  theme_id?: string | null;
+  theme_name?: string | null;
+  stage_label?: string | null;
+  recognition_label?: string | null;
+  one_line: string;
+  timeline: string[];
+  stage_reason: string[];
+  missing_evidence: string[];
+  risk: string[];
+  next_watch: string[];
+  evidence_signature: string;
+  message_hash?: string | null;
+  market_hash?: string | null;
+  theme_hash?: string | null;
+  recognition_hash?: string | null;
+  backtest_hash?: string | null;
+  lifecycle_package_hash?: string | null;
+  updated_at: string;
+};
+
+export type LifecycleDigestHashes = {
+  message_hash: string;
+  market_hash: string;
+  theme_hash: string;
+  recognition_hash: string;
+  backtest_hash: string;
+  lifecycle_package_hash: string;
+};
+
+export type LifecycleDigestPreviewItem = {
+  scope_key: string;
+  ts_code: string;
+  stock_name: string;
+  theme_id?: string | null;
+  theme_name?: string | null;
+  stage_label: string;
+  recognition_label: string;
+  action: string;
+  reason: string;
+  evidence_signature: string;
+  hashes: LifecycleDigestHashes;
+  changed_hashes: string[];
+};
+
+export type LifecycleDigestPreview = {
+  as_of_time?: string | null;
+  scanned_count: number;
+  processable_count: number;
+  pending_count: number;
+  skipped_count: number;
+  estimated_llm_calls: number;
+  items: LifecycleDigestPreviewItem[];
+};
+
 export type StockEvidenceMessage = {
   message_id?: string | null;
   time?: string | null;
@@ -96,6 +152,7 @@ export type StockEvidenceChainItem = {
   themes: StockEvidenceThemeContext[];
   primary_theme?: StockEvidenceThemeContext | null;
   recognition: StockEvidenceRecognitionContext;
+  lifecycle_digest?: StockEvidenceLifecycleDigestContext | null;
   updated_at: string;
 };
 

@@ -15,6 +15,7 @@ from radar.core.usecases.recommendation_backtest import (
     RecommendationBacktestSummaryResult,
 )
 from radar.core.usecases.stock_evidence_chain import (
+    LifecycleDigestPreview,
     StockEvidenceChainDashboard,
     StockEvidenceStockChart,
 )
@@ -204,8 +205,16 @@ class StockEvidenceChainJobRequest(BaseModel):
     force_llm: bool = False
 
 
+class LifecycleDigestJobRequest(BaseModel):
+    limit: int = Field(default=120, ge=1, le=500)
+    force: bool = False
+    llm_workers: int = Field(default=16, ge=1, le=64)
+    provider_names: list[str] | None = None
+    model: str | None = None
+
+
 class DerivedJobItem(BaseModel):
-    job_type: Literal["anchor", "recommendation_backtest", "stock_evidence_chain"]
+    job_type: Literal["anchor", "recommendation_backtest", "stock_evidence_chain", "lifecycle_digest"]
     run_id: str
     reused_existing: bool = False
     status: Literal["running"]
@@ -224,6 +233,10 @@ class StockEvidenceChainDashboardResponse(StockEvidenceChainDashboard):
 
 
 class StockEvidenceStockChartResponse(StockEvidenceStockChart):
+    pass
+
+
+class LifecycleDigestPreviewResponse(LifecycleDigestPreview):
     pass
 
 

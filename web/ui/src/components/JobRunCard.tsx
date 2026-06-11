@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Clock3, LoaderCircle } from "lucide-react";
 
 import type { RunItem } from "../types";
 
-type JobRunKind = "ingest" | "classify" | "anchor" | "backtest" | "stockEvidenceChain";
+type JobRunKind = "ingest" | "classify" | "anchor" | "backtest" | "stockEvidenceChain" | "lifecycleDigest";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -83,6 +83,9 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "stockEvidenceChain") {
       return evidenceChainProgress(run);
     }
+    if (kind === "lifecycleDigest") {
+      return lifecycleDigestProgress(run);
+    }
     return 8;
   }
   return 100;
@@ -126,6 +129,14 @@ function evidenceChainProgress(run?: RunItem): number {
   return numberValue(metadata.indexed_messages) > 0 ? 35 : 8;
 }
 
+function lifecycleDigestProgress(run?: RunItem): number {
+  const metadata = run?.metadata ?? {};
+  if (numberValue(metadata.generated_count) > 0 || numberValue(metadata.reused_count) > 0 || run?.stored_count) {
+    return 70;
+  }
+  return numberValue(metadata.processable_count) > 0 ? 35 : 8;
+}
+
 function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   if (kind === "ingest") {
     return ingestMetrics(run);
@@ -141,6 +152,9 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   }
   if (kind === "stockEvidenceChain") {
     return evidenceChainMetrics(run);
+  }
+  if (kind === "lifecycleDigest") {
+    return lifecycleDigestMetrics(run);
   }
   return [];
 }
@@ -248,6 +262,26 @@ function evidenceChainMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
+function lifecycleDigestMetrics(run?: RunItem): string[] {
+  const metadata = run?.metadata ?? {};
+  const processable = numberValue(metadata.processable_count) || run?.raw_count || 0;
+  const pending = numberValue(metadata.pending_count);
+  const generated = numberValue(metadata.generated_count);
+  const reused = numberValue(metadata.reused_count);
+  const skipped = numberValue(metadata.skipped_count);
+  const failed = numberValue(metadata.failed_count) || run?.filtered_count || 0;
+  return [
+    `可处理 ${processable} 个`,
+    `需调用 ${pending} 次`,
+    rerunReasonText(metadata.rerun_reason_counts),
+    `生成 ${generated}`,
+    `复用 ${reused}`,
+    `跳过 ${skipped}`,
+    `失败 ${failed}`,
+    durationText(run),
+  ].filter(Boolean);
+}
+
 function detailText(run?: RunItem): string {
   if (!run) {
     return "任务已提交，等待服务端返回运行状态。";
@@ -300,6 +334,9 @@ function kindTitle(kind: JobRunKind): string {
   if (kind === "stockEvidenceChain") {
     return "个股证据链";
   }
+  if (kind === "lifecycleDigest") {
+    return "生命周期摘要";
+  }
   return "作业";
 }
 
@@ -328,6 +365,18 @@ function distributionText(value: unknown): string {
     .slice(0, 3)
     .map(([category, count]) => `${category} ${count}`);
   return parts.length ? `类别 ${parts.join(" / ")}` : "";
+}
+
+function rerunReasonText(value: unknown): string {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return "";
+  }
+  const parts = Object.entries(value)
+    .filter(([, count]) => typeof count === "number" && count > 0)
+    .sort((a, b) => Number(b[1]) - Number(a[1]))
+    .slice(0, 3)
+    .map(([reason, count]) => `${reason} ${count}`);
+  return parts.length ? `原因 ${parts.join(" / ")}` : "";
 }
 
 function anchorTradeDateText(metadata: Record<string, unknown>): string {

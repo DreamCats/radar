@@ -198,6 +198,7 @@ export type {
   IngestJobItem,
   IngestRequest,
   IngestResultItem,
+  LifecycleDigestJobRequest,
   RecommendationBacktestRequest,
   StockEvidenceChainJobRequest,
 } from "./types/jobs";
@@ -296,6 +297,7 @@ export type OrganizeEvidenceQuery = Omit<OrganizeClassificationQuery, "evidence_
 export type {
   StockEvidenceChainDashboard,
   StockEvidenceChainItem,
+  StockEvidenceLifecycleDigestContext,
   StockEvidenceMarketPoint,
   StockEvidenceMessage,
   StockEvidenceRecognitionContext,
@@ -303,4 +305,7 @@ export type {
   StockEvidenceStockChart,
   StockEvidenceStockChartQuery,
   StockEvidenceThemeContext,
+  LifecycleDigestHashes,
+  LifecycleDigestPreview,
+  LifecycleDigestPreviewItem,
 } from "./types/strategy";

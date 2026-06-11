@@ -1,4 +1,4 @@
-import { Anchor, Bot, ChartNoAxesCombined, Database, GitBranch } from "lucide-react";
+import { Anchor, Bot, ChartNoAxesCombined, Database, GitBranch, ListTree } from "lucide-react";
 
 import type { IngestSource } from "../types";
 import type { JobTemplateKey } from "./jobRuns";
@@ -15,6 +15,7 @@ const ALL_JOB_TEMPLATES = [
   { key: "anchor", title: "Anchor 更新", meta: "市场词库", serves: "更新股票 / 概念 / 行业 / 主题", icon: Anchor },
   { key: "backtest", title: "证据回测补齐", meta: "T+N 补齐", serves: "服务于高质量证据榜", icon: ChartNoAxesCombined },
   { key: "stockEvidenceChain", title: "个股证据链", meta: "策略离线", serves: "服务于早期筛选 / 阶段判断", icon: GitBranch },
+  { key: "lifecycleDigest", title: "机会生命周期摘要", meta: "LLM 旁路", serves: "服务于阶段梳理 / 复盘", icon: ListTree },
 ] satisfies Array<{ key: JobTemplateKey; title: string; meta: string; serves: string; icon: typeof Database }>;
 
 export const JOB_TEMPLATES = ALL_JOB_TEMPLATES;
@@ -26,7 +27,7 @@ export const JOB_TEMPLATE_GROUPS = [
   },
   {
     title: "策略作业",
-    items: JOB_TEMPLATES.filter((item) => item.key === "stockEvidenceChain"),
+    items: JOB_TEMPLATES.filter((item) => ["stockEvidenceChain", "lifecycleDigest"].includes(item.key)),
   },
 ].filter((group) => group.items.length > 0);
 
@@ -45,6 +46,9 @@ export function configHints(kind: JobTemplateKey): string[] {
   }
   if (kind === "stockEvidenceChain") {
     return ["默认证据回看 40 天", "候选最多 120 只", "LLM 并发 16", "相同证据自动复用判断"];
+  }
+  if (kind === "lifecycleDigest") {
+    return ["读取最新个股证据链", "候选最多 120 只", "LLM 并发 16", "证据未变自动跳过"];
   }
   return [];
 }

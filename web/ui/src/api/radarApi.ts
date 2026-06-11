@@ -14,6 +14,8 @@ import type {
   IngestJobItem,
   IngestRequest,
   IngestResultItem,
+  LifecycleDigestJobRequest,
+  LifecycleDigestPreview,
   MessageConversationPage,
   MessageConversationQuery,
   MessageGroupItem,
@@ -213,6 +215,10 @@ export async function fetchStockEvidenceStockChart(tsCode: string, query: StockE
   return getJson(`/api/strategy/stocks/${encodeURIComponent(tsCode)}/chart?${params(query)}`);
 }
 
+export async function fetchLifecycleDigestPreview(query: { limit?: number; force?: boolean } = {}): Promise<LifecycleDigestPreview> {
+  return getJson(`/api/strategy/lifecycle-digests/preview?${params(query)}`);
+}
+
 export async function ingestWechat(request: IngestRequest): Promise<IngestResultItem[]> {
   const response = await fetch(`${apiBase}/api/ingest/wechat`, {
     method: "POST",
@@ -280,6 +286,19 @@ export async function startRecommendationBacktestJob(request: RecommendationBack
 
 export async function startStockEvidenceChainJob(request: StockEvidenceChainJobRequest): Promise<DerivedJobItem[]> {
   const response = await fetch(`${apiBase}/api/strategy/evidence-chain/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: DerivedJobItem[] };
+  return data.items;
+}
+
+export async function startLifecycleDigestJob(request: LifecycleDigestJobRequest): Promise<DerivedJobItem[]> {
+  const response = await fetch(`${apiBase}/api/strategy/lifecycle-digests/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

@@ -12,6 +12,11 @@ from radar.core.db import migrate_market_db
 from radar.core.store import connect, init_db
 from radar.core.tushare import RealtimeDailyQuote
 from radar.core.tushare import history
+from radar.core.usecases.stock_evidence_chain import (
+    latest_stock_evidence_chain,
+    preview_lifecycle_digests,
+    refresh_lifecycle_digests,
+)
 from radar.web.server.app import create_app
 
 
@@ -151,6 +156,121 @@ def test_stock_evidence_chain_latest_includes_theme_recognition_context(tmp_path
     assert item["themes"][0]["member_count"] == 2
     assert item["recognition"]["state"] == "confirmed"
     assert "CPO概念" in item["recognition"]["reasons"][0]
+
+
+def test_lifecycle_digest_preview_refresh_and_reuse(monkeypatch, tmp_path: Path):
+    config = _config(tmp_path)
+    as_of = datetime(2026, 6, 8, 15, 0)
+    window_start = datetime(2026, 6, 5, 15, 0)
+    evidence_start = datetime(2026, 5, 1, 15, 0)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        _insert_candidate(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="300394.SZ",
+            stock_name="天孚通信",
+            rank=1,
+            evidence_score=16,
+            family_counts={"catalyst": 2, "research": 1},
+        )
+        _insert_judgement(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="300394.SZ",
+            stock_name="天孚通信",
+            stage="seed",
+            confidence=0.78,
+            return_since_first_point=0.13,
+        )
+        _insert_candidate(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="000002.SZ",
+            stock_name="万科A",
+            rank=2,
+            evidence_score=12,
+            family_counts={"research": 2},
+        )
+        _insert_judgement(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="000002.SZ",
+            stock_name="万科A",
+            stage="seed",
+            confidence=0.72,
+            return_since_first_point=0.05,
+        )
+    finally:
+        conn.close()
+    _insert_theme_context(config)
+
+    def fake_chat(*args, **kwargs):
+        return json.dumps(
+            {
+                "one_line": "CPO机会处在主题确认后的个股跟踪阶段。",
+                "timeline": ["先有主题归属", "再有个股证据链确认"],
+                "stage_reason": ["主题归属明确", "市场认可已经确认"],
+                "missing_evidence": ["还缺更多主题成员扩散验证"],
+                "risk": ["短期涨幅后需要防止追高"],
+                "next_watch": ["观察成交额是否继续放大"],
+            },
+            ensure_ascii=False,
+        )
+
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.lifecycle_digest.chat", fake_chat)
+
+    preview = preview_lifecycle_digests(config, limit=5)
+    assert preview.processable_count == 2
+    assert preview.pending_count == 2
+    assert preview.estimated_llm_calls == 2
+    assert preview.items[0].theme_name == "CPO概念"
+    assert preview.items[1].theme_name is None
+    assert preview.items[0].reason == "缺少生命周期摘要"
+    assert preview.items[0].hashes.lifecycle_package_hash == preview.items[0].evidence_signature
+    assert preview.items[0].changed_hashes == ["missing"]
+
+    result = refresh_lifecycle_digests(config, limit=5, llm_workers=1)
+    assert result.generated_count == 2
+    assert result.failed_count == 0
+    assert result.rerun_reason_counts == {"缺少生命周期摘要": 2}
+
+    dashboard = latest_stock_evidence_chain(config, limit=2)
+    digest = dashboard.items[0].lifecycle_digest
+    assert digest is not None
+    assert digest.one_line == "CPO机会处在主题确认后的个股跟踪阶段。"
+    assert digest.stage_reason == ["主题归属明确", "市场认可已经确认"]
+    assert digest.lifecycle_package_hash == digest.evidence_signature
+    assert digest.market_hash
+    assert dashboard.items[1].lifecycle_digest is not None
+
+    reused_preview = preview_lifecycle_digests(config, limit=5)
+    assert reused_preview.pending_count == 0
+    assert reused_preview.items[0].action == "skip"
+    assert reused_preview.items[0].reason == "证据未变化"
+
+    _update_judgement_market_return(config, ts_code="300394.SZ", return_since_first_point=0.21)
+    changed_preview = preview_lifecycle_digests(config, limit=5)
+    changed_item = next(item for item in changed_preview.items if item.ts_code == "300394.SZ")
+    assert changed_preview.pending_count == 1
+    assert changed_item.action == "generate"
+    assert changed_item.reason == "市场变了"
+    assert changed_item.changed_hashes == ["market_hash"]
+    assert changed_item.hashes.message_hash == reused_preview.items[0].hashes.message_hash
+    assert changed_item.hashes.market_hash != reused_preview.items[0].hashes.market_hash
+
+    changed_result = refresh_lifecycle_digests(config, limit=5, llm_workers=1)
+    assert changed_result.generated_count == 1
+    assert changed_result.rerun_reason_counts == {"市场变了": 1}
 
 
 def test_strategy_stock_chart_endpoint_reads_local_market_history(monkeypatch, tmp_path: Path):
@@ -436,3 +556,32 @@ def _insert_judgement(
         ),
     )
     conn.commit()
+
+
+def _update_judgement_market_return(config, *, ts_code: str, return_since_first_point: float) -> None:
+    conn = connect(config.database_path)
+    try:
+        row = conn.execute(
+            """
+            SELECT judgement_id, result_json
+            FROM stock_lifecycle_judgements
+            WHERE ts_code = ?
+            ORDER BY as_of_time DESC
+            LIMIT 1
+            """,
+            (ts_code,),
+        ).fetchone()
+        assert row is not None
+        payload = json.loads(row["result_json"])
+        payload["market_evidence"]["summary"]["return_since_first_point"] = return_since_first_point
+        conn.execute(
+            """
+            UPDATE stock_lifecycle_judgements
+            SET result_json = ?, updated_at = ?
+            WHERE judgement_id = ?
+            """,
+            (json.dumps(payload, ensure_ascii=False), datetime.now().isoformat(), row["judgement_id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()

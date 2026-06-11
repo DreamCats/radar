@@ -80,8 +80,14 @@ export type StockEvidenceChainJobRequest = {
   force_llm: boolean;
 };
 
+export type LifecycleDigestJobRequest = {
+  limit: number;
+  force: boolean;
+  llm_workers: number;
+};
+
 export type DerivedJobItem = {
-  job_type: "anchor" | "recommendation_backtest" | "stock_evidence_chain";
+  job_type: "anchor" | "recommendation_backtest" | "stock_evidence_chain" | "lifecycle_digest";
   run_id: string;
   reused_existing: boolean;
   status: "running";

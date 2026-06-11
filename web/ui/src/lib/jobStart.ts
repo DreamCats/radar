@@ -1,6 +1,7 @@
 import {
   startClassifyMessagesJob,
   startIngestWechatJob,
+  startLifecycleDigestJob,
   startMarketAnchorUpdateJob,
   startRecommendationBacktestJob,
   startStockEvidenceChainJob,
@@ -81,6 +82,14 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
       force_llm: force,
     });
     return derivedJobs(kind, "全库证据", items);
+  }
+  if (kind === "lifecycleDigest") {
+    const items = await startLifecycleDigestJob({
+      limit: 120,
+      force,
+      llm_workers: 16,
+    });
+    return derivedJobs(kind, "机会摘要", items);
   }
   throw new Error(`未知作业类型：${kind}`);
 }

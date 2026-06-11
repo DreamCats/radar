@@ -6,15 +6,18 @@ from radar.core.config import RadarConfig
 from radar.core.usecases.stock_evidence_chain import (
     get_stock_evidence_stock_chart,
     latest_stock_evidence_chain,
+    preview_lifecycle_digests,
 )
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     DerivedJobResponse,
+    LifecycleDigestJobRequest,
+    LifecycleDigestPreviewResponse,
     StockEvidenceChainJobRequest,
     StockEvidenceChainDashboardResponse,
     StockEvidenceStockChartResponse,
 )
-from radar.web.server.strategy_jobs import submit_stock_evidence_chain_job
+from radar.web.server.strategy_jobs import submit_lifecycle_digest_job, submit_stock_evidence_chain_job
 
 router = APIRouter(prefix="/api/strategy", tags=["strategy"])
 
@@ -48,3 +51,20 @@ def start_stock_evidence_chain_job(
     if request.end_time <= request.start_time:
         raise HTTPException(status_code=400, detail="end_time 必须晚于 start_time")
     return DerivedJobResponse(items=[submit_stock_evidence_chain_job(config, request)])
+
+
+@router.get("/lifecycle-digests/preview", response_model=LifecycleDigestPreviewResponse)
+def lifecycle_digest_preview(
+    limit: int = Query(default=20, ge=1, le=100),
+    force: bool = Query(default=False),
+    config: RadarConfig = Depends(get_config),
+) -> LifecycleDigestPreviewResponse:
+    return LifecycleDigestPreviewResponse(**preview_lifecycle_digests(config, limit=limit, force=force).model_dump())
+
+
+@router.post("/lifecycle-digests/jobs", response_model=DerivedJobResponse)
+def start_lifecycle_digest_job(
+    request: LifecycleDigestJobRequest,
+    config: RadarConfig = Depends(get_config),
+) -> DerivedJobResponse:
+    return DerivedJobResponse(items=[submit_lifecycle_digest_job(config, request)])

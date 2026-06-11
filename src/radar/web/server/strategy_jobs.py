@@ -6,10 +6,11 @@ from threading import Lock
 
 from radar.core.config import RadarConfig
 from radar.core.runs import fail_run, fail_stale_runs, finish_run, get_running_run, start_run, update_run_progress
-from radar.core.usecases.stock_evidence_chain import build_stock_evidence_chain
-from radar.web.server.schemas import DerivedJobItem, StockEvidenceChainJobRequest
+from radar.core.usecases.stock_evidence_chain import build_stock_evidence_chain, refresh_lifecycle_digests
+from radar.web.server.schemas import DerivedJobItem, LifecycleDigestJobRequest, StockEvidenceChainJobRequest
 
 STOCK_EVIDENCE_CHAIN_RUN_KIND = "stock_evidence_chain"
+LIFECYCLE_DIGEST_RUN_KIND = "opportunity_lifecycle_digest"
 STALE_AFTER = timedelta(hours=12)
 
 _EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="radar-strategy")
@@ -41,6 +42,33 @@ def submit_stock_evidence_chain_job(config: RadarConfig, request: StockEvidenceC
 
 def mark_stale_stock_evidence_chain_runs(config: RadarConfig) -> int:
     return fail_stale_runs(config.database_path, older_than=datetime.now() - STALE_AFTER, kind=STOCK_EVIDENCE_CHAIN_RUN_KIND)
+
+
+def submit_lifecycle_digest_job(config: RadarConfig, request: LifecycleDigestJobRequest) -> DerivedJobItem:
+    with _SUBMIT_LOCK:
+        mark_stale_lifecycle_digest_runs(config)
+        target = _lifecycle_digest_target(request)
+        running = get_running_run(config.database_path, kind=LIFECYCLE_DIGEST_RUN_KIND, target=target)
+        if running is not None:
+            return DerivedJobItem(
+                job_type="lifecycle_digest",
+                run_id=running.run_id,
+                reused_existing=True,
+                status="running",
+            )
+
+        run_id = start_run(config.database_path, kind=LIFECYCLE_DIGEST_RUN_KIND, target=target, metadata=_lifecycle_metadata(request))
+        _EXECUTOR.submit(_run_lifecycle_digest_job, config, request, run_id)
+        return DerivedJobItem(
+            job_type="lifecycle_digest",
+            run_id=run_id,
+            reused_existing=False,
+            status="running",
+        )
+
+
+def mark_stale_lifecycle_digest_runs(config: RadarConfig) -> int:
+    return fail_stale_runs(config.database_path, older_than=datetime.now() - STALE_AFTER, kind=LIFECYCLE_DIGEST_RUN_KIND)
 
 
 def _run_stock_evidence_chain_job(config: RadarConfig, request: StockEvidenceChainJobRequest, run_id: str) -> None:
@@ -85,6 +113,46 @@ def _run_stock_evidence_chain_job(config: RadarConfig, request: StockEvidenceCha
         fail_run(config.database_path, run_id, exc)
 
 
+def _run_lifecycle_digest_job(config: RadarConfig, request: LifecycleDigestJobRequest, run_id: str) -> None:
+    try:
+        update_run_progress(config.database_path, run_id, metadata={"stage": "生成机会生命周期摘要"})
+        result = refresh_lifecycle_digests(
+            config,
+            limit=request.limit,
+            force=request.force,
+            provider_names=request.provider_names,
+            model=request.model,
+            llm_workers=request.llm_workers,
+        )
+        metadata = _lifecycle_metadata(request)
+        metadata.update(
+            {
+                "stage": "完成",
+                "as_of": result.as_of_time.isoformat() if result.as_of_time else None,
+                "scanned_count": result.scanned_count,
+                "processable_count": result.processable_count,
+                "pending_count": result.pending_count,
+                "generated_count": result.generated_count,
+                "reused_count": result.reused_count,
+                "skipped_count": result.skipped_count,
+                "failed_count": result.failed_count,
+                "rerun_reason_counts": result.rerun_reason_counts,
+            }
+        )
+        status = "skipped" if result.generated_count == 0 and result.reused_count == 0 and result.failed_count == 0 else "succeeded"
+        finish_run(
+            config.database_path,
+            run_id,
+            raw_count=result.processable_count,
+            stored_count=result.generated_count + result.reused_count,
+            filtered_count=result.failed_count,
+            metadata=metadata,
+            status=status,
+        )
+    except BaseException as exc:
+        fail_run(config.database_path, run_id, exc)
+
+
 def _evidence_chain_target(request: StockEvidenceChainJobRequest) -> str:
     providers = ",".join(request.provider_names or [])
     return (
@@ -96,4 +164,16 @@ def _evidence_chain_target(request: StockEvidenceChainJobRequest) -> str:
 
 
 def _metadata(request: StockEvidenceChainJobRequest) -> dict[str, object]:
+    return request.model_dump(mode="json")
+
+
+def _lifecycle_digest_target(request: LifecycleDigestJobRequest) -> str:
+    providers = ",".join(request.provider_names or [])
+    return (
+        f"opportunity_lifecycle_digest:limit={request.limit}:force={int(request.force)}:"
+        f"workers={request.llm_workers}:providers={providers}:model={request.model or ''}"
+    )
+
+
+def _lifecycle_metadata(request: LifecycleDigestJobRequest) -> dict[str, object]:
     return request.model_dump(mode="json")

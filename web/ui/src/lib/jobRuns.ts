@@ -5,7 +5,8 @@ export type JobTemplateKey =
   | "classify"
   | "anchor"
   | "backtest"
-  | "stockEvidenceChain";
+  | "stockEvidenceChain"
+  | "lifecycleDigest";
 
 export type TrackedJob = {
   kind: JobTemplateKey;
@@ -20,6 +21,7 @@ const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   market_anchor_update: "anchor",
   recommendation_backtest_refresh: "backtest",
   stock_evidence_chain: "stockEvidenceChain",
+  opportunity_lifecycle_digest: "lifecycleDigest",
 };
 
 export const JOB_RUN_KINDS = Object.keys(RUN_KIND_TO_JOB);
@@ -76,6 +78,9 @@ export function sourceLabel(value: IngestSource): string {
 function sourceFromRun(run: RunItem): string {
   if (run.kind === "stock_evidence_chain") {
     return "全库证据";
+  }
+  if (run.kind === "opportunity_lifecycle_digest") {
+    return "机会摘要";
   }
   if (run.kind === "market_anchor_update") {
     return "市场词库";
