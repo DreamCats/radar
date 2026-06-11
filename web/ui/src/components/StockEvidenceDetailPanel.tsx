@@ -276,7 +276,7 @@ function MarketPointStrip({ points }: { points: StockEvidenceMarketPoint[] }) {
         <article key={`${point.trade_date}-${point.tag ?? ""}`}>
           <time>{point.trade_date}</time>
           <strong>{point.close ?? "-"}</strong>
-          <span className={toneClass(point.pct_chg)}>{formatPercent(point.pct_chg, true)}</span>
+          <span className={toneClass(point.pct_chg)}>{formatPercentPoint(point.pct_chg, true)}</span>
           <small>量能 {point.amount_ratio_5d ? `${point.amount_ratio_5d.toFixed(1)}x` : "-"}</small>
         </article>
       ))}
@@ -309,7 +309,7 @@ function stockEvidenceChatLines(item: StockEvidenceChainItem): string[] {
       const source = [evidence.sender, evidence.group_name].filter(Boolean).join(" · ");
       return `证据：${evidence.time ?? "-"} ${evidence.type ?? "证据"} ${evidence.evidence ?? evidence.raw_content ?? "无摘要"}${source ? `（${source}）` : ""}`;
     }),
-    ...item.market_points.slice(-4).map((point) => `市场：${point.trade_date} 收盘 ${point.close ?? "-"} 涨跌 ${formatPercent(point.pct_chg, true)} 量能 ${point.amount_ratio_5d ? `${point.amount_ratio_5d.toFixed(1)}x` : "-"}`),
+    ...item.market_points.slice(-4).map((point) => `市场：${point.trade_date} 收盘 ${point.close ?? "-"} 涨跌 ${formatPercentPoint(point.pct_chg, true)} 量能 ${point.amount_ratio_5d ? `${point.amount_ratio_5d.toFixed(1)}x` : "-"}`),
     item.pricing_risk ? `定价风险：${item.pricing_risk}` : "",
     item.crowding_risk ? `拥挤风险：${item.crowding_risk}` : "",
     ...item.watch_next.slice(0, 4).map((line) => `下一步：${line}`),
@@ -331,6 +331,14 @@ function formatPercent(value?: number | null, signed = false): string {
   const normalized = Math.abs(value) > 1 ? value : value * 100;
   const text = `${normalized.toFixed(1)}%`;
   return signed && normalized > 0 ? `+${text}` : text;
+}
+
+function formatPercentPoint(value?: number | null, signed = false): string {
+  if (value === undefined || value === null) {
+    return "-";
+  }
+  const text = `${value.toFixed(1)}%`;
+  return signed && value > 0 ? `+${text}` : text;
 }
 
 function numberValue(value: unknown): number | null {
