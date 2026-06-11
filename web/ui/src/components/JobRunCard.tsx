@@ -191,13 +191,17 @@ function anchorMetrics(run?: RunItem): string[] {
   const members = run?.raw_count || numberValue(metadata.market_anchor_member_count) || numberValue(metadata.member_count);
   const current = optionalNumberValue(metadata.derived_current_count);
   const spans = optionalNumberValue(metadata.derived_span_count);
+  const themes = optionalNumberValue(metadata.theme_count);
+  const themeCoverage = optionalNumberValue(metadata.theme_coverage_ratio);
   const failedSources = recordKeys(metadata.failed_sources).length;
   return [
     anchorTradeDateText(metadata),
     `词库 ${anchors} 个`,
     `成分 ${members} 条`,
-    current !== undefined ? `current ${current}` : "",
-    spans !== undefined ? `spans ${spans}` : "",
+    current !== null ? `current ${current}` : "",
+    spans !== null ? `spans ${spans}` : "",
+    themes !== null ? `主题 ${themes}` : "",
+    themeCoverage !== null ? `覆盖 ${(themeCoverage * 100).toFixed(0)}%` : "",
     metadata.market_anchor_refreshed === false ? "已复用" : "",
     failedSources ? `失败源 ${failedSources}` : "",
     durationText(run),

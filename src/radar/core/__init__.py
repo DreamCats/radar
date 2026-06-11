@@ -12,6 +12,7 @@ from radar.core.market_anchors import (
     refresh_market_anchor_derivatives,
     refresh_market_anchors,
 )
+from radar.core.market_themes import RefreshMarketThemeNormalizationResult, refresh_market_theme_normalization
 from radar.core.models import MessageSource, RawMessage
 from radar.core.organize import (
     OrganizeClassificationCluster,
@@ -56,6 +57,7 @@ __all__ = [
     "RawMessage",
     "RefreshMarketAnchorDerivativesResult",
     "RefreshMarketAnchorsResult",
+    "RefreshMarketThemeNormalizationResult",
     "RunRecord",
     "TushareApiError",
     "TushareConfigError",
@@ -82,6 +84,7 @@ __all__ = [
     "ensure_market_anchors",
     "refresh_market_anchor_derivatives",
     "refresh_market_anchors",
+    "refresh_market_theme_normalization",
     "start_run",
     "test_llm",
     "test_market",

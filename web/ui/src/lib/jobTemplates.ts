@@ -38,7 +38,7 @@ export function configHints(kind: JobTemplateKey): string[] {
     return ["单批 16", "LLM 并发 10", "低置信阈值 0.65"];
   }
   if (kind === "anchor") {
-    return ["按交易日更新", "同步 current/spans", "不扫描消息库"];
+    return ["按交易日更新", "同步主题归一化", "不扫描消息库"];
   }
   if (kind === "backtest") {
     return ["来自个股证据链", "补齐 T+1/T+2/T+3/T+5", "已完成窗口自动跳过", "未成熟下次继续补"];

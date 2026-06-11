@@ -74,8 +74,18 @@ def test_market_db_migrations_are_independent(tmp_path):
             "tushare_history",
             "market_anchors",
             "market_anchor_members",
+            "market_anchor_current_members",
+            "market_anchor_member_spans",
+            "theme_nodes",
+            "theme_source_links",
+            "stock_theme_memberships",
         } <= tables
-        assert applied_migrations(conn) == {"001_init_market", "002_market_anchors"}
+        assert applied_migrations(conn) == {
+            "001_init_market",
+            "002_market_anchors",
+            "003_market_anchor_derivatives",
+            "004_market_theme_normalization",
+        }
         assert "messages" not in tables
     finally:
         conn.close()

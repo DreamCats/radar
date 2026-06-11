@@ -6,6 +6,7 @@ from threading import Lock
 
 from radar.core.config import RadarConfig
 from radar.core.market_anchors import ensure_market_anchors, refresh_market_anchor_derivatives
+from radar.core.market_themes import refresh_market_theme_normalization
 from radar.core.runs import fail_run, fail_stale_runs, finish_run, get_running_run, start_run, update_run_progress
 from radar.web.server.schemas import DerivedJobItem, MarketAnchorUpdateRequest
 
@@ -45,6 +46,8 @@ def _run_anchor_job(config: RadarConfig, request: MarketAnchorUpdateRequest, run
         )
         update_run_progress(config.database_path, run_id, metadata={"stage": "重建 anchor 派生表"})
         derivatives = refresh_market_anchor_derivatives(config)
+        update_run_progress(config.database_path, run_id, metadata={"stage": "重建主题归一化"})
+        themes = refresh_market_theme_normalization(config, rebuild_anchor_derivatives=False)
         metadata = {
             **request.model_dump(mode="json"),
             "stage": "完成",
@@ -59,6 +62,14 @@ def _run_anchor_job(config: RadarConfig, request: MarketAnchorUpdateRequest, run
             "derived_latest_trade_date": derivatives.latest_trade_date,
             "derived_current_count": derivatives.current_count,
             "derived_span_count": derivatives.span_count,
+            "theme_latest_trade_date": themes.latest_trade_date,
+            "theme_count": themes.theme_count,
+            "theme_source_link_count": themes.source_link_count,
+            "theme_membership_count": themes.membership_count,
+            "theme_current_stock_count": themes.current_stock_count,
+            "theme_covered_stock_count": themes.covered_stock_count,
+            "theme_coverage_ratio": themes.coverage_ratio,
+            "theme_ambiguous_stock_count": themes.ambiguous_stock_count,
         }
         finish_run(
             config.database_path,

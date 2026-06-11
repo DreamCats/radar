@@ -8,6 +8,7 @@ from radar.core.market_anchors import (
     refresh_market_anchor_derivatives,
     refresh_market_anchors,
 )
+from radar.core.market_themes import refresh_market_theme_normalization
 
 
 @click.group("market")
@@ -18,6 +19,11 @@ def market() -> None:
 @market.group("anchors")
 def anchors() -> None:
     """管理市场 anchor 词库。"""
+
+
+@market.group("themes")
+def themes() -> None:
+    """管理自动主题归一化层。"""
 
 
 @anchors.command("refresh")
@@ -98,4 +104,29 @@ def rebuild_anchor_derivatives_command(ctx: click.Context) -> None:
         "market/anchors/derived: "
         f"latest_trade_date={result.latest_trade_date or '-'} "
         f"current={result.current_count} spans={result.span_count}"
+    )
+
+
+@themes.command("rebuild")
+@click.option("--skip-anchor-derived", is_flag=True, help="不先重建 current/spans 派生表。")
+@click.pass_context
+def rebuild_themes_command(ctx: click.Context, skip_anchor_derived: bool) -> None:
+    """基于 anchor 派生表重建自动主题归一化层。"""
+
+    config = load_cli_config(ctx)
+    try:
+        result = refresh_market_theme_normalization(
+            config,
+            rebuild_anchor_derivatives=not skip_anchor_derived,
+        )
+    except Exception as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    click.echo(
+        "market/themes: "
+        f"latest_trade_date={result.latest_trade_date or '-'} "
+        f"themes={result.theme_count} links={result.source_link_count} "
+        f"memberships={result.membership_count} "
+        f"covered={result.covered_stock_count}/{result.current_stock_count} "
+        f"coverage={result.coverage_ratio:.1%} ambiguous={result.ambiguous_stock_count}"
     )

@@ -68,7 +68,9 @@
 
 第一版不能靠模型自动猜。
 
-应该先靠人工维护的政策主题词表。
+也不应该先靠人工维护政策主题词表。
+
+第一版先把政策字段显示为 `unknown`，只保留可审计的候选主题；后续如果能接入稳定政策来源，再做自动映射。
 
 示例：
 
@@ -80,15 +82,15 @@
 | 反内卷 | 光伏、锂电、化工、钢铁、水泥等供给治理 | 不一定利好所有公司，重点看产能出清 |
 | 自主可控 | 半导体设备、材料、工业软件、信创 | 重点看客户验证和订单 |
 
-落地方式：
+暂不落地：
 
 ```text
-人工维护 policy_theme_tags.yaml
+policy_theme_tags.yaml
 ```
 
-先不要让 LLM 直接决定政策顺风。
+先不要让 LLM 或人工文件直接决定政策顺风。
 
-LLM 可以做候选建议，但最终字段必须来自可审计词表。
+LLM 可以做候选建议，但最终字段必须来自可自动更新、可审计的数据源。
 
 ### 2. 产业认可
 
@@ -235,7 +237,7 @@ P0 的目标是：
 
 ```text
 第一优先级应该是复用 Tushare 概念/行业/题材主数据。
-人工维护只作为覆盖和纠偏，不作为主数据来源。
+第一版不做人工维护文件，也不做人工作业纠偏。
 ```
 
 当前 radar 其实已经有这条数据线：
@@ -260,51 +262,28 @@ Tushare 侧也有可用接口：
 Tushare/market_anchors 自动归属
 -> 多源合并
 -> 覆盖率检查
--> 只对缺失/错误/角色判断做人工 override
+-> 缺失和歧义只进入报告，不要求人工维护
 ```
 
-建议新增的不是全量人工文件，而是一个很小的纠偏文件：
+为什么先不做人工纠偏：
 
-```yaml
-overrides:
-  - ts_code: 002812.SZ
-    stock_name: 恩捷股份
-    add_themes:
-      - 新能源旧主线
-      - 锂电材料
-    role: old_consensus
-    reason: 自动概念覆盖不足，人工补充旧主线属性
-    updated_at: 2026-06-11
-
-  - ts_code: 300394.SZ
-    stock_name: 天孚通信
-    prefer_themes:
-      - AI硬件
-      - 光通信
-    role: core
-    reason: 多主题归属时，当前主线优先选择 AI 算力/光通信
-    updated_at: 2026-06-11
-```
-
-为什么仍然需要少量人工纠偏：
-
-- 概念数据覆盖不一定完整，每天不同源更新节奏不同。
-- 概念标签很多，同一股票可能同时属于十几个主题，需要选择当前主叙事。
-- 数据源能告诉我们“属于什么概念”，但不能稳定告诉我们“在这条叙事里是核心、弹性、补涨还是噪音”。
-- 有些重要判断是业务语义，例如“新能源旧主线”“老共识”“非当前政策主攻方向”，这些不是 Tushare 原始字段。
+- 人工维护成本会随着主题和股票数量持续上升。
+- 当前目标是先降低外部找证据的时间，不是保证每个主题语义完美。
+- 自动数据源能覆盖多数股票，缺失和歧义应该先变成产品报告。
+- 主叙事和角色先用多源数量、持续天数、最新交易日做保守自动判断，不把它伪装成确定结论。
 
 第一版验收不应该是“人工覆盖 50 个案例”，而应该是：
 
 ```text
 自动主题覆盖率 >= 80%
-缺失股票进入待纠偏列表
+缺失股票进入待补数据列表
 多主题股票能展示所有候选主题
-人工只处理缺失和主叙事选择
+主叙事只在自动高置信时给候选，否则显示 unknown
 ```
 
 ### P0-2：接入主题内相对强弱
 
-有了 `market_anchor_members` 的自动主题归属，再叠加少量人工 override 后，才能算：
+有了 `market_anchor_members` 的自动主题归属后，才能算：
 
 ```text
 这只股票在同主题里强不强？
@@ -446,7 +425,7 @@ if:
 
 | 维度 | 状态 | 证据 | 缺口 |
 | --- | --- | --- | --- |
-| 政策顺风 | 强 | 人工智能+、新质生产力 | 需要政策主题映射维护 |
+| 政策顺风 | unknown | 暂无自动政策映射 | 等稳定政策数据源 |
 | 产业兑现 | 中 | 有调研和催化，但订单证据弱 | 缺订单/业绩 |
 | 机构讨论 | 强 | 多研报、多路演、多会话扩散 | 缺买方确认 |
 | 市场确认 | 弱 | 成交未放大，弱于主题 | 等量能 |
@@ -460,15 +439,16 @@ if:
 
 ## 数据表建议
 
-### `policy_theme_tags`
+### `theme_nodes`
 
-维护政策主题。
+自动主题节点。
 
 | 字段 | 含义 |
 | --- | --- |
-| `theme_id` | 主题 ID |
+| `theme_id` | 自动生成的稳定主题 ID |
 | `theme_name` | 主题名 |
-| `policy_tags_json` | 政策关键词 |
+| `theme_type` | theme / concept / industry |
+| `aliases_json` | 多源名称别名 |
 | `policy_strength` | strong / medium / weak |
 | `source` | manual / doc / imported |
 | `updated_at` | 更新时间 |
@@ -596,7 +576,7 @@ stock_recognition_features_v0
 - 主题内强弱。
 - 政策顺风自动判断。
 
-### 第 2 阶段：自动主题主数据和少量人工纠偏
+### 第 2 阶段：自动主题主数据，不做人工纠偏
 
 第二阶段才是“主题归属”真正开始有用的地方。
 
@@ -605,7 +585,7 @@ stock_recognition_features_v0
 - 复用 `market_anchors`。
 - 复用 `market_anchor_members`。
 - 增加主题归一化表。
-- 增加人工 override 表或 YAML。
+- 增加覆盖率和歧义报告。
 
 能做：
 
@@ -622,20 +602,19 @@ stock_recognition_features_v0
 
 #### 第二阶段产出是什么
 
-第二阶段至少产出 5 个东西。
+第二阶段至少产出 4 个东西。
 
 | 产出 | 作用 |
 | --- | --- |
 | 主题归一化表 | 把东财、KPL、通达信、同花顺、申万里的同义主题合并成稳定 ID |
 | 原始主题到归一主题映射 | 保留“这个主题来自哪个数据源、原始名称是什么、原始代码是什么” |
 | 股票-主题归属表 | 让每只股票能查到属于哪些归一主题 |
-| 覆盖率和歧义报告 | 告诉我们哪些股票没有主题、哪些股票主题太多、哪些需要人工纠偏 |
-| 少量人工 override | 只处理缺失、纠错、当前主叙事选择、角色标注 |
+| 覆盖率和歧义报告 | 告诉我们哪些股票没有主题、哪些股票主题太多、哪些只能显示 unknown |
 
 一句话：
 
 ```text
-第二阶段不是做模型，而是把“股票属于什么主题”这件事做成稳定、可查询、可纠偏的主数据。
+第二阶段不是做模型，而是把“股票属于什么主题”这件事做成稳定、可查询、可回放的自动主数据。
 ```
 
 #### 为什么要做主题归一化
@@ -703,7 +682,6 @@ market_anchor_members: 约 22.4 万行
 稳定主题维表：theme_nodes
 原始主题映射：theme_source_links
 股票主题关系：stock_theme_memberships
-人工纠偏：stock_theme_overrides
 ```
 
 数据量预估：
@@ -713,7 +691,6 @@ market_anchor_members: 约 22.4 万行
 | `theme_nodes` | 几百到几千行 | 不会 |
 | `theme_source_links` | 几千到几万行 | 慢增长 |
 | `stock_theme_memberships` | 几万到几十万行 | 可控 |
-| `stock_theme_overrides` | 几十到几百行 | 很小 |
 | 原始 `market_anchor_members` | 每年百万级 | 已经存在，属于原始快照 |
 
 关键设计是：
@@ -732,7 +709,7 @@ market_anchor_members: 约 22.4 万行
 CREATE TABLE theme_nodes (
   theme_id TEXT PRIMARY KEY,
   theme_name TEXT NOT NULL,
-  theme_type TEXT NOT NULL,       -- policy / industry / concept / narrative
+  theme_type TEXT NOT NULL,       -- theme / concept / industry
   parent_theme_id TEXT,
   aliases_json TEXT NOT NULL DEFAULT '[]',
   policy_tags_json TEXT NOT NULL DEFAULT '[]',
@@ -746,9 +723,9 @@ CREATE TABLE theme_nodes (
 
 | theme_id | theme_name | theme_type | parent_theme_id | policy_tags_json |
 | --- | --- | --- | --- | --- |
-| `theme:ai_compute` | AI 算力 | narrative |  | `["新质生产力", "人工智能+"]` |
-| `theme:optical_module` | 光通信 / 光模块 | concept | `theme:ai_compute` | `["人工智能+"]` |
-| `theme:lithium_old_chain` | 新能源旧主线 / 锂电材料 | narrative |  | `["双碳", "反内卷"]` |
+| `theme:auto:...` | AI硬件 | theme |  | `[]` |
+| `theme:auto:...` | CPO概念 | concept |  | `[]` |
+| `theme:auto:...` | 光通信设备 | industry |  | `[]` |
 
 `theme_source_links`：原始主题到归一主题的映射。
 
@@ -763,7 +740,7 @@ CREATE TABLE theme_source_links (
   first_seen_date TEXT NOT NULL,
   last_seen_date TEXT NOT NULL,
   updated_at TEXT NOT NULL,
-  PRIMARY KEY (source, source_code, theme_id)
+  PRIMARY KEY (source, source_code, source_anchor_type, theme_id)
 );
 ```
 
@@ -771,9 +748,9 @@ CREATE TABLE theme_source_links (
 
 | theme_id | source | source_code | source_name | confidence |
 | --- | --- | --- | --- | --- |
-| `theme:ai_compute` | `kpl_concept_cons` | `AI硬件` | AI硬件 | 0.8 |
-| `theme:optical_module` | `dc_concept` | `BKxxxx` | CPO 概念 | 0.9 |
-| `theme:optical_module` | `ths_index` | `885xxx.TI` | 光通信 | 0.9 |
+| `theme:auto:...` | `kpl_list` | `AI硬件` | AI硬件 | 1.0 |
+| `theme:auto:...` | `dc_concept` | `BKxxxx` | CPO 概念 | 1.0 |
+| `theme:auto:...` | `dc_concept_cons` | `通信设备` | 通信设备 | 1.0 |
 
 `stock_theme_memberships`：股票和归一主题关系。
 
@@ -782,7 +759,7 @@ CREATE TABLE stock_theme_memberships (
   theme_id TEXT NOT NULL,
   ts_code TEXT NOT NULL,
   stock_name TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'unknown',  -- core / elastic / follower / old_consensus / unknown
+  role TEXT NOT NULL DEFAULT 'unknown',  -- core / elastic / unknown
   confidence REAL NOT NULL DEFAULT 0.5,
   source_count INTEGER NOT NULL DEFAULT 0,
   sources_json TEXT NOT NULL DEFAULT '[]',
@@ -799,30 +776,8 @@ CREATE TABLE stock_theme_memberships (
 
 | theme_id | ts_code | stock_name | role | source_count | reasons_json |
 | --- | --- | --- | --- | ---: | --- |
-| `theme:ai_compute` | `300394.SZ` | 天孚通信 | core | 2 | `["KPL: AI硬件", "消息证据: 光通信/AI 硬件"]` |
-| `theme:lithium_old_chain` | `002812.SZ` | 恩捷股份 | old_consensus | 1 | `["人工 override: 新能源旧主线"]` |
-
-`stock_theme_overrides`：少量人工纠偏。
-
-```sql
-CREATE TABLE stock_theme_overrides (
-  ts_code TEXT NOT NULL,
-  theme_id TEXT NOT NULL,
-  action TEXT NOT NULL,           -- add / remove / prefer / set_role
-  role TEXT,
-  reason TEXT NOT NULL,
-  updated_by TEXT,
-  updated_at TEXT NOT NULL,
-  PRIMARY KEY (ts_code, theme_id, action)
-);
-```
-
-例子：
-
-| ts_code | theme_id | action | role | reason |
-| --- | --- | --- | --- | --- |
-| `002812.SZ` | `theme:lithium_old_chain` | add | old_consensus | 自动概念覆盖不足，人工补充旧主线属性 |
-| `300394.SZ` | `theme:ai_compute` | prefer | core | 多主题归属时，当前主线优先选择 AI 算力/光通信 |
+| `theme:auto:...` | `300394.SZ` | 天孚通信 | elastic | 2 | `["dc_concept:CPO概念: 光模块", "kpl_list:AI硬件"]` |
+| `theme:auto:...` | `002812.SZ` | 恩捷股份 | unknown | 1 | `["dc_concept:锂电池"]` |
 
 #### 第二阶段的最小验收
 
@@ -831,9 +786,9 @@ CREATE TABLE stock_theme_overrides (
 验收标准可以这样定：
 
 1. 50 个案例里，自动主题覆盖率达到 80% 以上。
-2. 未覆盖的股票进入“待纠偏列表”。
+2. 未覆盖的股票进入“待补数据列表”。
 3. 一只股票能展示所有主题候选，而不是只展示一个标签。
-4. 能标出当前主叙事：自动高置信或人工 prefer。
+4. 只能在自动高置信时给当前主叙事候选，否则明确显示 unknown。
 5. 能按主题拉出成员股，计算主题内 5 日 / 20 日强弱。
 6. 个股详情页能解释：
 
@@ -842,7 +797,7 @@ CREATE TABLE stock_theme_overrides (
 当前主叙事是哪条；
 它在主题里强不强；
 主题归属来自哪个数据源；
-有没有人工纠偏。
+自动置信度和缺口是什么。
 ```
 
 ### 第 3 阶段：接入资金和行业数据
@@ -894,7 +849,7 @@ P0 完成不看“模型准不准”，看这几件事：
    - 消息强但市场不认。
    - 市场刚确认。
    - 已充分定价或定价后回撤。
-4. 对已有自动主题归属或人工 override 的股票，能显示主题内强弱。
+4. 对已有自动主题归属的股票，能显示主题内强弱。
 5. 用户看到一只股票后，至少少查 3 类外部资料：
    - 同板块谁更强。
    - 成交额有没有放大。

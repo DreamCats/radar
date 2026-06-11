@@ -13,6 +13,7 @@ from radar.core.market_anchors import (
     RefreshMarketAnchorDerivativesResult,
     RefreshMarketAnchorsResult,
 )
+from radar.core.market_themes import RefreshMarketThemeNormalizationResult
 from radar.core.store import connect, init_db, upsert_messages
 from radar.core.usecases import ClassifyRangeResult, IngestRangeResult, SmokeResult
 
@@ -526,6 +527,53 @@ def test_market_anchor_rebuild_derived_command_invokes_core(monkeypatch, tmp_pat
     assert result.exit_code == 0
     assert "market/anchors/derived: latest_trade_date=20260605 current=10 spans=8" in result.output
     assert calls == [{"market_database": tmp_path / "data" / "market.sqlite3"}]
+
+
+def test_market_themes_rebuild_command_invokes_core(monkeypatch, tmp_path):
+    config_dir = _config_dir(tmp_path)
+    calls: list[dict] = []
+
+    def fake_rebuild(config, *, rebuild_anchor_derivatives=True):
+        calls.append(
+            {
+                "market_database": config.market_database_path,
+                "rebuild_anchor_derivatives": rebuild_anchor_derivatives,
+            }
+        )
+        return RefreshMarketThemeNormalizationResult(
+            latest_trade_date="20260605",
+            theme_count=5,
+            source_link_count=8,
+            membership_count=12,
+            current_stock_count=10,
+            covered_stock_count=9,
+            coverage_ratio=0.9,
+            ambiguous_stock_count=1,
+        )
+
+    monkeypatch.setattr("radar.cli.market.refresh_market_theme_normalization", fake_rebuild)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "--config-dir",
+            str(config_dir),
+            "market",
+            "themes",
+            "rebuild",
+            "--skip-anchor-derived",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "market/themes: latest_trade_date=20260605 themes=5 links=8 memberships=12" in result.output
+    assert "covered=9/10 coverage=90.0% ambiguous=1" in result.output
+    assert calls == [
+        {
+            "market_database": tmp_path / "data" / "market.sqlite3",
+            "rebuild_anchor_derivatives": False,
+        }
+    ]
 
 
 def test_dashboard_command_starts_uvicorn(monkeypatch, tmp_path):

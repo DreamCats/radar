@@ -492,6 +492,62 @@ MARKET_MIGRATIONS: list[Migration] = [
             ON market_anchor_member_spans(anchor_key, last_seen_date);
         """,
     ),
+    (
+        "004_market_theme_normalization",
+        """
+        CREATE TABLE IF NOT EXISTS theme_nodes (
+            theme_id            TEXT PRIMARY KEY,
+            theme_name          TEXT NOT NULL,
+            theme_type          TEXT NOT NULL,
+            parent_theme_id     TEXT,
+            aliases_json        TEXT NOT NULL DEFAULT '[]',
+            policy_tags_json    TEXT NOT NULL DEFAULT '[]',
+            status              TEXT NOT NULL DEFAULT 'active',
+            created_at          TEXT NOT NULL,
+            updated_at          TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_theme_nodes_type
+            ON theme_nodes(theme_type, status);
+
+        CREATE TABLE IF NOT EXISTS theme_source_links (
+            theme_id            TEXT NOT NULL,
+            source              TEXT NOT NULL,
+            source_code         TEXT NOT NULL,
+            source_name         TEXT NOT NULL,
+            source_anchor_type  TEXT NOT NULL,
+            confidence          REAL NOT NULL DEFAULT 1.0,
+            first_seen_date     TEXT NOT NULL,
+            last_seen_date      TEXT NOT NULL,
+            updated_at          TEXT NOT NULL,
+            PRIMARY KEY (source, source_code, source_anchor_type, theme_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_theme_source_links_theme
+            ON theme_source_links(theme_id, last_seen_date);
+
+        CREATE TABLE IF NOT EXISTS stock_theme_memberships (
+            theme_id            TEXT NOT NULL,
+            ts_code             TEXT NOT NULL,
+            stock_name          TEXT NOT NULL,
+            role                TEXT NOT NULL DEFAULT 'unknown',
+            confidence          REAL NOT NULL DEFAULT 0.5,
+            source_count        INTEGER NOT NULL DEFAULT 0,
+            sources_json        TEXT NOT NULL DEFAULT '[]',
+            reasons_json        TEXT NOT NULL DEFAULT '[]',
+            first_seen_date     TEXT NOT NULL,
+            last_seen_date      TEXT NOT NULL,
+            latest_trade_date   TEXT NOT NULL,
+            updated_at          TEXT NOT NULL,
+            PRIMARY KEY (theme_id, ts_code)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_stock_theme_memberships_stock
+            ON stock_theme_memberships(ts_code, latest_trade_date);
+        CREATE INDEX IF NOT EXISTS idx_stock_theme_memberships_theme
+            ON stock_theme_memberships(theme_id, latest_trade_date, confidence);
+        """,
+    ),
 ]
 
 

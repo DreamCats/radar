@@ -795,6 +795,7 @@ def test_anchor_jobs_endpoint_updates_market_anchors_and_reuses_running_job(monk
 def test_anchor_jobs_endpoint_records_resolved_trade_date(monkeypatch, tmp_path):
     config = _config(tmp_path)
     derivative_calls: list[Path] = []
+    theme_calls: list[Path] = []
     monkeypatch.setattr(
         "radar.web.server.market_anchor_jobs.ensure_market_anchors",
         lambda *args, **kwargs: SimpleNamespace(
@@ -811,6 +812,20 @@ def test_anchor_jobs_endpoint_records_resolved_trade_date(monkeypatch, tmp_path)
         "radar.web.server.market_anchor_jobs.refresh_market_anchor_derivatives",
         lambda config: derivative_calls.append(config.market_database_path)
         or SimpleNamespace(latest_trade_date="20260605", current_count=10, span_count=8),
+    )
+    monkeypatch.setattr(
+        "radar.web.server.market_anchor_jobs.refresh_market_theme_normalization",
+        lambda config, *, rebuild_anchor_derivatives=True: theme_calls.append(config.market_database_path)
+        or SimpleNamespace(
+            latest_trade_date="20260605",
+            theme_count=5,
+            source_link_count=8,
+            membership_count=12,
+            current_stock_count=10,
+            covered_stock_count=9,
+            coverage_ratio=0.9,
+            ambiguous_stock_count=1,
+        ),
     )
 
     client = TestClient(create_app(config))
@@ -830,7 +845,11 @@ def test_anchor_jobs_endpoint_records_resolved_trade_date(monkeypatch, tmp_path)
     assert run.metadata["derived_latest_trade_date"] == "20260605"
     assert run.metadata["derived_current_count"] == 10
     assert run.metadata["derived_span_count"] == 8
+    assert run.metadata["theme_count"] == 5
+    assert run.metadata["theme_membership_count"] == 12
+    assert run.metadata["theme_coverage_ratio"] == 0.9
     assert derivative_calls == [config.market_database_path]
+    assert theme_calls == [config.market_database_path]
 
 
 def test_aggregate_refine_endpoints_are_removed(tmp_path):

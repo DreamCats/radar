@@ -356,6 +356,9 @@ def _replace_sources(
             ],
         )
         _rebuild_market_anchor_derivatives(conn)
+        from radar.core.market_themes import rebuild_market_theme_normalization_from_conn
+
+        rebuild_market_theme_normalization_from_conn(conn, commit=False)
         conn.commit()
 
 
