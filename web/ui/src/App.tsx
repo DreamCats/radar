@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Activity, BarChart3, Database, Layers3, ListOrdered, MessageCircle, RadioTower, Search } from "lucide-react";
-import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
@@ -23,20 +23,6 @@ const NAV_ITEMS = [
 export function App() {
   const [tab, setTab] = useState<TabKey>("dashboard");
   const shouldReduceMotion = useReducedMotion();
-
-  const pageMotion = shouldReduceMotion
-    ? {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 },
-        transition: { duration: 0.12 },
-      }
-    : {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 },
-        transition: { duration: 0.24, ease: [0.16, 1, 0.3, 1] as const },
-      };
 
   return (
     <main className="app workspace-shell">
@@ -90,16 +76,14 @@ export function App() {
       </aside>
       <section className="main workspace-main">
         <div className="content">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div className="page-motion" key={tab} {...pageMotion}>
-              {tab === "dashboard" && <DashboardPage />}
-              {tab === "wechat" && <WechatPage />}
-              {tab === "organize" && <OrganizePage />}
-              {tab === "leaderboard" && <LeaderboardPage />}
-              {tab === "strategy" && <StrategyPage />}
-              {tab === "ingest" && <IngestPage />}
-            </motion.div>
-          </AnimatePresence>
+          <div className="page-motion">
+            {tab === "dashboard" && <DashboardPage />}
+            {tab === "wechat" && <WechatPage />}
+            {tab === "organize" && <OrganizePage />}
+            {tab === "leaderboard" && <LeaderboardPage />}
+            {tab === "strategy" && <StrategyPage />}
+            {tab === "ingest" && <IngestPage />}
+          </div>
         </div>
       </section>
     </main>
