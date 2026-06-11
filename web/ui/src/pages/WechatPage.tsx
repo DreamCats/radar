@@ -44,6 +44,7 @@ export function WechatPage() {
   const [senderQuery, setSenderQuery] = useState("");
   const [threadKeyword, setThreadKeyword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [groupNamesLoading, setGroupNamesLoading] = useState(false);
   const [threadLoading, setThreadLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [threadError, setThreadError] = useState<string | null>(null);
@@ -78,9 +79,27 @@ export function WechatPage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    setGroupNamesLoading(true);
     void fetchMessageGroups({ source: query.source, limit: 200 })
-      .then((groups) => setGroupNames(groups.map((item) => item.group_name).filter((name) => !isSelfName(name))))
-      .catch(() => setGroupNames([]));
+      .then((groups) => {
+        if (!cancelled) {
+          setGroupNames(groups.map((item) => item.group_name).filter((name) => !isSelfName(name)));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGroupNames([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setGroupNamesLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [query.source]);
 
   useEffect(() => {
@@ -170,6 +189,7 @@ export function WechatPage() {
     <section className="wechat-page">
       <WechatFilters
         groupNames={groupNames}
+        groupNamesLoading={groupNamesLoading}
         loading={loading}
         query={query}
         onChange={setQuery}
@@ -221,6 +241,11 @@ export function WechatPage() {
                   </motion.button>
                 ))}
             </AnimatePresence>
+            {loading && conversations.length > 0 && (
+              <div className="wechat-list-refresh" role="status" aria-live="polite">
+                正在刷新会话
+              </div>
+            )}
             {!loading && conversations.length === 0 && <p className="empty-line">暂无数据</p>}
           </div>
           <div className="wechat-pager">
@@ -296,6 +321,7 @@ export function WechatPage() {
                   </button>
                 )}
                 {threadError && <p className="error-line">{threadError}</p>}
+                {threadLoading && threadItems.length === 0 && <p className="empty-line">正在加载消息。</p>}
                 {filteredThreadItems.map((item) => (
                   <article className="wechat-bubble-row" key={item.message_id}>
                     <Avatar name={displayName(item)} small />

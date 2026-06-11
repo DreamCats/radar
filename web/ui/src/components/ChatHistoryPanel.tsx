@@ -14,6 +14,7 @@ type SessionMenuState = {
 type ChatHistoryPanelProps = {
   activeSessionId: string | null;
   loading: boolean;
+  sessionAction: { label: string; sessionId: string } | null;
   sessions: ChatSessionItem[];
   onCopySessionContent: (sessionId: string) => void;
   onCopySessionId: (sessionId: string) => void;
@@ -60,8 +61,8 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
     <aside className="chat-history-panel" aria-label="历史对话">
       <div className="chat-history-head">
         <strong>历史对话</strong>
-        <button className="chat-history-refresh" type="button" onClick={props.onRefresh}>
-          刷新
+        <button className="chat-history-refresh" type="button" onClick={props.onRefresh} disabled={props.loading}>
+          {props.loading ? "刷新中" : "刷新"}
         </button>
       </div>
       <button className="chat-history-new" type="button" onClick={props.onNewSession}>
@@ -71,21 +72,25 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
       <div className="chat-history-list">
         {props.loading && props.sessions.length === 0 ? <p className="empty-line">加载中</p> : null}
         {!props.loading && props.sessions.length === 0 ? <p className="empty-line">暂无历史</p> : null}
-        {props.sessions.map((session) => (
-          <button
-            className={session.session_id === props.activeSessionId ? "chat-history-item active" : "chat-history-item"}
-            key={session.session_id}
-            type="button"
-            onClick={() => props.onRestore(session.session_id)}
-            onContextMenu={(event) => openMenu(event, session)}
-          >
-            <strong>{session.title || "未命名对话"}</strong>
-            <span>{session.preview || "暂无内容"}</span>
-            <em>
-              {formatSessionTime(session.updated_at)} · {session.message_count} 条
-            </em>
-          </button>
-        ))}
+        {props.sessions.map((session) => {
+          const actionLabel = props.sessionAction?.sessionId === session.session_id ? props.sessionAction.label : null;
+          return (
+            <button
+              className={session.session_id === props.activeSessionId ? "chat-history-item active" : "chat-history-item"}
+              disabled={Boolean(actionLabel)}
+              key={session.session_id}
+              type="button"
+              onClick={() => props.onRestore(session.session_id)}
+              onContextMenu={(event) => openMenu(event, session)}
+            >
+              <strong>{session.title || "未命名对话"}</strong>
+              <span>{actionLabel ?? session.preview ?? "暂无内容"}</span>
+              <em>
+                {formatSessionTime(session.updated_at)} · {session.message_count} 条
+              </em>
+            </button>
+          );
+        })}
       </div>
       {menu ? (
         <>

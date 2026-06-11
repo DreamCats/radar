@@ -17,6 +17,63 @@
   min-width: 0;
 }
 
+.message-group-control {
+  position: relative;
+}
+
+.message-group-control input {
+  padding-right: 24px;
+}
+
+.message-group-caret {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid var(--color-ink-tertiary);
+  border-bottom: 1px solid var(--color-ink-tertiary);
+  pointer-events: none;
+  transform: translateY(-65%) rotate(45deg);
+}
+
+.message-group-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  display: grid;
+  max-height: 240px;
+  overflow: auto;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface-2) 96%, black);
+  box-shadow: 0 16px 36px rgb(0 0 0 / 0.32);
+  padding: 6px;
+}
+
+.message-group-option,
+.message-group-empty {
+  min-width: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink-muted);
+  padding: 7px 8px;
+  text-align: left;
+  font-size: 12px;
+}
+
+.message-group-option {
+  cursor: pointer;
+}
+
+.message-group-option:hover {
+  background: var(--color-surface-3);
+  color: var(--color-ink);
+}
+
 .wechat-workspace {
   display: grid;
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
@@ -72,6 +129,7 @@
 }
 
 .wechat-conversation-list {
+  position: relative;
   min-height: 0;
   overflow: auto;
 }
@@ -228,6 +286,21 @@
 
 .wechat-conversation-meta {
   color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.wechat-list-refresh {
+  position: sticky;
+  bottom: 10px;
+  z-index: 2;
+  width: fit-content;
+  margin: 10px auto;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-surface-2) 92%, black);
+  color: var(--color-ink-muted);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.22);
+  padding: 5px 10px;
   font-size: 12px;
 }
 

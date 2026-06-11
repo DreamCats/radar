@@ -28,6 +28,11 @@
   padding: 3px 0;
 }
 
+.chat-history-refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .chat-history-new,
 .chat-history-item {
   width: 100%;
@@ -67,6 +72,15 @@
 .chat-history-item.active {
   border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-hairline));
   background: var(--color-surface-3);
+}
+
+.chat-history-item:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.chat-history-item:disabled span {
+  color: var(--color-primary);
 }
 
 .chat-history-item strong,

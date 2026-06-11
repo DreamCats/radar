@@ -30,6 +30,7 @@ export type ChatController = {
   messagesEndRef: RefObject<HTMLDivElement | null>;
   modelOptions: ChatModelOption[];
   selectedProviderName: string | null;
+  sessionAction: { label: string; sessionId: string } | null;
   sending: boolean;
   sessions: ChatSessionItem[];
   visibleContext: ChatContextItem[];

@@ -56,6 +56,7 @@ export function OverviewChatWorkspace(props: OverviewChatWorkspaceProps) {
           <ChatHistoryPanel
             activeSessionId={controller.activeSessionId}
             loading={controller.loadingSessions}
+            sessionAction={controller.sessionAction}
             sessions={controller.sessions}
             onNewSession={controller.startNewSession}
             onCopySessionContent={(nextSessionId) => void controller.copySessionContent(nextSessionId)}

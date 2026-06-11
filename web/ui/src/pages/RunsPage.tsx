@@ -8,14 +8,18 @@ import type { RunItem } from "../types";
 
 export function RunsPage() {
   const [runs, setRuns] = useState<RunItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function refresh() {
+    setLoading(true);
     setError(null);
     try {
       setRuns(await fetchRuns());
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -25,10 +29,10 @@ export function RunsPage() {
 
   return (
     <section className="content-panel panel full runs-panel">
-      <PanelTitle title="最近运行" meta={`${runs.length} 条`}>
-        <button className="btn btn-sm" type="button" onClick={() => void refresh()} title="刷新">
+      <PanelTitle title="最近运行" meta={loading ? "加载中" : `${runs.length} 条`}>
+        <button className="btn btn-sm" type="button" onClick={() => void refresh()} disabled={loading} title="刷新">
           <RefreshCw size={16} />
-          刷新
+          {loading ? "刷新中" : "刷新"}
         </button>
       </PanelTitle>
       {error && <p className="error-line">{error}</p>}
@@ -36,7 +40,7 @@ export function RunsPage() {
         {runs.map((run) => (
           <RunRow key={run.run_id} run={run} />
         ))}
-        {runs.length === 0 && <p className="empty-line">暂无运行记录</p>}
+        {runs.length === 0 && <p className="empty-line">{loading ? "正在加载运行记录。" : "暂无运行记录"}</p>}
       </div>
     </section>
   );

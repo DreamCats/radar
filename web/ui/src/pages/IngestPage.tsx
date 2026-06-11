@@ -50,6 +50,7 @@ export function IngestPage() {
   const [force, setForce] = useState(false);
   const [trackedJobs, setTrackedJobs] = useState<TrackedJob[]>([]);
   const [runs, setRuns] = useState<RunItem[]>([]);
+  const [runsLoading, setRunsLoading] = useState(false);
   const [lifecyclePreview, setLifecyclePreview] = useState<LifecycleDigestPreview | null>(null);
   const [lifecyclePreviewLoading, setLifecyclePreviewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -132,6 +133,7 @@ export function IngestPage() {
   }, [force, selectedJob]);
 
   async function refreshRunsAndResults(): Promise<boolean> {
+    setRunsLoading(true);
     setError(null);
     try {
       const [runItems, runningItems] = await Promise.all([
@@ -145,12 +147,14 @@ export function IngestPage() {
       const restoredJobs = mergeTrackedJobs(restoredRunningJobs, restoredRecentJobs);
       if (restoredJobs.length > 0) {
         const knownRunIds = new Set(mergedRuns.map((item) => item.run_id));
-          setTrackedJobs((current) => mergeTrackedJobs(restoredJobs, current.filter((item) => knownRunIds.has(item.run_id))));
+        setTrackedJobs((current) => mergeTrackedJobs(restoredJobs, current.filter((item) => knownRunIds.has(item.run_id))));
       }
       return runningItems.length > 0;
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载作业数据失败");
       return false;
+    } finally {
+      setRunsLoading(false);
     }
   }
 
@@ -347,15 +351,15 @@ export function IngestPage() {
         </section>
 
         <aside className="content-panel job-queue-panel">
-          <PanelTitle title="运行历史" meta={`${runningCount} 运行中`} />
+          <PanelTitle title="运行历史" meta={runsLoading ? "同步中" : `${runningCount} 运行中`} />
           <div className="job-queue-summary">
             <span>{finishedCount} 已结束</span>
-            <button className="btn btn-sm" type="button" onClick={() => void refreshRunsAndResults()}>
-              刷新
+            <button className="btn btn-sm" type="button" onClick={() => void refreshRunsAndResults()} disabled={runsLoading}>
+              {runsLoading ? "同步中" : "刷新"}
             </button>
           </div>
           <div className="job-list compact">
-            {rows.length === 0 && <p className="empty-line">暂无历史作业。</p>}
+            {rows.length === 0 && <p className="empty-line">{runsLoading ? "正在加载历史作业。" : "暂无历史作业。"}</p>}
             <AnimatePresence initial={false}>
               {rows.slice(0, 8).map(({ job, run }) => (
                 <motion.div

@@ -1,7 +1,7 @@
-type LoadingVariant = "dashboard" | "strategy";
+type LoadingVariant = "dashboard" | "strategy" | "organize";
 
 export function PageLoadingState(props: { label: string; variant: LoadingVariant }) {
-  const chartCount = props.variant === "dashboard" ? 7 : 3;
+  const chartCount = props.variant === "dashboard" ? 7 : props.variant === "organize" ? 4 : 3;
   return (
     <div className={`page-loading-state page-loading-${props.variant}`} role="status" aria-live="polite">
       <LoadingPill label={props.label} />

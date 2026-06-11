@@ -7,6 +7,7 @@ import type { MessageConversationQuery } from "../types";
 
 export function WechatFilters(props: {
   groupNames: string[];
+  groupNamesLoading: boolean;
   loading: boolean;
   query: MessageConversationQuery;
   onChange: (query: MessageConversationQuery) => void;
@@ -42,6 +43,7 @@ export function WechatFilters(props: {
       <GroupNameField
         groups={props.groupNames}
         label={nameLabel}
+        loading={props.groupNamesLoading}
         value={props.query.group_name ?? ""}
         onChange={(value) => props.onChange({ ...props.query, group_name: value })}
       />
@@ -65,6 +67,7 @@ export function Avatar({ name, small = false }: { name: string; small?: boolean 
 function GroupNameField(props: {
   groups: string[];
   label: string;
+  loading: boolean;
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -77,7 +80,7 @@ function GroupNameField(props: {
       : props.groups;
     return matched.slice(0, 40);
   }, [props.groups, props.value]);
-  const shouldShow = open && props.groups.length > 0;
+  const shouldShow = open && (props.loading || props.groups.length > 0);
 
   return (
     <div className="field message-group-field">
@@ -103,7 +106,9 @@ function GroupNameField(props: {
         <span className="message-group-caret" aria-hidden="true" />
         {shouldShow && (
           <div className="message-group-menu" onMouseDown={(event) => event.preventDefault()}>
-            {options.length > 0 ? (
+            {props.loading ? (
+              <span className="message-group-empty">正在加载{props.label}</span>
+            ) : options.length > 0 ? (
               options.map((name) => (
                 <button
                   className="message-group-option"

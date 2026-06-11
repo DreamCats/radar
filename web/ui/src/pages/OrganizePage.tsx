@@ -7,6 +7,7 @@ import {
 } from "../api/radarApi";
 import { DateField, SelectField } from "../components/FormFields";
 import { OrganizeClassificationView } from "../components/OrganizeClassificationView";
+import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
 import { toIso } from "../lib/datetime";
 import { buildPresetRange, rangeLabel, RANGE_PRESETS, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
@@ -43,6 +44,7 @@ export function OrganizePage() {
   const [page, setPage] = useState<OrganizeClassificationPage>(emptyPage);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [loadingMoreCategory, setLoadingMoreCategory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [evidenceError, setEvidenceError] = useState<string | null>(null);
@@ -80,6 +82,7 @@ export function OrganizePage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "整理结果加载失败");
     } finally {
+      setHasLoaded(true);
       setLoading(false);
     }
   }
@@ -96,6 +99,7 @@ export function OrganizePage() {
   const researchCount = countByCategory(page.clusters, "research");
   const hasMoreEvidence = selected ? selected.evidence.length < selected.count : false;
   const loadingMore = Boolean(selected && loadingMoreCategory === selected.category);
+  const initialLoading = loading && !hasLoaded;
   const metrics = [
     ["有效消息", page.summary.total_count, "高置信"],
     ["投资推荐", recommendationCount, "可行动"],
@@ -229,23 +233,30 @@ export function OrganizePage() {
       </form>
 
       {error && <p className="error-line">{error}</p>}
+      {loading && hasLoaded ? <PageRefreshProgress label="正在刷新整理结果" /> : null}
 
-      <div className="organize-metrics">
-        {metrics.map(([label, value, detail]) => (
-          <Metric detail={String(detail)} key={String(label)} label={String(label)} value={value} />
-        ))}
-      </div>
+      {initialLoading ? (
+        <PageLoadingState label="正在加载整理结果" variant="organize" />
+      ) : (
+        <>
+          <div className="organize-metrics">
+            {metrics.map(([label, value, detail]) => (
+              <Metric detail={String(detail)} key={String(label)} label={String(label)} value={value} />
+            ))}
+          </div>
 
-      <OrganizeClassificationView
-        evidenceError={evidenceError}
-        hasMoreEvidence={hasMoreEvidence}
-        loading={loading}
-        loadingMore={loadingMore}
-        page={page}
-        selected={selected}
-        onEvidenceScroll={handleEvidenceScroll}
-        onSelect={setSelectedCategory}
-      />
+          <OrganizeClassificationView
+            evidenceError={evidenceError}
+            hasMoreEvidence={hasMoreEvidence}
+            loading={loading}
+            loadingMore={loadingMore}
+            page={page}
+            selected={selected}
+            onEvidenceScroll={handleEvidenceScroll}
+            onSelect={setSelectedCategory}
+          />
+        </>
+      )}
     </section>
   );
 }

@@ -27,6 +27,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   const [selectedProviderName, setSelectedProviderName] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [sessionAction, setSessionAction] = useState<{ label: string; sessionId: string } | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -372,6 +373,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   }
 
   async function restoreSession(nextSessionId: string) {
+    setSessionAction({ sessionId: nextSessionId, label: "打开中" });
     try {
       const data = await fetchChatSession(nextSessionId);
       setBottomFollowMode(true);
@@ -384,6 +386,8 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     } catch (err) {
       clearActiveSessionId();
       setError(err instanceof Error ? err.message : "恢复对话失败");
+    } finally {
+      setSessionAction((current) => (current?.sessionId === nextSessionId ? null : current));
     }
   }
 
@@ -400,34 +404,44 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   }
 
   async function copySessionId(nextSessionId: string) {
+    setSessionAction({ sessionId: nextSessionId, label: "复制中" });
     try {
       await copyText(nextSessionId);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "复制失败");
+    } finally {
+      setSessionAction((current) => (current?.sessionId === nextSessionId ? null : current));
     }
   }
 
   async function copySessionTitle(session: ChatSessionItem) {
+    setSessionAction({ sessionId: session.session_id, label: "复制中" });
     try {
       await copyText(session.title?.trim() || "未命名对话");
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "复制失败");
+    } finally {
+      setSessionAction((current) => (current?.sessionId === session.session_id ? null : current));
     }
   }
 
   async function copySessionContent(nextSessionId: string) {
+    setSessionAction({ sessionId: nextSessionId, label: "复制内容中" });
     try {
       const data = await fetchChatSession(nextSessionId);
       await copyText(formatChatTranscript(data));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "复制内容失败");
+    } finally {
+      setSessionAction((current) => (current?.sessionId === nextSessionId ? null : current));
     }
   }
 
   async function removeSession(nextSessionId: string) {
+    setSessionAction({ sessionId: nextSessionId, label: "删除中" });
     try {
       if (nextSessionId === sessionId) abortControllerRef.current?.abort();
       await deleteChatSession(nextSessionId);
@@ -442,6 +456,8 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "删除对话失败");
+    } finally {
+      setSessionAction((current) => (current?.sessionId === nextSessionId ? null : current));
     }
   }
 
@@ -458,6 +474,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     messagesEndRef,
     modelOptions,
     selectedProviderName,
+    sessionAction,
     sending,
     sessions,
     visibleContext,
