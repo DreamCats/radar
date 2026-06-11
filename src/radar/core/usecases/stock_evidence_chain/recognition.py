@@ -11,12 +11,15 @@ from pydantic import BaseModel, Field
 
 from radar.core.config import RadarConfig
 from radar.core.db import migrate_market_db
+from radar.core.usecases.stock_evidence_chain.theme_quality import (
+    apply_theme_quality,
+    is_primary_theme_candidate,
+    theme_missing_summary,
+    theme_sort_key,
+)
 
 MAX_THEMES_PER_STOCK = 8
 MAX_RANKABLE_THEME_MEMBERS = 350
-
-ROLE_PRIORITY = {"core": 3, "elastic": 2, "unknown": 1}
-TYPE_PRIORITY = {"theme": 4, "concept": 3, "industry": 2, "stock": 1}
 
 
 class StockEvidenceThemeContext(BaseModel):
@@ -39,6 +42,11 @@ class StockEvidenceThemeContext(BaseModel):
     theme_return_median_5d: float | None = None
     is_theme_leader: bool = False
     is_theme_laggard: bool = False
+    is_broad_theme: bool = False
+    quality_score: float = 0.0
+    quality_label: str = "待确认"
+    quality_reasons: list[str] = Field(default_factory=list)
+    quality_warnings: list[str] = Field(default_factory=list)
     missing_evidence: list[str] = Field(default_factory=list)
 
 
@@ -72,12 +80,13 @@ def load_stock_theme_contexts(
             return {}
         selected = _select_memberships(raw)
         _attach_theme_rank_context(conn, selected, as_of=as_of)
+        apply_theme_quality(selected, as_of=as_of)
         return selected
 
 
 def primary_theme(themes: list[StockEvidenceThemeContext]) -> StockEvidenceThemeContext | None:
-    for item in themes:
-        if item.role in {"core", "elastic"} and (item.source_count >= 2 or item.confidence >= 0.78):
+    for item in sorted(themes, key=theme_sort_key):
+        if is_primary_theme_candidate(item):
             return item
     return None
 
@@ -93,11 +102,13 @@ def build_recognition_context(
     reasons: list[str] = []
     primary = primary_theme(themes)
     if not themes:
-        missing.append("缺主题归属，无法判断是否处在市场主线里")
+        missing.append(theme_missing_summary(themes))
     elif primary is None:
-        missing.append("主题候选较多或置信不足，主叙事暂不确定")
+        missing.append(theme_missing_summary(themes))
     else:
-        reasons.append(f"主叙事候选：{primary.theme_name}（{primary.role}，{primary.source_count} 个来源）")
+        reasons.append(
+            f"主叙事候选：{primary.theme_name}（{primary.quality_label}，{primary.source_count} 个来源）"
+        )
 
     return_since_first = _float(market_summary.get("return_since_first_point"))
     drawdown = _float(market_summary.get("drawdown_from_selected_high"))
@@ -217,13 +228,7 @@ def _select_memberships(
 
 
 def _theme_sort_key(item: StockEvidenceThemeContext) -> tuple[int, int, float, int, str]:
-    return (
-        -ROLE_PRIORITY.get(item.role, 0),
-        -item.source_count,
-        -item.confidence,
-        -TYPE_PRIORITY.get(item.theme_type, 0),
-        item.theme_name,
-    )
+    return theme_sort_key(item)
 
 
 def _attach_theme_rank_context(

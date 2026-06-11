@@ -18,6 +18,7 @@ import "./organize.css";
 import "./organize-responsive.css";
 import "./strategy-evidence-chain.css";
 import "./strategy-evidence-detail.css";
+import "./strategy-evidence-theme-quality.css";
 import "./strategy-stock-chart.css";
 import "./strategy-stock-drawer.css";
 import "./wechat.css";

@@ -49,6 +49,11 @@ export type StockEvidenceThemeContext = {
   theme_return_median_5d?: number | null;
   is_theme_leader: boolean;
   is_theme_laggard: boolean;
+  is_broad_theme: boolean;
+  quality_score: number;
+  quality_label: string;
+  quality_reasons: string[];
+  quality_warnings: string[];
   missing_evidence: string[];
 };
 

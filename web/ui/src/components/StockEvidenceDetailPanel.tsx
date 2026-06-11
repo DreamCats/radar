@@ -3,16 +3,15 @@ import {
   FileText,
   Gauge,
   MessageSquareText,
-  Network,
   Route,
   TrendingUp,
-  Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { StockEvidenceChainItem, StockEvidenceMarketPoint } from "../types";
 import { ChatLauncher } from "./ChatLauncher";
 import { StockEvidenceLifecycleDigest } from "./StockEvidenceLifecycleDigest";
+import { StockEvidenceThemeEvidence } from "./StockEvidenceThemeEvidence";
 
 type Props = {
   item: StockEvidenceChainItem | null;
@@ -28,7 +27,7 @@ export function StockEvidenceDetailPanel({ item, onOpenChart }: Props) {
       <DetailHeader item={item} onOpenChart={onOpenChart} />
       <VerdictCard item={item} />
       <MessageEvidence item={item} />
-      <ThemeEvidence item={item} />
+      <StockEvidenceThemeEvidence item={item} />
       <MarketRecognition item={item} />
       <RiskEvidence item={item} />
       <StockEvidenceLifecycleDigest item={item} />
@@ -126,42 +125,6 @@ function MessageEvidence({ item }: { item: StockEvidenceChainItem }) {
       </div>
       <FamilyChips counts={item.family_counts} />
       <DetailList items={item.why} empty="暂未形成清晰阶段依据。" />
-    </EvidenceCard>
-  );
-}
-
-function ThemeEvidence({ item }: { item: StockEvidenceChainItem }) {
-  const theme = item.primary_theme ?? item.themes[0] ?? null;
-  return (
-    <EvidenceCard
-      icon={<Network size={15} />}
-      title="是不是主线"
-      question="它属于什么主题，在主题里是核心还是边缘。"
-      tone="theme"
-    >
-      {theme ? (
-        <>
-          <div className="stock-evidence-theme-primary">
-            <strong>{theme.theme_name}</strong>
-            <span>{typeLabel(theme.theme_type)}</span>
-            <span>{roleLabel(theme.role)}</span>
-            <span>{theme.source_count} 源</span>
-            {theme.return_rank_5d && theme.member_count && <span>5日强弱 {theme.return_rank_5d}/{theme.member_count}</span>}
-          </div>
-          {!!item.themes.length && (
-            <div className="stock-evidence-theme-list">
-              {item.themes.slice(0, 5).map((candidate) => (
-                <span key={candidate.theme_id}>
-                  {candidate.theme_name}
-                  <small>{roleLabel(candidate.role)}</small>
-                </span>
-              ))}
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="stock-evidence-empty">暂无自动主题归属，先按个股机会观察。</p>
-      )}
     </EvidenceCard>
   );
 }
@@ -405,29 +368,6 @@ function reviewToneClass(tone: StockEvidenceChainItem["review"]["tone"]): string
     return "risk";
   }
   return "unknown";
-}
-
-function roleLabel(role: string): string {
-  if (role === "core") {
-    return "核心";
-  }
-  if (role === "elastic") {
-    return "弹性";
-  }
-  return "待确认";
-}
-
-function typeLabel(type: string): string {
-  if (type === "industry") {
-    return "行业";
-  }
-  if (type === "concept") {
-    return "概念";
-  }
-  if (type === "theme") {
-    return "题材";
-  }
-  return type || "主题";
 }
 
 function familyLabel(value: string): string {

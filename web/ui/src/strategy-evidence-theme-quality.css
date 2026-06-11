@@ -1,0 +1,79 @@
+.stock-evidence-theme-primary {
+  align-items: center;
+}
+
+.stock-evidence-theme-primary > div {
+  display: grid;
+  min-width: min(100%, 190px);
+  gap: 2px;
+  margin-right: 2px;
+}
+
+.stock-evidence-theme-primary > div small {
+  color: var(--stock-copy-soft);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.stock-evidence-theme-primary.uncertain {
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-signal-hot) 6%, transparent);
+}
+
+.stock-evidence-theme-quality {
+  font-weight: 800;
+}
+
+.stock-evidence-theme-quality.strong {
+  border-color: color-mix(in srgb, var(--color-market-up) 40%, var(--color-hairline));
+  color: var(--color-market-up);
+}
+
+.stock-evidence-theme-quality.medium {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 40%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+
+.stock-evidence-theme-quality.weak {
+  color: var(--color-ink-tertiary);
+}
+
+.stock-evidence-theme-quality-notes {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 17px;
+}
+
+.stock-evidence-theme-quality-notes li {
+  color: var(--stock-copy);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.stock-evidence-theme-quality-notes li::marker {
+  color: color-mix(in srgb, var(--color-signal-hot) 62%, var(--color-ink-tertiary));
+}
+
+.stock-evidence-theme-quality-list span {
+  display: grid;
+  max-width: 190px;
+  gap: 2px;
+  align-items: center;
+  border-radius: var(--radius-sm);
+}
+
+.stock-evidence-theme-quality-list span.active {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 46%, var(--color-hairline));
+  background: color-mix(in srgb, var(--color-signal-hot) 8%, var(--color-surface-2));
+}
+
+.stock-evidence-theme-quality-list em {
+  overflow: hidden;
+  color: var(--stock-copy-soft);
+  font-size: 10.5px;
+  font-style: normal;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
