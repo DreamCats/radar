@@ -358,6 +358,58 @@ def test_chat_session_detail_endpoint_restores_messages(tmp_path):
     assert [message["content"] for message in data["messages"]] == ["查风华高科"]
 
 
+def test_chat_session_detail_adds_turn_duration_to_assistant_messages(tmp_path):
+    from radar.core.chat import ChatEvent, ChatMessage, ChatSessionStore
+    from radar.core.chat.events import new_id
+
+    config = _config(tmp_path)
+    store = ChatSessionStore.from_config(config)
+    session = store.create_session(title="耗时")
+    user_message = ChatMessage(
+        message_id=new_id(),
+        role="user",
+        content="看一下今天消息",
+        created_at="2026-06-08T10:00:00",
+    )
+    assistant_message = ChatMessage(
+        message_id=new_id(),
+        role="assistant",
+        content="先看半导体。",
+        created_at="2026-06-08T10:00:04",
+    )
+    store.append_message(session.session_id, user_message)
+    store.append_event(
+        ChatEvent(
+            event_id=new_id(),
+            session_id=session.session_id,
+            type="turn_started",
+            created_at="2026-06-08T10:00:00",
+            payload={"user_message_id": user_message.message_id},
+        )
+    )
+    store.append_message(session.session_id, assistant_message)
+    store.append_event(
+        ChatEvent(
+            event_id=new_id(),
+            session_id=session.session_id,
+            type="turn_completed",
+            created_at="2026-06-08T10:00:04.250000",
+            payload={
+                "user_message_id": user_message.message_id,
+                "assistant_message_id": assistant_message.message_id,
+            },
+        )
+    )
+
+    client = TestClient(create_app(config))
+    response = client.get(f"/api/chat/sessions/{session.session_id}")
+
+    assert response.status_code == 200
+    messages = response.json()["messages"]
+    assert [message["content"] for message in messages] == ["看一下今天消息", "先看半导体。"]
+    assert messages[1]["metadata"]["duration_ms"] == 4250
+
+
 def test_chat_session_detail_marks_interrupted_turn_continuable(tmp_path):
     from radar.core.chat import ChatEvent, ChatMessage, ChatSessionStore
     from radar.core.chat.events import new_id, now_iso

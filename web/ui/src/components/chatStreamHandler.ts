@@ -1,7 +1,14 @@
 import type { Dispatch, SetStateAction } from "react";
 
 import type { ChatMessageItem, ChatStreamEvent } from "../types";
-import { formatToolName, mergeAssistantMetadata, statusForAgentEvent, updateToolActivities } from "./chatHelpers";
+import {
+  completedStatus,
+  durationMsValue,
+  formatToolName,
+  mergeAssistantMetadata,
+  statusForAgentEvent,
+  updateToolActivities,
+} from "./chatHelpers";
 
 type ChatStreamHandlerOptions = {
   assistantDraftId: string;
@@ -21,6 +28,7 @@ export function createChatStreamHandler({
   onFollowUpSuggestion,
 }: ChatStreamHandlerOptions): (event: ChatStreamEvent) => void {
   let assistantRoundClosed = false;
+  let turnStartedAtMs: number | null = null;
 
   return (event) => {
     if (event.type === "session") {
@@ -107,14 +115,29 @@ export function createChatStreamHandler({
     }
 
     const eventType = typeof event.event.type === "string" ? event.event.type : "";
-    const payload = typeof event.event.payload === "object" && event.event.payload ? event.event.payload : {};
+    const payload = typeof event.event.payload === "object" && event.event.payload ? (event.event.payload as Record<string, unknown>) : {};
+    const eventCreatedAtMs = timestampMs(event.event.created_at);
+    if (eventType === "turn_started") {
+      turnStartedAtMs = eventCreatedAtMs ?? Date.now();
+    }
     const toolName = "tool_name" in payload && typeof payload.tool_name === "string" ? payload.tool_name : "";
     const toolCallId = "tool_call_id" in payload && typeof payload.tool_call_id === "string" ? payload.tool_call_id : toolName;
     if (eventType === "turn_completed") {
+      const durationMs = durationMsValue(payload.duration_ms) ?? elapsedDurationMs(turnStartedAtMs, eventCreatedAtMs ?? Date.now());
       clearIdleTimer();
       setMessages((current) =>
         current.map((message) =>
-          message.message_id === assistantDraftId ? { ...message, metadata: { ...message.metadata, status: "已处理", streaming: false } } : message,
+          message.message_id === assistantDraftId
+            ? {
+                ...message,
+                metadata: {
+                  ...message.metadata,
+                  ...(durationMs === null ? {} : { duration_ms: durationMs }),
+                  status: completedStatus(durationMs),
+                  streaming: false,
+                },
+              }
+            : message,
         ),
       );
       return;
@@ -143,6 +166,21 @@ export function createChatStreamHandler({
       scheduleIdleStatus("正在准备查询");
     }
   };
+}
+
+function timestampMs(value: unknown): number | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function elapsedDurationMs(startedAtMs: number | null, completedAtMs: number): number | null {
+  if (startedAtMs === null || !Number.isFinite(completedAtMs) || completedAtMs < startedAtMs) {
+    return null;
+  }
+  return Math.round(completedAtMs - startedAtMs);
 }
 
 function readFollowUpSuggestion(value: unknown): string | null {

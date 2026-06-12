@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterator
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -66,9 +67,14 @@ def chat_session_detail(session_id: str, config: RadarConfig = Depends(get_confi
         raise HTTPException(status_code=404, detail=str(error)) from error
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
+    assistant_durations = _assistant_turn_durations(events)
     return ChatSessionDetailResponse(
         session=_session_response(session, messages, events=events),
-        messages=[_message_response(message) for message in messages if _visible_message(message)],
+        messages=[
+            _message_response(message, duration_ms=assistant_durations.get(message.message_id))
+            for message in messages
+            if _visible_message(message)
+        ],
     )
 
 
@@ -108,10 +114,14 @@ def chat_turn(
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error)[:1000]) from error
 
+    assistant_durations = _assistant_turn_durations(getattr(result, "events", []))
     return ChatTurnResponse(
         session_id=result.session_id,
         user_message=ChatMessageResponse(**result.user_message.model_dump()),
-        assistant_message=ChatMessageResponse(**result.assistant_message.model_dump()),
+        assistant_message=_message_response(
+            result.assistant_message,
+            duration_ms=assistant_durations.get(result.assistant_message.message_id),
+        ),
         tool_messages=[ChatMessageResponse(**message.model_dump()) for message in result.tool_messages],
     )
 
@@ -240,9 +250,11 @@ def _visible_message(message: ChatMessage) -> bool:
     return message.role != "tool" and bool(message.content.strip())
 
 
-def _message_response(message: ChatMessage) -> ChatMessageResponse:
+def _message_response(message: ChatMessage, *, duration_ms: int | None = None) -> ChatMessageResponse:
     response = ChatMessageResponse(**message.model_dump())
     response.content = _display_content(message)
+    if duration_ms is not None and message.role == "assistant":
+        response.metadata = {**response.metadata, "duration_ms": duration_ms}
     return response
 
 
@@ -257,6 +269,35 @@ def _strip_context_for_display(content: str) -> str:
     if marker not in content:
         return content.strip()
     return content.split(marker, 1)[0].strip()
+
+
+def _assistant_turn_durations(events: list[ChatEvent]) -> dict[str, int]:
+    durations: dict[str, int] = {}
+    started_at: datetime | None = None
+    for event in events:
+        if event.type == "turn_started":
+            started_at = _parse_event_time(event.created_at)
+            continue
+        if event.type != "turn_completed" or started_at is None:
+            continue
+        assistant_message_id = event.payload.get("assistant_message_id")
+        completed_at = _parse_event_time(event.created_at)
+        if not isinstance(assistant_message_id, str) or completed_at is None:
+            continue
+        try:
+            duration_ms = round((completed_at - started_at).total_seconds() * 1000)
+        except TypeError:
+            continue
+        durations[assistant_message_id] = max(0, duration_ms)
+        started_at = None
+    return durations
+
+
+def _parse_event_time(value: str) -> datetime | None:
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def _content_with_context(content: str, context: dict[str, Any]) -> str:

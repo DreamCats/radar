@@ -4,7 +4,7 @@ import { useState, type RefObject, type UIEvent } from "react";
 
 import type { ChatMessageItem } from "../types";
 import { copyText } from "../lib/clipboard";
-import { toolActivities, type ToolActivityItem } from "./chatHelpers";
+import { statusForChatMessage, toolActivities, type ToolActivityItem } from "./chatHelpers";
 import { DrawerMarkdownContent } from "./DrawerMarkdownContent";
 import { MarkdownContent } from "./MarkdownContent";
 
@@ -54,7 +54,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
         ) : null}
         <AnimatePresence initial={false}>
           {props.messages.map((message) => {
-            const status = typeof message.metadata.status === "string" ? message.metadata.status : "";
+            const status = message.role === "assistant" ? statusForChatMessage(message.metadata) : "";
             const reasoning = typeof message.metadata.reasoning === "string" ? message.metadata.reasoning : "";
             const activities = toolActivities(message.metadata.tool_activities);
             const canCopy = message.role === "assistant" && Boolean(message.content) && !message.metadata.streaming;

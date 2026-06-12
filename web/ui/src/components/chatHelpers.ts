@@ -9,6 +9,48 @@ export type ToolActivityItem = {
   status: "running" | "completed";
 };
 
+export function statusForChatMessage(metadata: Record<string, unknown>): string {
+  const status = typeof metadata.status === "string" ? metadata.status : "";
+  if (status === "已处理") {
+    return completedStatus(metadata.duration_ms);
+  }
+  if (status) {
+    return status;
+  }
+  return durationMsValue(metadata.duration_ms) === null ? "" : completedStatus(metadata.duration_ms);
+}
+
+export function completedStatus(durationMs: unknown): string {
+  const elapsed = formatElapsedTime(durationMs);
+  return elapsed ? `已处理 ${elapsed}` : "已处理";
+}
+
+export function formatElapsedTime(durationMs: unknown): string {
+  const value = durationMsValue(durationMs);
+  if (value === null) {
+    return "";
+  }
+  const totalSeconds = value === 0 ? 0 : Math.max(1, Math.round(value / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+}
+
+export function durationMsValue(value: unknown): number | null {
+  const duration = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  if (!Number.isFinite(duration) || duration < 0) {
+    return null;
+  }
+  return Math.round(duration);
+}
+
 export function statusForAgentEvent(eventType: string, toolName: string): string {
   if (eventType === "turn_started") {
     return "正在理解问题";
