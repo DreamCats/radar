@@ -25,6 +25,7 @@ build/
 # Local runtime data
 data/
 tmp/
+.runtime/
 *.sqlite
 *.sqlite3
 *.db

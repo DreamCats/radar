@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import os
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path
+from urllib.request import urlopen
+
+
+ROOT = Path(__file__).resolve().parents[1]
+STATE = ROOT / ".runtime" / "dashboard"
+PID = STATE / "dashboard.pid"
+ARGS = STATE / "dashboard.args"
+LOG = STATE / "dashboard.log"
+
+
+def main() -> int:
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "help"
+    args = sys.argv[2:]
+    if args[:1] == ["--"]:
+        args = args[1:]
+
+    if cmd == "start":
+        return start(args)
+    if cmd == "stop":
+        return stop()
+    if cmd == "restart":
+        stop(quiet=True)
+        return start(args)
+    if cmd == "status":
+        return status()
+    print("usage: scripts/dashboard {start|stop|restart|status} [-- dashboard args]")
+    return 1
+
+
+def start(args: list[str]) -> int:
+    pid = read_pid()
+    if pid and alive(pid):
+        print(f"dashboard already running pid={pid}")
+        print(f"log={LOG}")
+        return 0
+
+    STATE.mkdir(parents=True, exist_ok=True)
+    command = ["uv", "run", "radar", "dashboard", *args]
+    with LOG.open("a", encoding="utf-8") as log:
+        log.write(f"\n[{time.strftime('%F %T')}] start: {' '.join(command)}\n")
+        process = subprocess.Popen(
+            command,
+            cwd=ROOT,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+
+    PID.write_text(f"{process.pid}\n", encoding="utf-8")
+    ARGS.write_text(" ".join(args), encoding="utf-8")
+    time.sleep(1)
+    if not alive(process.pid):
+        PID.unlink(missing_ok=True)
+        print(f"dashboard failed; see log={LOG}", file=sys.stderr)
+        return 1
+
+    print(f"dashboard started pid={process.pid}")
+    print(f"ui=http://{opt(args, '--ui-host', '127.0.0.1')}:{opt(args, '--ui-port', '5173')}")
+    print(f"api=http://{opt(args, '--host', '127.0.0.1')}:{opt(args, '--port', '8000')}")
+    print(f"log={LOG}")
+    return 0
+
+
+def stop(*, quiet: bool = False) -> int:
+    pid = read_pid()
+    if not pid or not alive(pid):
+        PID.unlink(missing_ok=True)
+        if not quiet:
+            print("dashboard stopped")
+        return 0
+
+    # SIGINT 让 `radar dashboard` 自己清理 API 和 UI 子进程。
+    for sig, seconds in ((signal.SIGINT, 15), (signal.SIGTERM, 5), (signal.SIGKILL, 2)):
+        kill_group(pid, sig)
+        if wait_stopped(pid, seconds):
+            break
+
+    PID.unlink(missing_ok=True)
+    if not quiet:
+        print("dashboard stopped")
+        print(f"log={LOG}")
+    return 0
+
+
+def status() -> int:
+    pid = read_pid()
+    if not pid or not alive(pid):
+        PID.unlink(missing_ok=True)
+        print("dashboard stopped")
+        return 1
+
+    args = ARGS.read_text(encoding="utf-8").split() if ARGS.exists() else []
+    url = f"http://{opt(args, '--host', '127.0.0.1')}:{opt(args, '--port', '8000')}/api/health"
+    print(f"dashboard running pid={pid}")
+    print(f"log={LOG}")
+    if args:
+        print(f"args={' '.join(args)}")
+    print(f"health={health(url)}")
+    return 0
+
+
+def read_pid() -> int | None:
+    try:
+        return int(PID.read_text(encoding="utf-8").strip())
+    except (FileNotFoundError, ValueError):
+        return None
+
+
+def alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+
+
+def kill_group(pid: int, sig: signal.Signals) -> None:
+    try:
+        os.killpg(pid, sig)
+    except ProcessLookupError:
+        pass
+
+
+def wait_stopped(pid: int, seconds: float) -> bool:
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if not alive(pid):
+            return True
+        time.sleep(0.2)
+    return not alive(pid)
+
+
+def health(url: str) -> str:
+    try:
+        with urlopen(url, timeout=1) as response:
+            return f"ok status={response.status}"
+    except Exception as exc:
+        return f"unreachable {exc}"
+
+
+def opt(args: list[str], name: str, default: str) -> str:
+    prefix = f"{name}="
+    for index, item in enumerate(args):
+        if item == name and index + 1 < len(args):
+            return args[index + 1]
+        if item.startswith(prefix):
+            return item[len(prefix) :]
+    return default
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

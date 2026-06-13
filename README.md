@@ -216,6 +216,21 @@ uv run radar dashboard
 
 该命令会在同一个终端里启动 FastAPI 和 Vite。页面默认打开 `http://127.0.0.1:5173`，API 默认监听 `http://127.0.0.1:8000`。停止时直接按 `Ctrl+C`，命令会同时停止两个子进程。
 
+后台管理 dashboard：
+
+```bash
+scripts/dashboard start
+scripts/dashboard status
+scripts/dashboard restart
+scripts/dashboard stop
+```
+
+脚本会把 PID 和日志写到 `.runtime/dashboard/`。如需改端口，把参数透传给 `radar dashboard`：
+
+```bash
+scripts/dashboard start -- --port 8001 --ui-port 5174
+```
+
 如需改端口：
 
 ```bash
