@@ -14,6 +14,7 @@ import "./job-center.css";
 import "./leaderboard.css";
 import "./leaderboard-motion.css";
 import "./leaderboard-responsive.css";
+import "./login.css";
 import "./loading.css";
 import "./organize.css";
 import "./organize-responsive.css";

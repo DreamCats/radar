@@ -97,6 +97,15 @@ class ChatConfig(BaseModel):
     shell: ChatShellConfig = Field(default_factory=ChatShellConfig)
 
 
+class WebAuthConfig(BaseModel):
+    enabled: bool = False
+    session_hours: int = Field(default=24, ge=1, le=24 * 30)
+
+
+class WebConfig(BaseModel):
+    auth: WebAuthConfig = Field(default_factory=WebAuthConfig)
+
+
 class LlmProviderSecret(BaseModel):
     base_url: str
     api_key: str
@@ -144,6 +153,16 @@ class BraveSearchSecret(BaseModel):
     api_key: str | None = None
 
 
+class WebAuthSecret(BaseModel):
+    username: str | None = None
+    password: str | None = None
+    session_secret: str | None = None
+
+
+class WebSecrets(BaseModel):
+    auth: WebAuthSecret = Field(default_factory=WebAuthSecret)
+
+
 class FeatureFlags(BaseModel):
     llm_classify: bool = False
     signal_radar: bool = False
@@ -164,6 +183,7 @@ class RadarSecrets(BaseModel):
     llm: dict[str, LlmProviderSecret] = Field(default_factory=dict)
     market: dict[str, MarketSecret] = Field(default_factory=dict)
     brave_search: dict[str, BraveSearchSecret] = Field(default_factory=dict)
+    web: WebSecrets = Field(default_factory=WebSecrets)
 
 
 class RadarConfig(BaseModel):
@@ -174,6 +194,7 @@ class RadarConfig(BaseModel):
     wechat: WechatConfig = Field(default_factory=WechatConfig)
     llm: LlmConfig = Field(default_factory=LlmConfig)
     chat: ChatConfig = Field(default_factory=ChatConfig)
+    web: WebConfig = Field(default_factory=WebConfig)
     market: MarketConfig = Field(default_factory=MarketConfig)
     brave_search: BraveSearchConfig = Field(default_factory=BraveSearchConfig)
     features: FeatureFlags = Field(default_factory=FeatureFlags)
@@ -271,6 +292,7 @@ def _apply_env_overrides(config: RadarConfig) -> RadarConfig:
         config.market.database = Path(market_database).expanduser()
 
     _apply_brave_search_overrides(config)
+    _apply_web_auth_overrides(config)
     return config
 
 
@@ -311,3 +333,21 @@ def _set_brave_search_secret(config: RadarConfig, api_key: str) -> None:
     config.brave_search.provider = "brave"
     config.brave_search.secret_ref = secret_ref
     config.secrets.brave_search[secret_ref] = BraveSearchSecret(api_key=api_key)
+
+
+def _apply_web_auth_overrides(config: RadarConfig) -> None:
+    enabled = os.getenv("RADAR_WEB_AUTH_ENABLED")
+    if enabled is not None:
+        config.web.auth.enabled = enabled.lower() in {"1", "true", "yes", "on"}
+
+    username = os.getenv("RADAR_WEB_AUTH_USERNAME")
+    password = os.getenv("RADAR_WEB_AUTH_PASSWORD")
+    session_secret = os.getenv("RADAR_WEB_AUTH_SESSION_SECRET")
+    if username:
+        config.secrets.web.auth.username = username
+    if password:
+        config.secrets.web.auth.password = password
+    if session_secret:
+        config.secrets.web.auth.session_secret = session_secret
+    if username and password and enabled is None:
+        config.web.auth.enabled = True

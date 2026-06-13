@@ -120,6 +120,12 @@ chat:
     default_cwd: ~/Work/radar
     timeout_seconds: 30
     max_output_chars: 12000
+
+web:
+  auth:
+    # 个人部署时开启；未开启时 dashboard 保持免登录。
+    enabled: true
+    session_hours: 24
 ```
 
 `market.api_url` 可以填 Tushare 直连地址，也可以填远端代理地址；兼容旧配置名 `market.tushare_api_url`。
@@ -147,6 +153,12 @@ wechat:
 market:
   tushare_main:
     token: YOUR_TUSHARE_TOKEN
+web:
+  auth:
+    username: maifeng
+    password: CHANGE_ME
+    # 可选；不填时用 password 派生 cookie 签名密钥。
+    session_secret: CHANGE_ME_TOO
 ```
 
 也可以临时覆盖：
@@ -156,6 +168,7 @@ RADAR_CONFIG_DIR=/path/to/config uv run radar doctor
 RADAR_DATA_DIR=/path/to/data uv run radar query --limit 5
 RADAR_WECHAT_BASE_URL=https://example.invalid/wechat uv run radar doctor
 RADAR_TUSHARE_TOKEN=YOUR_TUSHARE_TOKEN uv run radar doctor
+RADAR_WEB_AUTH_USERNAME=maifeng RADAR_WEB_AUTH_PASSWORD=CHANGE_ME uv run radar dashboard
 ```
 
 ## 常用命令

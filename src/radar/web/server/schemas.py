@@ -5,9 +5,13 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from radar.core.models import ClassificationRetryMode, MessageCategory, MessageSource, RawMessage
 from radar.core.dashboard import DashboardSummaryPayload
-from radar.core.organize import OrganizeClassificationCluster, OrganizeClassificationSummary, OrganizeEvidenceMessage
+from radar.core.models import ClassificationRetryMode, MessageCategory, MessageSource, RawMessage
+from radar.core.organize import (
+    OrganizeClassificationCluster,
+    OrganizeClassificationSummary,
+    OrganizeEvidenceMessage,
+)
 from radar.core.storage import RunRecord
 from radar.core.usecases.recommendation_backtest import (
     DEFAULT_BENCHMARK_TS_CODE,
@@ -29,6 +33,17 @@ class HealthResponse(BaseModel):
     status: Literal["ok"]
     database: str
     market_database: str
+
+
+class AuthStatusResponse(BaseModel):
+    auth_required: bool
+    authenticated: bool
+    username: str | None = None
+
+
+class AuthLoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=1, max_length=256)
 
 
 class MessagePageResponse(BaseModel):

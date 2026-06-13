@@ -10,6 +10,7 @@ import type {
   ChatStreamEvent,
   ChatTurnRequest,
   ChatTurnResponse,
+  AuthStatus,
   DashboardSummary,
   DerivedJobItem,
   IngestJobItem,
@@ -39,6 +40,30 @@ import type {
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
 
+export async function fetchAuthStatus(): Promise<AuthStatus> {
+  return getJson("/api/auth/status");
+}
+
+export async function login(username: string, password: string): Promise<AuthStatus> {
+  const response = await apiFetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  return (await response.json()) as AuthStatus;
+}
+
+export async function logout(): Promise<AuthStatus> {
+  const response = await apiFetch("/api/auth/logout", { method: "POST" });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  return (await response.json()) as AuthStatus;
+}
+
 export async function fetchMessages(query: MessageQuery): Promise<MessagePage> {
   return getJson(`/api/messages?${params(query)}`);
 }
@@ -63,7 +88,7 @@ export async function fetchMessageOverview(
 }
 
 export async function sendChatTurn(request: ChatTurnRequest): Promise<ChatTurnResponse> {
-  const response = await fetch(`${apiBase}/api/chat/turn`, {
+  const response = await apiFetch("/api/chat/turn", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -83,7 +108,7 @@ export async function fetchChatSession(sessionId: string): Promise<ChatSessionDe
 }
 
 export async function deleteChatSession(sessionId: string): Promise<void> {
-  const response = await fetch(`${apiBase}/api/chat/sessions/${encodeURIComponent(sessionId)}`, {
+  const response = await apiFetch(`/api/chat/sessions/${encodeURIComponent(sessionId)}`, {
     method: "DELETE",
   });
   if (!response.ok) {
@@ -100,7 +125,7 @@ export async function streamChatTurn(
   onEvent: (event: ChatStreamEvent) => void,
   options: { signal?: AbortSignal } = {},
 ): Promise<void> {
-  const response = await fetch(`${apiBase}/api/chat/turn/stream`, {
+  const response = await apiFetch("/api/chat/turn/stream", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -115,7 +140,7 @@ export async function continueChatTurn(
   onEvent: (event: ChatStreamEvent) => void,
   options: { signal?: AbortSignal } = {},
 ): Promise<void> {
-  const response = await fetch(`${apiBase}/api/chat/sessions/${encodeURIComponent(sessionId)}/continue/stream`, {
+  const response = await apiFetch(`/api/chat/sessions/${encodeURIComponent(sessionId)}/continue/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -208,7 +233,7 @@ export async function fetchRuns(query: { kind?: string; kinds?: string[]; status
 }
 
 export async function cancelRun(runId: string): Promise<RunItem> {
-  const response = await fetch(`${apiBase}/api/runs/${runId}/cancel`, {
+  const response = await apiFetch(`/api/runs/${runId}/cancel`, {
     method: "POST",
   });
   if (!response.ok) {
@@ -245,7 +270,7 @@ export async function fetchLifecycleDigestPreview(query: { limit?: number; force
 }
 
 export async function ingestWechat(request: IngestRequest): Promise<IngestResultItem[]> {
-  const response = await fetch(`${apiBase}/api/ingest/wechat`, {
+  const response = await apiFetch("/api/ingest/wechat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -258,7 +283,7 @@ export async function ingestWechat(request: IngestRequest): Promise<IngestResult
 }
 
 export async function startIngestWechatJob(request: IngestRequest): Promise<IngestJobItem[]> {
-  const response = await fetch(`${apiBase}/api/ingest/wechat/jobs`, {
+  const response = await apiFetch("/api/ingest/wechat/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -271,7 +296,7 @@ export async function startIngestWechatJob(request: IngestRequest): Promise<Inge
 }
 
 export async function startClassifyMessagesJob(request: ClassifyRequest): Promise<ClassifyJobItem[]> {
-  const response = await fetch(`${apiBase}/api/classify/messages/jobs`, {
+  const response = await apiFetch("/api/classify/messages/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -284,7 +309,7 @@ export async function startClassifyMessagesJob(request: ClassifyRequest): Promis
 }
 
 export async function startMarketAnchorUpdateJob(request: AnchorRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/market/anchors/jobs`, {
+  const response = await apiFetch("/api/market/anchors/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -297,7 +322,7 @@ export async function startMarketAnchorUpdateJob(request: AnchorRequest): Promis
 }
 
 export async function startRecommendationBacktestJob(request: RecommendationBacktestRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/recommendation/backtest/jobs`, {
+  const response = await apiFetch("/api/recommendation/backtest/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -310,7 +335,7 @@ export async function startRecommendationBacktestJob(request: RecommendationBack
 }
 
 export async function startStockEvidenceChainJob(request: StockEvidenceChainJobRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/strategy/evidence-chain/jobs`, {
+  const response = await apiFetch("/api/strategy/evidence-chain/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -323,7 +348,7 @@ export async function startStockEvidenceChainJob(request: StockEvidenceChainJobR
 }
 
 export async function startLifecycleDigestJob(request: LifecycleDigestJobRequest): Promise<DerivedJobItem[]> {
-  const response = await fetch(`${apiBase}/api/strategy/lifecycle-digests/jobs`, {
+  const response = await apiFetch("/api/strategy/lifecycle-digests/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -336,11 +361,15 @@ export async function startLifecycleDigestJob(request: LifecycleDigestJobRequest
 }
 
 async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiBase}${path}`);
+  const response = await apiFetch(path);
   if (!response.ok) {
     throw new Error(await errorText(response));
   }
   return (await response.json()) as T;
+}
+
+function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  return fetch(`${apiBase}${path}`, { ...init, credentials: "include" });
 }
 
 function params(query: Record<string, unknown>): string {

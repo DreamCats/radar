@@ -92,6 +92,12 @@ export type DashboardSummary = {
   runs: RunItem[];
 };
 
+export type AuthStatus = {
+  auth_required: boolean;
+  authenticated: boolean;
+  username?: string | null;
+};
+
 export type ChatTurnRequest = {
   session_id?: string | null;
   title?: string | null;

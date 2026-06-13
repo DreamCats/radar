@@ -114,6 +114,54 @@ def test_conversations_endpoint_omits_message_count(tmp_path):
         assert "message_count" not in item
 
 
+def test_auth_disabled_by_default(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+
+    response = client.get("/api/auth/status")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "auth_required": False,
+        "authenticated": True,
+        "username": None,
+    }
+
+
+def test_auth_enabled_gates_api_and_uses_cookie(tmp_path):
+    config = _config(
+        tmp_path,
+        web={"auth": {"enabled": True}},
+        secrets={
+            "web": {
+                "auth": {
+                    "username": "maifeng",
+                    "password": "secret",
+                    "session_secret": "test-secret",
+                }
+            }
+        },
+    )
+    client = TestClient(create_app(config))
+
+    assert client.get("/api/health").status_code == 200
+    assert client.get("/api/runs").status_code == 401
+    assert client.post("/api/auth/login", json={"username": "maifeng", "password": "bad"}).status_code == 401
+
+    login_response = client.post(
+        "/api/auth/login",
+        json={"username": "maifeng", "password": "secret"},
+    )
+    assert login_response.status_code == 200
+    assert login_response.json()["authenticated"] is True
+
+    assert client.get("/api/runs").status_code == 200
+
+    logout_response = client.post("/api/auth/logout")
+    assert logout_response.status_code == 200
+    assert logout_response.json()["authenticated"] is False
+    assert client.get("/api/runs").status_code == 401
+
+
 def test_chat_turn_endpoint_creates_session_with_context(tmp_path, monkeypatch):
     from radar.core.chat.events import ChatMessage
 

@@ -1,13 +1,26 @@
-import { useState } from "react";
-import { Activity, BarChart3, Database, Layers3, ListOrdered, MessageCircle, RadioTower, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Activity,
+  BarChart3,
+  Database,
+  Layers3,
+  ListOrdered,
+  LogOut,
+  MessageCircle,
+  RadioTower,
+  Search,
+} from "lucide-react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 
+import { fetchAuthStatus, login, logout } from "./api/radarApi";
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
+import { LoginPage } from "./pages/LoginPage";
 import { OrganizePage } from "./pages/OrganizePage";
 import { StrategyPage } from "./pages/StrategyPage";
 import { WechatPage } from "./pages/WechatPage";
+import type { AuthStatus } from "./types";
 
 type TabKey = "dashboard" | "wechat" | "organize" | "leaderboard" | "strategy" | "ingest";
 
@@ -22,7 +35,50 @@ const NAV_ITEMS = [
 
 export function App() {
   const [tab, setTab] = useState<TabKey>("dashboard");
+  const [auth, setAuth] = useState<AuthStatus | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const shouldReduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    fetchAuthStatus()
+      .then((next) => {
+        setAuth(next);
+        setAuthError(null);
+      })
+      .catch((err) => {
+        setAuthError(err instanceof Error ? err.message : "无法读取登录状态");
+        setAuth({ auth_required: true, authenticated: false });
+      });
+  }, []);
+
+  async function handleLogin(username: string, password: string) {
+    const next = await login(username, password);
+    setAuth(next);
+    setAuthError(null);
+  }
+
+  async function handleLogout() {
+    const next = await logout();
+    setAuth(next);
+    setTab("dashboard");
+  }
+
+  if (auth === null) {
+    return (
+      <main className="app workspace-shell auth-shell">
+        <AmbientBackground shouldReduceMotion={shouldReduceMotion} />
+      </main>
+    );
+  }
+
+  if (auth.auth_required && !auth.authenticated) {
+    return (
+      <main className="app workspace-shell auth-shell">
+        <AmbientBackground shouldReduceMotion={shouldReduceMotion} />
+        <LoginPage error={authError} onLogin={handleLogin} />
+      </main>
+    );
+  }
 
   return (
     <main className="app workspace-shell">
@@ -38,26 +94,28 @@ export function App() {
         </div>
         <LayoutGroup id="workspace-nav">
           <nav className="nav-group side-nav" aria-label="workspace sections">
-          <div className="eyebrow">看板</div>
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <motion.button
-                className={tab === item.key ? "nav-item active" : "nav-item"}
-                key={item.key}
-                type="button"
-                onClick={() => setTab(item.key)}
-                whileHover={shouldReduceMotion ? undefined : { x: 2 }}
-                whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
-              >
-                {tab === item.key && <motion.span className="nav-active-pill" layoutId="nav-active-pill" />}
-                <span className="nav-item-content">
-                  <Icon size={16} />
-                  <span>{item.label}</span>
-                </span>
-              </motion.button>
-            );
-          })}
+            <div className="eyebrow">看板</div>
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <motion.button
+                  className={tab === item.key ? "nav-item active" : "nav-item"}
+                  key={item.key}
+                  type="button"
+                  onClick={() => setTab(item.key)}
+                  whileHover={shouldReduceMotion ? undefined : { x: 2 }}
+                  whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
+                >
+                  {tab === item.key && (
+                    <motion.span className="nav-active-pill" layoutId="nav-active-pill" />
+                  )}
+                  <span className="nav-item-content">
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </span>
+                </motion.button>
+              );
+            })}
           </nav>
         </LayoutGroup>
         <div className="nav-group module-stack">
@@ -73,6 +131,16 @@ export function App() {
             <span className="tag">预留</span>
           </button>
         </div>
+        {auth.auth_required && (
+          <button
+            className="nav-item logout-item"
+            type="button"
+            onClick={() => void handleLogout()}
+          >
+            <LogOut size={16} />
+            退出
+          </button>
+        )}
       </aside>
       <section className="main workspace-main">
         <div className="content">
