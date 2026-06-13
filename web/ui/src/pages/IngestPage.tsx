@@ -424,31 +424,8 @@ function LifecyclePreviewCard({ preview, loading }: { preview: LifecycleDigestPr
         <span>需调用 {preview.estimated_llm_calls}</span>
         <span>跳过 {preview.skipped_count}</span>
       </div>
-      <div className="job-preview-list">
-        {preview.items.slice(0, 5).map((item) => (
-          <article key={item.scope_key}>
-            <strong>{item.stock_name}</strong>
-            <span>{item.theme_name ?? "未确认主题"}</span>
-            <small>{item.stage_label} · {item.recognition_label} · {actionLabel(item.action)} · {item.reason}</small>
-          </article>
-        ))}
-        {preview.items.length === 0 && <p className="job-preview-muted">暂无可处理对象，请先运行个股证据链。</p>}
-      </div>
     </section>
   );
-}
-
-function actionLabel(value: string): string {
-  if (value === "generate") {
-    return "待生成";
-  }
-  if (value === "reuse") {
-    return "可复用";
-  }
-  if (value === "skip") {
-    return "跳过";
-  }
-  return value;
 }
 
 function forceLabel(kind: JobTemplateKey): string {
