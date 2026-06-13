@@ -247,6 +247,11 @@
   .job-template-group {
     grid-template-columns: 1fr;
   }
+
+  .job-config-grid.strategy {
+    grid-template-columns: 1fr;
+    max-width: none;
+  }
 }
 
 @media (max-width: 720px) {
