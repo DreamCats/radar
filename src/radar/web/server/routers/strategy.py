@@ -36,10 +36,11 @@ def stock_evidence_chain_latest(
 def stock_evidence_stock_chart(
     ts_code: str,
     days: int = Query(default=120, ge=1, le=260),
+    refresh: bool = Query(default=False),
     config: RadarConfig = Depends(get_config),
 ) -> StockEvidenceStockChartResponse:
     try:
-        result = get_stock_evidence_stock_chart(config, ts_code=ts_code, days=days)
+        result = get_stock_evidence_stock_chart(config, ts_code=ts_code, days=days, refresh=refresh)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return StockEvidenceStockChartResponse(**result.model_dump())

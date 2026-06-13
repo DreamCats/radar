@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from "react";
-import { BarChart3, ListChecks, X } from "lucide-react";
+import { BarChart3, ListChecks, RefreshCw, X } from "lucide-react";
 
 import { fetchStockEvidenceFinancials, fetchStockEvidenceStockChart } from "../api/radarApi";
 import { ChatLauncher } from "./ChatLauncher";
@@ -56,6 +56,7 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
   const [activeMode, setActiveMode] = useState<StrategyStockDrawerMode>(initialMode);
   const [chart, setChart] = useState<StockEvidenceStockChart | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [financials, setFinancials] = useState<StockEvidenceFinancials | null>(null);
   const [financialLoading, setFinancialLoading] = useState(false);
@@ -69,6 +70,7 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
     if (!stock) {
       setChart(null);
       setError(null);
+      setRefreshing(false);
       setFinancials(null);
       setFinancialError(null);
       setFinancialLoading(false);
@@ -76,6 +78,7 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
     }
     let cancelled = false;
     setLoading(true);
+    setRefreshing(false);
     setError(null);
     setFinancials(null);
     setFinancialError(null);
@@ -101,6 +104,22 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
       cancelled = true;
     };
   }, [stock?.ts_code]);
+
+  async function refreshChart() {
+    if (!stock || loading || refreshing) {
+      return;
+    }
+    setRefreshing(true);
+    setError(null);
+    try {
+      const result = await fetchStockEvidenceStockChart(stock.ts_code, { days: 120, refresh: true });
+      setChart(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "行情刷新失败");
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   useEffect(() => {
     if (!stock?.checklist || activeMode !== "checklist") {
@@ -189,6 +208,18 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
                 </button>
               )}
             </div>
+            {activePanel === "chart" && (
+              <button
+                className={`icon-btn strategy-stock-refresh${refreshing ? " is-refreshing" : ""}`}
+                type="button"
+                aria-label="刷新行情"
+                title="刷新行情"
+                onClick={() => void refreshChart()}
+                disabled={loading || refreshing}
+              >
+                <RefreshCw size={15} />
+              </button>
+            )}
             <ChatLauncher
               title={stock.stock_name}
               subtitle={drawerSubtitle(stock) || stock.ts_code}

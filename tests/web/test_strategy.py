@@ -5,6 +5,7 @@ import uuid
 from datetime import date, datetime, time
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
@@ -285,7 +286,14 @@ def test_lifecycle_digest_preview_refresh_and_reuse(monkeypatch, tmp_path: Path)
 
 def test_strategy_stock_chart_endpoint_reads_local_market_history(monkeypatch, tmp_path: Path):
     config = _config(tmp_path)
-    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._refresh_recent_daily_cache", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        "radar.core.usecases.stock_evidence_chain.stock_chart._refresh_recent_daily_cache",
+        lambda *args, **kwargs: pytest.fail("default chart read should not refresh daily cache"),
+    )
+    monkeypatch.setattr(
+        "radar.core.usecases.stock_evidence_chain.stock_chart._append_intraday_candle",
+        lambda *args, **kwargs: pytest.fail("default chart read should not fetch realtime candle"),
+    )
     daily = history.spec_for("daily")
     assert daily is not None
     history.put_rows(
@@ -313,7 +321,14 @@ def test_strategy_stock_chart_endpoint_reads_local_market_history(monkeypatch, t
 
 
 def test_strategy_stock_chart_endpoint_returns_empty_when_cache_missing(monkeypatch, tmp_path: Path):
-    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._refresh_recent_daily_cache", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        "radar.core.usecases.stock_evidence_chain.stock_chart._refresh_recent_daily_cache",
+        lambda *args, **kwargs: pytest.fail("default chart read should not refresh daily cache"),
+    )
+    monkeypatch.setattr(
+        "radar.core.usecases.stock_evidence_chain.stock_chart._append_intraday_candle",
+        lambda *args, **kwargs: pytest.fail("default chart read should not fetch realtime candle"),
+    )
     client = TestClient(create_app(_config(tmp_path)))
     response = client.get("/api/strategy/stocks/000001.SZ/chart")
 
@@ -350,7 +365,7 @@ def test_strategy_stock_chart_endpoint_refreshes_latest_daily_after_close(monkey
     monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart.tushare_client.call", fake_call)
 
     client = TestClient(create_app(config))
-    response = client.get("/api/strategy/stocks/300024.SZ/chart", params={"days": 5})
+    response = client.get("/api/strategy/stocks/300024.SZ/chart", params={"days": 5, "refresh": True})
 
     assert response.status_code == 200
     data = response.json()
@@ -392,7 +407,7 @@ def test_strategy_stock_chart_endpoint_appends_intraday_realtime_candle(monkeypa
     monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart.get_realtime_daily_quote", fake_quote)
 
     client = TestClient(create_app(config))
-    response = client.get("/api/strategy/stocks/300503.SZ/chart", params={"days": 5})
+    response = client.get("/api/strategy/stocks/300503.SZ/chart", params={"days": 5, "refresh": True})
 
     assert response.status_code == 200
     data = response.json()

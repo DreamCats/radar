@@ -41,6 +41,7 @@ def get_stock_evidence_stock_chart(
     *,
     ts_code: str,
     days: int = 120,
+    refresh: bool = False,
 ) -> StockEvidenceStockChart:
     code = ts_code.strip().upper()
     if not code:
@@ -50,12 +51,13 @@ def get_stock_evidence_stock_chart(
     if spec is None:
         raise ValueError("daily 行情缓存规格不存在")
 
-    _refresh_recent_daily_cache(config, code, days=days)
+    if refresh:
+        _refresh_recent_daily_cache(config, code, days=days)
     raw_rows = history.query(config.market_database_path, spec, code, start=None, end=None)
     candles = [_candle(row) for row in raw_rows]
     candles = [item for item in candles if item is not None]
     candles.sort(key=lambda item: item.trade_date)
-    latest_is_realtime = _append_intraday_candle(config, code, candles)
+    latest_is_realtime = _append_intraday_candle(config, code, candles) if refresh else False
     limited = candles[-days:]
 
     return StockEvidenceStockChart(

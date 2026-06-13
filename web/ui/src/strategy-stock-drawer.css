@@ -132,6 +132,15 @@
   background: var(--color-surface-3);
 }
 
+.strategy-stock-refresh:disabled {
+  cursor: progress;
+  opacity: 0.62;
+}
+
+.strategy-stock-refresh.is-refreshing svg {
+  animation: strategy-stock-refresh-spin 820ms linear infinite;
+}
+
 .strategy-stock-drawer-tags {
   display: flex;
   flex-wrap: wrap;
@@ -501,7 +510,8 @@
   .strategy-market-loading-dot,
   .strategy-market-loading-price-line,
   .strategy-market-loading-candle,
-  .strategy-market-loading-volumes span {
+  .strategy-market-loading-volumes span,
+  .strategy-stock-refresh.is-refreshing svg {
     animation: none;
   }
 }
@@ -566,5 +576,11 @@
   50% {
     opacity: 0.82;
     transform: scaleY(1);
+  }
+}
+
+@keyframes strategy-stock-refresh-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

@@ -13,12 +13,12 @@ export function StrategyMarketChartLoading({ stockName }: { stockName: string })
   const volumeBars = [34, 58, 42, 76, 94, 62, 84, 48, 66];
 
   return (
-    <section className="strategy-market-loading" role="status" aria-live="polite" aria-label={`正在同步${stockName}本地行情`}>
+    <section className="strategy-market-loading" role="status" aria-live="polite" aria-label={`正在读取${stockName}本地行情`}>
       <div className="strategy-market-loading-head">
         <span className="strategy-market-loading-dot" />
         <div>
-          <strong>正在同步本地行情</strong>
-          <span>读取日线缓存与盘中快照</span>
+          <strong>正在读取本地行情</strong>
+          <span>读取日线缓存</span>
         </div>
       </div>
       <div className="strategy-market-loading-chart" aria-hidden="true">

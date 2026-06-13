@@ -201,4 +201,5 @@ export type StockEvidenceChainDashboard = {
 
 export type StockEvidenceStockChartQuery = {
   days?: number;
+  refresh?: boolean;
 };
