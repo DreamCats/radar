@@ -145,6 +145,16 @@ def test_auth_enabled_gates_api_and_uses_cookie(tmp_path):
 
     assert client.get("/api/health").status_code == 200
     assert client.get("/api/runs").status_code == 401
+    preflight_response = client.options(
+        "/api/ingest/wechat/jobs",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert preflight_response.status_code == 200
+    assert preflight_response.headers["access-control-allow-origin"] == "http://localhost:5173"
     assert client.post("/api/auth/login", json={"username": "maifeng", "password": "bad"}).status_code == 401
 
     login_response = client.post(

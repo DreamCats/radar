@@ -14,6 +14,9 @@ from radar.core.usecases.stock_evidence_chain.models import (
     StockMention,
 )
 
+WATCH_FILL_TARGET = 50
+WATCH_CHANNEL = "watch"
+
 
 def load_messages(
     conn: sqlite3.Connection,
@@ -164,6 +167,15 @@ def load_candidates(conn: sqlite3.Connection, *, window_start: datetime, as_of: 
             item.channels.add("heat")
         if _is_early_strong(item):
             item.channels.add("early_strong")
+    strong_candidates = [item for item in by_code.values() if item.channels]
+    if len(strong_candidates) < WATCH_FILL_TARGET:
+        watch_candidates = sorted(
+            (item for item in by_code.values() if not item.channels and _is_watch_candidate(item)),
+            key=lambda item: item.rank_key,
+            reverse=True,
+        )[: WATCH_FILL_TARGET - len(strong_candidates)]
+        for item in watch_candidates:
+            item.channels.add(WATCH_CHANNEL)
     return sorted((item for item in by_code.values() if item.channels), key=lambda item: item.rank_key, reverse=True)
 
 
@@ -256,6 +268,12 @@ def save_candidates(
 
 def _is_early_strong(item: StockCandidate) -> bool:
     if item.unique_trigger_count < 3 or item.sender_count < 2 or item.conversation_count < 2:
+        return False
+    return item.family_counts.get("catalyst", 0) > 0 or item.evidence_score >= 8
+
+
+def _is_watch_candidate(item: StockCandidate) -> bool:
+    if item.unique_trigger_count < 2 or item.sender_count < 2 or item.conversation_count < 2:
         return False
     return item.family_counts.get("catalyst", 0) > 0 or item.evidence_score >= 8
 

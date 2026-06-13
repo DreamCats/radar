@@ -68,6 +68,9 @@ def _install_auth_middleware(app: FastAPI) -> None:
     @app.middleware("http")
     async def require_login(request, call_next):
         config = request.app.state.radar_config
+        if request.method == "OPTIONS":
+            # CORS 预检不依赖登录 cookie，交给 CORSMiddleware 返回允许头。
+            return await call_next(request)
         if _is_public_path(request.url.path) or not auth_required(config):
             return await call_next(request)
         if current_username(config, request) is not None:
