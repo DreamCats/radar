@@ -39,6 +39,7 @@ export function OrganizePage() {
   const [source, setSource] = useState<SourceFilter>("all");
   const [keyword, setKeyword] = useState("");
   const [submittedKeyword, setSubmittedKeyword] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [range, setRange] = useState<LocalRange>(() => buildPresetRange("yesterdayClose"));
   const [preset, setPreset] = useState<RangePreset>("yesterdayClose");
   const [page, setPage] = useState<OrganizeClassificationPage>(emptyPage);
@@ -199,37 +200,49 @@ export function OrganizePage() {
       </div>
 
       <form
-        className="organize-toolbar"
+        className={filtersOpen ? "organize-toolbar mobile-open" : "organize-toolbar"}
         onSubmit={(event) => {
           event.preventDefault();
           setSubmittedKeyword(keyword.trim());
+          setFiltersOpen(false);
         }}
       >
-        <div className="organize-search">
-          <Search size={15} />
-          <input
-            aria-label="搜索整理结果"
-            placeholder="搜分类理由、原文、发送人"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
-        </div>
-        <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
-        <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
-        <SelectField
-          label="来源"
-          value={source}
-          onChange={(value) => setSource(value as SourceFilter)}
-          options={[
-            ["all", "全部来源"],
-            ["group_message", "个人群"],
-            ["personal_message", "个人消息"],
-          ]}
-        />
-        <button className="btn btn-primary btn-sm organize-refresh" type="submit" disabled={loading || !canSubmit}>
-          {loading ? <RefreshCw size={14} /> : <Search size={14} />}
-          查询
+        <button
+          className="mobile-filter-toggle"
+          type="button"
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((value) => !value)}
+        >
+          整理筛选
+          <span>{organizeFilterSummary(source, range, submittedKeyword)}</span>
         </button>
+        <div className="mobile-filter-fields">
+          <div className="organize-search">
+            <Search size={15} />
+            <input
+              aria-label="搜索整理结果"
+              placeholder="搜分类理由、原文、发送人"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+          </div>
+          <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
+          <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
+          <SelectField
+            label="来源"
+            value={source}
+            onChange={(value) => setSource(value as SourceFilter)}
+            options={[
+              ["all", "全部来源"],
+              ["group_message", "个人群"],
+              ["personal_message", "个人消息"],
+            ]}
+          />
+          <button className="btn btn-primary btn-sm organize-refresh" type="submit" disabled={loading || !canSubmit}>
+            {loading ? <RefreshCw size={14} /> : <Search size={14} />}
+            查询
+          </button>
+        </div>
       </form>
 
       {error && <p className="error-line">{error}</p>}
@@ -269,6 +282,11 @@ function Metric(props: { label: string; value: number | string; detail: string }
       <em>{props.detail}</em>
     </div>
   );
+}
+
+function organizeFilterSummary(source: SourceFilter, range: LocalRange, keyword: string): string {
+  const sourceLabel = source === "group_message" ? "个人群" : source === "personal_message" ? "个人消息" : "全部来源";
+  return [rangeLabel(range), sourceLabel, keyword || ""].filter(Boolean).join(" · ");
 }
 
 function countByCategory(clusters: OrganizeClassificationCluster[], category: string): number {

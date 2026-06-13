@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  ChevronLeft,
   FileText,
   Gauge,
   ListChecks,
@@ -18,15 +19,16 @@ type Props = {
   item: StockEvidenceChainItem | null;
   onOpenChart?: (stock: StockEvidenceChainItem) => void;
   onOpenChecklist?: (stock: StockEvidenceChainItem) => void;
+  onBackToList?: () => void;
 };
 
-export function StockEvidenceDetailPanel({ item, onOpenChart, onOpenChecklist }: Props) {
+export function StockEvidenceDetailPanel({ item, onOpenChart, onOpenChecklist, onBackToList }: Props) {
   if (!item) {
     return <aside className="stock-evidence-detail empty">暂无匹配阶段的股票。</aside>;
   }
   return (
     <aside className="stock-evidence-detail">
-      <DetailHeader item={item} onOpenChart={onOpenChart} onOpenChecklist={onOpenChecklist} />
+      <DetailHeader item={item} onOpenChart={onOpenChart} onOpenChecklist={onOpenChecklist} onBackToList={onBackToList} />
       <VerdictCard item={item} />
       <MessageEvidence item={item} />
       <StockEvidenceThemeEvidence item={item} />
@@ -42,14 +44,21 @@ function DetailHeader({
   item,
   onOpenChart,
   onOpenChecklist,
+  onBackToList,
 }: {
   item: StockEvidenceChainItem;
   onOpenChart?: (stock: StockEvidenceChainItem) => void;
   onOpenChecklist?: (stock: StockEvidenceChainItem) => void;
+  onBackToList?: () => void;
 }) {
   return (
     <header>
       <div>
+        {onBackToList && (
+          <button className="mini-button stock-evidence-detail-back" type="button" onClick={onBackToList} aria-label="返回股票候选">
+            <ChevronLeft size={15} />
+          </button>
+        )}
         <strong>{item.stock_name}</strong>
         <span>{item.ts_code}</span>
       </div>

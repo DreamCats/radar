@@ -438,25 +438,47 @@
   .strategy-stock-drawer {
     width: 100vw;
     max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
   }
 
   .strategy-stock-drawer-head {
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 8px;
+    padding: 12px;
   }
 
   .strategy-stock-drawer-head-actions {
     flex-wrap: wrap;
     justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .strategy-stock-drawer-body {
+    gap: 10px;
+    padding: 10px 10px calc(12px + env(safe-area-inset-bottom));
   }
 
   .strategy-stock-context-grid,
   .strategy-stock-decision-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .strategy-stock-context-grid article,
+  .strategy-stock-decision-grid article {
+    padding: 8px;
+  }
+
+  .strategy-stock-drawer-tags {
+    gap: 5px;
+    padding: 8px 10px;
   }
 
   .strategy-market-loading-chart {
-    min-height: 220px;
+    min-height: 200px;
   }
 
   .strategy-market-loading-candles,
@@ -464,6 +486,13 @@
     right: 18px;
     left: 18px;
     gap: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .strategy-stock-context-grid,
+  .strategy-stock-decision-grid {
+    grid-template-columns: 1fr;
   }
 }
 

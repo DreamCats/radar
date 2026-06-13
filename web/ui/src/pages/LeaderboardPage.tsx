@@ -44,6 +44,7 @@ export function LeaderboardPage() {
   const [source, setSource] = useState<IngestSource>("all");
   const [dimension, setDimension] = useState<Dimension>("analyst_sector");
   const [minCount, setMinCount] = useState("3");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [summary, setSummary] = useState<RecommendationBacktestSummary>(emptySummary);
   const [overview, setOverview] = useState<RecommendationBacktestSummary>(emptySummary);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -161,50 +162,56 @@ export function LeaderboardPage() {
         </div>
       </div>
 
-      <div className="range-presets leaderboard-presets" aria-label="榜单时间窗口">
-        {RANGE_PRESETS.filter(([value]) => value !== "today" && value !== "yesterday").map(([value, label]) => (
-          <button
-            className={preset === value ? "preset-button active" : "preset-button"}
-            key={value}
-            type="button"
-            onClick={() => applyPreset(value)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <div className={filtersOpen ? "leaderboard-filter-stack mobile-filter-stack mobile-open" : "leaderboard-filter-stack mobile-filter-stack"}>
+        <button
+          className="mobile-filter-toggle"
+          type="button"
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((value) => !value)}
+        >
+          榜单筛选
+          <span>{leaderboardFilterSummary(range, source, minCount)}</span>
+        </button>
+        <div className="mobile-filter-fields">
+          <div className="range-presets leaderboard-presets" aria-label="榜单时间窗口">
+            {RANGE_PRESETS.filter(([value]) => value !== "today" && value !== "yesterday").map(([value, label]) => (
+              <button
+                className={preset === value ? "preset-button active" : "preset-button"}
+                key={value}
+                type="button"
+                onClick={() => applyPreset(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-      <div className="leaderboard-toolbar">
-        <SelectField
-          label="来源"
-          value={source}
-          options={[
-            ["all", "全部"],
-            ["personal_message", "个人消息"],
-            ["group_message", "个人群"],
-          ]}
-          onChange={(value) => setSource(value as IngestSource)}
-        />
-        <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
-        <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
-        <SelectField
-          label="最小样本"
-          value={minCount}
-          options={[
-            ["1", "1 条"],
-            ["3", "3 条"],
-            ["5", "5 条"],
-            ["10", "10 条"],
-          ]}
-          onChange={setMinCount}
-        />
-      </div>
-
-      <div className="leaderboard-metrics">
-        <Metric label="证据事件" value={metrics.eventCount} detail="按来源去重汇总" />
-        <Metric label="T+5 胜率" value={formatPercent(metrics.t5WinRate)} detail={`${metrics.t5SampleCount} 个成熟窗口`} />
-        <Metric label="T+5 平均收益" value={formatSignedPercent(metrics.t5AvgReturn)} detail="个股收益" tone={metrics.t5AvgReturn} />
-        <Metric label="T+5 平均超额" value={formatSignedPercent(metrics.t5AvgExcess)} detail="相对基准" tone={metrics.t5AvgExcess} />
+          <div className="leaderboard-toolbar">
+            <SelectField
+              label="来源"
+              value={source}
+              options={[
+                ["all", "全部"],
+                ["personal_message", "个人消息"],
+                ["group_message", "个人群"],
+              ]}
+              onChange={(value) => setSource(value as IngestSource)}
+            />
+            <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />
+            <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />
+            <SelectField
+              label="最小样本"
+              value={minCount}
+              options={[
+                ["1", "1 条"],
+                ["3", "3 条"],
+                ["5", "5 条"],
+                ["10", "10 条"],
+              ]}
+              onChange={setMinCount}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="leaderboard-dimensions" aria-label="榜单维度">
@@ -225,6 +232,13 @@ export function LeaderboardPage() {
             </button>
           );
         })}
+      </div>
+
+      <div className="leaderboard-metrics">
+        <Metric label="证据事件" value={metrics.eventCount} detail="按来源去重汇总" />
+        <Metric label="T+5 胜率" value={formatPercent(metrics.t5WinRate)} detail={`${metrics.t5SampleCount} 个成熟窗口`} />
+        <Metric label="T+5 平均收益" value={formatSignedPercent(metrics.t5AvgReturn)} detail="个股收益" tone={metrics.t5AvgReturn} />
+        <Metric label="T+5 平均超额" value={formatSignedPercent(metrics.t5AvgExcess)} detail="相对基准" tone={metrics.t5AvgExcess} />
       </div>
 
       {error && <p className="error-line">{error}</p>}
@@ -416,6 +430,11 @@ function weightedMetric(rows: RecommendationBacktestSummaryRow[], metricKey: str
 
 function sumMetric(rows: RecommendationBacktestSummaryRow[], key: string): number {
   return rows.reduce((sum, row) => sum + (metric(row, key) ?? 0), 0);
+}
+
+function leaderboardFilterSummary(range: LocalRange, source: IngestSource, minCount: string): string {
+  const sourceLabel = source === "group_message" ? "个人群" : source === "personal_message" ? "个人消息" : "全部来源";
+  return `${rangeLabel(range)} · ${sourceLabel} · ${minCount} 条样本`;
 }
 
 function metric(row: RecommendationBacktestSummaryRow, key: string): number | null {

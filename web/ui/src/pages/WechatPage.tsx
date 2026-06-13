@@ -43,6 +43,7 @@ export function WechatPage() {
   const [selectedSender, setSelectedSender] = useState<string | null>(null);
   const [senderQuery, setSenderQuery] = useState("");
   const [threadKeyword, setThreadKeyword] = useState("");
+  const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [groupNamesLoading, setGroupNamesLoading] = useState(false);
   const [threadLoading, setThreadLoading] = useState(false);
@@ -50,6 +51,8 @@ export function WechatPage() {
   const [threadError, setThreadError] = useState<string | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
   const threadScrollIntentRef = useRef<ThreadScrollIntent | null>(null);
+  const mobileThreadOpenRef = useRef(false);
+  const mobileThreadHistoryRef = useRef(false);
 
   const conversations = conversationPage.items;
   const selectedConversation = conversations.find((item) => item.key === selectedKey) ?? conversations[0] ?? null;
@@ -76,6 +79,21 @@ export function WechatPage() {
 
   useEffect(() => {
     void loadConversations(defaultQuery);
+  }, []);
+
+  useEffect(() => {
+    mobileThreadOpenRef.current = mobileThreadOpen;
+  }, [mobileThreadOpen]);
+
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      if (mobileThreadOpenRef.current && !event.state?.radarWechatThread) {
+        mobileThreadHistoryRef.current = false;
+        setMobileThreadOpen(false);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   useEffect(() => {
@@ -185,6 +203,24 @@ export function WechatPage() {
     }
   }
 
+  function openMobileThread(conversation: MessageConversationItem) {
+    setSelectedKey(conversation.key);
+    setMobileThreadOpen(true);
+    if (isMobileThreadLayout() && !mobileThreadOpenRef.current) {
+      window.history.pushState({ radarWechatThread: conversation.key }, "", window.location.href);
+      mobileThreadHistoryRef.current = true;
+    }
+  }
+
+  function closeMobileThread() {
+    if (mobileThreadHistoryRef.current) {
+      mobileThreadHistoryRef.current = false;
+      window.history.back();
+      return;
+    }
+    setMobileThreadOpen(false);
+  }
+
   return (
     <section className="wechat-page">
       <WechatFilters
@@ -195,11 +231,12 @@ export function WechatPage() {
         onChange={setQuery}
         onSubmit={() => {
           setHistory([]);
+          setMobileThreadOpen(false);
           void loadConversations({ ...query, cursor_time: undefined, cursor_key: undefined });
         }}
       />
 
-      <div className="wechat-workspace">
+      <div className={mobileThreadOpen ? "wechat-workspace thread-open" : "wechat-workspace"}>
         <aside className="wechat-conversation-panel content-panel panel">
           <div className="wechat-panel-head">
             <div>
@@ -225,7 +262,7 @@ export function WechatPage() {
                     layout
                     transition={conversationMotion.transition}
                     type="button"
-                    onClick={() => setSelectedKey(conversation.key)}
+                    onClick={() => openMobileThread(conversation)}
                   >
                     <Avatar name={conversation.title} />
                     <span className="wechat-conversation-main">
@@ -300,6 +337,7 @@ export function WechatPage() {
                 onSenderChange={setSelectedSender}
                 onSenderQueryChange={setSenderQuery}
                 onThreadKeywordChange={setThreadKeyword}
+                onBack={closeMobileThread}
               />
               <div
                 className="wechat-thread"
@@ -359,6 +397,10 @@ function ConversationSkeleton() {
   );
 }
 
+function isMobileThreadLayout(): boolean {
+  return window.matchMedia("(max-width: 760px)").matches;
+}
+
 function ThreadHeader(props: {
   conversation: MessageConversationItem;
   filteredCount: number;
@@ -371,9 +413,13 @@ function ThreadHeader(props: {
   onSenderChange: (sender: string | null) => void;
   onSenderQueryChange: (value: string) => void;
   onThreadKeywordChange: (value: string) => void;
+  onBack: () => void;
 }) {
   return (
     <div className="wechat-thread-head">
+      <button className="mini-button wechat-thread-back" type="button" onClick={props.onBack} aria-label="返回会话列表">
+        <ChevronLeft size={15} />
+      </button>
       <Avatar name={props.conversation.title} />
       <div className="wechat-thread-head-main">
         <div className="wechat-thread-title-row">

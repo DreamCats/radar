@@ -46,6 +46,7 @@ export function IngestPage() {
   const [source, setSource] = useState<IngestSource>("all");
   const [range, setRange] = useState<LocalRange>(initialRange);
   const [preset, setPreset] = useState<RangePreset>("yesterdayClose");
+  const [rangeOpen, setRangeOpen] = useState(false);
   const [tradeDate, setTradeDate] = useState(() => dateToTradeDate(initialRange.endDate));
   const [force, setForce] = useState(false);
   const [trackedJobs, setTrackedJobs] = useState<TrackedJob[]>([]);
@@ -252,17 +253,33 @@ export function IngestPage() {
         </div>
       </div>
 
-      <div className="range-presets" aria-label="快捷时间窗口">
-        {rangePresets.map(([value, label]) => (
-          <button
-            className={preset === value ? "preset-button active" : "preset-button"}
-            key={value}
-            type="button"
-            onClick={() => applyPreset(value)}
-          >
-            {label}
-          </button>
-        ))}
+      <div className={rangeOpen ? "ingest-range-stack mobile-filter-stack mobile-open" : "ingest-range-stack mobile-filter-stack"}>
+        <button
+          className="mobile-filter-toggle"
+          type="button"
+          aria-expanded={rangeOpen}
+          onClick={() => setRangeOpen((value) => !value)}
+        >
+          时间窗口
+          <span>{rangeLabel(range)}</span>
+        </button>
+        <div className="mobile-filter-fields">
+          <div className="range-presets" aria-label="快捷时间窗口">
+            {rangePresets.map(([value, label]) => (
+              <button
+                className={preset === value ? "preset-button active" : "preset-button"}
+                key={value}
+                type="button"
+                onClick={() => {
+                  applyPreset(value);
+                  setRangeOpen(false);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="job-center-grid">

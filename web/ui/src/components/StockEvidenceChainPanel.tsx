@@ -1,5 +1,5 @@
 import { CheckCircle2, CircleAlert, MessageSquareText, Network, TrendingUp, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { formatTime } from "../lib/datetime";
 import type { StockEvidenceChainDashboard, StockEvidenceChainItem } from "../types";
@@ -32,6 +32,9 @@ export function StockEvidenceChainPanel({ data, error, onSelectStock, onOpenChec
   const [stage, setStage] = useState("全部");
   const [reviewFilter, setReviewFilter] = useState<ReviewFilterKey>("全部");
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const mobileDetailOpenRef = useRef(false);
+  const mobileDetailHistoryRef = useRef(false);
   const stageFilteredItems = stage === "全部" ? items : items.filter((item) => item.stage_label === stage);
   const filteredItems = filterByReview(stageFilteredItems, reviewFilter);
   const reviewCounts = useMemo(() => reviewFilterCounts(stageFilteredItems), [stageFilteredItems]);
@@ -55,6 +58,43 @@ export function StockEvidenceChainPanel({ data, error, onSelectStock, onOpenChec
       setReviewFilter("全部");
     }
   }, [reviewCounts, reviewFilter]);
+
+  useEffect(() => {
+    setMobileDetailOpen(false);
+  }, [reviewFilter, stage]);
+
+  useEffect(() => {
+    mobileDetailOpenRef.current = mobileDetailOpen;
+  }, [mobileDetailOpen]);
+
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      if (mobileDetailOpenRef.current && !event.state?.radarStockEvidenceDetail) {
+        mobileDetailHistoryRef.current = false;
+        setMobileDetailOpen(false);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  function openMobileDetail(tsCode: string) {
+    setSelectedCode(tsCode);
+    setMobileDetailOpen(true);
+    if (isMobileStockLayout() && !mobileDetailOpenRef.current) {
+      window.history.pushState({ radarStockEvidenceDetail: tsCode }, "", window.location.href);
+      mobileDetailHistoryRef.current = true;
+    }
+  }
+
+  function closeMobileDetail() {
+    if (mobileDetailHistoryRef.current) {
+      mobileDetailHistoryRef.current = false;
+      window.history.back();
+      return;
+    }
+    setMobileDetailOpen(false);
+  }
 
   return (
     <div className="stock-evidence-workbench">
@@ -94,25 +134,34 @@ export function StockEvidenceChainPanel({ data, error, onSelectStock, onOpenChec
               ))}
             </div>
           </div>
-          <div className="stock-evidence-layout">
+          <div className={mobileDetailOpen ? "stock-evidence-layout detail-open" : "stock-evidence-layout"}>
             <div className="stock-evidence-list" aria-label="股票候选">
               {filteredItems.map((item) => (
                 <StockEvidenceRow
                   item={item}
                   selected={item.ts_code === selected?.ts_code}
                   key={item.ts_code}
-                  onClick={() => setSelectedCode(item.ts_code)}
+                  onClick={() => openMobileDetail(item.ts_code)}
                   onOpenChart={onSelectStock}
                 />
               ))}
               {!filteredItems.length && <p className="stock-evidence-empty">当前筛选暂无股票。</p>}
             </div>
-            <StockEvidenceDetailPanel item={selected} onOpenChart={onSelectStock} onOpenChecklist={onOpenChecklist} />
+            <StockEvidenceDetailPanel
+              item={selected}
+              onOpenChart={onSelectStock}
+              onOpenChecklist={onOpenChecklist}
+              onBackToList={closeMobileDetail}
+            />
           </div>
         </section>
       )}
     </div>
   );
+}
+
+function isMobileStockLayout(): boolean {
+  return window.matchMedia("(max-width: 720px)").matches;
 }
 
 function SortRuleHelp() {

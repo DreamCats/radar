@@ -176,10 +176,25 @@
 
 @media (max-width: 640px) {
   .chat-history-panel {
-    max-height: 220px;
+    max-height: 132px;
+    gap: 8px;
     border-right: 0;
     border-bottom: 1px solid var(--color-hairline);
     padding-right: 0;
-    padding-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  .chat-history-new {
+    min-height: 30px;
+    padding: 6px 9px;
+  }
+
+  .chat-history-list {
+    gap: 6px;
+  }
+
+  .chat-history-item {
+    gap: 4px;
+    padding: 7px 8px;
   }
 }

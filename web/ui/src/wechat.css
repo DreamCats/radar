@@ -317,6 +317,10 @@
   grid-template-rows: auto minmax(0, 1fr);
 }
 
+.wechat-thread-back {
+  display: none;
+}
+
 .wechat-thread-head {
   align-items: flex-start;
   padding-top: 12px;
@@ -558,5 +562,114 @@
 
   .wechat-thread-filters {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .wechat-page {
+    height: auto;
+    overflow: visible;
+  }
+
+  .wechat-filter-bar {
+    gap: 10px;
+  }
+
+  .wechat-workspace {
+    display: block;
+  }
+
+  .wechat-thread-panel {
+    display: none;
+  }
+
+  .wechat-workspace.thread-open .wechat-conversation-panel {
+    display: none;
+  }
+
+  .wechat-workspace.thread-open .wechat-thread-panel {
+    display: grid;
+  }
+
+  .wechat-conversation-panel,
+  .wechat-thread-panel {
+    min-height: calc(100dvh - 220px);
+  }
+
+  .wechat-conversation,
+  .wechat-conversation-skeleton {
+    grid-template-columns: 34px minmax(0, 1fr);
+    min-height: 70px;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .wechat-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+
+  .wechat-thread-back {
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+
+  .wechat-thread-head {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .wechat-thread-title-row,
+  .wechat-thread-title-main {
+    align-items: flex-start;
+  }
+
+  .wechat-thread-title-main {
+    display: grid;
+    gap: 3px;
+  }
+
+  .wechat-thread-title-main h2 {
+    white-space: normal;
+  }
+
+  .wechat-thread-filters {
+    gap: 6px;
+  }
+
+  .wechat-filter-input {
+    min-height: 28px;
+    border-radius: var(--radius-sm);
+    padding: 0 8px;
+  }
+
+  .wechat-sender-chips {
+    max-height: 58px;
+    gap: 5px;
+  }
+
+  .wechat-sender-chip {
+    max-width: 150px;
+    min-height: 24px;
+    padding: 0 7px;
+    font-size: 11.5px;
+  }
+
+  .wechat-thread {
+    gap: 10px;
+    min-height: calc(100dvh - 292px);
+    padding: 10px;
+  }
+
+  .wechat-bubble-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .wechat-message p {
+    max-width: 100%;
+    padding: 8px 10px;
+    font-size: 12.5px;
+    line-height: 1.55;
   }
 }

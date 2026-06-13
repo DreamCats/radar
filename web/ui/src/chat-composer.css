@@ -334,9 +334,9 @@
 
 @media (max-width: 640px) {
   .chat-composer textarea {
-    min-height: 110px;
+    min-height: 76px;
     padding-right: 14px;
-    padding-bottom: 56px;
+    padding-bottom: 50px;
   }
 
   .chat-composer-suggestion {
@@ -344,7 +344,14 @@
   }
 
   .chat-model-trigger {
-    max-width: min(148px, calc(100vw - 92px));
+    max-width: min(136px, calc(100vw - 86px));
+    height: 32px;
+  }
+
+  .chat-send-button,
+  .chat-context-meter {
+    width: 32px;
+    height: 32px;
   }
 
   .chat-composer.with-shortcuts {
@@ -352,10 +359,16 @@
   }
 
   .chat-composer.with-shortcuts .chat-composer-actions {
-    justify-self: stretch;
+    justify-self: end;
   }
 
   .chat-composer.with-shortcuts .chat-composer-shortcuts {
-    flex-wrap: wrap;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+
+  .chat-composer.with-shortcuts .chat-composer-shortcuts button {
+    flex: 0 0 auto;
   }
 }

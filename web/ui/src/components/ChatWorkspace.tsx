@@ -1,4 +1,4 @@
-import { History, Plus, X } from "lucide-react";
+import { ArrowLeft, History, Plus, X } from "lucide-react";
 
 import { ChatComposer } from "./ChatComposer";
 import { ChatHistoryPanel } from "./ChatHistoryPanel";
@@ -27,6 +27,11 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
   return (
     <div className="chat-workspace">
       <header className="chat-launcher-head">
+        {props.onClose ? (
+          <button className="icon-btn chat-launcher-back" type="button" aria-label="返回上一页" onClick={props.onClose}>
+            <ArrowLeft size={17} />
+          </button>
+        ) : null}
         <div className="chat-launcher-head-main">
           <div className="chat-launcher-title">
             <span>{props.surface}</span>
@@ -71,7 +76,7 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
             <Plus size={16} />
           </button>
           {props.onClose ? (
-            <button className="icon-btn" type="button" aria-label="关闭" onClick={props.onClose}>
+            <button className="icon-btn chat-launcher-close" type="button" aria-label="关闭" onClick={props.onClose}>
               <X size={16} />
             </button>
           ) : null}

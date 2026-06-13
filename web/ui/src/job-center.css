@@ -248,3 +248,33 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 720px) {
+  .job-template-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .job-template-group {
+    display: contents;
+  }
+
+  .job-template-group-title {
+    display: none;
+  }
+
+  .job-template {
+    min-width: 172px;
+  }
+
+  .job-queue-summary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .job-queue-summary .btn {
+    width: 100%;
+  }
+}

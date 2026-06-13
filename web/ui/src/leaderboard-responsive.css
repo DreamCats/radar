@@ -19,6 +19,11 @@
     overflow: auto;
   }
 
+  .leaderboard-filter-stack {
+    display: grid;
+    gap: 10px;
+  }
+
   .leaderboard-header,
   .leaderboard-toolbar {
     grid-template-columns: 1fr;
@@ -30,14 +35,33 @@
   }
 
   .leaderboard-toolbar,
-  .leaderboard-metrics,
-  .leaderboard-dimensions,
   .leaderboard-window-grid {
     grid-template-columns: 1fr;
+  }
+
+  .leaderboard-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .leaderboard-dimensions {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .leaderboard-dimension {
+    flex: 0 0 148px;
   }
 
   .leaderboard-window {
     width: fit-content;
     max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .leaderboard-metrics,
+  .leaderboard-window-grid {
+    grid-template-columns: 1fr;
   }
 }

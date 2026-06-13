@@ -37,6 +37,10 @@
   gap: var(--space-xs);
 }
 
+.ingest-range-stack {
+  display: contents;
+}
+
 .preset-button {
   min-height: 32px;
   border: 1px solid var(--color-hairline);
@@ -331,6 +335,21 @@
 }
 
 @media (max-width: 900px) {
+  .ingest-range-stack {
+    display: grid;
+    gap: 10px;
+  }
+
+  .range-presets {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .preset-button {
+    flex: 0 0 auto;
+  }
+
   .ingest-form-v2 {
     grid-template-columns: 1fr;
   }

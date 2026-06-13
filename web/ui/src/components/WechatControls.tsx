@@ -13,51 +13,69 @@ export function WechatFilters(props: {
   onChange: (query: MessageConversationQuery) => void;
   onSubmit: () => void;
 }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const nameLabel =
     props.query.source === "personal_message" ? "人名" : props.query.source === "group_message" ? "群名" : "群名/人名";
 
   return (
     <form
-      className="filter-panel wechat-filter-bar"
+      className={filtersOpen ? "filter-panel wechat-filter-bar mobile-open" : "filter-panel wechat-filter-bar"}
       onSubmit={(event) => {
         event.preventDefault();
+        setFiltersOpen(false);
         props.onSubmit();
       }}
     >
-      <SelectField
-        label="来源"
-        value={props.query.source ?? ""}
-        onChange={(value) =>
-          props.onChange({
-            ...props.query,
-            source: value,
-            group_name: "",
-          })
-        }
-        options={[
-          ["", "全部"],
-          ["personal_message", "个人消息"],
-          ["group_message", "个人群"],
-        ]}
-      />
-      <GroupNameField
-        groups={props.groupNames}
-        label={nameLabel}
-        loading={props.groupNamesLoading}
-        value={props.query.group_name ?? ""}
-        onChange={(value) => props.onChange({ ...props.query, group_name: value })}
-      />
-      <TextField
-        label="关键词"
-        value={props.query.keyword ?? ""}
-        onChange={(value) => props.onChange({ ...props.query, keyword: value })}
-      />
-      <button className="btn btn-primary" type="submit" disabled={props.loading}>
-        <Search size={16} />
-        查询
+      <button
+        className="mobile-filter-toggle"
+        type="button"
+        aria-expanded={filtersOpen}
+        onClick={() => setFiltersOpen((value) => !value)}
+      >
+        微信筛选
+        <span>{wechatFilterSummary(props.query)}</span>
       </button>
+      <div className="mobile-filter-fields">
+        <SelectField
+          label="来源"
+          value={props.query.source ?? ""}
+          onChange={(value) =>
+            props.onChange({
+              ...props.query,
+              source: value,
+              group_name: "",
+            })
+          }
+          options={[
+            ["", "全部"],
+            ["personal_message", "个人消息"],
+            ["group_message", "个人群"],
+          ]}
+        />
+        <GroupNameField
+          groups={props.groupNames}
+          label={nameLabel}
+          loading={props.groupNamesLoading}
+          value={props.query.group_name ?? ""}
+          onChange={(value) => props.onChange({ ...props.query, group_name: value })}
+        />
+        <TextField
+          label="关键词"
+          value={props.query.keyword ?? ""}
+          onChange={(value) => props.onChange({ ...props.query, keyword: value })}
+        />
+        <button className="btn btn-primary" type="submit" disabled={props.loading}>
+          <Search size={16} />
+          查询
+        </button>
+      </div>
     </form>
   );
+}
+
+function wechatFilterSummary(query: MessageConversationQuery): string {
+  const source = query.source === "personal_message" ? "个人消息" : query.source === "group_message" ? "个人群" : "全部来源";
+  return [source, query.group_name || "", query.keyword || ""].filter(Boolean).join(" · ");
 }
 
 export function Avatar({ name, small = false }: { name: string; small?: boolean }) {

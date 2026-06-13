@@ -1,8 +1,10 @@
 .auth-shell {
   display: block;
   height: 100vh;
+  height: 100dvh;
   min-height: 100vh;
-  overflow: hidden;
+  min-height: 100dvh;
+  overflow: auto;
 }
 
 .login-page {
@@ -10,6 +12,7 @@
   z-index: 1;
   display: grid;
   min-height: 100vh;
+  min-height: 100dvh;
   place-items: center;
   padding: 24px;
 }
@@ -102,4 +105,20 @@
 
 .login-submit {
   min-height: 38px;
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    align-items: start;
+    padding: 18px 14px;
+  }
+
+  .login-panel {
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .login-heading h1 {
+    font-size: 28px;
+  }
 }
