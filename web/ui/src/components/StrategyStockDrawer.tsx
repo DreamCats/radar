@@ -1,9 +1,12 @@
 import { Suspense, lazy, useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { BarChart3, ListChecks, X } from "lucide-react";
 
-import { fetchStockEvidenceStockChart } from "../api/radarApi";
+import { fetchStockEvidenceFinancials, fetchStockEvidenceStockChart } from "../api/radarApi";
 import { ChatLauncher } from "./ChatLauncher";
-import type { StockEvidenceStockChart } from "../types";
+import { StrategyMarketChartLoading } from "./StrategyMarketChartLoading";
+import { StockChecklistCard, type StockChecklistData } from "./StockChecklistCard";
+import { checklistWithFinancials } from "./stockChecklistFinancials";
+import type { StockEvidenceFinancials, StockEvidenceStockChart } from "../types";
 
 export type StrategyStockDrawerMetric = {
   label: string;
@@ -33,9 +36,11 @@ export type StrategyStockDrawerStock = {
   drawer_context?: StrategyStockDrawerContextItem[];
   evidence_title?: string;
   evidence_lines?: string[];
+  checklist?: StockChecklistData;
 };
 
 type StrategyStock = StrategyStockDrawerStock;
+export type StrategyStockDrawerMode = "chart" | "checklist";
 
 const StrategyStockCandlestickChart = lazy(() =>
   import("./StrategyStockCandlestickChart").then((module) => ({ default: module.StrategyStockCandlestickChart })),
@@ -43,23 +48,38 @@ const StrategyStockCandlestickChart = lazy(() =>
 
 type Props = {
   stock: StrategyStock | null;
+  initialMode?: StrategyStockDrawerMode;
   onClose: () => void;
 };
 
-export function StrategyStockDrawer({ stock, onClose }: Props) {
+export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: Props) {
+  const [activeMode, setActiveMode] = useState<StrategyStockDrawerMode>(initialMode);
   const [chart, setChart] = useState<StockEvidenceStockChart | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [financials, setFinancials] = useState<StockEvidenceFinancials | null>(null);
+  const [financialLoading, setFinancialLoading] = useState(false);
+  const [financialError, setFinancialError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveMode(initialMode);
+  }, [initialMode, stock?.ts_code]);
 
   useEffect(() => {
     if (!stock) {
       setChart(null);
       setError(null);
+      setFinancials(null);
+      setFinancialError(null);
+      setFinancialLoading(false);
       return;
     }
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setFinancials(null);
+    setFinancialError(null);
+    setFinancialLoading(false);
     void fetchStockEvidenceStockChart(stock.ts_code, { days: 120 })
       .then((result) => {
         if (!cancelled) {
@@ -83,6 +103,35 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
   }, [stock?.ts_code]);
 
   useEffect(() => {
+    if (!stock?.checklist || activeMode !== "checklist") {
+      return;
+    }
+    let cancelled = false;
+    setFinancialLoading(true);
+    setFinancialError(null);
+    void fetchStockEvidenceFinancials(stock.ts_code, { years: 5 })
+      .then((result) => {
+        if (!cancelled) {
+          setFinancials(result);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setFinancialError(err instanceof Error ? err.message : "财务数据加载失败");
+          setFinancials(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setFinancialLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeMode, stock?.checklist, stock?.ts_code]);
+
+  useEffect(() => {
     if (!stock) {
       return;
     }
@@ -101,9 +150,11 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
 
   const candles = chart?.candles ?? [];
   const evidenceLines = stockEvidenceLines(stock);
+  const checklist = stock.checklist ? checklistWithFinancials(stock.checklist, financials, financialLoading, financialError) : null;
+  const activePanel = checklist ? activeMode : "chart";
 
   return (
-    <div className="strategy-stock-drawer-shell" role="dialog" aria-modal="true" aria-label={`${stock.stock_name} K线`}>
+    <div className="strategy-stock-drawer-shell" role="dialog" aria-modal="true" aria-label={`${stock.stock_name} 个股深挖`}>
       <button className="strategy-stock-drawer-scrim" type="button" aria-label="关闭K线抽屉" onClick={onClose} />
       <aside className="strategy-stock-drawer">
         <header className="strategy-stock-drawer-head">
@@ -112,13 +163,39 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
             <span>{stock.ts_code}</span>
           </div>
           <div className="strategy-stock-drawer-head-actions">
+            <div className="strategy-stock-mode-switch" role="tablist" aria-label="个股深挖视图">
+              <button
+                className={activePanel === "chart" ? "active" : ""}
+                type="button"
+                role="tab"
+                aria-selected={activePanel === "chart"}
+                title="看K线"
+                onClick={() => setActiveMode("chart")}
+              >
+                <BarChart3 size={14} />
+                <span>K线</span>
+              </button>
+              {checklist && (
+                <button
+                  className={activePanel === "checklist" ? "active" : ""}
+                  type="button"
+                  role="tab"
+                  aria-selected={activePanel === "checklist"}
+                  title="打开个股核查卡"
+                  onClick={() => setActiveMode("checklist")}
+                >
+                  <ListChecks size={14} />
+                  <span>核查卡</span>
+                </button>
+              )}
+            </div>
             <ChatLauncher
               title={stock.stock_name}
               subtitle={drawerSubtitle(stock) || stock.ts_code}
               surface="个股深挖"
               entityId={stock.ts_code}
               buttonLabel="AI"
-              buttonClassName="btn btn-primary btn-sm strategy-stock-ai-action"
+              buttonClassName="btn btn-sm strategy-stock-ai-action"
               context={[
                 { label: "代码", value: stock.ts_code },
                 { label: "视图", value: stock.drawer_badge ?? "K线复盘" },
@@ -141,7 +218,7 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
 
         <div className="strategy-stock-drawer-tags">
           {stock.drawer_badge && <span className="strategy-stock-context-tag">{stock.drawer_badge}</span>}
-          <span>行情面板</span>
+          <span>{activePanel === "checklist" ? "个股核查卡" : "行情面板"}</span>
         </div>
 
         <div className="strategy-stock-drawer-body">
@@ -154,31 +231,37 @@ export function StrategyStockDrawer({ stock, onClose }: Props) {
             ))}
           </div>
 
-          {loading && <MarketChartLoading stockName={stock.stock_name} />}
-          {!loading && error && <p className="error-line">{error}</p>}
-          {!loading && !error && candles.length === 0 && (
-            <p className="strategy-stock-chart-empty">{chart?.missing_reason ?? "本地暂无日线缓存"}</p>
-          )}
-          {!loading && !error && candles.length > 0 && (
-            <Suspense fallback={<p className="strategy-stock-chart-empty">正在加载图表</p>}>
-              <StrategyStockCandlestickChart candles={candles} stock={stock} latestIsRealtime={chart?.latest_is_realtime ?? false} />
-            </Suspense>
-          )}
+          {activePanel === "checklist" && checklist ? (
+            <StockChecklistCard stockName={stock.stock_name} tsCode={stock.ts_code} checklist={checklist} />
+          ) : (
+            <>
+              {loading && <StrategyMarketChartLoading stockName={stock.stock_name} />}
+              {!loading && error && <p className="error-line">{error}</p>}
+              {!loading && !error && candles.length === 0 && (
+                <p className="strategy-stock-chart-empty">{chart?.missing_reason ?? "本地暂无日线缓存"}</p>
+              )}
+              {!loading && !error && candles.length > 0 && (
+                <Suspense fallback={<p className="strategy-stock-chart-empty">正在加载图表</p>}>
+                  <StrategyStockCandlestickChart candles={candles} stock={stock} latestIsRealtime={chart?.latest_is_realtime ?? false} />
+                </Suspense>
+              )}
 
-          <div className="strategy-stock-decision-grid">
-            {drawerMetrics(stock).map((metric) => (
-              <DecisionMetric label={metric.label} tone={metric.tone} value={metric.value} key={metric.label} />
-            ))}
-          </div>
+              <div className="strategy-stock-decision-grid">
+                {drawerMetrics(stock).map((metric) => (
+                  <DecisionMetric label={metric.label} tone={metric.tone} value={metric.value} key={metric.label} />
+                ))}
+              </div>
 
-          {evidenceLines.length > 0 && (
-            <section className="strategy-stock-evidence-panel">
-              <strong>{stock.evidence_title ?? "策略证据"}</strong>
-              {drawerSubtitle(stock) && <span>{drawerSubtitle(stock)}</span>}
-              {evidenceLines.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </section>
+              {evidenceLines.length > 0 && (
+                <section className="strategy-stock-evidence-panel">
+                  <strong>{stock.evidence_title ?? "策略证据"}</strong>
+                  {drawerSubtitle(stock) && <span>{drawerSubtitle(stock)}</span>}
+                  {evidenceLines.map((line) => (
+                    <p key={line}>{line}</p>
+                  ))}
+                </section>
+              )}
+            </>
           )}
         </div>
       </aside>
@@ -193,47 +276,6 @@ function DecisionMetric({ label, value, tone }: StrategyStockDrawerMetric) {
       <span>{label}</span>
       <strong className={metricToneClass(value, tone)}>{formatted}</strong>
     </article>
-  );
-}
-
-function MarketChartLoading({ stockName }: { stockName: string }) {
-  const candleBars = [
-    { className: "is-down", height: 46 },
-    { className: "is-up", height: 72 },
-    { className: "is-up", height: 58 },
-    { className: "is-down", height: 88 },
-    { className: "is-up", height: 104 },
-    { className: "is-down", height: 64 },
-    { className: "is-up", height: 92 },
-    { className: "is-up", height: 76 },
-    { className: "is-down", height: 52 },
-  ];
-  const volumeBars = [34, 58, 42, 76, 94, 62, 84, 48, 66];
-
-  return (
-    <section className="strategy-market-loading" role="status" aria-live="polite" aria-label={`正在同步${stockName}本地行情`}>
-      <div className="strategy-market-loading-head">
-        <span className="strategy-market-loading-dot" />
-        <div>
-          <strong>正在同步本地行情</strong>
-          <span>读取日线缓存与盘中快照</span>
-        </div>
-      </div>
-      <div className="strategy-market-loading-chart" aria-hidden="true">
-        <div className="strategy-market-loading-grid" />
-        <div className="strategy-market-loading-price-line" />
-        <div className="strategy-market-loading-candles">
-          {candleBars.map((bar, index) => (
-            <span className={`strategy-market-loading-candle ${bar.className}`} style={{ height: `${bar.height}px` }} key={index} />
-          ))}
-        </div>
-        <div className="strategy-market-loading-volumes">
-          {volumeBars.map((height, index) => (
-            <span style={{ height: `${height}%` }} key={index} />
-          ))}
-        </div>
-      </div>
-    </section>
   );
 }
 

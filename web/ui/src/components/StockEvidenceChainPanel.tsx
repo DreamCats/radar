@@ -24,9 +24,10 @@ type Props = {
   data: StockEvidenceChainDashboard | null;
   error: string | null;
   onSelectStock?: (stock: StockEvidenceChainItem) => void;
+  onOpenChecklist?: (stock: StockEvidenceChainItem) => void;
 };
 
-export function StockEvidenceChainPanel({ data, error, onSelectStock }: Props) {
+export function StockEvidenceChainPanel({ data, error, onSelectStock, onOpenChecklist }: Props) {
   const items = data?.items ?? [];
   const [stage, setStage] = useState("全部");
   const [reviewFilter, setReviewFilter] = useState<ReviewFilterKey>("全部");
@@ -106,7 +107,7 @@ export function StockEvidenceChainPanel({ data, error, onSelectStock }: Props) {
               ))}
               {!filteredItems.length && <p className="stock-evidence-empty">当前筛选暂无股票。</p>}
             </div>
-            <StockEvidenceDetailPanel item={selected} onOpenChart={onSelectStock} />
+            <StockEvidenceDetailPanel item={selected} onOpenChart={onSelectStock} onOpenChecklist={onOpenChecklist} />
           </div>
         </section>
       )}

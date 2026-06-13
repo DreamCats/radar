@@ -287,6 +287,7 @@
 
 .stock-evidence-row-metrics span,
 .stock-evidence-chart-btn,
+.stock-evidence-checklist-btn,
 .stock-evidence-detail-actions {
   display: inline-flex;
   align-items: center;
@@ -305,11 +306,38 @@
   cursor: pointer;
 }
 
+.stock-evidence-checklist-btn {
+  height: 30px;
+  justify-content: center;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-muted);
+  background: var(--color-surface-2);
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stock-evidence-checklist-btn:hover,
+.stock-evidence-checklist-btn:focus-visible {
+  color: var(--color-ink);
+  background: var(--color-surface-3);
+}
+
 .stock-evidence-ai-btn {
   min-width: 52px;
   height: 30px;
+  border-color: var(--color-hairline-strong);
+  color: var(--color-ink-muted);
+  background: var(--color-surface-2);
   justify-content: center;
   padding-inline: 10px;
+}
+
+.stock-evidence-ai-btn:hover:not(:disabled) {
+  color: var(--color-ink);
+  background: var(--color-surface-3);
 }
 
 .stock-evidence-stage {

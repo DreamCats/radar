@@ -1,0 +1,205 @@
+.stock-checklist-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface-3) 38%, transparent), transparent 220px),
+    var(--color-surface-2);
+  padding: 14px;
+}
+.stock-checklist-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stock-checklist-head > div {
+  display: grid;
+  gap: 3px;
+}
+
+.stock-checklist-head strong {
+  color: var(--color-ink);
+  font-size: 18px;
+}
+
+.stock-checklist-head small,
+.stock-checklist-kicker,
+.stock-checklist-summary,
+.stock-checklist-section small,
+.stock-checklist-section p,
+.stock-checklist-section li,
+.stock-checklist-metrics span {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.stock-checklist-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-ink-muted);
+  font-weight: 700;
+}
+
+.stock-checklist-status {
+  display: inline-flex;
+  height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stock-checklist-status.ready,
+.stock-checklist-section.ready .stock-checklist-section-head em {
+  border-color: color-mix(in srgb, var(--color-market-up) 42%, var(--color-hairline));
+  color: var(--color-market-up);
+}
+
+.stock-checklist-status.watch,
+.stock-checklist-section.watch .stock-checklist-section-head em {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 38%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+
+.stock-checklist-status.risk,
+.stock-checklist-section.risk .stock-checklist-section-head em {
+  border-color: color-mix(in srgb, var(--color-market-down) 42%, var(--color-hairline));
+  color: var(--color-market-down);
+}
+
+.stock-checklist-status.missing,
+.stock-checklist-section.missing .stock-checklist-section-head em {
+  color: var(--color-ink-subtle);
+}
+
+.stock-checklist-summary {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.stock-checklist-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stock-checklist-metrics article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--color-hairline) 82%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-1) 72%, transparent);
+  padding: 9px 10px;
+}
+
+.stock-checklist-metrics strong {
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock-checklist-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stock-checklist-section {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface-1) 76%, black);
+  padding: 12px;
+}
+
+.stock-checklist-section-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 9px;
+}
+
+.stock-checklist-section-head > span {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-muted);
+  background: var(--color-surface-2);
+}
+
+.stock-checklist-section-head div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stock-checklist-section-head strong {
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock-checklist-section-head em {
+  display: inline-flex;
+  min-width: max-content;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  padding: 2px 7px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.stock-checklist-section ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 16px;
+}
+
+.stock-checklist-section li,
+.stock-checklist-section p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.stock-checklist-section li::marker {
+  color: var(--color-ink-tertiary);
+}
+
+@media (max-width: 760px) {
+  .stock-checklist-metrics,
+  .stock-checklist-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .stock-checklist-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .stock-checklist-status {
+    width: fit-content;
+  }
+}

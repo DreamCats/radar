@@ -22,6 +22,7 @@ import "./strategy-evidence-detail.css";
 import "./strategy-evidence-theme-quality.css";
 import "./strategy-stock-chart.css";
 import "./strategy-stock-drawer.css";
+import "./stock-checklist-card.css";
 import "./wechat.css";
 
 createRoot(document.getElementById("root")!).render(<App />);

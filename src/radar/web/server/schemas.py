@@ -17,6 +17,7 @@ from radar.core.usecases.recommendation_backtest import (
 from radar.core.usecases.stock_evidence_chain import (
     LifecycleDigestPreview,
     StockEvidenceChainDashboard,
+    StockEvidenceFinancials,
     StockEvidenceStockChart,
 )
 
@@ -233,6 +234,10 @@ class StockEvidenceChainDashboardResponse(StockEvidenceChainDashboard):
 
 
 class StockEvidenceStockChartResponse(StockEvidenceStockChart):
+    pass
+
+
+class StockEvidenceFinancialsResponse(StockEvidenceFinancials):
     pass
 
 

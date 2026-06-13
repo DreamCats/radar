@@ -31,6 +31,7 @@ import type {
   RecommendationBacktestSummary,
   RunItem,
   StockEvidenceChainDashboard,
+  StockEvidenceFinancials,
   StockEvidenceChainJobRequest,
   StockEvidenceStockChart,
   StockEvidenceStockChartQuery,
@@ -233,6 +234,10 @@ export async function fetchStockEvidenceChainLatest(query: { limit?: number } = 
 
 export async function fetchStockEvidenceStockChart(tsCode: string, query: StockEvidenceStockChartQuery = {}): Promise<StockEvidenceStockChart> {
   return getJson(`/api/strategy/stocks/${encodeURIComponent(tsCode)}/chart?${params(query)}`);
+}
+
+export async function fetchStockEvidenceFinancials(tsCode: string, query: { years?: number } = {}): Promise<StockEvidenceFinancials> {
+  return getJson(`/api/strategy/stocks/${encodeURIComponent(tsCode)}/financials?${params(query)}`);
 }
 
 export async function fetchLifecycleDigestPreview(query: { limit?: number; force?: boolean } = {}): Promise<LifecycleDigestPreview> {

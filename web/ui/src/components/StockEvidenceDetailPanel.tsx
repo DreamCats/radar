@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   FileText,
   Gauge,
+  ListChecks,
   MessageSquareText,
   Route,
   TrendingUp,
@@ -16,15 +17,16 @@ import { StockEvidenceThemeEvidence } from "./StockEvidenceThemeEvidence";
 type Props = {
   item: StockEvidenceChainItem | null;
   onOpenChart?: (stock: StockEvidenceChainItem) => void;
+  onOpenChecklist?: (stock: StockEvidenceChainItem) => void;
 };
 
-export function StockEvidenceDetailPanel({ item, onOpenChart }: Props) {
+export function StockEvidenceDetailPanel({ item, onOpenChart, onOpenChecklist }: Props) {
   if (!item) {
     return <aside className="stock-evidence-detail empty">暂无匹配阶段的股票。</aside>;
   }
   return (
     <aside className="stock-evidence-detail">
-      <DetailHeader item={item} onOpenChart={onOpenChart} />
+      <DetailHeader item={item} onOpenChart={onOpenChart} onOpenChecklist={onOpenChecklist} />
       <VerdictCard item={item} />
       <MessageEvidence item={item} />
       <StockEvidenceThemeEvidence item={item} />
@@ -36,7 +38,15 @@ export function StockEvidenceDetailPanel({ item, onOpenChart }: Props) {
   );
 }
 
-function DetailHeader({ item, onOpenChart }: { item: StockEvidenceChainItem; onOpenChart?: (stock: StockEvidenceChainItem) => void }) {
+function DetailHeader({
+  item,
+  onOpenChart,
+  onOpenChecklist,
+}: {
+  item: StockEvidenceChainItem;
+  onOpenChart?: (stock: StockEvidenceChainItem) => void;
+  onOpenChecklist?: (stock: StockEvidenceChainItem) => void;
+}) {
   return (
     <header>
       <div>
@@ -51,13 +61,25 @@ function DetailHeader({ item, onOpenChart }: { item: StockEvidenceChainItem; onO
             看K线
           </button>
         )}
+        {onOpenChecklist && (
+          <button
+            className="stock-evidence-checklist-btn"
+            type="button"
+            title="打开个股核查卡"
+            aria-label={`打开${item.stock_name}个股核查卡`}
+            onClick={() => onOpenChecklist(item)}
+          >
+            <ListChecks size={14} />
+            <span>核查卡</span>
+          </button>
+        )}
         <ChatLauncher
           title={`${item.stock_name} 证据链`}
           subtitle={`${item.ts_code} · ${item.stage_label}`}
           surface="个股证据链"
           entityId={item.ts_code}
           buttonLabel="AI"
-          buttonClassName="btn btn-primary btn-sm stock-evidence-ai-btn"
+          buttonClassName="btn btn-sm stock-evidence-ai-btn"
           context={[
             { label: "股票", value: item.stock_name },
             { label: "代码", value: item.ts_code },

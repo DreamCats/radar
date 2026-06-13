@@ -20,6 +20,24 @@ export type StockEvidenceStockChart = {
   missing_reason?: string | null;
 };
 
+export type StockEvidenceFinancialMetric = {
+  label: string;
+  value: string;
+  tone?: "up" | "down" | "flat" | null;
+};
+
+export type StockEvidenceFinancials = {
+  ts_code: string;
+  status: string;
+  tone: "ready" | "watch" | "risk" | "missing";
+  latest_period?: string | null;
+  latest_ann_date?: string | null;
+  metrics: StockEvidenceFinancialMetric[];
+  lines: string[];
+  missing_reason?: string | null;
+  source: string;
+};
+
 export type StockEvidenceMarketPoint = {
   trade_date: string;
   close?: number | null;

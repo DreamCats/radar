@@ -4,13 +4,15 @@ import { RefreshCw } from "lucide-react";
 import { fetchStockEvidenceChainLatest } from "../api/radarApi";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { StockEvidenceChainPanel } from "../components/StockEvidenceChainPanel";
-import { StrategyStockDrawer, type StrategyStockDrawerStock } from "../components/StrategyStockDrawer";
+import { type StockChecklistData, type StockChecklistSection } from "../components/StockChecklistCard";
+import { StrategyStockDrawer, type StrategyStockDrawerMode, type StrategyStockDrawerStock } from "../components/StrategyStockDrawer";
 import { formatTime } from "../lib/datetime";
 import type { StockEvidenceChainDashboard, StockEvidenceChainItem } from "../types";
 
 export function StrategyPage() {
   const [data, setData] = useState<StockEvidenceChainDashboard | null>(null);
   const [selectedStock, setSelectedStock] = useState<StrategyStockDrawerStock | null>(null);
+  const [drawerMode, setDrawerMode] = useState<StrategyStockDrawerMode>("chart");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +33,10 @@ export function StrategyPage() {
   }, []);
 
   const initialLoading = loading && !data;
+  const openStockDrawer = (stock: StockEvidenceChainItem, mode: StrategyStockDrawerMode) => {
+    setSelectedStock(drawerStock(stock));
+    setDrawerMode(mode);
+  };
 
   return (
     <section className="strategy-page">
@@ -52,9 +58,19 @@ export function StrategyPage() {
       {initialLoading ? (
         <PageLoadingState label="正在加载个股证据链" variant="strategy" />
       ) : (
-        <StockEvidenceChainPanel data={data} error={error} onSelectStock={(stock) => setSelectedStock(drawerStock(stock))} />
+        <StockEvidenceChainPanel
+          data={data}
+          error={error}
+          onSelectStock={(stock) => openStockDrawer(stock, "chart")}
+          onOpenChecklist={(stock) => openStockDrawer(stock, "checklist")}
+        />
       )}
-      <StrategyStockDrawer stock={selectedStock} onClose={() => setSelectedStock(null)} />
+      <StrategyStockDrawer
+        key={selectedStock ? `${selectedStock.ts_code}-${drawerMode}` : "closed"}
+        stock={selectedStock}
+        initialMode={drawerMode}
+        onClose={() => setSelectedStock(null)}
+      />
     </section>
   );
 }
@@ -91,7 +107,165 @@ function drawerStock(item: StockEvidenceChainItem): StrategyStockDrawerStock {
       { label: "5日强弱", value: numberValue(item.primary_theme?.stock_return_5d) },
       { label: "量能", value: volumeRatioText(item.primary_theme?.amount_ratio_5d) },
     ],
+    evidence_title: "核查依据",
+    evidence_lines: stockEvidenceLines(item),
+    checklist: stockChecklist(item),
   };
+}
+
+function stockChecklist(item: StockEvidenceChainItem): StockChecklistData {
+  const status = checklistStatus(item);
+  return {
+    status: status.label,
+    tone: status.tone,
+    summary: item.summary || item.review.headline || "先按证据链核查，暂不输出买卖结论。",
+    metrics: [
+      { label: "阶段", value: item.stage_label },
+      { label: "复盘", value: item.review.label },
+      { label: "置信", value: formatConfidence(item.confidence) },
+      { label: "区间", value: formatPercent(numberValue(item.market_summary.return_since_first_point), true), tone: metricTone(numberValue(item.market_summary.return_since_first_point)) },
+    ],
+    sections: [
+      companySection(item),
+      logicSection(item),
+      catalystSection(item),
+      financeSection(),
+      marketSection(item),
+      riskSection(item),
+    ],
+  };
+}
+
+function companySection(item: StockEvidenceChainItem): StockChecklistSection {
+  const theme = item.primary_theme ?? item.themes[0] ?? null;
+  return {
+    key: "company",
+    icon: "company",
+    title: "公司身份",
+    caption: "公司做什么，处在产业链哪段。",
+    status: theme ? "先按主题核查" : "待补主营",
+    tone: "missing",
+    lines: [
+      theme ? `当前先按「${theme.theme_name}」里的 ${theme.role || "候选"} 角色观察。` : "暂无自动主题归属，需要补主营业务和产业链位置。",
+      "主营业务、客户结构、收入构成还未接入财报/公告数据，第一版不假装完整。",
+    ],
+    empty: "公司身份待补全。",
+  };
+}
+
+function logicSection(item: StockEvidenceChainItem): StockChecklistSection {
+  return {
+    key: "logic",
+    icon: "logic",
+    title: "消息逻辑",
+    caption: "消息源为什么把它推到候选池。",
+    status: item.why.length ? "有证据" : "待补证据",
+    tone: item.why.length ? "ready" : "missing",
+    lines: dedupe([item.summary, ...item.why.slice(0, 4)]),
+    empty: "暂无清晰消息逻辑。",
+  };
+}
+
+function catalystSection(item: StockEvidenceChainItem): StockChecklistSection {
+  const familyLines = Object.entries(item.family_counts)
+    .filter(([, count]) => count > 0)
+    .slice(0, 5)
+    .map(([family, count]) => `${familyLabel(family)} ${count} 条`);
+  const theme = item.primary_theme ?? item.themes[0] ?? null;
+  return {
+    key: "catalyst",
+    icon: "catalyst",
+    title: "催化传导",
+    caption: "事件能否传到收入、利润或估值。",
+    status: familyLines.length ? "有催化线索" : "待确认",
+    tone: familyLines.length ? "watch" : "missing",
+    lines: dedupe([...familyLines, ...(theme?.quality_reasons ?? []).slice(0, 3), ...item.watch_next.slice(0, 2)]),
+    empty: "暂无明确催化，需要继续观察订单、涨价、政策、业绩或产业反馈。",
+  };
+}
+
+function financeSection(): StockChecklistSection {
+  return {
+    key: "finance",
+    icon: "finance",
+    title: "财务核查",
+    caption: "收入、利润、现金流和资产质量。",
+    status: "接入 Tushare",
+    tone: "missing",
+    lines: [
+      "打开核查卡时读取 Tushare income / balancesheet / cashflow / fina_indicator。",
+      "第一版只展示财报事实，不接 LLM，也不自动给完整财务结论。",
+    ],
+    empty: "财务核查待接入。",
+  };
+}
+
+function marketSection(item: StockEvidenceChainItem): StockChecklistSection {
+  const theme = item.primary_theme ?? item.themes[0] ?? null;
+  const returnSince = numberValue(item.market_summary.return_since_first_point);
+  const drawdown = numberValue(item.market_summary.drawdown_from_selected_high);
+  return {
+    key: "market",
+    icon: "market",
+    title: "市场位置",
+    caption: "价格、量能、主题强弱是否已经反映。",
+    status: item.recognition.state_label,
+    tone: item.recognition.state === "confirmed" || item.recognition.state === "just_confirmed" ? "ready" : "watch",
+    lines: dedupe([
+      `区间收益 ${formatPercent(returnSince, true)}，高点回撤 ${formatPercent(drawdown, true)}。`,
+      theme ? `主题内 5 日强弱 ${formatPercent(theme.stock_return_5d, true)}，量能 ${theme.amount_ratio_5d ? `${theme.amount_ratio_5d.toFixed(1)}x` : "-"}。` : "",
+      ...item.recognition.reasons.slice(0, 3),
+    ]),
+    empty: "暂无市场认可依据。",
+  };
+}
+
+function riskSection(item: StockEvidenceChainItem): StockChecklistSection {
+  const missing = [
+    item.pricing_risk ? `定价风险：${item.pricing_risk}` : "",
+    item.crowding_risk ? `拥挤风险：${item.crowding_risk}` : "",
+    ...(item.lifecycle_digest?.risk ?? []),
+    ...item.recognition.missing_evidence,
+    ...(item.lifecycle_digest?.missing_evidence ?? []),
+  ];
+  const lines = dedupe(missing).slice(0, 6);
+  return {
+    key: "risk",
+    icon: "risk",
+    title: "反证和退出条件",
+    caption: "什么情况说明这条逻辑不该继续推进。",
+    status: lines.length ? "需跟踪" : "待补反证",
+    tone: item.review.tone === "danger" || item.review.tone === "warning" ? "risk" : "watch",
+    lines,
+    empty: "暂无明确反证，仍需要补公告、财务和后续消息验证。",
+  };
+}
+
+function stockEvidenceLines(item: StockEvidenceChainItem): string[] {
+  return [
+    `一句话判断：${item.summary || "暂无"}`,
+    `阶段：${item.stage_label}；复盘标签：${item.review.label}`,
+    `主题：${item.primary_theme?.theme_name ?? "未确认"}；市场认可：${item.recognition.state_label}`,
+    ...item.why.slice(0, 4).map((line) => `阶段依据：${line}`),
+    ...item.recognition.reasons.slice(0, 4).map((line) => `认可依据：${line}`),
+    ...item.watch_next.slice(0, 3).map((line) => `下一步：${line}`),
+  ].filter((line): line is string => Boolean(line));
+}
+
+function checklistStatus(item: StockEvidenceChainItem): { label: string; tone: StockChecklistData["tone"] } {
+  if (item.review.state === "overheated_review" || item.recognition.state === "overheated") {
+    return { label: "已过热", tone: "risk" };
+  }
+  if (item.review.tone === "danger") {
+    return { label: "反证优先", tone: "risk" };
+  }
+  if (item.review.tone === "success") {
+    return { label: "可继续研究", tone: "ready" };
+  }
+  if (item.review.tone === "warning") {
+    return { label: "风险偏高", tone: "risk" };
+  }
+  return { label: "待补全", tone: "missing" };
 }
 
 function firstEvidenceTime(item: StockEvidenceChainItem): string | null {
@@ -102,7 +276,41 @@ function numberValue(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function formatConfidence(value?: number | null): string {
+  return value === undefined || value === null ? "-" : `${(value * 100).toFixed(0)}%`;
+}
+
+function formatPercent(value?: number | null, signed = false): string {
+  if (value === undefined || value === null) {
+    return "-";
+  }
+  const text = `${(value * 100).toFixed(1)}%`;
+  return signed && value > 0 ? `+${text}` : text;
+}
+
+function metricTone(value?: number | null): "up" | "down" | "flat" {
+  if (value === undefined || value === null || value === 0) {
+    return "flat";
+  }
+  return value > 0 ? "up" : "down";
+}
+
 function volumeRatioText(value: unknown): string | null {
   const ratio = numberValue(value);
   return ratio === null ? null : `${ratio.toFixed(1)}x`;
+}
+
+function familyLabel(value: string): string {
+  const labels: Record<string, string> = {
+    catalyst: "催化",
+    research: "研报",
+    roadshow: "路演/调研",
+    push: "强推",
+    price: "价格确认",
+  };
+  return labels[value] ?? value;
+}
+
+function dedupe(items: string[]): string[] {
+  return Array.from(new Set(items.filter(Boolean)));
 }

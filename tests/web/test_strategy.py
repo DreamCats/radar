@@ -334,6 +334,7 @@ def test_strategy_stock_chart_endpoint_refreshes_latest_daily_after_close(monkey
     )
     monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: date(2026, 6, 8))
     monkeypatch.setattr("radar.core.tushare.history._now_time", lambda: time(17, 33))
+    monkeypatch.setattr("radar.core.usecases.stock_evidence_chain.stock_chart._now_time", lambda: time(17, 33))
 
     calls: list[dict] = []
 

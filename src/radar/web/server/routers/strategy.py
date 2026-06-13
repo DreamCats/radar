@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from radar.core.config import RadarConfig
 from radar.core.usecases.stock_evidence_chain import (
+    get_stock_evidence_financials,
     get_stock_evidence_stock_chart,
     latest_stock_evidence_chain,
     preview_lifecycle_digests,
@@ -15,6 +16,7 @@ from radar.web.server.schemas import (
     LifecycleDigestPreviewResponse,
     StockEvidenceChainJobRequest,
     StockEvidenceChainDashboardResponse,
+    StockEvidenceFinancialsResponse,
     StockEvidenceStockChartResponse,
 )
 from radar.web.server.strategy_jobs import submit_lifecycle_digest_job, submit_stock_evidence_chain_job
@@ -41,6 +43,19 @@ def stock_evidence_stock_chart(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return StockEvidenceStockChartResponse(**result.model_dump())
+
+
+@router.get("/stocks/{ts_code}/financials", response_model=StockEvidenceFinancialsResponse)
+def stock_evidence_financials(
+    ts_code: str,
+    years: int = Query(default=5, ge=1, le=10),
+    config: RadarConfig = Depends(get_config),
+) -> StockEvidenceFinancialsResponse:
+    try:
+        result = get_stock_evidence_financials(config, ts_code=ts_code, years=years)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return StockEvidenceFinancialsResponse(**result.model_dump())
 
 
 @router.post("/evidence-chain/jobs", response_model=DerivedJobResponse)
