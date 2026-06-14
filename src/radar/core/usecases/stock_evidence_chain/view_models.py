@@ -32,6 +32,15 @@ class StockEvidenceMessage(BaseModel):
     raw_content: str | None = None
 
 
+class StockEvidenceMarketValidation(BaseModel):
+    status: str = "unknown"
+    label: str = "待判断"
+    note: str = ""
+    latest_trade_date: str | None = None
+    current_first_time: str | None = None
+    current_last_time: str | None = None
+
+
 class StockEvidenceChainItem(BaseModel):
     ts_code: str
     stock_name: str
@@ -53,9 +62,11 @@ class StockEvidenceChainItem(BaseModel):
     pricing_risk: str | None = None
     crowding_risk: str | None = None
     watch_next: list[str] = Field(default_factory=list)
+    current_triggers: list[StockEvidenceMessage] = Field(default_factory=list)
     evidence_chain: list[StockEvidenceMessage] = Field(default_factory=list)
     market_summary: dict[str, Any] = Field(default_factory=dict)
     market_points: list[StockEvidenceMarketPoint] = Field(default_factory=list)
+    market_validation: StockEvidenceMarketValidation = Field(default_factory=StockEvidenceMarketValidation)
     themes: list[StockEvidenceThemeContext] = Field(default_factory=list)
     primary_theme: StockEvidenceThemeContext | None = None
     recognition: StockEvidenceRecognitionContext = Field(default_factory=StockEvidenceRecognitionContext)

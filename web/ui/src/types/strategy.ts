@@ -47,6 +47,15 @@ export type StockEvidenceMarketPoint = {
   tag?: string | null;
 };
 
+export type StockEvidenceMarketValidation = {
+  status: string;
+  label: string;
+  note: string;
+  latest_trade_date?: string | null;
+  current_first_time?: string | null;
+  current_last_time?: string | null;
+};
+
 export type StockEvidenceThemeContext = {
   theme_id: string;
   theme_name: string;
@@ -178,9 +187,11 @@ export type StockEvidenceChainItem = {
   pricing_risk?: string | null;
   crowding_risk?: string | null;
   watch_next: string[];
+  current_triggers: StockEvidenceMessage[];
   evidence_chain: StockEvidenceMessage[];
   market_summary: Record<string, unknown>;
   market_points: StockEvidenceMarketPoint[];
+  market_validation: StockEvidenceMarketValidation;
   themes: StockEvidenceThemeContext[];
   primary_theme?: StockEvidenceThemeContext | null;
   recognition: StockEvidenceRecognitionContext;

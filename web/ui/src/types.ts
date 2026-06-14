@@ -314,6 +314,7 @@ export type {
   StockEvidenceFinancials,
   StockEvidenceLifecycleDigestContext,
   StockEvidenceMarketPoint,
+  StockEvidenceMarketValidation,
   StockEvidenceMessage,
   StockEvidenceRecognitionContext,
   StockEvidenceReviewContext,

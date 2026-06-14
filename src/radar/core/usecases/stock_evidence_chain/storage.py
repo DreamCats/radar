@@ -183,6 +183,7 @@ def load_evidence_pack(
     conn: sqlite3.Connection,
     *,
     candidate: StockCandidate,
+    window_start: datetime,
     evidence_start: datetime,
     as_of: datetime,
     max_items: int,
@@ -199,16 +200,24 @@ def load_evidence_pack(
         """,
         (candidate.stock.ts_code, evidence_start.isoformat(), as_of.isoformat()),
     ).fetchall()
-    evidence: list[StockMention] = []
+    historical: list[StockMention] = []
+    current: list[StockMention] = []
     seen: set[str] = set()
     for row in rows:
         fingerprint = str(row["fingerprint"])
         if fingerprint in seen:
             continue
         seen.add(fingerprint)
-        evidence.append(_row_to_mention(row))
-        if len(evidence) >= max_items:
-            break
+        mention = _row_to_mention(row)
+        if mention.message.message_time >= window_start:
+            current.append(mention)
+        else:
+            historical.append(mention)
+    if len(current) >= max_items:
+        evidence = current[:max_items]
+    else:
+        evidence = historical[: max_items - len(current)] + current
+    evidence = sorted(evidence, key=lambda item: (item.message.message_time, item.message.message_id))
     return EvidencePack(candidate=candidate, evidence=evidence)
 
 

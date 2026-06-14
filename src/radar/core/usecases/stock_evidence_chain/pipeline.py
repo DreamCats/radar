@@ -114,12 +114,20 @@ def build_stock_evidence_chain(
         if run_llm and candidates:
             packs = []
             for item in candidates:
-                pack = load_evidence_pack(conn, candidate=item, evidence_start=evidence_start, as_of=as_of, max_items=80)
+                pack = load_evidence_pack(
+                    conn,
+                    candidate=item,
+                    window_start=window_start,
+                    evidence_start=evidence_start,
+                    as_of=as_of,
+                    max_items=80,
+                )
                 market = load_market_evidence(
                     config,
                     market_conn,
                     ts_code=item.stock.ts_code,
                     evidence=pack.evidence,
+                    window_start=window_start,
                     evidence_start=evidence_start,
                     as_of=as_of,
                 )

@@ -26,6 +26,7 @@ def load_market_evidence(
     *,
     ts_code: str,
     evidence: list[StockMention],
+    window_start: datetime | None = None,
     evidence_start: datetime,
     as_of: datetime,
 ) -> MarketEvidence | None:
@@ -35,7 +36,7 @@ def load_market_evidence(
     if not rows:
         return None
     indexed = {row.trade_date: row for row in rows}
-    evidence_dates = sorted({item.message.message_time.strftime("%Y%m%d") for item in evidence})
+    evidence_dates = _selected_evidence_dates(evidence, window_start=window_start)
     selected_keys = _selected_trade_dates(rows, evidence_dates, as_of.strftime("%Y%m%d"))
     latest_key = selected_keys[-1] if selected_keys else None
     points = [
@@ -116,6 +117,20 @@ def _selected_trade_dates(rows: list[_DailyRow], evidence_dates: list[str], as_o
     if latest and latest not in selected:
         selected.append(latest)
     return selected[-12:]
+
+
+def _selected_evidence_dates(evidence: list[StockMention], *, window_start: datetime | None) -> list[str]:
+    all_dates: list[str] = []
+    selected: list[str] = []
+    for item in evidence:
+        date_key = item.message.message_time.strftime("%Y%m%d")
+        all_dates.append(date_key)
+        if window_start is not None and item.message.message_time >= window_start:
+            selected.append(date_key)
+            continue
+        if item.evidence_score > 0 or item.evidence_families:
+            selected.append(date_key)
+    return sorted(set(selected or all_dates))
 
 
 def _nearest_on_or_before(trade_dates: list[str], date_key: str) -> str | None:

@@ -303,6 +303,67 @@ def test_stock_evidence_chain_latest_includes_theme_recognition_context(tmp_path
     assert "CPO概念" in item["recognition"]["reasons"][0]
 
 
+def test_stock_evidence_chain_latest_includes_current_trigger_validation(tmp_path: Path):
+    config = _config(tmp_path)
+    as_of = datetime(2026, 6, 14, 11, 35)
+    window_start = datetime(2026, 6, 13, 15, 0)
+    evidence_start = datetime(2026, 5, 5, 11, 35)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        _insert_candidate(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="688041.SH",
+            stock_name="海光信息",
+            rank=1,
+            evidence_score=12,
+            family_counts={"catalyst": 1},
+        )
+        _insert_judgement(
+            conn,
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=evidence_start,
+            ts_code="688041.SH",
+            stock_name="海光信息",
+            stage="seed",
+            confidence=0.76,
+            return_since_first_point=-0.05,
+            market_points=[
+                {
+                    "trade_date": "20260612",
+                    "close": 280.0,
+                    "pct_chg": -3.395,
+                    "amount_ratio_5d": 1.27,
+                    "tag": "latest",
+                }
+            ],
+        )
+        _insert_current_stock_mention(
+            conn,
+            ts_code="688041.SH",
+            stock_name="海光信息",
+            message_id="current-hygon-1",
+            message_time=datetime(2026, 6, 13, 17, 38),
+            raw_content="国产算力周思考，海光信息 DCU 获得新增关注。",
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/strategy/evidence-chain/latest", params={"limit": 1})
+
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["current_triggers"][0]["message_id"] == "current-hygon-1"
+    assert item["current_triggers"][0]["type"] == "本次催化"
+    assert item["market_validation"]["status"] == "pending_current_trigger"
+    assert "早于本次触发" in item["market_validation"]["note"]
+
+
 def test_lifecycle_digest_preview_refresh_and_reuse(monkeypatch, tmp_path: Path):
     config = _config(tmp_path)
     as_of = datetime(2026, 6, 8, 15, 0)
@@ -667,6 +728,7 @@ def _insert_judgement(
     stage: str,
     confidence: float,
     return_since_first_point: float,
+    market_points: list[dict] | None = None,
 ) -> None:
     result = {
         "stage_label": {"seed": "种子期", "crowded": "拥挤期"}[stage],
@@ -677,7 +739,7 @@ def _insert_judgement(
                 "return_since_first_point": return_since_first_point,
                 "drawdown_from_selected_high": -0.02,
             },
-            "points": [],
+            "points": market_points or [],
         },
     }
     conn.execute(
@@ -713,6 +775,60 @@ def _insert_judgement(
             as_of.isoformat(),
             as_of.isoformat(),
             "test",
+        ),
+    )
+    conn.commit()
+
+
+def _insert_current_stock_mention(
+    conn,
+    *,
+    ts_code: str,
+    stock_name: str,
+    message_id: str,
+    message_time: datetime,
+    raw_content: str,
+) -> None:
+    symbol = ts_code.split(".", 1)[0]
+    conn.execute(
+        """
+        INSERT INTO messages (
+            message_id, source, sender, message_time, raw_content, group_name, fetch_time, fetch_window
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            message_id,
+            "group_message",
+            "测试发送人",
+            message_time.isoformat(),
+            raw_content,
+            "测试群",
+            message_time.isoformat(),
+            "test-window",
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO stock_message_mentions (
+            message_id, ts_code, stock_name, symbol, message_time, source, sender,
+            group_name, category, fingerprint, evidence_score, evidence_families_json, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            message_id,
+            ts_code,
+            stock_name,
+            symbol,
+            message_time.isoformat(),
+            "group_message",
+            "测试发送人",
+            "测试群",
+            "recommendation",
+            message_id,
+            3,
+            json.dumps(["catalyst"], ensure_ascii=False),
+            message_time.isoformat(),
+            message_time.isoformat(),
         ),
     )
     conn.commit()

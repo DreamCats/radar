@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import type { StockEvidenceChainItem, StockEvidenceMarketPoint, StockEvidenceThemeContext } from "../types";
 import { StockEvidenceAlignedTimeline } from "./StockEvidenceAlignedTimeline";
+import { StockEvidenceCurrentTrigger } from "./StockEvidenceCurrentTrigger";
 import { StockEvidenceSafetyBrief } from "./StockEvidenceSafetyBrief";
 
 export function StockEvidenceBeginnerGuide({ item }: { item: StockEvidenceChainItem }) {
@@ -26,6 +27,7 @@ export function StockEvidenceBeginnerGuide({ item }: { item: StockEvidenceChainI
           <span>{item.unique_trigger_count} 条去重消息</span>
         </div>
       </section>
+      <StockEvidenceCurrentTrigger item={item} />
       <StockEvidenceSafetyBrief item={item} theme={theme} />
 
       <BeginnerStepCard
@@ -49,8 +51,8 @@ export function StockEvidenceBeginnerGuide({ item }: { item: StockEvidenceChainI
       <BeginnerStepCard
         index="02"
         icon={<MessageSquareText size={15} />}
-        title="消息在说什么"
-        question="把群里的复杂话翻译成：催化、扩散、还是弱线索。"
+        title="历史证据在说什么"
+        question="这里看的是过去一段时间的逻辑，不等于本次新增已经被验证。"
       >
         <p className="stock-evidence-plain-line">{messageLine(item)}</p>
         <EvidenceTypeStrip item={item} />
@@ -61,7 +63,7 @@ export function StockEvidenceBeginnerGuide({ item }: { item: StockEvidenceChainI
         index="03"
         icon={<TrendingUp size={15} />}
         title="市场有没有认"
-        question="看价格、成交和回撤，不只看消息有多热。"
+        question="先确认行情验证的是历史证据，还是这次新增触发。"
       >
         <p className="stock-evidence-plain-line">{marketLine(item, latestPoint)}</p>
         <MiniFacts
@@ -79,7 +81,7 @@ export function StockEvidenceBeginnerGuide({ item }: { item: StockEvidenceChainI
         index="04"
         icon={<Route size={15} />}
         title="消息和市场对得上吗"
-        question="按日期对照：先看消息，再看市场有没有给反馈。"
+        question="按日期对照：本次触发、历史证据和市场点分开看。"
       >
         <StockEvidenceAlignedTimeline item={item} />
       </BeginnerStepCard>
@@ -214,15 +216,22 @@ function messageLine(item: StockEvidenceChainItem): string {
   const roadshow = item.family_counts.roadshow ?? 0;
   const push = item.family_counts.push ?? 0;
   if (catalyst > 0) {
-    return `这条线索里有 ${catalyst} 条催化证据，不只是泛泛推荐；再看这些催化是否能传到收入、利润或估值。`;
+    return `历史证据里有 ${catalyst} 条催化证据，不只是泛泛推荐；但还要单独看本次触发有没有新增信息。`;
   }
   if (roadshow + push > 0) {
-    return "消息主要来自路演或强推，说明关注度在扩散，但还需要硬催化和市场承接。";
+    return "历史消息主要来自路演或强推，说明关注度在扩散，但还需要硬催化和市场承接。";
   }
   return "目前更像普通关注线索，需要继续补订单、涨价、业绩、政策或产业反馈。";
 }
 
 function marketLine(item: StockEvidenceChainItem, latestPoint: StockEvidenceMarketPoint | undefined): string {
+  const validation = item.market_validation;
+  if (validation?.status === "pending_current_trigger") {
+    return validation.note;
+  }
+  if (validation?.status === "same_day_current_trigger") {
+    return validation.note;
+  }
   const returnSince = numberValue(item.market_summary.return_since_first_point);
   const drawdown = numberValue(item.market_summary.drawdown_from_selected_high);
   const amount = latestPoint?.amount_ratio_5d;

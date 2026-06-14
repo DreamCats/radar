@@ -10,8 +10,14 @@ type TimelineRow = {
 
 export function StockEvidenceAlignedTimeline({ item }: { item: StockEvidenceChainItem }) {
   const rows = alignedTimelineRows(item);
+  const validation = item.market_validation ?? { status: "unknown", note: "" };
   return (
     <div className="stock-evidence-aligned-block">
+      {validation.note && (
+        <p className={`stock-evidence-aligned-note ${validationTone(validation.status)}`}>
+          {validation.note}
+        </p>
+      )}
       <div className="stock-evidence-aligned-legend">
         <span>
           <MessageSquareText size={13} />
@@ -102,11 +108,23 @@ function alignedTimelineRows(item: StockEvidenceChainItem): TimelineRow[] {
     return next;
   };
 
-  item.evidence_chain.slice(0, 6).forEach((evidence) => {
+  const currentTriggers = item.current_triggers ?? [];
+  const currentIds = new Set(currentTriggers.map((evidence) => evidence.message_id).filter(Boolean));
+  currentTriggers.slice(0, 6).forEach((evidence) => {
     ensureRow(dateKeyFromMessage(evidence)).messages.push(evidence);
   });
+  item.evidence_chain
+    .filter((evidence) => !evidence.message_id || !currentIds.has(evidence.message_id))
+    .slice(0, 6)
+    .forEach((evidence) => {
+      ensureRow(dateKeyFromMessage(evidence)).messages.push(evidence);
+    });
   item.market_points.slice(-5).forEach((point) => {
-    ensureRow(formatTradeDate(point.trade_date)).marketPoints.push(point);
+    const date = formatTradeDate(point.trade_date);
+    if (point.tag !== "latest" && !rows.has(date)) {
+      return;
+    }
+    ensureRow(date).marketPoints.push(point);
   });
 
   return Array.from(rows.values()).sort((a, b) => dateSortValue(a.date) - dateSortValue(b.date));
@@ -153,15 +171,28 @@ function dateSortValue(value: string): number {
 
 function marketTagLabel(tag: string): string {
   if (tag === "latest") {
-    return "最新";
+    return "最新交易日";
   }
   if (tag === "evidence_day") {
-    return "证据日";
+    return "历史证据日";
   }
   if (tag === "selected_high") {
     return "阶段高点";
   }
   return tag;
+}
+
+function validationTone(status: string): string {
+  if (status === "has_after_trigger_market") {
+    return "confirmed";
+  }
+  if (status === "pending_current_trigger" || status === "same_day_current_trigger") {
+    return "watch";
+  }
+  if (status === "no_market") {
+    return "risk";
+  }
+  return "muted";
 }
 
 function formatPercentPoint(value?: number | null, signed = false): string {

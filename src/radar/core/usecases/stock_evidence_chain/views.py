@@ -23,6 +23,10 @@ from radar.core.usecases.stock_evidence_chain.review import (
     is_llm_output_invalid,
 )
 from radar.core.usecases.stock_evidence_chain.sorting import stock_evidence_item_sort_key
+from radar.core.usecases.stock_evidence_chain.view_enrichment import (
+    build_market_validation,
+    load_current_triggers,
+)
 from radar.core.usecases.stock_evidence_chain.view_models import (
     StockEvidenceChainDashboard,
     StockEvidenceChainItem,
@@ -60,6 +64,7 @@ def stock_evidence_chain(
                 generated_at=datetime.now(),
             )
         messages = _load_messages(conn, rows)
+        current_triggers = load_current_triggers(conn, rows)
         theme_contexts = load_stock_theme_contexts(
             config,
             [str(row["ts_code"]) for row in rows],
@@ -70,6 +75,7 @@ def stock_evidence_chain(
             _row_to_item(
                 row,
                 messages,
+                current_triggers.get(str(row["ts_code"]), []),
                 theme_contexts.get(str(row["ts_code"]), []),
                 lifecycle_digests.get(str(row["ts_code"])),
             )
@@ -192,6 +198,7 @@ def _load_messages(conn: sqlite3.Connection, rows: list[sqlite3.Row]) -> dict[st
 def _row_to_item(
     row: sqlite3.Row,
     messages: dict[str, sqlite3.Row],
+    current_triggers: list[StockEvidenceMessage],
     themes: list[StockEvidenceThemeContext],
     lifecycle_digest: StockEvidenceLifecycleDigestContext | None,
 ) -> StockEvidenceChainItem:
@@ -244,9 +251,11 @@ def _row_to_item(
         pricing_risk=_optional_text(result.get("pricing_risk")),
         crowding_risk=_optional_text(result.get("crowding_risk")),
         watch_next=[str(item) for item in _json_list(result.get("watch_next"))],
+        current_triggers=current_triggers,
         evidence_chain=_evidence_chain(result, row, messages),
         market_summary=market_summary,
         market_points=market_points,
+        market_validation=build_market_validation(current_triggers, market_points),
         themes=themes,
         primary_theme=primary,
         recognition=recognition,

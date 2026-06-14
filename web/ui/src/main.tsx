@@ -22,6 +22,7 @@ import "./strategy-evidence-chain.css";
 import "./strategy-evidence-detail.css";
 import "./strategy-evidence-beginner.css";
 import "./strategy-evidence-safety.css";
+import "./strategy-evidence-current.css";
 import "./strategy-snapshot-dropdown.css";
 import "./strategy-evidence-theme-quality.css";
 import "./strategy-stock-chart.css";
