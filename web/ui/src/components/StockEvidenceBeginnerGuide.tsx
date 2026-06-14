@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import type { StockEvidenceChainItem, StockEvidenceMarketPoint, StockEvidenceThemeContext } from "../types";
 import { StockEvidenceAlignedTimeline } from "./StockEvidenceAlignedTimeline";
+import { StockEvidenceSafetyBrief } from "./StockEvidenceSafetyBrief";
 
 export function StockEvidenceBeginnerGuide({ item }: { item: StockEvidenceChainItem }) {
   const theme = item.primary_theme ?? item.themes[0] ?? null;
@@ -25,6 +26,7 @@ export function StockEvidenceBeginnerGuide({ item }: { item: StockEvidenceChainI
           <span>{item.unique_trigger_count} 条去重消息</span>
         </div>
       </section>
+      <StockEvidenceSafetyBrief item={item} theme={theme} />
 
       <BeginnerStepCard
         index="01"
