@@ -200,7 +200,8 @@ def evidence_signature(pack: EvidencePack) -> str:
 def _system_prompt() -> str:
     return (
         "你是个人投资者的投研证据链助手。只能基于给定消息证据和市场证据判断阶段，"
-        "不编造外部信息，不给买卖建议。输出必须是严格 JSON object，不能有 Markdown。"
+        "不编造外部信息，不给买卖建议，不做 KDJ、MACD、RSI、BOLL、均线形态等技术指标分析。"
+        "输出必须是严格 JSON object，不能有 Markdown。"
     )
 
 
@@ -245,6 +246,7 @@ def _user_prompt(pack: EvidencePack) -> str:
         "- 如果缺少股价/成交/定价证据，不要因为讨论热度高就判 pricing。",
         "- 如果缺少多会话/多发送人扩散证据，不要判 spreading。",
         "- pricing 必须结合市场证据：明显上涨、涨停、成交额/成交量放大、突破或连续大涨，不能只看消息热度。",
+        "- K 线、涨跌幅、成交量/成交额只用于判断市场确认、定价程度和拥挤风险，不要计算或解释 KDJ、MACD、RSI、BOLL、均线形态等技术指标。",
         "- crowded 必须结合市场证据和讨论证据：高位大涨后继续密集强推/争论/观点趋同，不能只看上涨。",
         "- evidence_chain 只选最关键的 5-8 条，必须来自下面证据时间线，不要编造。",
         "- 没有足够证据时要降阶段、降 confidence，并说明缺什么。",

@@ -6,7 +6,7 @@ from typing import Any
 
 
 HIGH_VALUE_CATEGORIES = ("research", "event", "recommendation", "industry")
-PROMPT_VERSION = "stock-evidence-chain-v2"
+PROMPT_VERSION = "stock-evidence-chain-v3"
 STAGES = ("lead", "seed", "formed", "spreading", "pricing", "crowded")
 
 

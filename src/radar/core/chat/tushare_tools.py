@@ -106,7 +106,7 @@ class RadarTushareTools:
     def stock_factor_tool(self) -> ChatTool:
         return ChatTool(
             name="radar_get_stock_technical_factors",
-            description="读取个股技术因子 stk_factor，用于确认均线、MACD、KDJ、RSI、BOLL 等技术状态。",
+            description="读取 Tushare stk_factor 原始因子，仅在用户明确要求技术指标字段时使用；常规投研回答不要主动分析 KDJ、MACD、RSI、BOLL 或均线形态。",
             input_schema=_object_schema(
                 {
                     "stock": {"type": "string"},

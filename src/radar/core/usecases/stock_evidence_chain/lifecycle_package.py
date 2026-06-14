@@ -5,7 +5,7 @@ from typing import Any
 
 from radar.core.usecases.stock_evidence_chain.view_models import StockEvidenceChainItem
 
-PROMPT_VERSION = "opportunity-lifecycle-digest-v1"
+PROMPT_VERSION = "opportunity-lifecycle-digest-v2"
 
 
 def evidence_package(item: StockEvidenceChainItem, *, as_of_time: datetime | None) -> dict[str, Any]:
