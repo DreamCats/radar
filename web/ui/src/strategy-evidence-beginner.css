@@ -1,0 +1,376 @@
+.stock-evidence-beginner {
+  display: grid;
+  gap: 12px;
+}
+
+.stock-evidence-beginner-verdict {
+  display: grid;
+  gap: 11px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-hairline-strong));
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 62%),
+    color-mix(in srgb, var(--color-surface-2) 92%, black);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.035),
+    0 10px 28px rgb(0 0 0 / 0.18);
+  padding: 15px;
+}
+
+.stock-evidence-beginner-verdict.confirmed {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-market-up) 12%, transparent), transparent 58%),
+    var(--color-surface-2);
+}
+
+.stock-evidence-beginner-verdict.risk,
+.stock-evidence-beginner-verdict.rejected {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-market-down) 12%, transparent), transparent 58%),
+    var(--color-surface-2);
+}
+
+.stock-evidence-beginner-verdict > div:first-child,
+.stock-evidence-beginner-pills,
+.stock-evidence-type-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+}
+
+.stock-evidence-beginner-verdict h3 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.48;
+}
+
+.stock-evidence-beginner-verdict p,
+.stock-evidence-plain-line {
+  margin: 0;
+  color: var(--stock-copy);
+  font-size: 13px;
+  line-height: 1.72;
+}
+
+.stock-evidence-beginner-pills span,
+.stock-evidence-type-strip span {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-canvas) 58%, transparent);
+  color: var(--color-ink-muted);
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.stock-evidence-type-strip span.strong {
+  border-color: color-mix(in srgb, var(--color-market-up) 36%, var(--color-hairline));
+  color: var(--color-market-up);
+}
+
+.stock-evidence-type-strip span.medium {
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-hairline));
+  color: color-mix(in srgb, var(--color-primary) 78%, var(--color-ink));
+}
+
+.stock-evidence-type-strip span.price {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 44%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+
+.stock-evidence-beginner-card {
+  gap: 12px;
+}
+
+.stock-evidence-beginner-head {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.stock-evidence-beginner-head > span {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-ink-muted);
+}
+
+.stock-evidence-beginner-head small {
+  display: block;
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.stock-evidence-beginner-head strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.stock-evidence-beginner-head em {
+  display: block;
+  margin-top: 3px;
+  color: var(--stock-copy-soft);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.5;
+}
+
+.stock-evidence-mini-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stock-evidence-mini-facts article {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 88%, black);
+  padding: 10px;
+}
+
+.stock-evidence-mini-facts span {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.stock-evidence-mini-facts strong {
+  overflow-wrap: anywhere;
+  color: var(--color-ink);
+  font-size: 13.5px;
+  line-height: 1.35;
+}
+
+.stock-evidence-aligned-block {
+  display: grid;
+  gap: 10px;
+}
+
+.stock-evidence-aligned-legend {
+  display: grid;
+  grid-template-columns: 92px 1.1fr 0.9fr;
+  gap: 8px;
+  color: var(--color-ink-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.stock-evidence-aligned-legend::before {
+  content: "时间";
+  color: var(--color-ink-tertiary);
+}
+
+.stock-evidence-aligned-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stock-evidence-aligned-timeline {
+  display: grid;
+  gap: 7px;
+}
+
+.stock-evidence-aligned-row {
+  display: grid;
+  grid-template-columns: 92px 1.1fr 0.9fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.stock-evidence-aligned-row > time {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-canvas) 52%, transparent);
+  color: var(--color-ink-muted);
+  padding: 9px 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.stock-evidence-aligned-cell {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 88%, black);
+  padding: 9px;
+}
+
+.stock-evidence-aligned-cell.market {
+  background: color-mix(in srgb, var(--color-surface-2) 82%, var(--color-canvas));
+}
+
+.stock-evidence-aligned-evidence,
+.stock-evidence-aligned-market {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.stock-evidence-aligned-evidence + .stock-evidence-aligned-evidence {
+  border-top: 1px solid var(--color-hairline);
+  padding-top: 7px;
+}
+
+.stock-evidence-aligned-evidence strong,
+.stock-evidence-aligned-market strong {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  overflow-wrap: anywhere;
+  color: var(--color-ink);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.stock-evidence-aligned-evidence strong span {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  color: var(--color-ink-subtle);
+  padding: 1px 6px;
+  font-size: 11px;
+}
+
+.stock-evidence-aligned-evidence p,
+.stock-evidence-aligned-market p,
+.stock-evidence-judgement-panel p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  color: var(--stock-copy);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.stock-evidence-aligned-cell small {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.stock-evidence-aligned-empty {
+  margin: 0;
+  color: var(--color-ink-tertiary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.stock-evidence-judgement-panel {
+  display: grid;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-hairline));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-2));
+  padding: 10px;
+}
+
+.stock-evidence-judgement-panel h4 {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 12.5px;
+}
+
+.stock-evidence-judgement-panel > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stock-evidence-judgement-panel article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.stock-evidence-judgement-panel span {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.stock-evidence-judgement-panel strong {
+  overflow-wrap: anywhere;
+  color: var(--color-ink);
+  font-size: 12.5px;
+}
+
+.stock-evidence-fail-box {
+  display: grid;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--color-market-down) 20%, var(--color-hairline));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-market-down-soft) 20%, var(--color-surface-2));
+  padding: 10px;
+}
+
+.stock-evidence-fail-box strong {
+  color: var(--color-ink-muted);
+  font-size: 12.5px;
+}
+
+@media (max-width: 720px) {
+  .stock-evidence-mini-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stock-evidence-aligned-legend {
+    display: none;
+  }
+
+  .stock-evidence-aligned-row {
+    grid-template-columns: 1fr;
+  }
+
+  .stock-evidence-aligned-row > time {
+    padding: 7px 8px;
+  }
+
+  .stock-evidence-judgement-panel > div {
+    grid-template-columns: 1fr;
+  }
+
+  .stock-evidence-beginner-verdict {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .stock-evidence-beginner-head {
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .stock-evidence-beginner-head > span {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stock-evidence-mini-facts {
+    grid-template-columns: 1fr;
+  }
+}
