@@ -32,6 +32,140 @@ def test_stock_evidence_chain_latest_endpoint_returns_empty_dashboard(tmp_path: 
     assert data["stage_counts"] == {}
 
 
+def test_stock_evidence_chain_snapshots_endpoint_lists_versions(tmp_path: Path):
+    config = _config(tmp_path)
+    old_as_of = datetime(2026, 6, 8, 15, 0)
+    new_as_of = datetime(2026, 6, 9, 15, 0)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        _insert_candidate(
+            conn,
+            as_of=old_as_of,
+            window_start=datetime(2026, 6, 7, 15, 0),
+            evidence_start=datetime(2026, 5, 1, 15, 0),
+            ts_code="000001.SZ",
+            stock_name="旧版股份",
+            rank=1,
+            evidence_score=12,
+            family_counts={"research": 2},
+        )
+        _insert_judgement(
+            conn,
+            as_of=old_as_of,
+            window_start=datetime(2026, 6, 7, 15, 0),
+            evidence_start=datetime(2026, 5, 1, 15, 0),
+            ts_code="000001.SZ",
+            stock_name="旧版股份",
+            stage="seed",
+            confidence=0.72,
+            return_since_first_point=0.04,
+        )
+        _insert_candidate(
+            conn,
+            as_of=new_as_of,
+            window_start=datetime(2026, 6, 8, 15, 0),
+            evidence_start=datetime(2026, 5, 2, 15, 0),
+            ts_code="000002.SZ",
+            stock_name="新版股份",
+            rank=1,
+            evidence_score=18,
+            family_counts={"catalyst": 2},
+        )
+        _insert_judgement(
+            conn,
+            as_of=new_as_of,
+            window_start=datetime(2026, 6, 8, 15, 0),
+            evidence_start=datetime(2026, 5, 2, 15, 0),
+            ts_code="000002.SZ",
+            stock_name="新版股份",
+            stage="seed",
+            confidence=0.8,
+            return_since_first_point=0.08,
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/strategy/evidence-chain/snapshots")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert [item["as_of_time"] for item in data["items"]] == [
+        new_as_of.isoformat(),
+        old_as_of.isoformat(),
+    ]
+    assert [item["item_count"] for item in data["items"]] == [1, 1]
+
+
+def test_stock_evidence_chain_latest_endpoint_can_select_previous_snapshot(tmp_path: Path):
+    config = _config(tmp_path)
+    old_as_of = datetime(2026, 6, 8, 15, 0)
+    new_as_of = datetime(2026, 6, 9, 15, 0)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        _insert_candidate(
+            conn,
+            as_of=old_as_of,
+            window_start=datetime(2026, 6, 7, 15, 0),
+            evidence_start=datetime(2026, 5, 1, 15, 0),
+            ts_code="000001.SZ",
+            stock_name="旧版股份",
+            rank=1,
+            evidence_score=12,
+            family_counts={"research": 2},
+        )
+        _insert_judgement(
+            conn,
+            as_of=old_as_of,
+            window_start=datetime(2026, 6, 7, 15, 0),
+            evidence_start=datetime(2026, 5, 1, 15, 0),
+            ts_code="000001.SZ",
+            stock_name="旧版股份",
+            stage="seed",
+            confidence=0.72,
+            return_since_first_point=0.04,
+        )
+        _insert_candidate(
+            conn,
+            as_of=new_as_of,
+            window_start=datetime(2026, 6, 8, 15, 0),
+            evidence_start=datetime(2026, 5, 2, 15, 0),
+            ts_code="000002.SZ",
+            stock_name="新版股份",
+            rank=1,
+            evidence_score=18,
+            family_counts={"catalyst": 2},
+        )
+        _insert_judgement(
+            conn,
+            as_of=new_as_of,
+            window_start=datetime(2026, 6, 8, 15, 0),
+            evidence_start=datetime(2026, 5, 2, 15, 0),
+            ts_code="000002.SZ",
+            stock_name="新版股份",
+            stage="seed",
+            confidence=0.8,
+            return_since_first_point=0.08,
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    latest_response = client.get("/api/strategy/evidence-chain/latest", params={"limit": 5})
+    old_response = client.get(
+        "/api/strategy/evidence-chain/latest",
+        params={"limit": 5, "as_of_time": old_as_of.isoformat()},
+    )
+
+    assert latest_response.status_code == 200
+    assert latest_response.json()["items"][0]["stock_name"] == "新版股份"
+    assert old_response.status_code == 200
+    assert old_response.json()["as_of_time"] == old_as_of.isoformat()
+    assert old_response.json()["items"][0]["stock_name"] == "旧版股份"
+
+
 def test_lifecycle_digest_preview_allows_default_job_limit(tmp_path: Path):
     client = TestClient(create_app(_config(tmp_path)))
     response = client.get("/api/strategy/lifecycle-digests/preview", params={"limit": 120, "force": False})

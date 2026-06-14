@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from radar.core.config import RadarConfig
@@ -7,7 +9,9 @@ from radar.core.usecases.stock_evidence_chain import (
     get_stock_evidence_financials,
     get_stock_evidence_stock_chart,
     latest_stock_evidence_chain,
+    list_stock_evidence_chain_snapshots,
     preview_lifecycle_digests,
+    stock_evidence_chain,
 )
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
@@ -17,6 +21,7 @@ from radar.web.server.schemas import (
     StockEvidenceChainJobRequest,
     StockEvidenceChainDashboardResponse,
     StockEvidenceFinancialsResponse,
+    StockEvidenceChainSnapshotListResponse,
     StockEvidenceStockChartResponse,
 )
 from radar.web.server.strategy_jobs import submit_lifecycle_digest_job, submit_stock_evidence_chain_job
@@ -27,9 +32,25 @@ router = APIRouter(prefix="/api/strategy", tags=["strategy"])
 @router.get("/evidence-chain/latest", response_model=StockEvidenceChainDashboardResponse)
 def stock_evidence_chain_latest(
     limit: int = Query(default=120, ge=1, le=500),
+    as_of_time: datetime | None = Query(default=None),
     config: RadarConfig = Depends(get_config),
 ) -> StockEvidenceChainDashboardResponse:
-    return StockEvidenceChainDashboardResponse(**latest_stock_evidence_chain(config, limit=limit).model_dump())
+    result = (
+        stock_evidence_chain(config, as_of=as_of_time, limit=limit)
+        if as_of_time is not None
+        else latest_stock_evidence_chain(config, limit=limit)
+    )
+    return StockEvidenceChainDashboardResponse(**result.model_dump())
+
+
+@router.get("/evidence-chain/snapshots", response_model=StockEvidenceChainSnapshotListResponse)
+def stock_evidence_chain_snapshots(
+    limit: int = Query(default=50, ge=1, le=200),
+    config: RadarConfig = Depends(get_config),
+) -> StockEvidenceChainSnapshotListResponse:
+    return StockEvidenceChainSnapshotListResponse(
+        **list_stock_evidence_chain_snapshots(config, limit=limit).model_dump()
+    )
 
 
 @router.get("/stocks/{ts_code}/chart", response_model=StockEvidenceStockChartResponse)

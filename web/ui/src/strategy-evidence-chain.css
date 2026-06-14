@@ -31,6 +31,19 @@
   background: var(--color-surface-3);
 }
 
+.strategy-snapshot-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.strategy-snapshot-field {
+  width: min(320px, 42vw);
+  gap: 3px;
+}
+
 .stock-evidence-workbench {
   display: grid;
   gap: 14px;
@@ -436,6 +449,19 @@
     min-height: auto;
     gap: 10px;
     grid-template-rows: auto auto auto;
+  }
+
+  .strategy-page .dashboard-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .strategy-snapshot-controls {
+    justify-content: stretch;
+  }
+
+  .strategy-snapshot-field {
+    width: 100%;
   }
 
   .stock-evidence-workbench {

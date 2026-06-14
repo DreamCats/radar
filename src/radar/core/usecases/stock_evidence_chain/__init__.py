@@ -23,7 +23,11 @@ from radar.core.usecases.stock_evidence_chain.stock_chart import (
 )
 from radar.core.usecases.stock_evidence_chain.views import (
     StockEvidenceChainDashboard,
+    StockEvidenceChainSnapshot,
+    StockEvidenceChainSnapshotList,
     latest_stock_evidence_chain,
+    list_stock_evidence_chain_snapshots,
+    stock_evidence_chain,
 )
 
 __all__ = [
@@ -32,6 +36,8 @@ __all__ = [
     "LifecycleDigestPreview",
     "LifecycleDigestRunResult",
     "StockEvidenceChainDashboard",
+    "StockEvidenceChainSnapshot",
+    "StockEvidenceChainSnapshotList",
     "StockEvidenceFinancials",
     "StockEvidenceLifecycleDigestContext",
     "StockEvidenceStockChart",
@@ -40,6 +46,8 @@ __all__ = [
     "get_stock_evidence_stock_chart",
     "index_stock_mentions",
     "latest_stock_evidence_chain",
+    "list_stock_evidence_chain_snapshots",
     "preview_lifecycle_digests",
     "refresh_lifecycle_digests",
+    "stock_evidence_chain",
 ]

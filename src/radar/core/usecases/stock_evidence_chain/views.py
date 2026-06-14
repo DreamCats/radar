@@ -26,39 +26,44 @@ from radar.core.usecases.stock_evidence_chain.sorting import stock_evidence_item
 from radar.core.usecases.stock_evidence_chain.view_models import (
     StockEvidenceChainDashboard,
     StockEvidenceChainItem,
+    StockEvidenceChainSnapshot,
+    StockEvidenceChainSnapshotList,
     StockEvidenceMarketPoint,
     StockEvidenceMessage,
 )
 
 
-def latest_stock_evidence_chain(config: RadarConfig, *, limit: int = 120) -> StockEvidenceChainDashboard:
+def latest_stock_evidence_chain(
+    config: RadarConfig,
+    *,
+    limit: int = 120,
+) -> StockEvidenceChainDashboard:
+    return stock_evidence_chain(config, limit=limit)
+
+
+def stock_evidence_chain(
+    config: RadarConfig,
+    *,
+    as_of: datetime | None = None,
+    limit: int = 120,
+) -> StockEvidenceChainDashboard:
     conn = connect(config.database_path)
     try:
         init_db(conn)
-        as_of = _latest_as_of(conn)
-        if as_of is None:
+        as_of_key = as_of.isoformat() if as_of is not None else _latest_as_of(conn)
+        if as_of_key is None:
             return StockEvidenceChainDashboard(generated_at=datetime.now())
-        rows = conn.execute(
-            """
-            SELECT
-                j.*,
-                c.rank AS candidate_rank,
-                c.evidence_score AS candidate_evidence_score,
-                c.family_counts_json AS candidate_family_counts_json
-            FROM stock_lifecycle_judgements j
-            LEFT JOIN stock_lifecycle_candidates c
-              ON c.as_of_time = j.as_of_time
-             AND c.ts_code = j.ts_code
-            WHERE j.as_of_time = ?
-            ORDER BY COALESCE(c.rank, 999999), j.updated_at DESC
-            """,
-            (as_of,),
-        ).fetchall()
+        rows = _load_judgement_rows(conn, as_of_key)
+        if not rows:
+            return StockEvidenceChainDashboard(
+                as_of_time=datetime.fromisoformat(as_of_key),
+                generated_at=datetime.now(),
+            )
         messages = _load_messages(conn, rows)
         theme_contexts = load_stock_theme_contexts(
             config,
             [str(row["ts_code"]) for row in rows],
-            as_of=datetime.fromisoformat(as_of),
+            as_of=datetime.fromisoformat(as_of_key),
         )
         lifecycle_digests = _load_lifecycle_digests(conn, rows, theme_contexts)
         items = [
@@ -72,7 +77,7 @@ def latest_stock_evidence_chain(config: RadarConfig, *, limit: int = 120) -> Sto
         ]
         items = sorted(items, key=stock_evidence_item_sort_key)[:limit]
         return StockEvidenceChainDashboard(
-            as_of_time=datetime.fromisoformat(as_of),
+            as_of_time=datetime.fromisoformat(as_of_key),
             window_start_time=_datetime(rows[0]["window_start_time"]) if rows else None,
             evidence_start_time=_datetime(rows[0]["evidence_start_time"]) if rows else None,
             generated_at=datetime.now(),
@@ -84,10 +89,78 @@ def latest_stock_evidence_chain(config: RadarConfig, *, limit: int = 120) -> Sto
         conn.close()
 
 
+def list_stock_evidence_chain_snapshots(
+    config: RadarConfig,
+    *,
+    limit: int = 50,
+) -> StockEvidenceChainSnapshotList:
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        rows = conn.execute(
+            """
+            SELECT
+                as_of_time,
+                MIN(window_start_time) AS window_start_time,
+                MIN(evidence_start_time) AS evidence_start_time,
+                COUNT(DISTINCT ts_code) AS item_count,
+                MAX(updated_at) AS updated_at
+            FROM stock_lifecycle_judgements
+            GROUP BY as_of_time
+            ORDER BY as_of_time DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return StockEvidenceChainSnapshotList(
+            items=[
+                StockEvidenceChainSnapshot(
+                    as_of_time=datetime.fromisoformat(str(row["as_of_time"])),
+                    window_start_time=_datetime(row["window_start_time"]),
+                    evidence_start_time=_datetime(row["evidence_start_time"]),
+                    item_count=int(row["item_count"] or 0),
+                    updated_at=_datetime(row["updated_at"]),
+                )
+                for row in rows
+            ]
+        )
+    finally:
+        conn.close()
+
+
 def _latest_as_of(conn: sqlite3.Connection) -> str | None:
     row = conn.execute("SELECT MAX(as_of_time) FROM stock_lifecycle_judgements").fetchone()
     value = row[0] if row else None
     return str(value) if value else None
+
+
+def _load_judgement_rows(conn: sqlite3.Connection, as_of: str) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT
+            j.*,
+            c.rank AS candidate_rank,
+            c.evidence_score AS candidate_evidence_score,
+            c.family_counts_json AS candidate_family_counts_json
+        FROM stock_lifecycle_judgements j
+        LEFT JOIN stock_lifecycle_candidates c
+          ON c.as_of_time = j.as_of_time
+         AND c.ts_code = j.ts_code
+        WHERE j.as_of_time = ?
+          AND NOT EXISTS (
+              SELECT 1
+              FROM stock_lifecycle_judgements newer
+              WHERE newer.as_of_time = j.as_of_time
+                AND newer.ts_code = j.ts_code
+                AND (
+                    newer.updated_at > j.updated_at
+                    OR (newer.updated_at = j.updated_at AND newer.prompt_version > j.prompt_version)
+                )
+          )
+        ORDER BY COALESCE(c.rank, 999999), j.updated_at DESC
+        """,
+        (as_of,),
+    ).fetchall()
 
 
 def _load_messages(conn: sqlite3.Connection, rows: list[sqlite3.Row]) -> dict[str, sqlite3.Row]:

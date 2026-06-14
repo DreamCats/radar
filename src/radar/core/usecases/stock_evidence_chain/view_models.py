@@ -72,3 +72,15 @@ class StockEvidenceChainDashboard(BaseModel):
     item_count: int = 0
     stage_counts: dict[str, int] = Field(default_factory=dict)
     items: list[StockEvidenceChainItem] = Field(default_factory=list)
+
+
+class StockEvidenceChainSnapshot(BaseModel):
+    as_of_time: datetime
+    window_start_time: datetime | None = None
+    evidence_start_time: datetime | None = None
+    item_count: int = 0
+    updated_at: datetime | None = None
+
+
+class StockEvidenceChainSnapshotList(BaseModel):
+    items: list[StockEvidenceChainSnapshot] = Field(default_factory=list)

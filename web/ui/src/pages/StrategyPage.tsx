@@ -1,26 +1,37 @@
-import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { useEffect, useId, useState } from "react";
+import { ChevronDown, RefreshCw } from "lucide-react";
 
-import { fetchStockEvidenceChainLatest } from "../api/radarApi";
+import { fetchStockEvidenceChainLatest, fetchStockEvidenceChainSnapshots } from "../api/radarApi";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { StockEvidenceChainPanel } from "../components/StockEvidenceChainPanel";
 import { type StockChecklistData, type StockChecklistSection } from "../components/StockChecklistCard";
 import { StrategyStockDrawer, type StrategyStockDrawerMode, type StrategyStockDrawerStock } from "../components/StrategyStockDrawer";
 import { formatTime } from "../lib/datetime";
-import type { StockEvidenceChainDashboard, StockEvidenceChainItem } from "../types";
+import type { StockEvidenceChainDashboard, StockEvidenceChainItem, StockEvidenceChainSnapshot } from "../types";
 
 export function StrategyPage() {
   const [data, setData] = useState<StockEvidenceChainDashboard | null>(null);
+  const [snapshots, setSnapshots] = useState<StockEvidenceChainSnapshot[]>([]);
+  const [selectedSnapshot, setSelectedSnapshot] = useState("");
+  const [snapshotMenuOpen, setSnapshotMenuOpen] = useState(false);
   const [selectedStock, setSelectedStock] = useState<StrategyStockDrawerStock | null>(null);
   const [drawerMode, setDrawerMode] = useState<StrategyStockDrawerMode>("chart");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const snapshotLabelId = useId();
+  const snapshotListId = useId();
 
-  async function refresh() {
+  async function refresh(asOfTime = selectedSnapshot || undefined) {
     setLoading(true);
     setError(null);
     try {
-      setData(await fetchStockEvidenceChainLatest({ limit: 120 }));
+      const [dashboard, snapshotList] = await Promise.all([
+        fetchStockEvidenceChainLatest({ limit: 120, as_of_time: asOfTime }),
+        fetchStockEvidenceChainSnapshots({ limit: 50 }),
+      ]);
+      setData(dashboard);
+      setSnapshots(snapshotList.items);
+      setSelectedSnapshot(dashboard.as_of_time ?? asOfTime ?? snapshotList.items[0]?.as_of_time ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
     } finally {
@@ -33,17 +44,78 @@ export function StrategyPage() {
   }, []);
 
   const initialLoading = loading && !data;
+  const selectedSnapshotLabel = snapshotLabel(snapshots, selectedSnapshot);
+  const snapshotDisabled = loading || !snapshots.length;
   const openStockDrawer = (stock: StockEvidenceChainItem, mode: StrategyStockDrawerMode) => {
     setSelectedStock(drawerStock(stock));
     setDrawerMode(mode);
+  };
+  const selectSnapshot = (asOfTime: string) => {
+    setSnapshotMenuOpen(false);
+    setSelectedSnapshot(asOfTime);
+    setSelectedStock(null);
+    void refresh(asOfTime);
   };
 
   return (
     <section className="strategy-page">
       <div className="dashboard-actions">
         <p>{strategyHeaderText(initialLoading, data)}</p>
-        <div>
+        <div className="strategy-snapshot-controls">
           {loading && !initialLoading && <PageRefreshProgress label="正在刷新策略" />}
+          <div className="field strategy-snapshot-field">
+            <span id={snapshotLabelId}>快照</span>
+            <div
+              className={snapshotMenuOpen ? "strategy-snapshot-dropdown open" : "strategy-snapshot-dropdown"}
+              onBlur={(event) => {
+                const nextTarget = event.relatedTarget as Node | null;
+                if (!nextTarget || !event.currentTarget.contains(nextTarget)) {
+                  setSnapshotMenuOpen(false);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setSnapshotMenuOpen(false);
+                }
+              }}
+            >
+              <button
+                className="strategy-snapshot-trigger"
+                type="button"
+                aria-controls={snapshotListId}
+                aria-expanded={snapshotMenuOpen}
+                aria-haspopup="listbox"
+                aria-labelledby={`${snapshotLabelId} ${snapshotListId}-value`}
+                disabled={snapshotDisabled}
+                onClick={() => setSnapshotMenuOpen((open) => !open)}
+              >
+                <span id={`${snapshotListId}-value`}>{selectedSnapshotLabel}</span>
+                <ChevronDown size={14} aria-hidden="true" />
+              </button>
+              {snapshotMenuOpen && snapshots.length > 0 && (
+                <div className="strategy-snapshot-menu" id={snapshotListId} role="listbox" aria-labelledby={snapshotLabelId}>
+                  {snapshots.map((snapshot, index) => {
+                    const selected = snapshot.as_of_time === selectedSnapshot;
+                    return (
+                      <button
+                        className={selected ? "strategy-snapshot-option active" : "strategy-snapshot-option"}
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        key={snapshot.as_of_time}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => selectSnapshot(snapshot.as_of_time)}
+                      >
+                        <span>{snapshotOptionPrefix(index)}</span>
+                        <strong>{formatTime(snapshot.as_of_time)}</strong>
+                        <em>{snapshot.item_count} 个候选</em>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
           <button className="btn btn-sm" type="button" onClick={() => void refresh()} disabled={loading}>
             <RefreshCw size={15} />
             刷新
@@ -83,6 +155,31 @@ function strategyHeaderText(loading: boolean, data: StockEvidenceChainDashboard 
     return "暂无个股证据链判断";
   }
   return `个股证据链 ${formatTime(data.as_of_time)} · ${data.item_count} 个候选`;
+}
+
+function snapshotOptionLabel(snapshot: StockEvidenceChainSnapshot, index: number): string {
+  return `${snapshotOptionPrefix(index)} · ${formatTime(snapshot.as_of_time)} · ${snapshot.item_count} 个候选`;
+}
+
+function snapshotLabel(snapshots: StockEvidenceChainSnapshot[], selectedSnapshot: string): string {
+  const selectedIndex = snapshots.findIndex((snapshot) => snapshot.as_of_time === selectedSnapshot);
+  if (selectedIndex < 0) {
+    return snapshots.length ? snapshotOptionLabel(snapshots[0], 0) : "暂无快照";
+  }
+  return snapshotOptionLabel(snapshots[selectedIndex], selectedIndex);
+}
+
+function snapshotOptionPrefix(index: number): string {
+  if (index === 0) {
+    return "最新";
+  }
+  if (index === 1) {
+    return "上一版";
+  }
+  if (index === 2) {
+    return "上上版";
+  }
+  return `前${index}版`;
 }
 
 function drawerStock(item: StockEvidenceChainItem): StrategyStockDrawerStock {

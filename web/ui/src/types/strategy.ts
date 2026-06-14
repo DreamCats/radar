@@ -199,6 +199,18 @@ export type StockEvidenceChainDashboard = {
   items: StockEvidenceChainItem[];
 };
 
+export type StockEvidenceChainSnapshot = {
+  as_of_time: string;
+  window_start_time?: string | null;
+  evidence_start_time?: string | null;
+  item_count: number;
+  updated_at?: string | null;
+};
+
+export type StockEvidenceChainSnapshotList = {
+  items: StockEvidenceChainSnapshot[];
+};
+
 export type StockEvidenceStockChartQuery = {
   days?: number;
   refresh?: boolean;
