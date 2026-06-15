@@ -237,6 +237,8 @@ def test_chat_system_prompt_layers_surface_rules():
     assert "不输出买入、卖出、持有、仓位、目标价" in common_prompt
     assert "投资价值排序" in common_prompt
     assert "证据完整度、跟踪优先级" in common_prompt
+    assert "多次调用 radar_search_messages / radar_get_conversation_window 和 radar_search_web" in common_prompt
+    assert "本地消息用于定位线索，Brave Search 用于补公开来源" in common_prompt
     assert "radar_strategy_candidates / radar_theme_candidates" in common_prompt
     assert "不要一次性拉取完整证据链" in common_prompt
     assert "输出 Markdown 时使用标准语法" in common_prompt
