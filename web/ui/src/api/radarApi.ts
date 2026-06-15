@@ -169,6 +169,7 @@ async function readChatEventStream(response: Response, onEvent: (event: ChatStre
     for (const rawEvent of events) {
       const event = parseChatStreamEvent(rawEvent);
       if (event.type === "error") {
+        onEvent(event);
         throw new Error(event.message);
       }
       onEvent(event);
@@ -180,6 +181,7 @@ async function readChatEventStream(response: Response, onEvent: (event: ChatStre
   if (buffer.trim()) {
     const event = parseChatStreamEvent(buffer);
     if (event.type === "error") {
+      onEvent(event);
       throw new Error(event.message);
     }
     onEvent(event);

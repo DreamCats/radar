@@ -9,6 +9,40 @@ export type ToolActivityItem = {
   status: "running" | "completed";
 };
 
+export type ChatTraceItem =
+  | {
+      key: string;
+      type: "reasoning";
+      content: string;
+    }
+  | {
+      key: string;
+      type: "tool";
+      toolCallId: string;
+      label: string;
+      status: "running" | "completed";
+    }
+  | {
+      key: string;
+      type: "status";
+      label: string;
+    }
+  | {
+      key: string;
+      type: "summary";
+      content: string;
+    }
+  | {
+      key: string;
+      type: "error";
+      message: string;
+    }
+  | {
+      key: string;
+      type: "assistant";
+      content: string;
+    };
+
 export function statusForChatMessage(metadata: Record<string, unknown>): string {
   const status = typeof metadata.status === "string" ? metadata.status : "";
   if (status === "已处理") {
@@ -90,12 +124,108 @@ export function mergeAssistantMetadata(draft: ChatMessageItem, message: ChatMess
     metadata: {
       ...message.metadata,
       server_message_id: message.message_id,
-      reasoning: draft.metadata.reasoning,
       tool_activities: draft.metadata.tool_activities,
+      trace_items: draft.metadata.trace_items,
       status: "正在处理",
       streaming: true,
     },
   };
+}
+
+export function appendStatusTrace(raw: unknown, label: string): ChatTraceItem[] {
+  const current = chatTraceItems(raw);
+  const trimmedLabel = label.trim();
+  if (!trimmedLabel) {
+    return current;
+  }
+  const last = current[current.length - 1];
+  if (last?.type === "status" && last.label === trimmedLabel) {
+    return current;
+  }
+  return [...current, { key: `status-${current.length + 1}`, type: "status", label: trimmedLabel }];
+}
+
+export function appendSummaryTrace(raw: unknown, content: string): ChatTraceItem[] {
+  const current = chatTraceItems(raw);
+  const trimmedContent = content.trim();
+  if (!trimmedContent || current.some((item) => item.type === "summary" && item.content === trimmedContent)) {
+    return current;
+  }
+  return [...current, { key: `summary-${current.length + 1}`, type: "summary", content: trimmedContent }];
+}
+
+export function appendErrorTrace(raw: unknown, message: string): ChatTraceItem[] {
+  const current = chatTraceItems(raw);
+  const trimmedMessage = message.trim();
+  if (!trimmedMessage) {
+    return current;
+  }
+  const last = current[current.length - 1];
+  if (last?.type === "error" && last.message === trimmedMessage) {
+    return current;
+  }
+  return [...current, { key: `error-${current.length + 1}`, type: "error", message: trimmedMessage }];
+}
+
+export function appendAssistantTrace(raw: unknown, content: string): ChatTraceItem[] {
+  const current = chatTraceItems(raw);
+  if (!content) {
+    return current;
+  }
+  const last = current[current.length - 1];
+  if (last?.type === "assistant") {
+    return current.map((item, index) =>
+      index === current.length - 1 && item.type === "assistant" ? { ...item, content: `${item.content}${content}` } : item,
+    );
+  }
+  return [...current, { key: `assistant-${current.length + 1}`, type: "assistant", content }];
+}
+
+export function ensureAssistantTrace(raw: unknown, content: string): ChatTraceItem[] {
+  const current = chatTraceItems(raw);
+  const fullContent = content.trim();
+  if (!fullContent) {
+    return current;
+  }
+  const assistantContent = current
+    .map((item) => (item.type === "assistant" ? item.content : ""))
+    .filter(Boolean)
+    .join("\n\n");
+  if (!assistantContent) {
+    return appendAssistantTrace(current, content);
+  }
+  if (content.startsWith(assistantContent)) {
+    const missingContent = content.slice(assistantContent.length);
+    return missingContent.trim() ? appendAssistantTrace(current, missingContent) : current;
+  }
+  return current;
+}
+
+export function updateToolTrace(raw: unknown, eventType: string, toolCallId: string, toolName: string): ChatTraceItem[] {
+  const current = chatTraceItems(raw);
+  if (!toolCallId || !toolName) {
+    return current;
+  }
+  if (eventType !== "tool_execution_started" && eventType !== "tool_execution_completed") {
+    return current;
+  }
+  const status = eventType === "tool_execution_started" ? "running" : "completed";
+  const index = current.findIndex((item) => item.type === "tool" && item.toolCallId === toolCallId);
+  if (index < 0) {
+    return [
+      ...current,
+      {
+        key: `tool-${toolCallId}`,
+        type: "tool",
+        toolCallId,
+        label: formatToolName(toolName),
+        status,
+      },
+    ];
+  }
+  return current.map((item, itemIndex) =>
+    itemIndex === index && item.type === "tool" ? { ...item, label: formatToolName(toolName), status } : item,
+  );
 }
 
 export function updateToolActivities(raw: unknown, eventType: string, toolCallId: string, toolName: string): ToolActivityItem[] {
@@ -108,7 +238,7 @@ export function updateToolActivities(raw: unknown, eventType: string, toolCallId
   }
   const activity = {
     key: toolCallId,
-    label: `${eventType === "tool_execution_started" ? "调用" : "完成"} ${formatToolName(toolName)}`,
+    label: formatToolName(toolName),
     status: eventType === "tool_execution_started" ? "running" : "completed",
   } as ToolActivityItem;
   const index = current.findIndex((item) => item.key === toolCallId);
@@ -123,6 +253,13 @@ export function toolActivities(raw: unknown): ToolActivityItem[] {
     return [];
   }
   return raw.filter(isToolActivityItem);
+}
+
+export function chatTraceItems(raw: unknown): ChatTraceItem[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw.filter(isChatTraceItem);
 }
 
 export function readActiveSessionId(): string | null {
@@ -156,6 +293,35 @@ function isToolActivityItem(value: unknown): value is ToolActivityItem {
   const item = value as Record<string, unknown>;
   return (
     typeof item.key === "string" &&
+    typeof item.label === "string" &&
+    (item.status === "running" || item.status === "completed")
+  );
+}
+
+function isChatTraceItem(value: unknown): value is ChatTraceItem {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const item = value as Record<string, unknown>;
+  if (item.type === "reasoning") {
+    return typeof item.key === "string" && typeof item.content === "string";
+  }
+  if (item.type === "status") {
+    return typeof item.key === "string" && typeof item.label === "string";
+  }
+  if (item.type === "summary") {
+    return typeof item.key === "string" && typeof item.content === "string";
+  }
+  if (item.type === "error") {
+    return typeof item.key === "string" && typeof item.message === "string";
+  }
+  if (item.type === "assistant") {
+    return typeof item.key === "string" && typeof item.content === "string";
+  }
+  return (
+    item.type === "tool" &&
+    typeof item.key === "string" &&
+    typeof item.toolCallId === "string" &&
     typeof item.label === "string" &&
     (item.status === "running" || item.status === "completed")
   );

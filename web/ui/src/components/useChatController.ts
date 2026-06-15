@@ -5,6 +5,8 @@ import { formatChatTranscript } from "../lib/chatTranscript";
 import { copyText } from "../lib/clipboard";
 import type { ChatMessageItem, ChatModelOption, ChatSessionItem } from "../types";
 import {
+  appendErrorTrace,
+  chatTraceItems,
   clearActiveSessionId,
   clearSelectedProviderName,
   readActiveSessionId,
@@ -101,6 +103,30 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       return;
     }
     list.scrollTop = list.scrollHeight;
+  }
+
+  function stopAssistantDraft(assistantDraftId: string, errorMessage: string | null) {
+    setMessages((current) =>
+      current
+        .map((message) => {
+          if (message.message_id !== assistantDraftId) {
+            return message;
+          }
+          const metadata = {
+            ...message.metadata,
+            streaming: false,
+            stopped: true,
+            ...(errorMessage ? { status: "处理失败", trace_items: appendErrorTrace(message.metadata.trace_items, errorMessage) } : {}),
+          };
+          return { ...message, metadata };
+        })
+        .filter(
+          (message) =>
+            message.message_id !== assistantDraftId ||
+            message.content.trim() ||
+            chatTraceItems(message.metadata.trace_items).length > 0,
+        ),
+    );
   }
 
   function updateMessageScrollState(isNearBottom: boolean) {
@@ -210,18 +236,13 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       );
       setCanContinue(false);
     } catch (err) {
+      const errorMessage = err instanceof DOMException && err.name === "AbortError" ? null : err instanceof Error ? err.message : "发送失败";
       if (err instanceof DOMException && err.name === "AbortError") {
         setError(null);
       } else {
-        setError(err instanceof Error ? err.message : "发送失败");
+        setError(errorMessage);
       }
-      setMessages((current) =>
-        current
-          .filter((message) => message.message_id !== assistantDraftId || message.content.trim())
-          .map((message) =>
-            message.message_id === assistantDraftId ? { ...message, metadata: { ...message.metadata, streaming: false, stopped: true } } : message,
-          ),
-      );
+      stopAssistantDraft(assistantDraftId, errorMessage);
       setCanContinue(Boolean(currentSessionId));
     } finally {
       clearIdleTimer();
@@ -283,18 +304,13 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       await continueChatTurn(sessionId, { provider_name: selectedProviderName }, handleStreamEvent, { signal: controller.signal });
       setCanContinue(false);
     } catch (err) {
+      const errorMessage = err instanceof DOMException && err.name === "AbortError" ? null : err instanceof Error ? err.message : "继续生成失败";
       if (err instanceof DOMException && err.name === "AbortError") {
         setError(null);
       } else {
-        setError(err instanceof Error ? err.message : "继续生成失败");
+        setError(errorMessage);
       }
-      setMessages((current) =>
-        current
-          .filter((message) => message.message_id !== assistantDraftId || message.content.trim())
-          .map((message) =>
-            message.message_id === assistantDraftId ? { ...message, metadata: { ...message.metadata, streaming: false, stopped: true } } : message,
-          ),
-      );
+      stopAssistantDraft(assistantDraftId, errorMessage);
       setCanContinue(true);
     } finally {
       clearIdleTimer();

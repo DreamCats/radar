@@ -310,21 +310,10 @@
   width: fit-content;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 999px;
-  background: var(--color-surface-2);
   color: var(--color-ink-subtle);
   font-size: 12px;
-  padding: 4px 8px;
-}
-
-.chat-agent-status::before {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--color-primary);
-  content: "";
-  opacity: 0.8;
+  font-weight: 600;
+  padding: 2px 0;
 }
 
 .chat-message-user {
