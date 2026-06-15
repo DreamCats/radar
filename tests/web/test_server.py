@@ -799,8 +799,16 @@ def test_classify_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_p
         tmp_path,
         llm={
             "providers": {
-                "provider-a": {"protocol": "openai", "secret_ref": "a", "model": "model-a"},
-                "provider-b": {"protocol": "anthropic", "secret_ref": "b", "model": "model-b"},
+                "provider-a": {
+                    "protocol": "openai",
+                    "secret_ref": "a",
+                    "model": "model-a",
+                },
+                "provider-b": {
+                    "protocol": "anthropic",
+                    "secret_ref": "b",
+                    "model": "model-b",
+                },
             }
         },
     )
@@ -1088,6 +1096,168 @@ def test_recommendation_backtest_jobs_endpoint_starts_and_reuses_running_job(mon
     assert calls[0]["windows"] == [1, 2, 3, 5]
     assert calls[0]["benchmark_ts_code"] == "000300.SH"
     assert calls[0]["run_id"] == first["run_id"]
+
+
+def test_stock_evidence_chain_job_uses_configured_provider_pool(monkeypatch, tmp_path):
+    config = _config(
+        tmp_path,
+        llm={
+            "providers": {
+                "provider-a": {"protocol": "openai", "secret_ref": "a", "model": "model-a"},
+                "provider-b": {"protocol": "anthropic", "secret_ref": "b", "model": "model-b"},
+            }
+        },
+    )
+    calls: list[dict] = []
+    started = Event()
+    release = Event()
+
+    def fake_build(
+        config,
+        *,
+        as_of,
+        window_start,
+        evidence_days,
+        limit,
+        run_llm,
+        llm_workers,
+        llm_providers,
+        llm_model,
+        force_llm,
+    ):
+        calls.append(
+            {
+                "as_of": as_of,
+                "window_start": window_start,
+                "evidence_days": evidence_days,
+                "limit": limit,
+                "run_llm": run_llm,
+                "llm_workers": llm_workers,
+                "llm_providers": llm_providers,
+                "llm_model": llm_model,
+                "force_llm": force_llm,
+            }
+        )
+        started.set()
+        release.wait(timeout=2)
+        return SimpleNamespace(
+            as_of=as_of,
+            window_start=window_start,
+            evidence_start=as_of - timedelta(days=evidence_days),
+            indexed_messages=10,
+            mention_count=20,
+            candidate_count=3,
+            judged_count=3,
+            reused_count=0,
+            failed_count=0,
+        )
+
+    monkeypatch.setattr("radar.web.server.strategy_jobs.build_stock_evidence_chain", fake_build)
+
+    client = TestClient(create_app(config))
+    payload = {
+        "start_time": "2026-06-04T15:00:00",
+        "end_time": "2026-06-05T09:30:00",
+        "evidence_days": 40,
+        "limit": 120,
+        "run_llm": True,
+        "llm_workers": 16,
+        "force_llm": False,
+    }
+    response = client.post("/api/strategy/evidence-chain/jobs", json=payload)
+
+    assert response.status_code == 200
+    first = response.json()["items"][0]
+    assert started.wait(timeout=1)
+    run = get_run(config.database_path, first["run_id"])
+    assert run is not None
+    assert run.metadata["effective_provider_names"] == ["provider-a", "provider-b"]
+    assert "providers=provider-a,provider-b" in run.target
+
+    response = client.post("/api/strategy/evidence-chain/jobs", json=payload)
+    second = response.json()["items"][0]
+
+    assert second["run_id"] == first["run_id"]
+    assert second["reused_existing"] is True
+    release.set()
+    wait_for_run_status(config.database_path, first["run_id"], "succeeded")
+    assert calls[0]["llm_providers"] == ["provider-a", "provider-b"]
+    assert calls[0]["llm_workers"] == 16
+
+
+def test_lifecycle_digest_job_uses_configured_provider_pool(monkeypatch, tmp_path):
+    config = _config(
+        tmp_path,
+        llm={
+            "providers": {
+                "provider-a": {
+                    "protocol": "openai",
+                    "secret_ref": "a",
+                    "model": "model-a",
+                },
+                "provider-b": {
+                    "protocol": "anthropic",
+                    "secret_ref": "b",
+                    "model": "model-b",
+                },
+            }
+        },
+    )
+    calls: list[dict] = []
+    started = Event()
+    release = Event()
+
+    def fake_refresh(config, *, limit, force, provider_names, model, llm_workers):
+        calls.append(
+            {
+                "limit": limit,
+                "force": force,
+                "provider_names": provider_names,
+                "model": model,
+                "llm_workers": llm_workers,
+            }
+        )
+        started.set()
+        release.wait(timeout=2)
+        return SimpleNamespace(
+            as_of_time=datetime.fromisoformat("2026-06-05T09:30:00"),
+            scanned_count=120,
+            processable_count=120,
+            pending_count=120,
+            generated_count=118,
+            reused_count=0,
+            skipped_count=0,
+            failed_count=2,
+            rerun_reason_counts={"缺少生命周期摘要": 120},
+        )
+
+    monkeypatch.setattr("radar.web.server.strategy_jobs.refresh_lifecycle_digests", fake_refresh)
+
+    client = TestClient(create_app(config))
+    payload = {
+        "limit": 120,
+        "force": False,
+        "llm_workers": 16,
+    }
+    response = client.post("/api/strategy/lifecycle-digests/jobs", json=payload)
+
+    assert response.status_code == 200
+    first = response.json()["items"][0]
+    assert started.wait(timeout=1)
+    run = get_run(config.database_path, first["run_id"])
+    assert run is not None
+    assert run.metadata["effective_provider_names"] == ["provider-a", "provider-b"]
+    assert "providers=provider-a,provider-b" in run.target
+
+    response = client.post("/api/strategy/lifecycle-digests/jobs", json=payload)
+    second = response.json()["items"][0]
+
+    assert second["run_id"] == first["run_id"]
+    assert second["reused_existing"] is True
+    release.set()
+    wait_for_run_status(config.database_path, first["run_id"], "succeeded")
+    assert calls[0]["provider_names"] == ["provider-a", "provider-b"]
+    assert calls[0]["llm_workers"] == 16
 
 
 def test_recommendation_backtest_summary_endpoint_returns_rows(monkeypatch, tmp_path):
