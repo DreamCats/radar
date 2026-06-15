@@ -37,8 +37,8 @@ def test_refresh_market_anchors_builds_dictionary(tmp_path: Path):
         "tdx_index": 2,
     }
     assert [call[0] for call in calls] == [
-        "dc_concept",
-        "dc_concept_cons",
+        "dc_index",
+        "dc_member",
         "kpl_list",
         "kpl_concept_cons",
         "tdx_index",
@@ -55,8 +55,8 @@ def test_refresh_market_anchors_builds_dictionary(tmp_path: Path):
         ).fetchall()
     finally:
         conn.close()
-    assert ("603915.SH", "国茂股份", "减速器") in member_rows
-    assert ("002164.SZ", "宁波东力", "行星减速器") in member_rows
+    assert ("603915.SH", "国茂股份", None) in member_rows
+    assert ("002164.SZ", "宁波东力", None) in member_rows
 
 
 def test_refresh_market_anchors_rebuilds_current_and_spans(tmp_path: Path):
@@ -83,8 +83,8 @@ def test_refresh_market_anchors_rebuilds_current_and_spans(tmp_path: Path):
     finally:
         conn.close()
 
-    assert current == ("dc_concept:000084.DC", "人形机器人", "dc_concept_cons", "603915.SH", "20260605", "减速器")
-    assert span == ("dc_concept:000084.DC", "603915.SH", "20260604", "20260605", 2, "减速器")
+    assert current == ("dc_concept:000084.DC", "人形机器人", "dc_concept_cons", "603915.SH", "20260605", None)
+    assert span == ("dc_concept:000084.DC", "603915.SH", "20260604", "20260605", 2, None)
 
 
 def test_refresh_market_anchor_derivatives_can_rebuild_existing_raw(tmp_path: Path):
@@ -192,8 +192,8 @@ def test_ensure_market_anchors_keeps_open_trade_date(tmp_path: Path):
     assert result.anchor_count == 7
     assert calls == [
         "trade_cal",
-        "dc_concept",
-        "dc_concept_cons",
+        "dc_index",
+        "dc_member",
         "kpl_list",
         "kpl_concept_cons",
         "tdx_index",
@@ -300,6 +300,29 @@ def test_refresh_market_anchors_records_optional_source_failure(tmp_path: Path):
 
 def _rows(api_name: str) -> list[dict[str, Any]]:
     rows = {
+        "dc_index": [
+            {
+                "ts_code": "000084.DC",
+                "trade_date": "20260604",
+                "name": "人形机器人",
+                "leading": "国茂股份",
+                "leading_code": "603915.SH",
+            }
+        ],
+        "dc_member": [
+            {
+                "ts_code": "000084.DC",
+                "con_code": "603915.SH",
+                "trade_date": "20260604",
+                "name": "国茂股份",
+            },
+            {
+                "ts_code": "000084.DC",
+                "con_code": "002164.SZ",
+                "trade_date": "20260604",
+                "name": "宁波东力",
+            },
+        ],
         "dc_concept": [
             {
                 "theme_code": "000084.DC",

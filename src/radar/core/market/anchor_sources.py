@@ -22,12 +22,12 @@ def _load_dc_concepts(config: RadarConfig, trade_date: str, fetch: TushareCallFn
     members: list[MarketAnchorMember] = []
     concept_rows = fetch(
         config,
-        "dc_concept",
+        "dc_index",
         {"trade_date": trade_date},
-        "theme_code,trade_date,name,pct_change,hot,sort,strength,z_t_num,lead_stock,lead_stock_code",
+        "ts_code,name,leading,leading_code,trade_date,pct_change,leading_pct,total_mv,turnover_rate,up_num,down_num",
     )
     for row in concept_rows:
-        code = _text(row.get("theme_code"))
+        code = _text(row.get("ts_code") or row.get("theme_code"))
         name = _text(row.get("name"))
         if code and name:
             anchors.append(
@@ -45,13 +45,13 @@ def _load_dc_concepts(config: RadarConfig, trade_date: str, fetch: TushareCallFn
 
     member_rows = fetch(
         config,
-        "dc_concept_cons",
+        "dc_member",
         {"trade_date": trade_date},
-        "ts_code,trade_date,name,theme_code,industry_code,industry,reason,hot_num",
+        "trade_date,ts_code,con_code,name",
     )
     for row in member_rows:
-        theme_code = _text(row.get("theme_code"))
-        ts_code = _text(row.get("ts_code"))
+        theme_code = _text(row.get("theme_code") or row.get("ts_code"))
+        ts_code = _text(row.get("con_code") or row.get("ts_code"))
         stock_name = _text(row.get("name"))
         if theme_code and ts_code and stock_name:
             members.append(
