@@ -81,7 +81,7 @@ export function App() {
   }
 
   return (
-    <main className="app workspace-shell">
+    <main className={`app workspace-shell active-tab-${tab}`}>
       <AmbientBackground shouldReduceMotion={shouldReduceMotion} />
       <aside className="sidebar">
         <div className="brand brand-block">
