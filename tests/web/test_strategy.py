@@ -9,9 +9,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
+from radar.core.market.quotes import RealtimeQuote
 from radar.core.storage.db import migrate_market_db
 from radar.core.storage import connect, init_db
 from radar.core.tushare import RealtimeDailyQuote
+from radar.core.tushare.exceptions import TushareApiError
 from radar.core.tushare import history
 from radar.core.usecases.stock_evidence_chain import (
     latest_stock_evidence_chain,
@@ -612,6 +614,74 @@ def test_strategy_stock_chart_endpoint_appends_intraday_realtime_candle(monkeypa
     assert [item["trade_date"] for item in data["candles"]] == ["20260605", "20260608"]
     assert data["candles"][-1]["close"] == 86.0
     assert data["candles"][-1]["amount"] == 30000
+
+
+def test_strategy_stock_chart_endpoint_falls_back_to_public_realtime_quote(
+    monkeypatch,
+    tmp_path: Path,
+):
+    config = _config(tmp_path)
+    daily = history.spec_for("daily")
+    assert daily is not None
+    history.put_rows(
+        config.market_database_path,
+        daily,
+        [_daily("000811.SZ", "20260605", 30.0, 31.0, 29.8, 30.77, pct_chg=1.1)],
+    )
+    monkeypatch.setattr(
+        "radar.core.usecases.stock_evidence_chain.stock_chart._refresh_recent_daily_cache",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr("radar.core.tushare.history._today_date", lambda: date(2026, 6, 8))
+    monkeypatch.setattr(
+        "radar.core.usecases.stock_evidence_chain.stock_chart._now_time",
+        lambda: time(10, 30),
+    )
+    monkeypatch.setattr(
+        "radar.core.usecases.stock_evidence_chain.stock_chart._is_trading_day",
+        lambda *args, **kwargs: True,
+    )
+
+    def fake_tushare_quote(config_arg, *, ts_code, use_cache):
+        raise TushareApiError("rt_k: 无权限")
+
+    def fake_public_quote(config_arg, *, ts_code):
+        assert ts_code == "000811.SZ"
+        return RealtimeQuote(
+            ts_code=ts_code,
+            source="tencent",
+            name="冰轮环境",
+            pre_close=30.77,
+            open=31.8,
+            high=33.85,
+            low=31.06,
+            close=33.85,
+            volume_shares=45_723_400,
+            amount_yuan=1_515_000_000,
+        )
+
+    monkeypatch.setattr(
+        "radar.core.usecases.stock_evidence_chain.stock_chart.get_realtime_daily_quote",
+        fake_tushare_quote,
+    )
+    monkeypatch.setattr(
+        "radar.core.usecases.stock_evidence_chain.stock_chart.get_public_realtime_quote",
+        fake_public_quote,
+    )
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/strategy/stocks/000811.SZ/chart",
+        params={"days": 5, "refresh": True},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["latest_source"] == "tencent_rt"
+    assert data["latest_is_realtime"] is True
+    assert data["candles"][-1]["close"] == 33.85
+    assert data["candles"][-1]["vol"] == 457234
+    assert data["candles"][-1]["amount"] == 1515000
 
 
 def _config(tmp_path: Path) -> RadarConfig:

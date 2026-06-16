@@ -6,10 +6,11 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from radar.core.config import RadarConfig
+from radar.core.market.quotes import RealtimeQuote, get_public_realtime_quote
 from radar.core.tushare import client as tushare_client
 from radar.core.tushare import history
-from radar.core.tushare.realtime import RealtimeDailyQuote, get_realtime_daily_quote
 from radar.core.tushare.exceptions import TushareError
+from radar.core.tushare.realtime import RealtimeDailyQuote, get_realtime_daily_quote
 
 INTRADAY_START_TIME = dt.time(9, 30)
 
@@ -57,15 +58,19 @@ def get_stock_evidence_stock_chart(
     candles = [_candle(row) for row in raw_rows]
     candles = [item for item in candles if item is not None]
     candles.sort(key=lambda item: item.trade_date)
-    latest_is_realtime = _append_intraday_candle(config, code, candles) if refresh else False
+    latest_realtime_source = _append_intraday_candle(config, code, candles) if refresh else None
     limited = candles[-days:]
 
     return StockEvidenceStockChart(
         ts_code=code,
         candles=limited,
         latest_trade_date=limited[-1].trade_date if limited else None,
-        latest_source=_latest_source(limited, latest_is_realtime),
-        latest_is_realtime=latest_is_realtime and bool(limited) and limited[-1].trade_date == history.today_key("day"),
+        latest_source=_latest_source(limited, latest_realtime_source),
+        latest_is_realtime=(
+            bool(latest_realtime_source)
+            and bool(limited)
+            and limited[-1].trade_date == history.today_key("day")
+        ),
         missing_reason=None if limited else "本地 market.sqlite3 暂无该股票日线缓存",
     )
 
@@ -89,26 +94,35 @@ def _refresh_recent_daily_cache(config: RadarConfig, ts_code: str, *, days: int)
             use_cache=True,
         )
     except TushareError:
-        # K 线抽屉优先展示已有本地缓存；Tushare 未配置或临时失败不应打断页面。
+        # K 线抽屉优先展示本地缓存；Tushare 失败时不中断页面。
         return
 
 
-def _append_intraday_candle(config: RadarConfig, ts_code: str, candles: list[StockEvidenceStockCandle]) -> bool:
+def _append_intraday_candle(
+    config: RadarConfig,
+    ts_code: str,
+    candles: list[StockEvidenceStockCandle],
+) -> str | None:
     today_key = history.today_key("day")
     if not _should_use_realtime_quote(config, today_key):
-        return False
+        return None
+    source = "rt_k"
     try:
         quote = get_realtime_daily_quote(config, ts_code=ts_code, use_cache=True)
     except TushareError:
-        return False
+        quote = None
     candle = _realtime_candle(quote, today_key)
     if candle is None:
-        return False
+        public_quote = get_public_realtime_quote(config, ts_code=ts_code)
+        candle = _public_realtime_candle(public_quote, today_key)
+        source = f"{public_quote.source}_rt" if public_quote is not None else source
+    if candle is None:
+        return None
     if candles and candles[-1].trade_date == today_key:
         candles[-1] = candle
     else:
         candles.append(candle)
-    return True
+    return source
 
 
 def _should_use_realtime_quote(config: RadarConfig, today_key: str) -> bool:
@@ -129,10 +143,17 @@ def _is_trading_day(config: RadarConfig, trade_date: str) -> bool:
         )
     except TushareError:
         return False
-    return any(str(row.get("cal_date")) == trade_date and str(row.get("is_open")) in {"1", "1.0", "True", "true"} for row in rows)
+    return any(
+        str(row.get("cal_date")) == trade_date
+        and str(row.get("is_open")) in {"1", "1.0", "True", "true"}
+        for row in rows
+    )
 
 
-def _realtime_candle(quote: RealtimeDailyQuote | None, trade_date: str) -> StockEvidenceStockCandle | None:
+def _realtime_candle(
+    quote: RealtimeDailyQuote | None,
+    trade_date: str,
+) -> StockEvidenceStockCandle | None:
     if quote is None or quote.open is None or quote.close is None:
         return None
     high = quote.high if quote.high is not None else max(quote.open, quote.close)
@@ -146,16 +167,44 @@ def _realtime_candle(quote: RealtimeDailyQuote | None, trade_date: str) -> Stock
         close=quote.close,
         pre_close=quote.pre_close,
         change=change,
-        pct_chg=(change / quote.pre_close * 100) if change is not None and quote.pre_close else None,
+        pct_chg=_pct_change(change, quote.pre_close),
         vol=quote.vol,
         amount=quote.amount,
     )
 
 
-def _latest_source(candles: list[StockEvidenceStockCandle], latest_is_realtime: bool) -> str | None:
+def _public_realtime_candle(
+    quote: RealtimeQuote | None,
+    trade_date: str,
+) -> StockEvidenceStockCandle | None:
+    if quote is None or quote.open is None or quote.close is None:
+        return None
+    high = quote.high if quote.high is not None else max(quote.open, quote.close)
+    low = quote.low if quote.low is not None else min(quote.open, quote.close)
+    change = quote.close - quote.pre_close if quote.pre_close else None
+    return StockEvidenceStockCandle(
+        trade_date=trade_date,
+        open=quote.open,
+        high=high,
+        low=low,
+        close=quote.close,
+        pre_close=quote.pre_close,
+        change=change,
+        pct_chg=_pct_change(change, quote.pre_close),
+        vol=quote.volume_shares / 100 if quote.volume_shares is not None else None,
+        amount=quote.amount_yuan / 1000 if quote.amount_yuan is not None else None,
+    )
+
+
+def _latest_source(
+    candles: list[StockEvidenceStockCandle],
+    latest_realtime_source: str | None,
+) -> str | None:
     if not candles:
         return None
-    return "rt_k" if latest_is_realtime and candles[-1].trade_date == history.today_key("day") else "daily"
+    if latest_realtime_source and candles[-1].trade_date == history.today_key("day"):
+        return latest_realtime_source
+    return "daily"
 
 
 def _now_time() -> dt.time:
@@ -200,3 +249,7 @@ def _float(value: object) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _pct_change(change: float | None, pre_close: float | None) -> float | None:
+    return change / pre_close * 100 if change is not None and pre_close else None
