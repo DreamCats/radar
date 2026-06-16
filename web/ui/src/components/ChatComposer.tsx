@@ -151,6 +151,66 @@ export function ChatComposer({
             <kbd>Tab</kbd>
           </button>
         ) : null}
+        <div className="chat-composer-actions">
+          <div className="chat-context-meter" tabIndex={0} aria-label={contextTooltip}>
+            <span
+              className="chat-context-ring"
+              style={{ "--ctx-used": `${visualUsedPercent}%` } as CSSProperties}
+              aria-hidden="true"
+            />
+            <span className="chat-context-tooltip" role="tooltip">
+              <strong>背景信息窗口：</strong>
+              <span>{usedPercentLabel} 已用（剩余 {remainingPercentLabel}）</span>
+              <span>
+                约 {formatTokenCount(contextUsage.usedTokens)} 标记，共 {formatTokenCount(contextUsage.totalTokens)}
+              </span>
+            </span>
+          </div>
+          <div className="chat-model-menu" ref={modelMenuRef}>
+            <button
+              className="chat-model-trigger"
+              type="button"
+              disabled={modelOptions.length === 0 || sending}
+              aria-expanded={modelMenuOpen}
+              aria-haspopup="menu"
+              aria-label="选择模型"
+              onClick={() => setModelMenuOpen((value) => !value)}
+            >
+              <Brain size={14} />
+              <span>{modelLabel}</span>
+              <ChevronDown size={14} />
+            </button>
+            {modelMenuOpen && modelOptions.length > 0 ? (
+              <div className="chat-model-options" role="menu">
+                {modelOptions.map((option) => (
+                  <button
+                    className={option.provider_name === selectedOption?.provider_name ? "selected" : ""}
+                    key={option.provider_name}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={option.provider_name === selectedOption?.provider_name}
+                    onClick={() => {
+                      onProviderChange(option.provider_name);
+                      setModelMenuOpen(false);
+                    }}
+                  >
+                    <span>{labelForModelOption(option)}</span>
+                    <em>{option.model}</em>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <button
+            className="chat-send-button"
+            type="button"
+            disabled={!sending && !draft.trim() && !canContinue}
+            onClick={() => (sending ? onStop() : shouldContinue ? onContinue() : onSubmit())}
+            aria-label={sending ? "停止生成" : shouldContinue ? "继续生成" : "发送"}
+          >
+            {sending ? <Square size={14} /> : shouldContinue ? <RotateCcw size={15} /> : <ArrowUp size={18} />}
+          </button>
+        </div>
       </div>
       {quickPrompts && quickPrompts.length > 0 ? (
         <div className="chat-composer-shortcuts" aria-label="快捷问题">
@@ -161,66 +221,6 @@ export function ChatComposer({
           ))}
         </div>
       ) : null}
-      <div className="chat-composer-actions">
-        <div className="chat-context-meter" tabIndex={0} aria-label={contextTooltip}>
-          <span
-            className="chat-context-ring"
-            style={{ "--ctx-used": `${visualUsedPercent}%` } as CSSProperties}
-            aria-hidden="true"
-          />
-          <span className="chat-context-tooltip" role="tooltip">
-            <strong>背景信息窗口：</strong>
-            <span>{usedPercentLabel} 已用（剩余 {remainingPercentLabel}）</span>
-            <span>
-              约 {formatTokenCount(contextUsage.usedTokens)} 标记，共 {formatTokenCount(contextUsage.totalTokens)}
-            </span>
-          </span>
-        </div>
-        <div className="chat-model-menu" ref={modelMenuRef}>
-          <button
-            className="chat-model-trigger"
-            type="button"
-            disabled={modelOptions.length === 0 || sending}
-            aria-expanded={modelMenuOpen}
-            aria-haspopup="menu"
-            aria-label="选择模型"
-            onClick={() => setModelMenuOpen((value) => !value)}
-          >
-            <Brain size={14} />
-            <span>{modelLabel}</span>
-            <ChevronDown size={14} />
-          </button>
-          {modelMenuOpen && modelOptions.length > 0 ? (
-            <div className="chat-model-options" role="menu">
-              {modelOptions.map((option) => (
-                <button
-                  className={option.provider_name === selectedOption?.provider_name ? "selected" : ""}
-                  key={option.provider_name}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={option.provider_name === selectedOption?.provider_name}
-                  onClick={() => {
-                    onProviderChange(option.provider_name);
-                    setModelMenuOpen(false);
-                  }}
-                >
-                  <span>{labelForModelOption(option)}</span>
-                  <em>{option.model}</em>
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-        <button
-          className="chat-send-button"
-          type="button"
-          disabled={!sending && !draft.trim() && !canContinue}
-          onClick={() => (sending ? onStop() : shouldContinue ? onContinue() : onSubmit())}
-          aria-label={sending ? "停止生成" : shouldContinue ? "继续生成" : "发送"}
-        >
-          {sending ? <Square size={14} /> : shouldContinue ? <RotateCcw size={15} /> : <ArrowUp size={18} />}
-        </button>
-      </div>
     </div>
   );
 }

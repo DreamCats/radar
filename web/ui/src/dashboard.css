@@ -618,13 +618,16 @@
     padding: 10px 10px 14px;
   }
 
-  .dashboard-agent-page,
-  .overview-chat-workspace {
-    min-height: calc(100dvh - 92px);
+  .dashboard-agent-page {
+    --dashboard-mobile-height: calc(100dvh - 92px - env(safe-area-inset-bottom, 0px));
+    height: var(--dashboard-mobile-height);
+    min-height: 0;
+    overflow: hidden;
   }
 
   .overview-chat-workspace {
-    height: calc(100dvh - 92px);
+    height: 100%;
+    min-height: 0;
   }
 
   .overview-chat-body,

@@ -1,9 +1,5 @@
 .chat-composer {
   position: relative;
-  display: block;
-}
-
-.chat-composer.with-shortcuts {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px 10px;
@@ -11,11 +7,8 @@
 
 .chat-composer-field {
   position: relative;
-  min-width: 0;
-}
-
-.chat-composer.with-shortcuts .chat-composer-field {
   grid-column: 1 / -1;
+  min-width: 0;
 }
 
 .chat-composer textarea {
@@ -27,17 +20,9 @@
   border-radius: 14px;
   background: var(--color-surface-1);
   color: var(--color-ink);
-  padding: 12px 176px 12px 14px;
+  padding: 12px 14px 56px;
   line-height: 1.55;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.02);
-}
-
-.chat-composer:not(.with-shortcuts) textarea {
-  padding-bottom: 56px;
-}
-
-.chat-composer.with-shortcuts textarea {
-  padding-right: 14px;
 }
 
 .chat-composer textarea:focus {
@@ -48,7 +33,7 @@
 .chat-composer-suggestion {
   position: absolute;
   top: 13px;
-  right: 176px;
+  right: 14px;
   left: 14px;
   display: flex;
   min-width: 0;
@@ -63,10 +48,6 @@
   line-height: 1.55;
   padding: 0;
   text-align: left;
-}
-
-.chat-composer.with-shortcuts .chat-composer-suggestion {
-  right: 14px;
 }
 
 .chat-composer-suggestion span {
@@ -127,12 +108,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.chat-composer.with-shortcuts .chat-composer-actions {
-  position: static;
-  align-self: center;
-  justify-self: end;
 }
 
 .chat-model-menu {
@@ -335,12 +310,12 @@
 @media (max-width: 640px) {
   .chat-composer textarea {
     min-height: 76px;
-    padding-right: 14px;
-    padding-bottom: 50px;
+    padding: 11px 12px 50px;
   }
 
-  .chat-composer-suggestion {
-    right: 14px;
+  .chat-composer-actions {
+    right: 12px;
+    bottom: 12px;
   }
 
   .chat-model-trigger {
@@ -356,10 +331,6 @@
 
   .chat-composer.with-shortcuts {
     grid-template-columns: 1fr;
-  }
-
-  .chat-composer.with-shortcuts .chat-composer-actions {
-    justify-self: end;
   }
 
   .chat-composer.with-shortcuts .chat-composer-shortcuts {
