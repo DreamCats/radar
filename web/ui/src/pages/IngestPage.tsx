@@ -71,8 +71,9 @@ export function IngestPage() {
     })
     .filter((row): row is { job: TrackedJob; run: RunItem } => row !== null);
   const runningRows = rows.filter(({ run }) => run.status === "running");
+  const selectedRunningRows = runningRows.filter(({ job }) => job.kind === selectedJob);
   const hasRunning = runningRows.length > 0;
-  const active = submitting || canceling || hasRunning;
+  const selectedHasRunning = selectedRunningRows.length > 0;
   const runningCount = runningRows.length;
   const finishedCount = rows.length - runningCount;
   const jobMotion = panelMotionState(shouldReduceMotion);
@@ -183,13 +184,13 @@ export function IngestPage() {
   }
 
   async function cancelRunningJobs() {
-    if (runningRows.length === 0) {
+    if (selectedRunningRows.length === 0) {
       return;
     }
     setCanceling(true);
     setError(null);
     try {
-      await Promise.all(runningRows.map(({ run }) => cancelRun(run.run_id)));
+      await Promise.all(selectedRunningRows.map(({ run }) => cancelRun(run.run_id)));
       await refreshRunsAndResults();
     } catch (err) {
       setError(err instanceof Error ? err.message : "终止作业失败");
@@ -199,7 +200,7 @@ export function IngestPage() {
   }
 
   function handlePrimaryAction() {
-    if (hasRunning) {
+    if (selectedHasRunning) {
       void cancelRunningJobs();
       return;
     }
@@ -345,11 +346,11 @@ export function IngestPage() {
                 <button
                   className="primary-button ingest-submit"
                   type="button"
-                  disabled={submitting || canceling || (!hasRunning && !canSubmit)}
+                  disabled={submitting || canceling || (!selectedHasRunning && !canSubmit)}
                   onClick={handlePrimaryAction}
                 >
-                  {hasRunning ? <Square size={16} /> : <Play size={16} />}
-                  {canceling ? "终止中" : submitting ? "提交中" : hasRunning ? "终止任务" : "开始执行"}
+                  {selectedHasRunning ? <Square size={16} /> : <Play size={16} />}
+                  {canceling ? "终止中" : submitting ? "提交中" : selectedHasRunning ? "终止任务" : "开始执行"}
                 </button>
               </div>
               {selectedJob !== "anchor" && selectedJob !== "lifecycleDigest" && !validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}
