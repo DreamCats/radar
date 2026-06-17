@@ -29,6 +29,13 @@
   transition: transform 140ms ease;
 }
 
+.chat-agent-summary em {
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 500;
+}
+
 .chat-agent-trace[open] .chat-agent-summary svg {
   transform: rotate(180deg);
 }

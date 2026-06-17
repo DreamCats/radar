@@ -183,13 +183,20 @@ function AssistantTrace({
 }) {
   const hasProcess = traceItems.length > 0 || activities.length > 0;
   const hasAssistantTrace = traceItems.some((item) => item.type === "assistant");
-  const [expanded, setExpanded] = useState(streaming);
+  const logEventCount = traceItems.filter((item) => item.type !== "assistant").length;
+  const [expanded, setExpanded] = useState(streaming && !hasAssistantTrace);
 
   useEffect(() => {
-    if (streaming) {
+    if (streaming && !hasAssistantTrace) {
       setExpanded(true);
     }
-  }, [streaming]);
+  }, [hasAssistantTrace, streaming]);
+
+  useEffect(() => {
+    if (hasAssistantTrace) {
+      setExpanded(false);
+    }
+  }, [hasAssistantTrace]);
 
   if (!hasProcess) {
     return <div className="chat-agent-status">{status}</div>;
@@ -205,6 +212,7 @@ function AssistantTrace({
           onClick={() => setExpanded((value) => !value)}
         >
           <span>{status}</span>
+          {logEventCount > 0 ? <em>消息日志事件 {logEventCount} 条</em> : null}
           <ChevronDown size={14} aria-hidden="true" />
         </button>
         <div className="chat-agent-process">
