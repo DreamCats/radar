@@ -83,6 +83,11 @@ export function IngestPage() {
     selectedJob === "stockEvidenceChain" ? "strategy" : "",
     selectedJob === "lifecycleDigest" ? "strategy" : "",
   ].filter(Boolean).join(" ");
+  const submitButtonClass = [
+    "primary-button",
+    "ingest-submit",
+    selectedHasRunning ? "running" : "",
+  ].filter(Boolean).join(" ");
 
   useEffect(() => {
     let cancelled = false;
@@ -344,7 +349,7 @@ export function IngestPage() {
                   <span>{forceLabel(selectedJob)}</span>
                 </label>
                 <button
-                  className="primary-button ingest-submit"
+                  className={submitButtonClass}
                   type="button"
                   disabled={submitting || canceling || (!selectedHasRunning && !canSubmit)}
                   onClick={handlePrimaryAction}

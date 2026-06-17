@@ -134,6 +134,17 @@
   white-space: nowrap;
 }
 
+.ingest-submit.running {
+  border-color: var(--color-market-down);
+  background: var(--color-market-down);
+  color: var(--color-on-primary);
+}
+
+.ingest-submit.running:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-market-down) 84%, white);
+  background: color-mix(in srgb, var(--color-market-down) 84%, white);
+}
+
 .ingest-side {
   display: grid;
   gap: var(--space-xs);
