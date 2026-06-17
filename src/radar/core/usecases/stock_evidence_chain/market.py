@@ -110,7 +110,7 @@ def _selected_trade_dates(rows: list[_DailyRow], evidence_dates: list[str], as_o
     trade_dates = [row.trade_date for row in rows]
     selected: list[str] = []
     for date_key in evidence_dates:
-        nearest = _nearest_on_or_before(trade_dates, date_key)
+        nearest = _nearest_on_or_after(trade_dates, date_key)
         if nearest and nearest not in selected:
             selected.append(nearest)
     latest = _nearest_on_or_before(trade_dates, as_of_key)
@@ -136,6 +136,11 @@ def _selected_evidence_dates(evidence: list[StockMention], *, window_start: date
 def _nearest_on_or_before(trade_dates: list[str], date_key: str) -> str | None:
     candidates = [item for item in trade_dates if item <= date_key]
     return candidates[-1] if candidates else None
+
+
+def _nearest_on_or_after(trade_dates: list[str], date_key: str) -> str | None:
+    candidates = [item for item in trade_dates if item >= date_key]
+    return candidates[0] if candidates else None
 
 
 def _point(row: _DailyRow, *, tag: str, previous: list[_DailyRow]) -> MarketPoint:

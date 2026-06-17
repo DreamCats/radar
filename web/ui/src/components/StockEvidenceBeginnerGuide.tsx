@@ -68,7 +68,7 @@ export function StockEvidenceBeginnerGuide({ item }: { item: StockEvidenceChainI
         <p className="stock-evidence-plain-line">{marketLine(item, latestPoint)}</p>
         <MiniFacts
           items={[
-            { label: "首次后", value: formatPercent(numberValue(item.market_summary.return_since_first_point), true), tone: toneClass(numberValue(item.market_summary.return_since_first_point)) },
+            { label: marketReturnLabel(item), value: formatPercent(numberValue(item.market_summary.return_since_first_point), true), tone: toneClass(numberValue(item.market_summary.return_since_first_point)) },
             { label: "高点回撤", value: formatPercent(numberValue(item.market_summary.drawdown_from_selected_high), true), tone: toneClass(numberValue(item.market_summary.drawdown_from_selected_high)) },
             { label: "最新量能", value: latestPoint?.amount_ratio_5d ? `${latestPoint.amount_ratio_5d.toFixed(1)}x` : "-" },
             { label: "主题5日", value: formatPercent(theme?.stock_return_5d, true), tone: toneClass(theme?.stock_return_5d) },
@@ -236,10 +236,10 @@ function marketLine(item: StockEvidenceChainItem, latestPoint: StockEvidenceMark
   const drawdown = numberValue(item.market_summary.drawdown_from_selected_high);
   const amount = latestPoint?.amount_ratio_5d;
   if (item.recognition.state === "rejected") {
-    return `市场暂时不认：首次证据后收益 ${formatPercent(returnSince, true)}，高点回撤 ${formatPercent(drawdown, true)}。放量也要先判断是确认还是分歧。`;
+    return `市场暂时不认：${marketReturnLabel(item)}收益 ${formatPercent(returnSince, true)}，高点回撤 ${formatPercent(drawdown, true)}。放量也要先判断是确认还是分歧。`;
   }
   if (item.recognition.state === "overheated") {
-    return `市场已经充分反映：首次证据后收益 ${formatPercent(returnSince, true)}。现在要看承接和高位分歧，不是继续堆消息。`;
+    return `市场已经充分反映：${marketReturnLabel(item)}收益 ${formatPercent(returnSince, true)}。现在要看承接和高位分歧，不是继续堆消息。`;
   }
   if (item.recognition.state === "just_started" || item.recognition.state === "just_confirmed") {
     return `市场开始给反馈：最新量能 ${amount ? `${amount.toFixed(1)}x` : "-"}，但还要看后面 2-3 个交易日是否承接。`;
@@ -248,6 +248,26 @@ function marketLine(item: StockEvidenceChainItem, latestPoint: StockEvidenceMark
     return `市场已经比较配合：涨幅、回撤和量能能互相支持。下一步看逻辑是否继续增强。`;
   }
   return "市场证据还不够完整，先不要只凭消息热度下判断。";
+}
+
+function marketReturnLabel(item: StockEvidenceChainItem): string {
+  const date = tradeDateLabel(item.market_summary.first_trade_date);
+  return date ? `${date}后` : "首点后";
+}
+
+function tradeDateLabel(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const compact = value.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (compact) {
+    return `${Number(compact[2])}/${Number(compact[3])}`;
+  }
+  const dashed = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (dashed) {
+    return `${Number(dashed[2])}/${Number(dashed[3])}`;
+  }
+  return null;
 }
 
 function nextWatchItems(item: StockEvidenceChainItem): string[] {
