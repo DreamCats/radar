@@ -235,6 +235,11 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
                 { label: "样本", value: drawerSubtitle(stock) },
               ]}
               evidence={evidenceLines}
+              quickPrompts={[
+                { label: "分时数据", prompt: "站在投资研究视角解读当前分时或行情数据：价格位置、成交量、资金承接和回落节奏分别说明什么；判断是发酵、分歧、兑现还是过热。" },
+                { label: "兑现判断", prompt: "结合首现消息和当前行情，判断股价是提前反映、刚开始发酵，还是利好兑现；列出最关键的证据和反证。" },
+                { label: "观察位", prompt: "给出后续观察位：接下来要盯的 3 个价格、量能或消息条件，以及什么情况下降低跟踪优先级。" },
+              ]}
               suggestedQuestions={[
                 "只看这张K线，当前价格位置和量能有什么风险？",
                 "从首现到最近消息，股价是提前反映、刚启动，还是已经兑现？",

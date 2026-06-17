@@ -86,6 +86,11 @@ function DetailHeader({
             { label: "生命周期", value: item.lifecycle_digest?.one_line ?? "未生成" },
           ]}
           evidence={stockEvidenceChatLines(item)}
+          quickPrompts={[
+            { label: "证据核验", prompt: "把这只股票的原文证据、催化、市场确认和反证串成一条证据链；区分事实、推断和缺口。" },
+            { label: "主线判断", prompt: "判断它是不是当前主线的真实受益者：说明业务关联强弱、市场认可度、证据缺口和可能误归类的风险。" },
+            { label: "跟踪计划", prompt: "给我一份后续跟踪清单：接下来 3 个最该验证的问题、对应要看的数据或消息、什么情况下降低优先级。" },
+          ]}
           suggestedQuestions={[
             "用小白能听懂的话解释：消息证据和市场证据怎么对上？",
             "这只股票现在是刚确认、强趋势、充分定价，还是市场不认？",

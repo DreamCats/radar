@@ -446,6 +446,11 @@ function ThreadHeader(props: {
               { label: "当前可见", value: `${props.filteredCount}/${props.totalCount} 条` },
             ]}
             evidence={props.threadEvidence}
+            quickPrompts={[
+              { label: "总结群聊", prompt: "站在投资研究视角总结这个会话：最近主要在聊什么，涉及哪些股票、行业或主题；哪些是原文明确证据，哪些只是推断；最后列出 3 条值得继续验证的线索。" },
+              { label: "投资线索", prompt: "从这个会话里筛出值得继续研究的股票或主题线索：按证据强度排序，说明催化、来源、需要补的行情或公开资料验证。" },
+              { label: "反证风险", prompt: "帮我排除噪音：哪些内容只是旧题材、情绪转发、利好兑现或证据不足；分别给出反证和暂缓跟踪理由。" },
+            ]}
             suggestedQuestions={[
               "帮我解释这个会话最近在聊什么，哪些内容和投资有关？",
               "这里面涉及哪些股票、行业或主题？请按原文证据和你的推断分开。",

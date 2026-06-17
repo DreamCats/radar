@@ -12,6 +12,7 @@ type ChatWorkspaceProps = {
   surface: string;
   entityId: string;
   evidence?: string[];
+  quickPrompts?: { label: string; prompt: string }[];
   onClose?: () => void;
 };
 
@@ -117,6 +118,7 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
             contextItems={controller.visibleContext}
             evidence={props.evidence}
             followUpSuggestion={controller.followUpSuggestion}
+            quickPrompts={props.quickPrompts}
             sending={controller.sending}
             onAcceptFollowUpSuggestion={controller.acceptFollowUpSuggestion}
             onDraftChange={controller.setDraft}

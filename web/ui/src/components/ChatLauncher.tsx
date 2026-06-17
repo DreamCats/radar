@@ -10,6 +10,7 @@ import { useChatController } from "./useChatController";
 export type ChatLauncherProps = ChatSurfaceProps & {
   buttonLabel: string;
   buttonClassName?: string;
+  quickPrompts?: { label: string; prompt: string }[];
 };
 
 function isMobileChatLayout() {
@@ -124,6 +125,7 @@ export function ChatLauncher(props: ChatLauncherProps) {
               surface={props.surface}
               entityId={props.entityId}
               evidence={props.evidence}
+              quickPrompts={props.quickPrompts}
               onClose={closeLauncher}
             />
           </motion.aside>
