@@ -1,9 +1,14 @@
 .strategy-snapshot-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
   width: min(360px, 42vw);
 }
 
 .strategy-snapshot-field > span {
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .strategy-snapshot-dropdown {
