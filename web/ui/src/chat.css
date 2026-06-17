@@ -386,11 +386,11 @@
 }
 
 .chat-workspace .chat-composer {
-  border: 1px solid color-mix(in srgb, var(--color-hairline-strong) 84%, transparent);
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--color-surface-2) 72%, transparent);
-  padding: 8px;
-  box-shadow: 0 -14px 42px rgb(0 0 0 / 0.16);
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
 }
 
 .chat-workspace .chat-composer textarea {
@@ -595,7 +595,7 @@
 
   .chat-workspace .chat-composer {
     border-radius: var(--radius-md);
-    padding: 7px;
+    padding: 0;
   }
 
   .chat-workspace .chat-composer textarea {
