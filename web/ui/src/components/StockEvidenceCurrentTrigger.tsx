@@ -1,9 +1,13 @@
-import { Clock3, MessageSquareText, ShieldAlert, Users } from "lucide-react";
+import { Check, Clock3, Copy, FileText, MessageSquareText, ShieldAlert, Users, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
+import { copyText } from "../lib/clipboard";
 import type { StockEvidenceChainItem, StockEvidenceMarketValidation, StockEvidenceMessage } from "../types";
 
 export function StockEvidenceCurrentTrigger({ item }: { item: StockEvidenceChainItem }) {
   const triggers = item.current_triggers ?? [];
+  const [originalMessage, setOriginalMessage] = useState<StockEvidenceMessage | null>(null);
   const validation: StockEvidenceMarketValidation = item.market_validation ?? {
     status: "unknown",
     label: "待判断",
@@ -44,23 +48,42 @@ export function StockEvidenceCurrentTrigger({ item }: { item: StockEvidenceChain
       {triggers.length ? (
         <div className="stock-evidence-current-list">
           {triggers.slice(0, 4).map((trigger, index) => (
-            <TriggerRow key={`${trigger.message_id ?? trigger.time ?? "trigger"}-${index}`} trigger={trigger} />
+            <TriggerRow
+              key={`${trigger.message_id ?? trigger.time ?? "trigger"}-${index}`}
+              trigger={trigger}
+              onOpenOriginal={() => setOriginalMessage(trigger)}
+            />
           ))}
           {triggers.length > 4 && <small>还有 {triggers.length - 4} 条本次窗口触发</small>}
         </div>
       ) : (
         <p className="stock-evidence-empty">这版没有恢复到窗口内触发消息，先只按历史证据链观察。</p>
       )}
+      {originalMessage ? <OriginalMessageDrawer trigger={originalMessage} onClose={() => setOriginalMessage(null)} /> : null}
     </section>
   );
 }
 
-function TriggerRow({ trigger }: { trigger: StockEvidenceMessage }) {
+function TriggerRow({ trigger, onOpenOriginal }: { trigger: StockEvidenceMessage; onOpenOriginal: () => void }) {
+  const hasOriginal = Boolean(originalContent(trigger));
   return (
     <article className="stock-evidence-current-row">
-      <div>
-        <time>{trigger.time ?? "时间待确认"}</time>
-        <span>{trigger.type ?? "本次触发"}</span>
+      <div className="stock-evidence-current-row-head">
+        <div>
+          <time>{trigger.time ?? "时间待确认"}</time>
+          <span>{trigger.type ?? "本次触发"}</span>
+        </div>
+        {hasOriginal ? (
+          <button
+            className="stock-evidence-original-btn"
+            type="button"
+            aria-label="查看原文"
+            title="查看原文"
+            onClick={onOpenOriginal}
+          >
+            <FileText size={13} />
+          </button>
+        ) : null}
       </div>
       <p>{trigger.evidence ?? trigger.raw_content ?? "暂无摘要"}</p>
       <small>
@@ -68,6 +91,80 @@ function TriggerRow({ trigger }: { trigger: StockEvidenceMessage }) {
       </small>
     </article>
   );
+}
+
+function OriginalMessageDrawer({ trigger, onClose }: { trigger: StockEvidenceMessage; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const content = originalContent(trigger) ?? "暂无原文";
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  async function copyOriginal() {
+    try {
+      await copyText(content);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return createPortal(
+    <div className="stock-evidence-original-shell" role="dialog" aria-modal="true" aria-label="查看原文">
+      <button className="stock-evidence-original-scrim" type="button" aria-label="关闭原文" onClick={onClose} />
+      <aside className="stock-evidence-original-drawer">
+        <header>
+          <div>
+            <span>{trigger.type ?? "原始消息"}</span>
+            <strong>查看原文</strong>
+          </div>
+          <div>
+            <button
+              className={copied ? "icon-btn is-copied" : "icon-btn"}
+              type="button"
+              aria-label={copied ? "已复制原文" : "复制原文"}
+              title={copied ? "已复制" : "复制原文"}
+              onClick={() => void copyOriginal()}
+            >
+              {copied ? <Check size={15} /> : <Copy size={15} />}
+            </button>
+            <button className="icon-btn" type="button" aria-label="关闭原文" onClick={onClose}>
+              <X size={16} />
+            </button>
+          </div>
+        </header>
+        <div className="stock-evidence-original-meta">
+          <article>
+            <span>时间</span>
+            <strong>{trigger.time ?? "-"}</strong>
+          </article>
+          <article>
+            <span>发送人</span>
+            <strong>{trigger.sender ?? "-"}</strong>
+          </article>
+          <article>
+            <span>来源</span>
+            <strong>{trigger.group_name ?? "个人消息"}</strong>
+          </article>
+        </div>
+        <pre>{content}</pre>
+      </aside>
+    </div>,
+    document.body,
+  );
+}
+
+function originalContent(trigger: StockEvidenceMessage): string | null {
+  const content = trigger.raw_content?.trim();
+  return content || null;
 }
 
 function currentTriggerLine(item: StockEvidenceChainItem, validation: Pick<StockEvidenceMarketValidation, "status">): string {
