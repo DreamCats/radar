@@ -93,7 +93,7 @@ function TriggerRow({ trigger, onOpenOriginal }: { trigger: StockEvidenceMessage
   );
 }
 
-function OriginalMessageDrawer({ trigger, onClose }: { trigger: StockEvidenceMessage; onClose: () => void }) {
+export function OriginalMessageDrawer({ trigger, onClose }: { trigger: StockEvidenceMessage; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const content = originalContent(trigger) ?? "暂无原文";
 
@@ -162,7 +162,7 @@ function OriginalMessageDrawer({ trigger, onClose }: { trigger: StockEvidenceMes
   );
 }
 
-function originalContent(trigger: StockEvidenceMessage): string | null {
+export function originalContent(trigger: StockEvidenceMessage): string | null {
   const content = trigger.raw_content?.trim();
   return content || null;
 }

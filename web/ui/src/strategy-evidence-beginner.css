@@ -232,16 +232,28 @@
   padding-top: 7px;
 }
 
+.stock-evidence-aligned-evidence-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 .stock-evidence-aligned-evidence strong,
 .stock-evidence-aligned-market strong {
   display: flex;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+  min-width: 0;
   overflow-wrap: anywhere;
   color: var(--color-ink);
   font-size: 12.5px;
   line-height: 1.35;
+}
+
+.stock-evidence-aligned-evidence-head .stock-evidence-original-btn {
+  margin-left: auto;
 }
 
 .stock-evidence-aligned-evidence strong span {

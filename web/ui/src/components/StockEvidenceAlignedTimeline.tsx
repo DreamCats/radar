@@ -1,6 +1,8 @@
-import { Gauge, MessageSquareText, TrendingUp } from "lucide-react";
+import { FileText, Gauge, MessageSquareText, TrendingUp } from "lucide-react";
+import { useState } from "react";
 
 import type { StockEvidenceChainItem, StockEvidenceMarketPoint, StockEvidenceMessage } from "../types";
+import { OriginalMessageDrawer, originalContent } from "./StockEvidenceCurrentTrigger";
 
 type TimelineRow = {
   date: string;
@@ -10,6 +12,7 @@ type TimelineRow = {
 
 export function StockEvidenceAlignedTimeline({ item }: { item: StockEvidenceChainItem }) {
   const rows = alignedTimelineRows(item);
+  const [originalMessage, setOriginalMessage] = useState<StockEvidenceMessage | null>(null);
   const validation = item.market_validation ?? { status: "unknown", note: "" };
   return (
     <div className="stock-evidence-aligned-block">
@@ -36,10 +39,23 @@ export function StockEvidenceAlignedTimeline({ item }: { item: StockEvidenceChai
               {row.messages.length ? (
                 row.messages.slice(0, 2).map((evidence, index) => (
                   <div className="stock-evidence-aligned-evidence" key={`${evidence.message_id ?? row.date}-${index}`}>
-                    <strong>
-                      {timeOnly(evidence.time)}
-                      <span>{evidence.type ?? "证据"}</span>
-                    </strong>
+                    <div className="stock-evidence-aligned-evidence-head">
+                      <strong>
+                        {timeOnly(evidence.time)}
+                        <span>{evidence.type ?? "证据"}</span>
+                      </strong>
+                      {originalContent(evidence) ? (
+                        <button
+                          className="stock-evidence-original-btn"
+                          type="button"
+                          aria-label="查看原文"
+                          title="查看原文"
+                          onClick={() => setOriginalMessage(evidence)}
+                        >
+                          <FileText size={13} />
+                        </button>
+                      ) : null}
+                    </div>
                     <p>{evidence.evidence ?? evidence.raw_content ?? "无摘要"}</p>
                   </div>
                 ))
@@ -69,6 +85,7 @@ export function StockEvidenceAlignedTimeline({ item }: { item: StockEvidenceChai
         ))}
         {!rows.length && <p className="stock-evidence-empty">暂无可对照的消息或市场证据。</p>}
       </div>
+      {originalMessage ? <OriginalMessageDrawer trigger={originalMessage} onClose={() => setOriginalMessage(null)} /> : null}
       <section className="stock-evidence-judgement-panel">
         <h4>
           <Gauge size={14} />
