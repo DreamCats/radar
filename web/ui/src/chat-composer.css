@@ -310,7 +310,7 @@
 @media (max-width: 640px) {
   .chat-composer {
     max-height: 220px;
-    overflow: hidden;
+    overflow: visible;
     transition:
       max-height 180ms ease,
       opacity 140ms ease,
@@ -320,6 +320,7 @@
   .chat-composer.is-reading-hidden:not(:focus-within) {
     max-height: 0;
     opacity: 0;
+    overflow: hidden;
     pointer-events: none;
     transform: translateY(10px);
   }
