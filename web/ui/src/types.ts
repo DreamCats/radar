@@ -92,6 +92,196 @@ export type DashboardSummary = {
   runs: RunItem[];
 };
 
+export type IndustryChainEvidenceStatus = "supported" | "weakly_supported" | "candidate" | "unsupported";
+
+export type IndustryChainIndexItem = {
+  chain_id: string;
+  title: string;
+  category: string;
+  aliases: string[];
+  status: string;
+  sort_order: number;
+  content_path: string;
+  data_path: string;
+  updated_at: string;
+  entry_tags: string[];
+  audience_level?: string | null;
+  evidence_level?: string | null;
+  summary: string;
+};
+
+export type IndustryChainList = {
+  version: number;
+  updated_at: string;
+  items: IndustryChainIndexItem[];
+};
+
+export type IndustryChainNode = {
+  id: string;
+  label: string;
+  layer: string;
+  group: string;
+  beginner_explanation: string;
+  bottleneck_strength: number;
+  evidence_status: IndustryChainEvidenceStatus;
+  teach?: IndustryChainNodeTeach | null;
+};
+
+export type IndustryChainNodeTeach = {
+  what: string;
+  why_matters: string;
+  benefit_logic: string;
+  watch: string[];
+  common_misread: string;
+};
+
+export type IndustryChainEdge = {
+  source: string;
+  target: string;
+  relation_type: string;
+  label: string;
+  description: string;
+  evidence_status: IndustryChainEvidenceStatus;
+};
+
+export type IndustryChainCompany = {
+  name: string;
+  ts_code: string;
+  nodes: string[];
+  role: string;
+  tier: string;
+  attention_level?: "leader" | "core_candidate" | "watch" | "candidate" | null;
+  attention_label?: string | null;
+  leader_reason?: string | null;
+  current_view: string;
+  evidence_status: IndustryChainEvidenceStatus;
+  next_checks: string[];
+  why_watch?: string | null;
+  evidence_basis?: string[];
+  verification_focus?: string[];
+  risks?: string[];
+  evidence_refs?: IndustryChainEvidenceRef[];
+};
+
+export type IndustryChainEvidenceRef = {
+  title: string;
+  publisher: string;
+  date?: string | null;
+  url?: string | null;
+  evidence_grade?: string | null;
+  usage: string;
+};
+
+export type IndustryChainQuickRead = {
+  headline: string;
+  summary: string;
+  logic_chain: string[];
+  takeaways: string[];
+};
+
+export type IndustryChainCommonMisread = {
+  title: string;
+  correction: string;
+};
+
+export type IndustryChainFinancialTranslation = {
+  node_id: string;
+  title: string;
+  watch: string;
+  source_hint: string;
+  risk?: string | null;
+};
+
+export type IndustryChainCatalyst = {
+  horizon: string;
+  title: string;
+  why: string;
+  watch: string;
+  risk?: string | null;
+};
+
+export type IndustryChainConceptDiagramPart = {
+  label: string;
+  role: string;
+  description: string;
+};
+
+export type IndustryChainConceptDiagram = {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon?: "wind" | "liquid" | "chip" | "control" | "connector" | "system" | null;
+  node_ids: string[];
+  takeaway: string;
+  parts: IndustryChainConceptDiagramPart[];
+};
+
+export type IndustryChainEvidencePolicyLabel = {
+  status: IndustryChainEvidenceStatus;
+  label: string;
+  meaning: string;
+  evidence_needed: string;
+};
+
+export type IndustryChainEvidencePolicy = {
+  default_status: IndustryChainEvidenceStatus;
+  status_values: IndustryChainEvidenceStatus[];
+  upgrade_rule: string;
+  labels?: IndustryChainEvidencePolicyLabel[];
+};
+
+export type IndustryChainTrackingMetric = {
+  name: string;
+  why: string;
+  source_hint: string;
+};
+
+export type IndustryChainSource = {
+  title: string;
+  publisher: string;
+  date?: string | null;
+  url?: string | null;
+  source_type: string;
+  usage: string;
+};
+
+export type IndustryChainLearningStep = {
+  id: string;
+  title: string;
+  subtitle: string;
+  question: string;
+  answer: string;
+  node_ids: string[];
+};
+
+export type IndustryChainData = {
+  version: number;
+  chain_id: string;
+  title: string;
+  category: string;
+  status: string;
+  updated_at: string;
+  summary: string;
+  quick_read?: IndustryChainQuickRead | null;
+  learning_steps?: IndustryChainLearningStep[];
+  evidence_policy?: IndustryChainEvidencePolicy | null;
+  nodes: IndustryChainNode[];
+  edges: IndustryChainEdge[];
+  companies: IndustryChainCompany[];
+  concept_diagrams?: IndustryChainConceptDiagram[];
+  common_misreads?: IndustryChainCommonMisread[];
+  financial_translations?: IndustryChainFinancialTranslation[];
+  catalysts?: IndustryChainCatalyst[];
+  tracking_metrics: IndustryChainTrackingMetric[];
+  sources: IndustryChainSource[];
+};
+
+export type IndustryChainDetail = {
+  item: IndustryChainIndexItem;
+  data: IndustryChainData;
+  content_markdown: string;
+};
+
 export type AuthStatus = {
   auth_required: boolean;
   authenticated: boolean;

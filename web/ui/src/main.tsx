@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
 import "./styles.css";
+import "@xyflow/react/dist/style.css";
 import "./motion.css";
 import "./chat.css";
 import "./chat-composer.css";
@@ -11,6 +12,9 @@ import "./dashboard.css";
 import "./ambient.css";
 import "./ingest.css";
 import "./job-center.css";
+import "./industry-chain.css";
+import "./industry-chain-flow.css";
+import "./industry-chain-detail.css";
 import "./leaderboard.css";
 import "./leaderboard-motion.css";
 import "./leaderboard-responsive.css";

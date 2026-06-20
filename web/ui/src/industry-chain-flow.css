@@ -1,0 +1,217 @@
+.industry-chain-learning-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.industry-chain-learning-steps button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 8px;
+  min-height: 84px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 66%, transparent);
+  color: var(--color-ink-muted);
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.industry-chain-learning-steps button:hover,
+.industry-chain-learning-steps button.active {
+  border-color: color-mix(in srgb, var(--color-primary-hover) 48%, var(--color-hairline-strong));
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface-2));
+  color: var(--color-ink);
+}
+
+.industry-chain-learning-steps b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: 50%;
+  color: var(--color-ink-subtle);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.industry-chain-learning-steps button.active b {
+  border-color: var(--color-primary-hover);
+  background: var(--color-primary);
+  color: white;
+}
+
+.industry-chain-learning-steps span {
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.industry-chain-learning-steps em {
+  grid-column: 1 / -1;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.5;
+}
+
+.industry-chain-flow-canvas {
+  height: clamp(430px, 52vh, 620px);
+  min-height: 430px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-canvas) 78%, black);
+  overflow: hidden;
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node {
+  width: 168px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 88%, transparent);
+  color: var(--color-ink-muted);
+  padding: 0;
+  text-align: left;
+  box-shadow: inset 3px 0 0 var(--color-hairline-strong);
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-column-label {
+  width: 168px;
+  border: 1px solid color-mix(in srgb, var(--color-hairline) 70%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-1) 80%, transparent);
+  color: var(--color-ink-muted);
+  padding: 0;
+  text-align: left;
+}
+
+.industry-chain-flow-column-label-inner {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px;
+}
+
+.industry-chain-flow-column-label-inner span {
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.industry-chain-flow-column-label-inner em {
+  color: var(--color-ink-subtle);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node:hover,
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.related {
+  border-color: color-mix(in srgb, var(--color-primary-hover) 34%, var(--color-hairline-strong));
+  background: color-mix(in srgb, var(--color-primary) 9%, var(--color-surface-2));
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.selected,
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.active-step {
+  border-color: var(--color-primary-hover);
+  background: color-mix(in srgb, var(--color-primary) 18%, var(--color-surface-2));
+  color: var(--color-ink);
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.dimmed {
+  opacity: 0.34;
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.dimmed:hover {
+  opacity: 0.82;
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.supported {
+  box-shadow: inset 3px 0 0 var(--color-market-up);
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.weakly_supported {
+  box-shadow: inset 3px 0 0 var(--color-signal-hot);
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.candidate {
+  box-shadow: inset 3px 0 0 var(--color-primary-hover);
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.unsupported {
+  box-shadow: inset 3px 0 0 var(--color-market-down);
+}
+
+.industry-chain-flow-node-label {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  min-height: 90px;
+  padding: 10px 54px 10px 11px;
+}
+
+.industry-chain-flow-node-label span {
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.industry-chain-flow-node-label em {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.industry-chain-flow-node-label b {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 20px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-3) 78%, transparent);
+  color: var(--color-ink-subtle);
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.industry-chain-flow-canvas .react-flow__handle {
+  opacity: 0;
+}
+
+.industry-chain-flow-canvas .react-flow__controls {
+  overflow: hidden;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.industry-chain-flow-canvas .react-flow__controls-button {
+  border-bottom: 1px solid var(--color-hairline);
+  background: var(--color-surface-2);
+  color: var(--color-ink-muted);
+}
+
+.industry-chain-flow-canvas .react-flow__controls-button:hover {
+  background: var(--color-surface-3);
+}
+
+.industry-chain-flow-canvas .react-flow__controls-button svg {
+  fill: currentColor;
+}

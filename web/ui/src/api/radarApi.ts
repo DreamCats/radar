@@ -16,6 +16,8 @@ import type {
   IngestJobItem,
   IngestRequest,
   IngestResultItem,
+  IndustryChainDetail,
+  IndustryChainList,
   LifecycleDigestJobRequest,
   LifecycleDigestPreview,
   MessageConversationPage,
@@ -86,6 +88,14 @@ export async function fetchMessageOverview(
   query: { days?: number; top_limit?: number } = {},
 ): Promise<MessageOverview> {
   return getJson(`/api/messages/overview?${params(query)}`);
+}
+
+export async function fetchIndustryChains(): Promise<IndustryChainList> {
+  return getJson("/api/industry-chains");
+}
+
+export async function fetchIndustryChainDetail(chainId: string): Promise<IndustryChainDetail> {
+  return getJson(`/api/industry-chains/${encodeURIComponent(chainId)}`);
 }
 
 export async function sendChatTurn(request: ChatTurnRequest): Promise<ChatTurnResponse> {

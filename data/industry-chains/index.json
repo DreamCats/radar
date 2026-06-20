@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "updated_at": "2026-06-20",
+  "items": [
+    {
+      "chain_id": "ai-liquid-cooling",
+      "title": "AI 算力液冷",
+      "category": "AI 硬件 / 数据中心基础设施",
+      "aliases": [
+        "数据中心液冷",
+        "AIDC 液冷",
+        "冷板式液冷",
+        "浸没式液冷",
+        "服务器液冷"
+      ],
+      "status": "draft",
+      "sort_order": 10,
+      "content_path": "chains/ai-liquid-cooling.md",
+      "data_path": "chains/ai-liquid-cooling.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "AI 算力",
+        "数据中心",
+        "液冷",
+        "散热",
+        "高密度机柜"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "secondary_sources_first_draft",
+      "summary": "高功耗 GPU 和高密度 AI 服务器推动数据中心从风冷走向液冷，核心观察点是冷板、CDU、UQD、manifold、系统可靠性和客户验证。"
+    }
+  ]
+}

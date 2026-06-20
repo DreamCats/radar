@@ -1,0 +1,1307 @@
+{
+  "version": 1,
+  "chain_id": "ai-liquid-cooling",
+  "title": "AI 算力液冷",
+  "category": "AI 硬件 / 数据中心基础设施",
+  "status": "draft",
+  "updated_at": "2026-06-20",
+  "summary": "AI 算力液冷解决的是高功耗 GPU / AI 服务器在高密度机柜里风冷散不动、能耗压不下、部署密度上不去的问题。",
+  "quick_read": {
+    "headline": "需求不是卡点，可靠交付才是卡点",
+    "summary": "AI 液冷的起点是算力需求和服务器功耗上升，但研究重点不是“谁沾液冷概念”，而是谁能把冷板、CDU、快接头、歧管和运维监控稳定交付到高密度机柜。",
+    "logic_chain": [
+      "AI 训练和推理需要更多 GPU / AI 服务器",
+      "服务器功耗上升，机柜热密度变高",
+      "风冷在高密度部署和 PUE 约束下开始吃力",
+      "液冷从可选方案变成高功率机柜的重要方案",
+      "真正要验证核心部件、系统交付、客户订单和收入占比"
+    ],
+    "takeaways": [
+      "先看需求是否持续，再看散热约束是否真实变强。",
+      "核心卡点在系统可靠性和客户验证，不是简单的“有液冷产品”。",
+      "A 股公司先按角色分层，再用公告、年报、订单和财务科目补证据。"
+    ]
+  },
+  "learning_steps": [
+    {
+      "id": "why-now",
+      "title": "先看远因",
+      "subtitle": "AI 算力需求为什么会把散热推到前台",
+      "question": "为什么现在需要重新看液冷？",
+      "answer": "大模型训练和推理拉动高功耗 GPU / AI 服务器，高密度机柜里的热量和能耗压力先发生变化。",
+      "node_ids": [
+        "demand-ai-compute",
+        "ai-server"
+      ]
+    },
+    {
+      "id": "pressure",
+      "title": "再看约束",
+      "subtitle": "风冷为什么开始不够用",
+      "question": "传统方案卡在哪里？",
+      "answer": "单机柜功率密度上升后，风冷散热效率、机房 PUE 和部署密度都会变成约束。",
+      "node_ids": [
+        "ai-server",
+        "high-density-rack"
+      ]
+    },
+    {
+      "id": "solution",
+      "title": "进入系统",
+      "subtitle": "液冷不是单点零件，而是一套系统",
+      "question": "液冷到底卖的是什么？",
+      "answer": "液冷系统把热量从服务器侧带到机房冷源侧，核心不是一个零件，而是冷板、CDU、快接头、歧管、管路和运维监控的协同。",
+      "node_ids": [
+        "liquid-system",
+        "cdu"
+      ]
+    },
+    {
+      "id": "bottleneck",
+      "title": "拆开卡点",
+      "subtitle": "真正的壁垒在可靠交付和客户验证",
+      "question": "什么地方最容易形成瓶颈？",
+      "answer": "冷板换热、UQD 密封、manifold 分配、CDU 控制、漏液检测和运维可靠性共同决定能否规模化导入。",
+      "node_ids": [
+        "liquid-system",
+        "cold-plate",
+        "uqd",
+        "manifold",
+        "cdu",
+        "monitoring"
+      ]
+    },
+    {
+      "id": "verification",
+      "title": "最后看验证",
+      "subtitle": "从产业逻辑落到 A 股公司证据",
+      "question": "怎么判断公司是不是受益？",
+      "answer": "先看公司处在哪个节点，再看收入占比、客户认证、订单交付、毛利率、现金流和是否只是概念标签。",
+      "node_ids": [
+        "liquid-system",
+        "cold-plate",
+        "cdu",
+        "pump-valve-pipe"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "default_status": "candidate",
+    "status_values": [
+      "supported",
+      "weakly_supported",
+      "candidate",
+      "unsupported"
+    ],
+    "upgrade_rule": "公司角色升级为 supported 前，必须补年报、公告、投资者关系记录、客户认证、订单或收入占比等一手证据。",
+    "labels": [
+      {
+        "status": "supported",
+        "label": "强支持",
+        "meaning": "已经有比较明确的一手或高可信证据，能支撑这个节点或公司角色。",
+        "evidence_needed": "年报、公告、订单、客户认证、收入占比、权威白皮书或可追溯项目。"
+      },
+      {
+        "status": "weakly_supported",
+        "label": "弱支持",
+        "meaning": "产业逻辑和公开资料能支持方向，但还缺公司级收入、客户或订单拆分。",
+        "evidence_needed": "继续补公告、互动易、IR、财报分部和项目交付证据。"
+      },
+      {
+        "status": "candidate",
+        "label": "待验证",
+        "meaning": "逻辑上相关，市场也可能提到，但暂时不能当成确认受益。",
+        "evidence_needed": "先确认具体产品、应用场景、客户导入和收入占比。"
+      },
+      {
+        "status": "unsupported",
+        "label": "证据不足",
+        "meaning": "目前只剩概念联想，缺少可验证事实，不能作为产业链映射结论。",
+        "evidence_needed": "需要找到公司公告、业务披露或可追溯客户项目，否则降级或移除。"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "demand-ai-compute",
+      "label": "AI 训练/推理需求",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "大模型训练和推理需要更多 GPU 和服务器。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "大模型训练和推理需要大量 GPU、服务器和数据中心资源。",
+        "why_matters": "需求端决定液冷的天花板。没有持续算力投入，后面所有散热部件都只是阶段性主题。",
+        "benefit_logic": "算力需求越强，AI 服务器出货和高功率机柜部署越多，液冷才有放量基础。",
+        "watch": [
+          "云厂商资本开支",
+          "AI 服务器订单和出货",
+          "大模型训练/推理需求变化"
+        ],
+        "common_misread": "不能看到 AI 热就直接推导所有液冷公司受益，中间还要经过服务器功耗和机柜密度约束。"
+      }
+    },
+    {
+      "id": "ai-server",
+      "label": "高功耗 AI 服务器",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "单机功耗提高，机柜热密度上升。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "高功耗 AI 服务器把多颗 GPU、CPU、内存和高速互联集中在一台设备里。",
+        "why_matters": "服务器单机功耗上升后，热量集中，传统风冷的边际能力开始变弱。",
+        "benefit_logic": "服务器越高功耗，越需要冷板、CDU、机柜级液冷和可靠连接件配套。",
+        "watch": [
+          "单机功耗",
+          "液冷服务器产品发布",
+          "服务器厂商订单和交付",
+          "整机毛利率变化"
+        ],
+        "common_misread": "服务器厂商是需求验证锚，不一定是液冷上游核心卡点。"
+      }
+    },
+    {
+      "id": "high-density-rack",
+      "label": "高密度机柜",
+      "layer": "midstream",
+      "group": "scenario",
+      "beginner_explanation": "机柜里放更多算力，热量集中，风冷压力变大。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "高密度机柜是在一个机柜里放入更多算力设备，单位空间热量更集中。",
+        "why_matters": "机柜功率密度越高，风冷越难兼顾散热效率、能耗和部署密度。",
+        "benefit_logic": "高密度部署把液冷从可选配置推向刚需配置，推动系统方案和部件需求。",
+        "watch": [
+          "单机柜功率密度",
+          "PUE 约束",
+          "数据中心改造项目",
+          "液冷机柜部署比例"
+        ],
+        "common_misread": "不是所有数据中心都需要液冷，只有高功率、高密度场景更迫切。"
+      }
+    },
+    {
+      "id": "liquid-system",
+      "label": "液冷系统方案",
+      "layer": "midstream",
+      "group": "system",
+      "beginner_explanation": "把热量从服务器带到机房冷源的完整系统。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "液冷系统负责把服务器芯片热量带到机房冷源，包含冷板、CDU、管路、快接头、歧管、监控等。",
+        "why_matters": "客户买的不是单个零件，而是一套可靠、可维护、可规模交付的系统。",
+        "benefit_logic": "系统方案商如果能打通设计、部件、交付和运维，就更容易获得客户项目和订单。",
+        "watch": [
+          "液冷相关收入占比",
+          "项目交付规模",
+          "客户认证",
+          "合同负债和毛利率"
+        ],
+        "common_misread": "有液冷方案介绍不等于商业化放量，要看收入、客户和订单。"
+      }
+    },
+    {
+      "id": "cold-plate",
+      "label": "冷板",
+      "layer": "component",
+      "group": "core_component",
+      "beginner_explanation": "贴近 CPU/GPU，把芯片热量传给冷却液。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "冷板贴近 CPU/GPU，把芯片热量传导给冷却液，是冷板式液冷最核心的换热部件。",
+        "why_matters": "冷板性能和可靠性直接影响芯片散热效果、服务器稳定性和客户认证。",
+        "benefit_logic": "AI 芯片功耗越高，冷板价值量和工艺要求越重要。",
+        "watch": [
+          "冷板产品量产",
+          "客户认证",
+          "单位价值量",
+          "良率和毛利率"
+        ],
+        "common_misread": "热管理业务很宽，必须拆出数据中心液冷冷板，而不是只看“散热”两个字。"
+      }
+    },
+    {
+      "id": "uqd",
+      "label": "UQD / 快接头",
+      "layer": "component",
+      "group": "core_component",
+      "beginner_explanation": "服务器和液冷管路的快速连接接口，关系到维护和漏液风险。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "UQD 是液冷管路和服务器之间的快速连接接口，负责快速插拔和密封。",
+        "why_matters": "液体进机柜后，维护效率和漏液风险都绕不开快接头可靠性。",
+        "benefit_logic": "如果液冷服务器规模化部署，可靠快接头会随服务器节点和维护场景放量。",
+        "watch": [
+          "密封可靠性",
+          "客户认证",
+          "批量订单",
+          "供应链导入"
+        ],
+        "common_misread": "快接头是高可靠部件，不能只凭概念文章确认公司已经进入核心供应链。"
+      }
+    },
+    {
+      "id": "manifold",
+      "label": "Manifold / 歧管",
+      "layer": "component",
+      "group": "core_component",
+      "beginner_explanation": "把冷却液分配到机柜内多个服务器节点。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "Manifold / 歧管把冷却液分配到机柜内多个服务器节点。",
+        "why_matters": "它影响流量分配、维护便利性和机柜级液冷系统稳定性。",
+        "benefit_logic": "机柜级液冷部署越多，歧管和配套管路越可能成为系统交付的一部分。",
+        "watch": [
+          "机柜级方案项目",
+          "歧管产品线",
+          "客户项目案例",
+          "订单和收入拆分"
+        ],
+        "common_misread": "很多公司把歧管放在整体方案里讲，研究时要确认是不是具体产品和收入。"
+      }
+    },
+    {
+      "id": "cdu",
+      "label": "CDU 冷量分配单元",
+      "layer": "equipment",
+      "group": "core_equipment",
+      "beginner_explanation": "控制冷却液流量、温度、压力，是二次侧核心设备。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "CDU 冷量分配单元连接服务器液冷侧和机房冷源侧，控制流量、温度、压力。",
+        "why_matters": "CDU 是液冷系统的控制中枢，决定换热效率和运行稳定性。",
+        "benefit_logic": "液冷系统交付增加时，CDU 有望跟随机柜或项目配套放量。",
+        "watch": [
+          "CDU 产品收入",
+          "项目交付规模",
+          "客户认证",
+          "毛利率和售后运维"
+        ],
+        "common_misread": "传统空调或冷源设备不能直接等同于液冷 CDU，要看具体产品场景。"
+      }
+    },
+    {
+      "id": "pump-valve-pipe",
+      "label": "泵阀 / 管路",
+      "layer": "component",
+      "group": "component",
+      "beginner_explanation": "负责冷却液循环、控制和连接。",
+      "bottleneck_strength": 3,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "泵阀和管路负责冷却液循环、压力控制和系统连接。",
+        "why_matters": "它们是系统可靠运行的基础部件，但通常更偏二阶配套。",
+        "benefit_logic": "当液冷机柜项目放量，进入供应链的管路、泵阀公司可能获得增量订单。",
+        "watch": [
+          "数据中心液冷供应链导入",
+          "产品认证",
+          "收入占比",
+          "客户项目"
+        ],
+        "common_misread": "汽车或工业管路背景不等于 AI 数据中心液冷收入，需要单独证明场景切换。"
+      }
+    },
+    {
+      "id": "coolant",
+      "label": "冷却液",
+      "layer": "material",
+      "group": "material",
+      "beginner_explanation": "冷板多用水基工质，浸没式常涉及绝缘冷却液。",
+      "bottleneck_strength": 3,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "冷却液是带走热量的介质，冷板式和浸没式对冷却液要求不同。",
+        "why_matters": "材料兼容性、绝缘性、稳定性和维护成本会影响液冷路线选择。",
+        "benefit_logic": "如果特定冷却液路线放量，相关材料和配方供应商才有弹性。",
+        "watch": [
+          "液冷路线选择",
+          "客户测试",
+          "材料兼容性",
+          "量产收入"
+        ],
+        "common_misread": "冷板式多用水基工质，浸没式才更强调绝缘冷却液，不能混在一起看。"
+      }
+    },
+    {
+      "id": "monitoring",
+      "label": "漏液检测 / 运维监控",
+      "layer": "service",
+      "group": "reliability",
+      "beginner_explanation": "液体进机柜后，可靠运维和故障检测变重要。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "漏液检测和运维监控负责发现泄漏、异常温度、压力波动和设备故障。",
+        "why_matters": "液冷规模化部署后，可靠运维是客户敢不敢大规模上机柜的前提。",
+        "benefit_logic": "运维监控会随系统方案打包，但单独形成利润弹性需要看项目和产品占比。",
+        "watch": [
+          "项目案例",
+          "传感和监控产品",
+          "运维服务收入",
+          "故障率和可靠性指标"
+        ],
+        "common_misread": "运维可靠性重要，但不代表每个检测/传感公司都有明显 A 股弹性。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "demand-ai-compute",
+      "target": "ai-server",
+      "relation_type": "demand_pull",
+      "label": "拉动服务器需求",
+      "description": "AI 训练和推理增加高性能服务器需求。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "ai-server",
+      "target": "high-density-rack",
+      "relation_type": "supply_constraint",
+      "label": "形成热密度压力",
+      "description": "GPU 功耗提升使机柜散热压力上升。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "high-density-rack",
+      "target": "liquid-system",
+      "relation_type": "technology_upgrade",
+      "label": "风冷向液冷升级",
+      "description": "高密度部署和 PUE 约束推动液冷渗透。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "liquid-system",
+      "target": "cold-plate",
+      "relation_type": "key_component",
+      "label": "核心换热部件",
+      "description": "冷板式液冷通过冷板带走芯片热量。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "liquid-system",
+      "target": "uqd",
+      "relation_type": "reliability_component",
+      "label": "快速连接与维护",
+      "description": "UQD 影响服务器维护效率和漏液风险。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "liquid-system",
+      "target": "manifold",
+      "relation_type": "distribution_component",
+      "label": "机柜内冷却液分配",
+      "description": "Manifold 负责把冷却液分配到多个服务器节点。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "liquid-system",
+      "target": "cdu",
+      "relation_type": "key_equipment",
+      "label": "核心控制设备",
+      "description": "CDU 连接机柜侧和冷源侧，控制冷却循环。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "cdu",
+      "target": "pump-valve-pipe",
+      "relation_type": "component_dependency",
+      "label": "依赖循环控制",
+      "description": "泵阀、管路影响流量、压力和可靠性。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "liquid-system",
+      "target": "coolant",
+      "relation_type": "material_dependency",
+      "label": "冷却介质",
+      "description": "不同液冷路线对冷却液和材料兼容性要求不同。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "liquid-system",
+      "target": "monitoring",
+      "relation_type": "validation",
+      "label": "运维可靠性验证",
+      "description": "漏液检测、传感和运维是规模化部署前提。",
+      "evidence_status": "weakly_supported"
+    }
+  ],
+  "companies": [
+    {
+      "name": "英维克",
+      "ts_code": "002837.SZ",
+      "nodes": [
+        "liquid-system",
+        "cold-plate",
+        "cdu",
+        "uqd",
+        "manifold"
+      ],
+      "role": "显性验证节点 / 全链条方案商",
+      "tier": "validation_node",
+      "attention_level": "leader",
+      "attention_label": "液冷温控龙头/验证锚",
+      "leader_reason": "官方年报和官网产品页能直接对应液冷系统、冷板、CDU、快接头、Manifold 等核心环节，适合作为全链条液冷商业化的验证锚。",
+      "current_view": "2025 年报摘要披露英维克 Coolinside 全链条液冷覆盖冷板、快速接头、Manifold、CDU、液冷工质、管路、冷源等端到端产品，并强调“厂到场”交付；官网产品页能交叉验证 CDU、液冷板、UQD/快接头等具体产品。因此公司在 AI 液冷链条中的角色可以升为强支持，但液冷收入占比、订单利润和现金流兑现仍需继续验证。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "继续查 2025 年报全文中的液冷收入和毛利拆分",
+        "跟踪 2026 中报里的 AI 数据中心液冷订单、收入和现金流",
+        "核对客户认证、平台生态和订单是否有公告或 IR 级证据",
+        "区分数据中心液冷、储能液冷和传统机房温控收入"
+      ],
+      "why_watch": "它不是单一部件商，而是端到端液冷方案验证锚。小白可以用它学习两件事：一是如何把公司产品映射到产业链节点；二是为什么“产品覆盖强”还不等于“业绩已经兑现”。",
+      "evidence_basis": [
+        "2025 年报摘要明确披露 Coolinside 全链条液冷覆盖冷板、快速接头、Manifold、CDU、液冷工质、管路、冷源等端到端产品。",
+        "官网 CDU、液冷板、UQD/快接头产品页能对应图谱里的系统方案、冷板、CDU、UQD 等节点。",
+        "2026-001 投资者关系记录披露冷板、UQD04 快接头、分水器、机架式液冷 CDU 通过英特尔测试与验证，并提到 UQD/MQD 进入英伟达 MGX 生态合作伙伴。",
+        "年报摘要披露机房温控节能收入同比快速增长，但尚未直接拆出 AI 数据中心液冷收入。"
+      ],
+      "verification_focus": [
+        "AI 数据中心液冷收入占比是否单独披露",
+        "冷板、CDU、UQD、Manifold 是自产、集成还是外采配套",
+        "客户认证、订单和交付是否能持续在公告或 IR 中验证",
+        "液冷业务毛利率、应收账款、存货和经营现金流是否同步改善"
+      ],
+      "risks": [
+        "全链条产品覆盖不等于每个部件都有高价值量和高毛利。",
+        "公司收入仍包含传统机房温控、储能温控、轨交等业务，不能把全部增长都归因于 AI 液冷。",
+        "如果订单兑现慢、应收和存货上升、毛利率承压，液冷主题可能先体现在预期而不是利润。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "英维克 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-04-21",
+          "url": "https://static.cninfo.com.cn/finalpage/2026-04-21/1225131812.PDF",
+          "evidence_grade": "A",
+          "usage": "确认公司数据中心/智算中心温控定位、Coolinside 全链条液冷产品覆盖、厂到场交付和机房温控收入增长。"
+        },
+        {
+          "title": "机架式液液 CDU",
+          "publisher": "英维克官网",
+          "url": "https://www.envicool.com/productinfo70.html",
+          "evidence_grade": "A",
+          "usage": "确认 CDU 产品结构、一次侧/二次侧连接方式，以及面向高功率密度机柜的散热支持。"
+        },
+        {
+          "title": "液冷板",
+          "publisher": "英维克官网",
+          "url": "https://www.envicool.com/productinfo71.html",
+          "evidence_grade": "A",
+          "usage": "确认冷板通过液体工质带走热源热量、流道优化和耐压/检漏等可靠性描述。"
+        },
+        {
+          "title": "冷却应用快速接头-UQD 系列",
+          "publisher": "英维克官网",
+          "url": "https://www.envicool.com/productinfo594.html",
+          "evidence_grade": "A",
+          "usage": "确认快接头/UQD 产品形态、无滴漏、耐腐蚀、插拔寿命、工作介质等可靠性要点。"
+        },
+        {
+          "title": "英维克 2026-001 投资者关系活动记录表",
+          "publisher": "东方财富公告 PDF",
+          "date": "2026-04-21",
+          "url": "https://pdf.dfcfw.com/pdf/H2_AN202604211821395630_1.pdf",
+          "evidence_grade": "B",
+          "usage": "用于交叉验证英特尔测试、英伟达 MGX 生态、全链条液冷产品和 2026 年业务展望。"
+        }
+      ]
+    },
+    {
+      "name": "高澜股份",
+      "ts_code": "300499.SZ",
+      "nodes": [
+        "liquid-system",
+        "cold-plate"
+      ],
+      "role": "弹性候选",
+      "tier": "flexible_candidate",
+      "attention_level": "core_candidate",
+      "attention_label": "冷板/浸没方案候选",
+      "current_view": "2025 年半年度报告披露，高澜股份数据中心液冷产品覆盖服务器液冷板、流体连接部件、多型号 CDU、TANK、换热单元等关键部件，并形成以冷板式和浸没式为主的信息与通信液冷解决方案。公司角色可升为强支持，但订单、收入占比和客户结构仍需继续验证。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报全文的数据中心液冷收入和订单",
+        "确认冷板、CDU、TANK 等产品的客户和交付规模",
+        "区分电力电子热管理、储能液冷和数据中心液冷收入"
+      ],
+      "why_watch": "它适合观察冷板式和浸没式方案从“产品能力”到“批量订单”的迁移，是英维克之外的方案弹性样本。",
+      "evidence_basis": [
+        "2025 半年度报告披露公司可提供冷板式和浸没式为主的信息与通信液冷解决方案。",
+        "半年度报告列出了服务器液冷板、流体连接部件、CDU、TANK、换热单元等数据中心液冷关键部件。",
+        "公司具备电力电子热管理和液冷系统工程背景，但财报尚需拆出数据中心液冷收入占比。"
+      ],
+      "verification_focus": [
+        "数据中心液冷收入和订单是否单独披露",
+        "冷板、CDU、TANK 等产品是否形成批量客户",
+        "液冷业务毛利率和现金流是否优于传统业务"
+      ],
+      "risks": [
+        "产品覆盖强不等于客户和订单已经充分兑现。",
+        "如果液冷收入仍混在传统热管理业务里，财务弹性需要打折。",
+        "浸没式商业化节奏可能慢于冷板式，不能混用两条路线的确定性。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "高澜股份 2025 年半年度报告全文",
+          "publisher": "新浪财经公告 PDF",
+          "date": "2025-08-23",
+          "url": "http://file.finance.sina.com.cn/211.154.219.97:9494/MRGG/CNSESZ_STOCK/2025/2025-8/2025-08-23/11336764.PDF",
+          "evidence_grade": "B",
+          "usage": "确认服务器液冷板、流体连接部件、CDU、TANK、换热单元以及冷板式/浸没式方案能力。"
+        },
+        {
+          "title": "高澜股份 2025 年年度报告",
+          "publisher": "新浪财经公告页",
+          "date": "2026-04-24",
+          "url": "https://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300499&id=12164098",
+          "evidence_grade": "B",
+          "usage": "用于后续补充全年数据中心液冷收入、客户和订单验证。"
+        }
+      ]
+    },
+    {
+      "name": "申菱环境",
+      "ts_code": "301018.SZ",
+      "nodes": [
+        "liquid-system",
+        "cdu"
+      ],
+      "role": "显性验证节点 / CDU 方案商",
+      "tier": "flexible_candidate",
+      "attention_level": "leader",
+      "attention_label": "CDU 龙头候选",
+      "current_view": "申菱环境 2025 年报摘要和 2025 半年度报告均披露数据服务产品覆盖液冷系列，并提到公司在液冷数据中心 CDU 厂商排名、智算液冷数据中心厂商排名中靠前。它可以作为数据中心液冷温控/CDU 的验证节点，但仍要拆清液冷收入、订单交付和客户结构。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报全文的数据服务板块收入、订单和毛利",
+        "确认液冷系列、CDU、相变/风冷产品的收入拆分",
+        "跟踪海外业务和液冷订单的交付节奏"
+      ],
+      "why_watch": "它是数据中心温控和 CDU 环节的重点样本，适合教学里说明“传统温控公司如何升级为液冷系统供应商”。",
+      "evidence_basis": [
+        "2025 半年度报告披露数据服务产品主要包括液冷系列、风冷系列、相变系列、主机系列等。",
+        "2025 年报摘要披露数据服务板块新增订单同比增长约 72%，海外业务和液冷取得较好进展。",
+        "公开报告摘要引用赛迪顾问称公司在 2024 年中国液冷数据中心 CDU 厂商排名第一。"
+      ],
+      "verification_focus": [
+        "液冷/CDU 收入和订单是否单独披露",
+        "数据中心、算力中心客户结构和项目交付",
+        "数据服务板块毛利率和经营现金流"
+      ],
+      "risks": [
+        "数据服务产品包括风冷、相变、主机等，不全是液冷。",
+        "排名和订单增长需要继续落到收入、毛利和现金流。",
+        "储能液冷和数据中心液冷要分开看，不能混成同一条逻辑。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "申菱环境 2025 年年度报告摘要",
+          "publisher": "东方财富公告 PDF",
+          "date": "2026-04-26",
+          "url": "https://pdf.dfcfw.com/pdf/H2_AN202604261821589125_1.pdf",
+          "evidence_grade": "B",
+          "usage": "确认数据服务板块订单增长、液冷进展、数据中心液冷技术积累和 CDU 厂商排名线索。"
+        },
+        {
+          "title": "申菱环境 2025 年半年度报告全文",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-29",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-29/1224614643.PDF",
+          "evidence_grade": "A",
+          "usage": "确认数据服务产品包括液冷系列，以及应用于数据中心、算力设备、通信基建等场景。"
+        }
+      ]
+    },
+    {
+      "name": "同飞股份",
+      "ts_code": "300990.SZ",
+      "nodes": [
+        "liquid-system",
+        "cdu",
+        "manifold"
+      ],
+      "role": "二阶受益候选 / 方案拓展",
+      "tier": "flexible_candidate",
+      "attention_level": "watch",
+      "attention_label": "二阶观察",
+      "current_view": "同飞股份在投资者关系记录和互动平台中披露数据中心液冷相关问题，并称推出冷板式液冷和浸没液冷全套解决方案，覆盖 CDU、Manifold、预制化管路、室外干冷器、集成冷站、TANK 等产品。当前可以升为弱支持，但仍缺数据中心液冷收入、客户和订单的强验证。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "查 2025 年报全文和 2026 中报的数据中心液冷收入",
+        "确认 CDU、Manifold、TANK 是否有量产客户和订单",
+        "区分储能温控、工业温控和数据中心液冷"
+      ],
+      "why_watch": "它更像二阶弹性观察：原有工业温控能力可能迁移到数据中心液冷，但需要订单和财务拆分证明。",
+      "evidence_basis": [
+        "投资者关系记录披露公司被问及数据中心液冷订单，说明市场关注点明确。",
+        "互动平台资料显示公司数据中心液冷方案覆盖 CDU、Manifold、预制化管路、干冷器、集成冷站和 TANK。",
+        "公司主业是工业温控，场景迁移逻辑成立，但财务暴露仍需验证。"
+      ],
+      "verification_focus": [
+        "数据中心液冷收入占比",
+        "客户名称、订单金额和交付进度",
+        "新业务投入对毛利率和费用率的影响"
+      ],
+      "risks": [
+        "互动平台和研报线索不能单独证明规模化订单。",
+        "工业温控、储能温控和数据中心液冷的客户、产品和毛利不同。",
+        "若数据中心收入占比低，仍只能作为二阶观察。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "同飞股份 2025-004 投资者关系活动记录表",
+          "publisher": "腾讯财经公告 PDF",
+          "date": "2025-09-15",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/09/15/1224660677.PDF",
+          "evidence_grade": "B",
+          "usage": "确认市场关注数据中心液冷订单，并提供公司半年度经营情况线索。"
+        },
+        {
+          "title": "同飞股份 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-27",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-27/1224579033.PDF",
+          "evidence_grade": "A",
+          "usage": "用于核对主业结构、数控装备温控收入和数据中心业务披露口径。"
+        },
+        {
+          "title": "同飞股份互动平台：数据中心液冷产品线",
+          "publisher": "证券时报/人民财讯",
+          "date": "2025-12-17",
+          "url": "https://stcn.com/article/detail/3545493.html",
+          "evidence_grade": "C",
+          "usage": "作为产品线线索，显示 CDU、Manifold、预制化管路、干冷器、集成冷站和 TANK 覆盖。"
+        }
+      ]
+    },
+    {
+      "name": "飞荣达",
+      "ts_code": "300602.SZ",
+      "nodes": [
+        "cold-plate",
+        "cdu",
+        "monitoring"
+      ],
+      "role": "热管理部件候选 / 量产线索",
+      "tier": "flexible_candidate",
+      "attention_level": "core_candidate",
+      "attention_label": "热管理部件候选",
+      "current_view": "飞荣达 2024 年报摘要已披露热管理材料及器件包括散热模组、VC、热管、压铸件及液冷板等，并提到 AI 服务器液冷相关业务开展较为顺利、获得批量订单并量产；2025 年报摘要进一步列出数据中心 CDU、流量监控仪等产品。它可升为强支持的部件候选，但客户名称、订单金额和液冷收入拆分仍待核实。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报全文里的 AI 服务器液冷收入和客户",
+        "确认 CDU、液冷模组、流量监控等产品的量产规模",
+        "跟踪热管理业务毛利率、存货和应收变化"
+      ],
+      "why_watch": "它适合观察“热管理材料/部件公司”如何从消费电子、通信散热迁移到 AI 服务器液冷。",
+      "evidence_basis": [
+        "2024 年报摘要披露 AI 服务器液冷相关业务获得批量订单并量产。",
+        "2025 年报摘要列出数据中心 CDU、流量监控仪等液冷相关产品。",
+        "公司长期从事热管理材料及器件，具备冷板、散热模组等部件基础。"
+      ],
+      "verification_focus": [
+        "AI 服务器液冷收入占比",
+        "客户认证、批量订单和量产交付",
+        "冷板、CDU、液冷模组、监控仪等产品价值量"
+      ],
+      "risks": [
+        "热管理业务覆盖消费电子、通信、新能源等多个场景，不能全部归因 AI 液冷。",
+        "批量订单和量产仍需确认订单金额、客户持续性和毛利率。",
+        "部分产品涉密或客户不披露时，财务验证难度更高。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "飞荣达 2024 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2025-04-16",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-04-16/1223100742.PDF",
+          "evidence_grade": "A",
+          "usage": "确认热管理产品覆盖液冷板等部件，并披露 AI 服务器液冷业务批量订单和量产线索。"
+        },
+        {
+          "title": "飞荣达 2025 年年度报告摘要",
+          "publisher": "证券之星公告转载",
+          "date": "2026-04-27",
+          "url": "https://stock.stockstar.com/notice/SN2026042700046093.shtml",
+          "evidence_grade": "B",
+          "usage": "交叉确认数据中心 CDU、流量监控仪等液冷相关产品。"
+        },
+        {
+          "title": "飞荣达 2025 年年度报告",
+          "publisher": "新浪财经公告页",
+          "date": "2026-04-28",
+          "url": "https://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300602&id=12221931",
+          "evidence_grade": "B",
+          "usage": "用于继续核对全年业务结构、液冷部件收入和客户披露。"
+        }
+      ]
+    },
+    {
+      "name": "川环科技",
+      "ts_code": "300547.SZ",
+      "nodes": [
+        "pump-valve-pipe"
+      ],
+      "role": "管路部件候选 / 供应链导入",
+      "tier": "flexible_candidate",
+      "attention_level": "core_candidate",
+      "attention_label": "液冷管路候选",
+      "current_view": "川环科技 2025 半年度报告披露，公司对某液冷服务器公司使用的冷却系统管路产品已经研发成功，并经客户验证合格，报告期有批量供货；2025 年 9 月 IR 记录还提到管路产品进入 CoolerMaster、AVC、英维克、中航光电、飞荣达、宝德华南等供应商体系。它可升为强支持的管路部件候选，但当前服务器液冷收入占比仍较小。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪服务器液冷管路收入占比是否提升",
+        "确认客户认证、供货规模和是否形成持续订单",
+        "区分汽车管路、储能液冷管路和数据中心液冷管路"
+      ],
+      "why_watch": "它是管路这一细分环节的样本，能教小白理解“二阶部件也可能有机会，但必须看客户验证和收入占比”。",
+      "evidence_basis": [
+        "2025 半年度报告披露某液冷服务器公司冷却系统管路已研发成功、客户验证合格并批量供货。",
+        "2025 年 9 月投资者关系记录披露管路产品进入多家液冷供应体系，但也提示服务器液冷收入占比相对较小。",
+        "公司管路主业与液冷系统中的流体连接、管路环节直接相关。"
+      ],
+      "verification_focus": [
+        "服务器液冷管路收入占比",
+        "客户认证和批量供货持续性",
+        "管路产品是否具备进口替代和认证壁垒"
+      ],
+      "risks": [
+        "公司收入基底仍以汽车管路为主，数据中心液冷占比目前相对较小。",
+        "供应体系进入不等于大额订单，仍要看持续供货和收入确认。",
+        "如果只是间接供应链，客户和订单透明度会较低。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "川环科技 2025 年半年度报告全文",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-12",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-12/1224444230.pdf",
+          "evidence_grade": "A",
+          "usage": "确认液冷服务器冷却系统管路产品客户验证合格并批量供货。"
+        },
+        {
+          "title": "川环科技 2025-002 投资者关系活动记录表",
+          "publisher": "巨潮资讯",
+          "date": "2025-09-12",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-09-12/1224657106.PDF",
+          "evidence_grade": "A",
+          "usage": "确认进入 CoolerMaster、AVC、英维克、中航光电、飞荣达、宝德华南等供应商体系，并提示收入占比仍较小。"
+        }
+      ]
+    },
+    {
+      "name": "飞龙股份",
+      "ts_code": "002536.SZ",
+      "nodes": [
+        "pump-valve-pipe"
+      ],
+      "role": "液冷泵新兴布局 / 二阶观察",
+      "tier": "flexible_candidate",
+      "attention_level": "watch",
+      "attention_label": "泵类观察",
+      "current_view": "飞龙股份 2025 年报披露，公司将热管理技术应用场景从汽车延伸至服务器液冷、数据中心等新兴领域，并完成商用液冷泵等产品设计开发。它可以从待验证升为弱支持，但目前仍是汽车热管理主业向非车液冷的延伸，数据中心收入和客户尚未充分确认。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "确认服务器液冷/数据中心液冷泵客户和订单金额",
+        "跟踪非车用液冷泵收入占比",
+        "核对航逸科技等新业务是否形成量产交付"
+      ],
+      "why_watch": "它是泵类二阶观察对象，只有在数据中心液冷泵客户明确时才有较强意义。",
+      "evidence_basis": [
+        "2025 年报披露将热管理技术应用从汽车延伸至服务器液冷和数据中心等新兴领域。",
+        "2025 年报披露全年完成商用液冷泵等产品设计开发。",
+        "投资者关系资料披露郑州飞龙具备电子水泵、温控阀和集成模块产能。"
+      ],
+      "verification_focus": [
+        "数据中心液冷泵产品是否量产",
+        "客户、订单和收入占比",
+        "汽车电子水泵能力能否迁移到数据中心液冷泵"
+      ],
+      "risks": [
+        "汽车水泵主业较强，不能直接推导 AI 数据中心受益。",
+        "液冷泵新业务仍处拓展阶段，客户和收入披露不足。",
+        "如果非车业务占比低，只能作为二阶观察。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "飞龙股份 2025 年年度报告全文",
+          "publisher": "深交所披露 PDF",
+          "date": "2026-03-20",
+          "url": "https://disc.static.szse.cn/disc/disk03/finalpage/2026-03-20/b78ae933-fbcc-43e9-aabe-34cda5932c6e.PDF",
+          "evidence_grade": "A",
+          "usage": "确认公司将热管理技术延伸至服务器液冷、数据中心等新兴领域，并开发商用液冷泵。"
+        },
+        {
+          "title": "飞龙股份投资者关系活动记录表",
+          "publisher": "腾讯财经公告 PDF",
+          "date": "2025-08-12",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/12/1224454482.PDF",
+          "evidence_grade": "B",
+          "usage": "确认电子水泵、温控阀和集成模块产能，以及新设液冷业务平台线索。"
+        }
+      ]
+    },
+    {
+      "name": "紫光股份",
+      "ts_code": "000938.SZ",
+      "nodes": [
+        "ai-server",
+        "liquid-system"
+      ],
+      "role": "下游验证节点",
+      "tier": "validation_node",
+      "attention_level": "leader",
+      "attention_label": "下游服务器验证锚",
+      "leader_reason": "优先用来观察 AI 服务器和液冷服务器需求，但不直接等同于上游液冷卡点。",
+      "current_view": "紫光股份/新华三在 2024 年报、2025 半年度报告和 2025 董事会工作报告中披露全冷板液冷服务器、H3C UniPoD 超节点、高密液冷整机柜等产品和方案。它可作为下游液冷服务器需求验证锚，但不是冷板、CDU、管路等上游部件的直接卡点。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报全文中的液冷服务器/整机柜收入和毛利",
+        "确认 UniPoD、高密液冷整机柜项目部署数量",
+        "观察 AI 服务器放量对上游冷板、CDU、管路的拉动"
+      ],
+      "why_watch": "它用于验证“液冷服务器是不是从产品发布走向项目部署”，再反推上游部件需求。",
+      "evidence_basis": [
+        "2024 年报披露 H3C UniServer R4900 G6 全冷板液冷服务器。",
+        "2025 半年度报告披露 UniPoD 超节点产品，支持单机柜、多机柜形态。",
+        "2025 董事会工作报告披露 H3C UniPoD S80000 超节点和高密液冷整机柜等产品。"
+      ],
+      "verification_focus": [
+        "液冷服务器/整机柜收入和毛利",
+        "AI 服务器订单、项目部署和交付节奏",
+        "液冷产品对上游部件需求的拉动"
+      ],
+      "risks": [
+        "下游整机厂不一定掌握上游液冷部件利润。",
+        "AI 服务器放量可能伴随毛利压力，需求验证不等于利润验证。",
+        "项目部署和产品发布不能直接推导上游某家公司受益。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "紫光股份 2025 年度董事会工作报告",
+          "publisher": "证券日报信披 PDF",
+          "date": "2026-04-14",
+          "url": "http://xinpi.zqrb.cn/pdf/SZ/000938/2026/0415/00acedfe9a561bcfe59b78be3988139c.pdf",
+          "evidence_grade": "B",
+          "usage": "确认 H3C UniPoD S80000 超节点、高密液冷整机柜和 AI 基础设施产品线。"
+        },
+        {
+          "title": "紫光股份 2024 年年度报告",
+          "publisher": "证券日报信披 PDF",
+          "date": "2025-04-29",
+          "url": "http://xinpi.zqrb.cn/pdf/SZ/000938/2025/0429/edc95d98d517c8f56ed5d4451fa4b79a.pdf",
+          "evidence_grade": "B",
+          "usage": "确认 H3C UniServer R4900 G6 全冷板液冷服务器等液冷技术路线。"
+        },
+        {
+          "title": "紫光股份 2025 年半年度报告",
+          "publisher": "同花顺公告 PDF",
+          "date": "2025-08-30",
+          "url": "http://notice.10jqka.com.cn/api/pdf/847f60d48c0029f1.pdf",
+          "evidence_grade": "B",
+          "usage": "确认 2025 年上半年 UniPoD 超节点等 AI 产品和绿色低碳基础设施方向。"
+        }
+      ]
+    },
+    {
+      "name": "浪潮信息",
+      "ts_code": "000977.SZ",
+      "nodes": [
+        "ai-server",
+        "liquid-system"
+      ],
+      "role": "下游验证节点",
+      "tier": "validation_node",
+      "attention_level": "leader",
+      "attention_label": "下游服务器验证锚",
+      "leader_reason": "优先用来验证液冷服务器渗透和 AI 服务器放量，再顺藤摸瓜看上游部件。",
+      "current_view": "浪潮信息官网液冷数据中心解决方案和年报/半年报资料均显示其全栈布局液冷，产品覆盖从一次侧冷源、二次侧 CDU、液冷连接系统到液冷服务器等环节；公司还披露连续多年位居中国液冷服务器市场第一。它是最强的下游需求验证锚之一，但服务器产品毛利和存货压力也需要同步观察。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报中的服务器毛利率、存货和减值压力",
+        "跟踪液冷服务器订单、交付和行业份额",
+        "观察液冷服务器放量如何传导到冷板、CDU、管路、快接头供应商"
+      ],
+      "why_watch": "它适合做液冷服务器渗透率的需求锚：先看下游是否真的放量，再追踪上游哪个环节更紧。",
+      "evidence_basis": [
+        "官网液冷数据中心方案披露冷板式液冷方案由一次侧、二次侧、液冷 IT 设备等单元组成。",
+        "公司官网新闻引用 Omdia 数据，披露浪潮信息在数据中心液冷基础设施全球市场前五、单相冷板细分市场全球第一。",
+        "公开年报/半年报资料显示其全线服务器支持冷板式液冷，并持续推进 All in 液冷。"
+      ],
+      "verification_focus": [
+        "液冷服务器出货和项目部署",
+        "服务器业务毛利率、存货和跌价准备",
+        "液冷服务器放量对上游核心部件的拉动"
+      ],
+      "risks": [
+        "服务器出货增长不等于液冷部件公司都有定价权。",
+        "整机业务可能受 GPU 供给、价格竞争、低毛利和存货压力影响。",
+        "作为下游验证锚，浪潮更多用于确认需求，不直接代表上游最佳弹性。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "浪潮信息液冷数据中心解决方案",
+          "publisher": "浪潮信息官网",
+          "url": "https://www.ieisystem.com/product/liquidcooling/",
+          "evidence_grade": "A",
+          "usage": "确认冷板式液冷数据中心建设方案，以及一次侧、二次侧、液冷 IT 设备等系统组成。"
+        },
+        {
+          "title": "浪潮信息 2025 年年度报告",
+          "publisher": "新浪财经公告页",
+          "date": "2026-04-11",
+          "url": "https://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=000977&id=12081456",
+          "evidence_grade": "B",
+          "usage": "用于核对 2025 年 AI 服务器、液冷数据中心、毛利率、存货和财务风险。"
+        },
+        {
+          "title": "Omdia：浪潮信息居数据中心液冷基础设施市场全球前五",
+          "publisher": "浪潮信息官网",
+          "date": "2025-09-15",
+          "url": "https://www.ieisystem.com/about/news/19782.html",
+          "evidence_grade": "B",
+          "usage": "确认液冷基础设施份额、单相冷板细分市场排名和全栈液冷布局。"
+        },
+        {
+          "title": "浪潮信息 2024 年年度报告",
+          "publisher": "东方财富公告 PDF",
+          "date": "2025-03-29",
+          "url": "https://pdf.dfcfw.com/pdf/H2_AN202503281648797582_1.pdf",
+          "evidence_grade": "B",
+          "usage": "确认 All in 液冷战略、全线服务器冷板式液冷和液冷数据中心整体解决方案。"
+        }
+      ]
+    }
+  ],
+  "common_misreads": [
+    {
+      "title": "服务器厂商不等于液冷卡点",
+      "correction": "服务器厂商更适合验证液冷服务器需求和渗透率，未必直接掌握冷板、CDU、快接头等上游核心卡点。"
+    },
+    {
+      "title": "温控公司不等于 AI 数据中心液冷受益",
+      "correction": "必须确认产品是否用于 AI 数据中心液冷，是否有项目、客户、订单和收入占比。"
+    },
+    {
+      "title": "有产品不等于有商业化收入",
+      "correction": "样机、方案、展会资料只能算线索，升级结论前要看年报、公告、互动易、客户认证或订单。"
+    },
+    {
+      "title": "概念相关不等于利润弹性",
+      "correction": "如果液冷收入占比很小，或只是原有业务的边缘延伸，股价弹性和财务兑现都要打折。"
+    }
+  ],
+  "financial_translations": [
+    {
+      "node_id": "ai-server",
+      "title": "下游需求验证",
+      "watch": "AI 服务器出货、液冷服务器订单、相关业务毛利率。",
+      "source_hint": "服务器厂商公告、年报、项目披露、行业出货报告",
+      "risk": "服务器放量不代表上游液冷部件一定有定价权。"
+    },
+    {
+      "node_id": "liquid-system",
+      "title": "系统方案验证",
+      "watch": "数据中心温控 / 液冷相关收入占比、项目交付、合同负债、毛利率。",
+      "source_hint": "年报分部、公告、投资者关系记录",
+      "risk": "方案名义覆盖很广，但收入可能仍主要来自传统温控。"
+    },
+    {
+      "node_id": "cold-plate",
+      "title": "核心换热部件验证",
+      "watch": "冷板产品收入、客户认证、量产交付、单位价值量和毛利率。",
+      "source_hint": "公告、年报、客户认证线索、互动易",
+      "risk": "只披露热管理业务时，需要拆出数据中心液冷比例。"
+    },
+    {
+      "node_id": "uqd",
+      "title": "可靠连接验证",
+      "watch": "快接头产品认证、批量订单、维护可靠性指标、客户导入。",
+      "source_hint": "公告、投资者关系、客户供应链线索",
+      "risk": "密封可靠性要求高，不能只凭概念文章确认。"
+    },
+    {
+      "node_id": "manifold",
+      "title": "机柜分配验证",
+      "watch": "歧管产品线、机柜级方案交付、订单和客户项目。",
+      "source_hint": "公司公告、年报、项目案例",
+      "risk": "容易被笼统归入系统方案，需要确认具体产品。"
+    },
+    {
+      "node_id": "cdu",
+      "title": "冷量分配设备验证",
+      "watch": "CDU 产品收入、项目交付规模、毛利率、客户认证和订单。",
+      "source_hint": "年报、半年度报告、公告、IR",
+      "risk": "传统冷源或空调设备收入不能直接等同于液冷 CDU。"
+    },
+    {
+      "node_id": "pump-valve-pipe",
+      "title": "二阶部件验证",
+      "watch": "泵阀 / 管路进入数据中心液冷供应链、收入占比、客户导入。",
+      "source_hint": "公告、互动易、年报、客户认证",
+      "risk": "汽车或工业管路背景强的公司，需要单独证明数据中心场景。"
+    },
+    {
+      "node_id": "coolant",
+      "title": "冷却介质验证",
+      "watch": "冷却液路线、材料兼容性、客户测试进展、量产收入。",
+      "source_hint": "白皮书、年报、公告、客户测试信息",
+      "risk": "冷板式与浸没式对冷却液要求不同，不能混用概念。"
+    },
+    {
+      "node_id": "monitoring",
+      "title": "运维可靠性验证",
+      "watch": "漏液检测、传感、运维监控是否进入规模项目。",
+      "source_hint": "项目案例、公告、解决方案资料",
+      "risk": "可靠性功能重要，但单独形成上市公司利润弹性需要再验证。"
+    }
+  ],
+  "tracking_metrics": [
+    {
+      "name": "AI 服务器出货 / 云厂商资本开支",
+      "why": "决定液冷需求总量。",
+      "source_hint": "云厂商财报、服务器行业报告、IDC 等"
+    },
+    {
+      "name": "单机柜功率密度",
+      "why": "功率越高，液冷必要性越强。",
+      "source_hint": "服务器平台资料、白皮书、行业报告"
+    },
+    {
+      "name": "液冷服务器渗透率",
+      "why": "判断从可选项到必选项的速度。",
+      "source_hint": "IDC、行业报告、券商报告"
+    },
+    {
+      "name": "冷板 / CDU / UQD / manifold 订单",
+      "why": "验证核心部件是否放量。",
+      "source_hint": "公司公告、年报、IR"
+    },
+    {
+      "name": "液冷相关收入占比",
+      "why": "判断是否真受益。",
+      "source_hint": "年报、半年报、财报附注"
+    }
+  ],
+  "custom_blocks": [
+    {
+      "id": "route-comparison",
+      "title": "三种液冷路线对比",
+      "type": "comparison_table"
+    },
+    {
+      "id": "value-chain-bottleneck",
+      "title": "价值链卡点",
+      "type": "text_callout"
+    }
+  ],
+  "sources": [
+    {
+      "title": "智算背景下冷板式液冷技术应用研究",
+      "publisher": "中国通信企业协会等",
+      "date": "2025-06",
+      "source_type": "industry_whitepaper",
+      "usage": "技术路线、产业结构和卡点解释"
+    },
+    {
+      "title": "数据中心液冷解决方案白皮书",
+      "publisher": "Vertiv",
+      "source_type": "industry_whitepaper",
+      "usage": "液冷系统架构和数据中心方案参考"
+    },
+    {
+      "title": "英维克 2025 年年度报告摘要",
+      "publisher": "巨潮资讯",
+      "date": "2026-04-21",
+      "url": "https://static.cninfo.com.cn/finalpage/2026-04-21/1225131812.PDF",
+      "source_type": "annual_report",
+      "usage": "英维克公司角色、全链条液冷产品覆盖和机房温控业务验证"
+    },
+    {
+      "title": "英维克 CDU / 液冷板 / UQD 产品页",
+      "publisher": "英维克官网",
+      "url": "https://www.envicool.com/productinfo70.html",
+      "source_type": "company_product_page",
+      "usage": "公司产品映射到 CDU、冷板、快接头等图谱节点的一手资料"
+    },
+    {
+      "title": "英维克 2026-001 投资者关系活动记录表",
+      "publisher": "东方财富公告 PDF",
+      "date": "2026-04-21",
+      "url": "https://pdf.dfcfw.com/pdf/H2_AN202604211821395630_1.pdf",
+      "source_type": "investor_relations",
+      "usage": "英特尔测试、英伟达 MGX 生态、液冷业务展望等交叉验证"
+    },
+    {
+      "title": "AI发展加速液冷技术渗透 多家上市公司深度布局",
+      "publisher": "新华网",
+      "date": "2025-08-25",
+      "source_type": "news",
+      "usage": "行业趋势和公司线索"
+    },
+    {
+      "title": "AI发展加速液冷技术渗透 行业正处强劲上升周期",
+      "publisher": "证券时报",
+      "date": "2025-08-25",
+      "source_type": "news",
+      "usage": "行业趋势和公司线索"
+    },
+    {
+      "title": "英维克背靠英伟达，“大树”下好乘凉？",
+      "publisher": "21 经济网",
+      "date": "2025-08-22",
+      "source_type": "news",
+      "usage": "公司线索，不能单独支持强结论"
+    }
+  ],
+  "catalysts": [
+    {
+      "horizon": "短期",
+      "title": "AI 服务器订单和液冷服务器产品发布",
+      "why": "最直接验证下游需求是否真实，是液冷链条能否继续扩散的起点。",
+      "watch": "服务器厂商产品、云厂商资本开支、项目中标、AI 服务器出货。",
+      "risk": "服务器订单放量不代表上游部件都有利润弹性。"
+    },
+    {
+      "horizon": "中期",
+      "title": "高密度机柜和 PUE 约束加强",
+      "why": "当机柜功率密度继续上升，液冷从可选方案变成更刚性的基础设施。",
+      "watch": "单机柜功率、数据中心改造、液冷机柜渗透率、行业白皮书。",
+      "risk": "如果功率密度提升慢，液冷渗透率可能低于市场预期。"
+    },
+    {
+      "horizon": "兑现",
+      "title": "核心部件订单和液冷收入占比披露",
+      "why": "最终要从产业逻辑落到上市公司收入、毛利和现金流。",
+      "watch": "冷板、CDU、UQD、歧管订单；年报分部；合同负债；毛利率。",
+      "risk": "收入占比小或利润率低时，主题热度可能无法兑现成业绩。"
+    }
+  ],
+  "concept_diagrams": [
+    {
+      "id": "air-vs-liquid",
+      "title": "风冷 vs 液冷",
+      "subtitle": "先理解为什么风冷会遇到边界",
+      "node_ids": [
+        "high-density-rack",
+        "liquid-system"
+      ],
+      "icon": "wind",
+      "takeaway": "风冷像用空气把热吹走；液冷是让冷却液更靠近热源，把热量更快带出去。机柜功率越高，液冷必要性越强。",
+      "parts": [
+        {
+          "label": "风冷",
+          "role": "旧方案",
+          "description": "靠风扇和空调把热空气带走，部署简单，但高密度机柜里效率下降。"
+        },
+        {
+          "label": "热密度上升",
+          "role": "约束",
+          "description": "GPU 功耗提升，机柜里热量集中，风冷压力变大。"
+        },
+        {
+          "label": "液冷",
+          "role": "升级方案",
+          "description": "用冷却液靠近热源传热，更适合高功率服务器和高密度机柜。"
+        }
+      ]
+    },
+    {
+      "id": "cold-plate-path",
+      "title": "冷板怎么带走热量",
+      "subtitle": "看懂冷板式液冷的第一步",
+      "node_ids": [
+        "ai-server",
+        "cold-plate",
+        "coolant"
+      ],
+      "icon": "chip",
+      "takeaway": "冷板贴近 CPU/GPU，把芯片热量传给冷却液。研究冷板公司时，要确认产品是否真的用于 AI 数据中心液冷。",
+      "parts": [
+        {
+          "label": "CPU / GPU",
+          "role": "热源",
+          "description": "AI 芯片工作时产生大量热量。"
+        },
+        {
+          "label": "冷板",
+          "role": "换热部件",
+          "description": "贴近芯片，把热量传导给内部流动的冷却液。"
+        },
+        {
+          "label": "冷却液",
+          "role": "带走热量",
+          "description": "把热量带到 CDU 和机房冷源侧继续处理。"
+        }
+      ]
+    },
+    {
+      "id": "cdu-control",
+      "title": "CDU 是液冷系统的控制中枢",
+      "subtitle": "它不是普通空调，而是液冷循环控制设备",
+      "node_ids": [
+        "liquid-system",
+        "cdu",
+        "pump-valve-pipe"
+      ],
+      "icon": "control",
+      "takeaway": "CDU 负责控制冷却液的流量、温度和压力。判断公司时，要确认是否是数据中心液冷 CDU，而不是传统冷源或空调设备。",
+      "parts": [
+        {
+          "label": "服务器侧",
+          "role": "二次侧",
+          "description": "冷却液从服务器带出热量。"
+        },
+        {
+          "label": "CDU",
+          "role": "控制中枢",
+          "description": "控制流量、温度、压力，并连接服务器侧和机房冷源。"
+        },
+        {
+          "label": "机房冷源",
+          "role": "排热",
+          "description": "把热量继续传到冷源系统或室外。"
+        }
+      ]
+    },
+    {
+      "id": "uqd-manifold-maintenance",
+      "title": "UQD / 歧管为什么重要",
+      "subtitle": "液体进机柜后，维护和漏液风险会变成关键问题",
+      "node_ids": [
+        "uqd",
+        "manifold",
+        "monitoring"
+      ],
+      "icon": "connector",
+      "takeaway": "UQD 关系到快速插拔和密封，歧管负责把冷却液分配到多个服务器节点，漏液检测则决定客户敢不敢规模部署。",
+      "parts": [
+        {
+          "label": "UQD 快接头",
+          "role": "连接/密封",
+          "description": "服务器维护时需要快速连接和断开，同时控制漏液风险。"
+        },
+        {
+          "label": "Manifold 歧管",
+          "role": "分配",
+          "description": "把冷却液分配到机柜内多个服务器节点。"
+        },
+        {
+          "label": "漏液检测",
+          "role": "可靠运维",
+          "description": "规模化部署前必须能发现异常和降低运维风险。"
+        }
+      ]
+    }
+  ]
+}

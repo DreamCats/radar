@@ -1,0 +1,829 @@
+.industry-chain-company-workspace {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  height: clamp(540px, 68vh, 720px);
+  min-height: 0;
+}
+
+.industry-chain-company-list {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.industry-chain-company-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 8px;
+  min-height: 88px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 72%, transparent);
+  color: var(--color-ink-muted);
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.industry-chain-company-row:hover,
+.industry-chain-company-row.active {
+  border-color: color-mix(in srgb, var(--color-primary-hover) 46%, var(--color-hairline-strong));
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface-2));
+}
+
+.industry-chain-company-row.related {
+  box-shadow: inset 3px 0 0 var(--color-primary-hover);
+}
+
+.industry-chain-company-row.leader {
+  box-shadow: inset 3px 0 0 var(--color-signal-hot);
+}
+
+.industry-chain-company-row-head {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.industry-chain-company-row-head strong {
+  overflow: hidden;
+  color: var(--color-ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.industry-chain-company-row-head em,
+.industry-chain-company-row-role,
+.industry-chain-company-row-view {
+  color: var(--color-ink-subtle);
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.industry-chain-company-row-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  max-width: 132px;
+}
+
+.industry-chain-company-row-role,
+.industry-chain-company-row-view {
+  grid-column: 1 / -1;
+}
+
+.industry-chain-company-row-view {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-ink-tertiary);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.industry-chain-company-detail-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.025), transparent 130px),
+    color-mix(in srgb, var(--color-surface-2) 72%, transparent);
+  color: var(--color-ink-muted);
+  overflow: auto;
+  padding: 14px;
+}
+
+.industry-chain-company-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.industry-chain-company-card-head div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.industry-chain-company-detail-card strong {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.industry-chain-company-card-head span {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.industry-chain-company-card-badges {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+  max-width: 150px;
+}
+
+.industry-chain-company-detail-subtitle {
+  color: var(--color-ink-tertiary);
+  font-size: 12px;
+}
+
+.industry-chain-company-detail-card p {
+  color: var(--color-ink-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.industry-chain-company-detail-card small {
+  color: var(--color-ink-tertiary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.industry-chain-company-detail-card em {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.industry-chain-company-detail-card ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 16px;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.industry-chain-company-evidence-refs {
+  display: grid;
+  gap: 7px;
+}
+
+.industry-chain-company-evidence-ref {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-1) 72%, transparent);
+  padding: 8px;
+}
+
+.industry-chain-company-evidence-ref div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.industry-chain-company-evidence-ref span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 22px;
+  height: 20px;
+  border: 1px solid color-mix(in srgb, var(--color-market-up) 45%, var(--color-hairline));
+  border-radius: var(--radius-xs);
+  background: var(--color-market-up-soft);
+  color: var(--color-market-up);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.industry-chain-company-evidence-ref a,
+.industry-chain-company-evidence-ref strong {
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.industry-chain-company-evidence-ref a:hover {
+  color: var(--color-primary-hover);
+}
+
+.industry-chain-company-evidence-ref small {
+  color: var(--color-ink-tertiary);
+}
+
+.industry-chain-company-evidence-ref p {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.industry-chain-company-empty {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-subtle);
+  height: 100%;
+  padding: 14px;
+}
+
+@media (max-width: 1180px) {
+  .industry-chain-company-workspace {
+    height: auto;
+  }
+
+  .industry-chain-company-list,
+  .industry-chain-company-detail-card,
+  .industry-chain-company-empty {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.industry-chain-company-card-section {
+  display: grid;
+  gap: 5px;
+  border-top: 1px solid color-mix(in srgb, var(--color-hairline) 82%, transparent);
+  padding-top: 8px;
+}
+
+.industry-chain-company-card-section > span {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.industry-chain-node-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.industry-chain-node-tags button {
+  min-height: 24px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-ink-muted);
+  padding: 0 7px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.industry-chain-node-tags button:hover {
+  border-color: var(--color-primary-hover);
+  color: var(--color-ink);
+}
+
+.industry-chain-segmented {
+  display: inline-flex;
+  gap: 3px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-1);
+  padding: 3px;
+}
+
+.industry-chain-segmented button {
+  min-height: 28px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--color-ink-subtle);
+  padding: 0 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.industry-chain-segmented button.active,
+.industry-chain-segmented button:hover {
+  background: var(--color-surface-3);
+  color: var(--color-ink);
+}
+
+.industry-chain-evidence-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.industry-chain-attention-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+  color: var(--color-ink-subtle);
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.industry-chain-attention-badge.leader {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 56%, var(--color-hairline));
+  background: rgb(252 213 53 / 0.12);
+  color: var(--color-signal-hot);
+}
+
+.industry-chain-attention-badge.core_candidate {
+  border-color: color-mix(in srgb, var(--color-primary-hover) 44%, var(--color-hairline));
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary-hover);
+}
+
+.industry-chain-attention-badge.watch {
+  background: var(--color-surface-2);
+  color: var(--color-ink-subtle);
+}
+
+.industry-chain-evidence-badge.supported {
+  border-color: color-mix(in srgb, var(--color-market-up) 52%, var(--color-hairline));
+  background: var(--color-market-up-soft);
+  color: var(--color-market-up);
+}
+
+.industry-chain-evidence-badge.weakly_supported {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 44%, var(--color-hairline));
+  background: rgb(252 213 53 / 0.12);
+  color: var(--color-signal-hot);
+}
+
+.industry-chain-evidence-badge.candidate {
+  border-color: color-mix(in srgb, var(--color-primary-hover) 44%, var(--color-hairline));
+  background: color-mix(in srgb, var(--color-primary) 13%, transparent);
+  color: var(--color-primary-hover);
+}
+
+.industry-chain-evidence-badge.unsupported {
+  border-color: color-mix(in srgb, var(--color-market-down) 46%, var(--color-hairline));
+  background: var(--color-market-down-soft);
+  color: var(--color-market-down);
+}
+
+.industry-chain-evidence-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.industry-chain-evidence-guide-item {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 72%, transparent);
+  padding: 10px;
+}
+
+.industry-chain-evidence-guide-item div {
+  display: grid;
+  gap: 7px;
+}
+
+.industry-chain-evidence-guide-item strong {
+  color: var(--color-ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.industry-chain-evidence-guide-item p,
+.industry-chain-evidence-rule {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.industry-chain-evidence-rule {
+  margin-top: 10px;
+  border-left: 2px solid var(--color-primary-hover);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  padding: 8px 10px;
+}
+
+.industry-chain-concept-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.industry-chain-concept-card {
+  display: grid;
+  gap: 12px;
+  min-height: 310px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.025), transparent 112px),
+    color-mix(in srgb, var(--color-surface-2) 72%, transparent);
+  padding: 12px;
+}
+
+.industry-chain-concept-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+}
+
+.industry-chain-concept-card-head > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid color-mix(in srgb, var(--color-primary-hover) 42%, var(--color-hairline));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary-hover);
+}
+
+.industry-chain-concept-card-head strong {
+  color: var(--color-ink);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.industry-chain-concept-card-head p {
+  margin-top: 3px;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.industry-chain-concept-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.industry-chain-concept-part {
+  display: grid;
+  gap: 5px;
+  min-height: 126px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-1) 78%, transparent);
+  padding: 10px;
+}
+
+.industry-chain-concept-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary-hover);
+}
+
+.industry-chain-concept-part span {
+  width: fit-content;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-ink-tertiary);
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.industry-chain-concept-part strong {
+  color: var(--color-ink);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.industry-chain-concept-part p,
+.industry-chain-concept-takeaway {
+  color: var(--color-ink-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.industry-chain-concept-takeaway {
+  border-left: 2px solid var(--color-primary-hover);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  padding: 8px 10px;
+}
+
+.industry-chain-node-teach {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 68%, transparent);
+  padding: 10px;
+}
+
+.industry-chain-teach-line,
+.industry-chain-teach-watch {
+  display: grid;
+  gap: 4px;
+}
+
+.industry-chain-teach-line span,
+.industry-chain-teach-watch span {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.industry-chain-teach-line p {
+  color: var(--color-ink-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.industry-chain-teach-watch div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.industry-chain-teach-watch em {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-ink-muted);
+  padding: 0 7px;
+  font-size: 12px;
+  font-style: normal;
+}
+
+.industry-chain-catalyst-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.industry-chain-catalyst-item {
+  display: grid;
+  gap: 7px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 72%, transparent);
+  padding: 12px;
+}
+
+.industry-chain-catalyst-item > span {
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--color-primary-hover) 44%, var(--color-hairline));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary-hover);
+  padding: 3px 7px;
+  font-size: 12px;
+}
+
+.industry-chain-catalyst-item strong {
+  color: var(--color-ink);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.industry-chain-catalyst-item p {
+  color: var(--color-ink-muted);
+  line-height: 1.55;
+}
+
+.industry-chain-catalyst-item dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.industry-chain-catalyst-item div {
+  display: grid;
+  gap: 3px;
+}
+
+.industry-chain-catalyst-item dt {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+
+.industry-chain-catalyst-item dd {
+  margin: 0;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.industry-chain-tracking-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 12px;
+  align-items: stretch;
+  height: clamp(360px, 48vh, 560px);
+  min-height: 0;
+}
+
+.industry-chain-investor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 12px;
+}
+
+.industry-chain-metric-list,
+.industry-chain-source-list,
+.industry-chain-financial-list,
+.industry-chain-misread-list {
+  display: grid;
+  gap: 8px;
+}
+
+.industry-chain-tracking-panel,
+.industry-chain-source-panel {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.industry-chain-tracking-panel .industry-chain-section-head,
+.industry-chain-source-panel .industry-chain-section-head {
+  flex: 0 0 auto;
+}
+
+.industry-chain-metric-list,
+.industry-chain-source-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.industry-chain-tracking-item,
+.industry-chain-source-item,
+.industry-chain-financial-item,
+.industry-chain-misread-item {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-2) 72%, transparent);
+  padding: 10px;
+}
+
+.industry-chain-tracking-item strong,
+.industry-chain-source-item strong,
+.industry-chain-financial-item strong,
+.industry-chain-misread-item strong {
+  color: var(--color-ink);
+}
+
+.industry-chain-tracking-item p,
+.industry-chain-source-item p,
+.industry-chain-financial-item p,
+.industry-chain-misread-item p {
+  color: var(--color-ink-muted);
+  line-height: 1.55;
+}
+
+.industry-chain-tracking-item span,
+.industry-chain-source-item span,
+.industry-chain-financial-item span {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.industry-chain-misread-item {
+  border-color: color-mix(in srgb, var(--color-signal-warn) 28%, var(--color-hairline));
+}
+
+.industry-chain-markdown-panel .markdown-content {
+  max-width: none;
+}
+
+.industry-chain-markdown-panel .markdown-content h3:first-child {
+  display: none;
+}
+
+.industry-chain-error {
+  border: 1px solid color-mix(in srgb, var(--color-market-down) 44%, var(--color-hairline));
+  border-radius: var(--radius-md);
+  background: var(--color-market-down-soft);
+  color: var(--color-ink);
+  padding: 14px;
+}
+
+@media (max-width: 1180px) {
+  .industry-chain-focus-grid,
+  .industry-chain-company-workspace,
+  .industry-chain-investor-grid,
+  .industry-chain-tracking-grid,
+  .industry-chain-evidence-guide-grid,
+  .industry-chain-catalyst-grid,
+  .industry-chain-concept-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .industry-chain-hero-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .industry-chain-tracking-grid {
+    height: auto;
+  }
+
+  .industry-chain-tracking-panel,
+  .industry-chain-source-panel,
+  .industry-chain-metric-list,
+  .industry-chain-source-list {
+    overflow: visible;
+  }
+
+  .industry-chain-learning-steps,
+  .industry-chain-logic-chain {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .industry-chain-hero-panel,
+  .industry-chain-quick-panel,
+  .industry-chain-evidence-guide-panel,
+  .industry-chain-learning-panel,
+  .industry-chain-graph-panel,
+  .industry-chain-node-panel,
+  .industry-chain-concept-panel,
+  .industry-chain-company-panel,
+  .industry-chain-catalyst-panel,
+  .industry-chain-financial-panel,
+  .industry-chain-misread-panel,
+  .industry-chain-tracking-panel,
+  .industry-chain-source-panel,
+  .industry-chain-markdown-panel {
+    padding: 12px;
+  }
+
+  .industry-chain-metrics,
+  .industry-chain-node-meta,
+  .industry-chain-learning-steps,
+  .industry-chain-logic-chain,
+  .industry-chain-takeaways {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .industry-chain-causal-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .industry-chain-concept-flow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .industry-chain-concept-arrow {
+    transform: rotate(90deg);
+  }
+
+  .industry-chain-flow-canvas {
+    height: 390px;
+    min-height: 390px;
+  }
+
+  .industry-chain-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .industry-chain-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .industry-chain-picker {
+    width: 100%;
+  }
+
+  .industry-chain-picker select {
+    width: 100%;
+  }
+
+  .industry-chain-markdown-panel summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

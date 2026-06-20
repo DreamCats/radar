@@ -23,7 +23,9 @@ build/
 .vite/
 
 # Local runtime data
-data/
+data/*
+!data/industry-chains/
+!data/industry-chains/**
 tmp/
 .runtime/
 *.sqlite

@@ -7,6 +7,7 @@ import {
   ListOrdered,
   LogOut,
   MessageCircle,
+  Network,
   RadioTower,
   Search,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { fetchAuthStatus, login, logout } from "./api/radarApi";
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
+import { IndustryChainPage } from "./pages/IndustryChainPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OrganizePage } from "./pages/OrganizePage";
@@ -22,12 +24,13 @@ import { StrategyPage } from "./pages/StrategyPage";
 import { WechatPage } from "./pages/WechatPage";
 import type { AuthStatus } from "./types";
 
-type TabKey = "dashboard" | "wechat" | "organize" | "leaderboard" | "strategy" | "ingest";
+type TabKey = "dashboard" | "wechat" | "organize" | "industry-chain" | "leaderboard" | "strategy" | "ingest";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "洞察", icon: Activity },
   { key: "wechat", label: "微信", icon: MessageCircle },
   { key: "organize", label: "整理", icon: Layers3 },
+  { key: "industry-chain", label: "产业链", icon: Network },
   { key: "leaderboard", label: "榜单", icon: ListOrdered },
   { key: "strategy", label: "策略", icon: Search },
   { key: "ingest", label: "作业", icon: Database },
@@ -148,6 +151,7 @@ export function App() {
             {tab === "dashboard" && <DashboardPage />}
             {tab === "wechat" && <WechatPage />}
             {tab === "organize" && <OrganizePage />}
+            {tab === "industry-chain" && <IndustryChainPage />}
             {tab === "leaderboard" && <LeaderboardPage />}
             {tab === "strategy" && <StrategyPage />}
             {tab === "ingest" && <IngestPage />}

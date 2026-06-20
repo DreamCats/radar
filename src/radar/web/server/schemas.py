@@ -42,6 +42,34 @@ class AuthStatusResponse(BaseModel):
     username: str | None = None
 
 
+class IndustryChainIndexItem(BaseModel):
+    chain_id: str
+    title: str
+    category: str
+    aliases: list[str] = Field(default_factory=list)
+    status: str
+    sort_order: int = 0
+    content_path: str
+    data_path: str
+    updated_at: str
+    entry_tags: list[str] = Field(default_factory=list)
+    audience_level: str | None = None
+    evidence_level: str | None = None
+    summary: str
+
+
+class IndustryChainListResponse(BaseModel):
+    version: int
+    updated_at: str
+    items: list[IndustryChainIndexItem]
+
+
+class IndustryChainDetailResponse(BaseModel):
+    item: IndustryChainIndexItem
+    data: dict[str, Any]
+    content_markdown: str
+
+
 class AuthLoginRequest(BaseModel):
     username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=1, max_length=256)
