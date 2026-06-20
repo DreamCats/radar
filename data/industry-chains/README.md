@@ -29,6 +29,12 @@ data/industry-chains/
   chains/
     ai-liquid-cooling.md
     ai-liquid-cooling.json
+    solid-state-battery.md
+    solid-state-battery.json
+    short-drama-entertainment.md
+    short-drama-entertainment.json
+    humanoid-robotics.md
+    humanoid-robotics.json
   templates/
     chain-page-template.md
 ```

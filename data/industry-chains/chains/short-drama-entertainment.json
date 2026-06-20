@@ -1,0 +1,1216 @@
+{
+  "version": 1,
+  "chain_id": "short-drama-entertainment",
+  "title": "微短剧 / 影视娱乐",
+  "category": "传媒娱乐 / 内容平台与营销",
+  "status": "draft",
+  "updated_at": "2026-06-20",
+  "summary": "微短剧不是传统制造链，而是内容命中率、制作效率、平台分发、投流 ROI、付费/广告转化和监管合规共同决定的商业模式链。",
+  "quick_read": {
+    "headline": "卡点不是拍短剧，而是内容命中率和投流 ROI",
+    "summary": "短剧的产业链要从用户碎片化娱乐需求看起，再进入 IP、剧本、制作、审核、平台、买量、付费和广告变现。小白最容易误读的是把短剧当成普通影视制作，真正影响利润的往往是爆款命中率、素材测试、买量成本、平台分成、复购和合规风险。",
+    "logic_chain": [
+      "用户碎片化时间和强情绪内容需求，推动短剧成为高频娱乐形态",
+      "网文 IP、原创剧本和 AI 工具决定内容供给效率",
+      "短周期制作和剧场化运营让内容快速测试、快速迭代",
+      "备案、版权和平台审核决定内容能不能稳定上线",
+      "平台、APP、小程序和短视频渠道决定触达用户的效率",
+      "投流买量和素材测试决定获客成本，直接影响项目盈亏",
+      "付费、免费广告、品牌植入和出海决定商业化天花板",
+      "公司研究必须回到收入占比、买量费用、现金流、版权资产和监管风险"
+    ],
+    "takeaways": [
+      "短剧不是制造业链条，不能硬套上游材料、中游设备、下游客户。",
+      "核心问题是单部内容能否回本，以及平台能否持续低成本获客。",
+      "A 股映射要先分清内容 IP、平台分发、制作发行、营销投流和出海，再用财报补证据。"
+    ]
+  },
+  "learning_steps": [
+    {
+      "id": "demand",
+      "title": "先看需求",
+      "subtitle": "用户为什么愿意刷短剧",
+      "question": "短剧为什么不是昙花一现？",
+      "answer": "短剧吃的是碎片化时间、强情绪剧情和低决策成本。用户不需要投入一整晚追长剧，几分钟就能获得爽点和反馈。",
+      "node_ids": [
+        "fragmented-attention-demand",
+        "content-ip-pool"
+      ]
+    },
+    {
+      "id": "content",
+      "title": "再看内容",
+      "subtitle": "爆款不是靠拍摄成本堆出来的",
+      "question": "短剧内容端最重要的是什么？",
+      "answer": "核心是题材、剧本、节奏、人物关系和素材测试。IP 储备、网文改编、AI 剧本和漫剧工具能提升供给效率，但不能替代爆款判断。",
+      "node_ids": [
+        "content-ip-pool",
+        "ai-production",
+        "production-studio"
+      ]
+    },
+    {
+      "id": "compliance",
+      "title": "进入制作合规",
+      "subtitle": "能拍出来不等于能长期上线",
+      "question": "为什么短剧还要重点看监管？",
+      "answer": "微短剧已经进入备案、审核、版权和平台治理周期。内容能否合规上线、是否侵权、是否被平台限流，会直接影响商业化稳定性。",
+      "node_ids": [
+        "production-studio",
+        "compliance-review"
+      ]
+    },
+    {
+      "id": "distribution",
+      "title": "看平台和投流",
+      "subtitle": "流量成本决定项目盈亏",
+      "question": "为什么投流买量是核心卡点？",
+      "answer": "短剧不只是拍完等观众来，而是通过 APP、小程序、短视频平台和素材广告把用户拉进来。买量成本、素材点击率、付费转化和复购会决定项目能不能赚钱。",
+      "node_ids": [
+        "platform-distribution",
+        "traffic-buying",
+        "data-feedback"
+      ]
+    },
+    {
+      "id": "monetization",
+      "title": "最后看变现",
+      "subtitle": "付费、广告和出海才落到财报",
+      "question": "怎么判断 A 股公司是不是真受益？",
+      "answer": "先看公司属于内容 IP、平台、制作发行、营销投流还是出海，再查短剧收入、买量费用、毛利率、现金流、版权资产和监管风险。",
+      "node_ids": [
+        "conversion-model",
+        "overseas-localization",
+        "platform-distribution"
+      ]
+    }
+  ],
+  "flow_columns": [
+    {
+      "key": "demand",
+      "label": "需求牵引",
+      "description": "为什么用户愿意看",
+      "node_ids": [
+        "fragmented-attention-demand"
+      ]
+    },
+    {
+      "key": "content",
+      "label": "内容供给",
+      "description": "IP、剧本、AI 工具",
+      "node_ids": [
+        "content-ip-pool",
+        "ai-production"
+      ]
+    },
+    {
+      "key": "production",
+      "label": "制作合规",
+      "description": "拍摄、发行、审核",
+      "node_ids": [
+        "production-studio",
+        "compliance-review"
+      ]
+    },
+    {
+      "key": "distribution",
+      "label": "平台分发",
+      "description": "APP、小程序、渠道",
+      "node_ids": [
+        "platform-distribution",
+        "overseas-localization"
+      ]
+    },
+    {
+      "key": "growth",
+      "label": "投流增长",
+      "description": "买量和素材测试",
+      "node_ids": [
+        "traffic-buying",
+        "data-feedback"
+      ]
+    },
+    {
+      "key": "monetization",
+      "label": "商业变现",
+      "description": "付费、广告、品牌",
+      "node_ids": [
+        "conversion-model"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "default_status": "candidate",
+    "status_values": [
+      "supported",
+      "weakly_supported",
+      "candidate",
+      "unsupported"
+    ],
+    "upgrade_rule": "短剧公司角色升级为 supported 前，必须能落到年报、半年度报告、公告、投资者关系记录、短剧收入、平台数据、客户合作或监管备案等可追溯证据。",
+    "labels": [
+      {
+        "status": "supported",
+        "label": "强支持",
+        "meaning": "已经有比较明确的一手或高可信证据，能支撑这个节点或公司角色。",
+        "evidence_needed": "年报、半年度报告、公告、投资者关系记录、短剧收入、平台运营数据、备案或客户合作。"
+      },
+      {
+        "status": "weakly_supported",
+        "label": "弱支持",
+        "meaning": "产业逻辑和公开资料支持方向，但还缺收入、利润、费用、权益归属或平台数据拆分。",
+        "evidence_needed": "继续补财报分部、买量费用、净利率、现金流、平台 DAU/MAU、客户和项目清单。"
+      },
+      {
+        "status": "candidate",
+        "label": "待验证",
+        "meaning": "逻辑上相关，市场也提到过，但暂时不能当成确认受益。",
+        "evidence_needed": "先确认具体短剧业务、收入占比、上线项目、平台合作、版权权益和费用结构。"
+      },
+      {
+        "status": "unsupported",
+        "label": "证据不足",
+        "meaning": "目前只剩概念联想，缺少可验证事实，不能作为产业链映射结论。",
+        "evidence_needed": "需要找到公司公告、业务披露或可追溯项目，否则降级或移除。"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "fragmented-attention-demand",
+      "label": "碎片化娱乐需求",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "用户用几分钟刷一个强情绪故事，降低了观看门槛。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "短剧把强情绪、快节奏、低门槛内容压缩到几分钟一集，适合碎片化时间。",
+        "why_matters": "需求端决定行业天花板。用户时长和付费意愿增长，才会支撑平台、制作和投流继续投入。",
+        "benefit_logic": "用户时长越高，平台越愿意采购内容和投放广告，内容方才有更高变现空间。",
+        "watch": [
+          "短剧用户规模",
+          "人均使用时长",
+          "付费率和复购率",
+          "免费短剧广告填充率"
+        ],
+        "common_misread": "不能因为用户多就默认所有内容公司受益，短剧项目之间的盈亏差异很大。"
+      }
+    },
+    {
+      "id": "content-ip-pool",
+      "label": "IP / 剧本供给",
+      "layer": "upstream",
+      "group": "material",
+      "beginner_explanation": "网文 IP、原创剧本和题材库决定短剧能不能持续供给。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "短剧上游不是矿和材料，而是 IP、网文、剧本、题材库、编剧和版权。",
+        "why_matters": "短剧更新快，内容池越厚，越能快速测试题材和复制成功模型。",
+        "benefit_logic": "有 IP 和剧本储备的公司，更容易把存量版权变成短剧、漫剧或互动剧产品。",
+        "watch": [
+          "版权储备和 IP 改编数量",
+          "短剧上线部数",
+          "爆款率和完播率",
+          "版权成本和摊销"
+        ],
+        "common_misread": "有 IP 不等于能赚钱，还要看改编能力、分发渠道和投流效率。"
+      }
+    },
+    {
+      "id": "ai-production",
+      "label": "AI 剧本 / 漫剧工具",
+      "layer": "service",
+      "group": "system",
+      "beginner_explanation": "AI 可用于剧本创意、分镜、素材、翻译和动画短剧生产。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "AI 工具可以辅助剧本创意、项目评估、分镜、美术、素材生成、翻译配音和漫剧制作。",
+        "why_matters": "短剧拼的是上新速度和测试效率，AI 有机会降低试错成本。",
+        "benefit_logic": "如果 AI 能显著降低制作和素材成本，平台和内容公司会拥有更高项目周转率。",
+        "watch": [
+          "AI 工具实际覆盖环节",
+          "单位制作成本变化",
+          "AI 生成内容上线规模",
+          "版权和合规风险"
+        ],
+        "common_misread": "AI 概念不能直接等于短剧利润提升，必须看到成本、效率或内容数量变化。"
+      }
+    },
+    {
+      "id": "production-studio",
+      "label": "短剧制作 / 发行",
+      "layer": "midstream",
+      "group": "service",
+      "beginner_explanation": "负责选题、拍摄、剪辑、上线、发行和项目回款。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "制作发行环节把 IP 和剧本变成可上线产品，并决定内容质量、成本和交付速度。",
+        "why_matters": "短剧单部周期短，但爆款率不稳定。制作公司要靠项目组合和发行能力分散风险。",
+        "benefit_logic": "制作发行能力强的公司，能通过自制、联合出品、分账、平台合作和海外发行获得收入。",
+        "watch": [
+          "上线部数和爆款项目",
+          "单部成本和回本周期",
+          "分账收入和充值收入",
+          "应收账款和现金流"
+        ],
+        "common_misread": "拍摄能力不是唯一壁垒，选题、发行、投流和回款同样重要。"
+      }
+    },
+    {
+      "id": "compliance-review",
+      "label": "备案 / 审核 / 版权",
+      "layer": "service",
+      "group": "reliability",
+      "beginner_explanation": "短剧上线需要备案、审核和版权合规，违规会影响上线和流量。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "监管要求网络微短剧分类分层审核，并对平台、小程序和投流渠道提出备案和治理要求。",
+        "why_matters": "合规决定内容能不能上线、能不能推广、能不能持续经营。",
+        "benefit_logic": "合规能力强、内容体系正规的平台和制作方，更可能在行业出清后获得稳定份额。",
+        "watch": [
+          "备案号和许可证",
+          "平台审核政策",
+          "版权纠纷",
+          "监管通报和下架风险"
+        ],
+        "common_misread": "监管不是短期噪音，而是决定短剧行业能否长期健康增长的底层约束。"
+      }
+    },
+    {
+      "id": "platform-distribution",
+      "label": "平台 / 小程序 / APP 分发",
+      "layer": "downstream",
+      "group": "system",
+      "beginner_explanation": "通过短剧 APP、小程序、短视频平台和长视频平台触达用户。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "平台分发包括短剧 APP、小程序、短视频平台、长视频平台剧场和联合分账。",
+        "why_matters": "平台掌握流量、推荐和支付链路，是短剧商业化的核心入口。",
+        "benefit_logic": "有自有平台或强渠道合作的公司，能更直接拿到用户、数据和变现分成。",
+        "watch": [
+          "APP 用户规模",
+          "小程序矩阵",
+          "平台分账规则",
+          "内容采购和自制比例"
+        ],
+        "common_misread": "平台流量大不代表利润好，还要看买量成本、分成比例和留存。"
+      }
+    },
+    {
+      "id": "overseas-localization",
+      "label": "短剧出海 / 本土化",
+      "layer": "downstream",
+      "group": "service",
+      "beginner_explanation": "把短剧产品、语言、演员和题材适配海外用户。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "出海短剧需要本土题材、翻译配音、海外投流、支付渠道、版权和当地合规。",
+        "why_matters": "海外用户 ARPU 和付费模型可能更高，但获客、合规和文化适配难度也更高。",
+        "benefit_logic": "海外平台如果能形成稳定用户和付费流水，可能打开国内内容公司第二增长曲线。",
+        "watch": [
+          "海外流水和 ARR",
+          "海外用户增长",
+          "投流 ROI",
+          "本土化制作能力"
+        ],
+        "common_misread": "海外下载量不是收入，流水也不等于利润，要看平台归属、费用和分成。"
+      }
+    },
+    {
+      "id": "traffic-buying",
+      "label": "投流买量 / 素材测试",
+      "layer": "service",
+      "group": "core_component",
+      "beginner_explanation": "通过广告素材和买量把用户导入短剧，直接影响获客成本。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "投流是用短视频素材、信息流广告、达人和渠道推广把用户导入短剧。",
+        "why_matters": "短剧很多项目不是内容成本高，而是获客成本和付费转化决定盈亏。",
+        "benefit_logic": "能做素材测试、投放优化和品牌广告转化的公司，可能在短剧商业化里承担关键服务角色。",
+        "watch": [
+          "销售费用率",
+          "投流 ROI",
+          "广告素材点击率",
+          "充值转化和复购"
+        ],
+        "common_misread": "收入增长如果靠高买量堆出来，利润和现金流可能并不好。"
+      }
+    },
+    {
+      "id": "data-feedback",
+      "label": "数据复盘 / 爆款复制",
+      "layer": "service",
+      "group": "system",
+      "beginner_explanation": "用播放、付费、投流和留存数据反推题材、素材和上线节奏。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "短剧运营需要持续看点击、完播、充值、留存、复购和素材转化数据。",
+        "why_matters": "内容行业很难保证每部爆款，数据复盘能提高下一批内容和投放的命中率。",
+        "benefit_logic": "数据能力越强，越可能降低试错成本，提高项目组合回报。",
+        "watch": [
+          "爆款率",
+          "素材迭代速度",
+          "用户留存",
+          "单项目 ROI"
+        ],
+        "common_misread": "复盘能力很重要，但公司很少充分披露，不能把运营话术直接当强证据。"
+      }
+    },
+    {
+      "id": "conversion-model",
+      "label": "付费 / 广告 / 品牌变现",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "短剧最终通过用户充值、免费广告、会员、分账和品牌合作变现。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "短剧商业化包括 IAP 充值、免费广告、会员订阅、平台分账、品牌植入和定制剧。",
+        "why_matters": "变现模式决定收入质量。付费模式看复购和流水，免费模式看广告填充和 eCPM。",
+        "benefit_logic": "能持续提高 ARPU、广告收入和品牌预算的公司，才可能从内容热度转成财报兑现。",
+        "watch": [
+          "短剧收入占比",
+          "毛利率和净利率",
+          "销售费用率",
+          "经营现金流"
+        ],
+        "common_misread": "流水、收入和利润不是一回事，必须把渠道分成和买量费用扣掉看。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "fragmented-attention-demand",
+      "target": "content-ip-pool",
+      "relation_type": "pulls",
+      "label": "拉动内容供给",
+      "description": "碎片化娱乐需求增加后，平台和制作方需要更多题材、IP 和剧本。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "content-ip-pool",
+      "target": "ai-production",
+      "relation_type": "enables",
+      "label": "提升生产效率",
+      "description": "IP、剧本和题材库结合 AI 工具，可以提高创意、分镜、素材和漫剧生产效率。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "content-ip-pool",
+      "target": "production-studio",
+      "relation_type": "supplies",
+      "label": "供给拍摄项目",
+      "description": "IP 和剧本进入制作发行环节，变成可上线短剧。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "ai-production",
+      "target": "production-studio",
+      "relation_type": "improves",
+      "label": "降低试错成本",
+      "description": "AI 可辅助剧本、分镜、素材和翻译，提高制作和测试效率。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "production-studio",
+      "target": "compliance-review",
+      "relation_type": "requires",
+      "label": "先过审核",
+      "description": "短剧上线、投流和跨平台分发都需要备案、审核和版权合规。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "compliance-review",
+      "target": "platform-distribution",
+      "relation_type": "unlocks",
+      "label": "合规上线",
+      "description": "合规内容才能进入平台、小程序、APP 和投流渠道长期分发。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "platform-distribution",
+      "target": "traffic-buying",
+      "relation_type": "amplifies",
+      "label": "放大触达",
+      "description": "平台承接用户，投流买量把内容推到更多潜在付费或广告用户面前。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "traffic-buying",
+      "target": "data-feedback",
+      "relation_type": "measures",
+      "label": "反馈素材和题材",
+      "description": "投流数据反过来告诉平台和内容方哪些题材、封面和素材更容易转化。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "data-feedback",
+      "target": "conversion-model",
+      "relation_type": "optimizes",
+      "label": "优化变现",
+      "description": "复盘播放、充值、留存和广告数据，才能提高项目组合回报。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "platform-distribution",
+      "target": "overseas-localization",
+      "relation_type": "extends",
+      "label": "复制到海外",
+      "description": "国内平台经验可以扩展到海外，但需要本土化内容、投流和支付能力。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "overseas-localization",
+      "target": "conversion-model",
+      "relation_type": "expands",
+      "label": "打开海外变现",
+      "description": "海外短剧如果形成稳定付费和广告流水，会提高平台收入空间。",
+      "evidence_status": "weakly_supported"
+    }
+  ],
+  "companies": [
+    {
+      "name": "掌阅科技",
+      "ts_code": "603533.SH",
+      "nodes": [
+        "content-ip-pool",
+        "ai-production",
+        "production-studio",
+        "platform-distribution",
+        "traffic-buying",
+        "conversion-model",
+        "overseas-localization"
+      ],
+      "role": "阅读 IP / 短剧平台验证锚",
+      "tier": "validation_node",
+      "attention_level": "leader",
+      "attention_label": "短剧收入验证锚",
+      "leader_reason": "2025 半年度报告披露短剧等衍生业务收入快速增长，并成为公司第一大业务板块，是 A 股短剧收入验证较清晰的样本。",
+      "current_view": "掌阅科技 2025 半年度报告披露，短剧等衍生业务收入快速增长，已成为公司第一大业务板块；证券时报报道披露 2025 上半年短剧等衍生业务收入 8.38 亿元，同比增长 149.09%。它适合作为短剧从阅读 IP、AI 工具、内容运营到付费变现的验证锚。但公司仍要重点跟踪买量费用、利润率、现金流和海外业务是否持续贡献。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报中短剧收入、毛利和销售费用",
+        "确认短剧业务是否持续为第一大业务板块",
+        "拆分国内短剧和海外短剧收入",
+        "跟踪经营现金流和投流 ROI"
+      ],
+      "why_watch": "它能回答短剧是否真正进入财报：不是只说布局，而是已经出现较明确的收入板块。",
+      "evidence_basis": [
+        "2025 半年度报告披露短剧等衍生业务快速增长，并成为第一大业务板块。",
+        "公开报道披露 2025 上半年短剧等衍生业务收入和同比增速。",
+        "公司披露 AI 在数字阅读和短剧等场景应用，具备 IP 和内容运营基础。"
+      ],
+      "verification_focus": [
+        "短剧收入占比和持续性",
+        "销售费用率和买量 ROI",
+        "短剧毛利率和净利率",
+        "海外业务、现金流和版权成本"
+      ],
+      "risks": [
+        "短剧收入增长可能伴随高投流费用。",
+        "项目爆款率和用户复购存在波动。",
+        "监管、版权和平台政策变化会影响上线和推广。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "掌阅科技 2025 半年度报告",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-08-28",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/28/1224593945.PDF",
+          "evidence_grade": "A",
+          "usage": "确认短剧等衍生业务快速增长、AI 应用和公司业务结构变化。"
+        },
+        {
+          "title": "掌阅科技半年报报道",
+          "publisher": "证券时报",
+          "date": "2025-08-28",
+          "url": "https://www.stcn.com/article/detail/3330462.html",
+          "evidence_grade": "B",
+          "usage": "用于补充短剧等衍生业务收入 8.38 亿元和同比增速线索，仍以公司报告为主。"
+        }
+      ]
+    },
+    {
+      "name": "昆仑万维",
+      "ts_code": "300418.SZ",
+      "nodes": [
+        "platform-distribution",
+        "overseas-localization",
+        "traffic-buying",
+        "data-feedback",
+        "conversion-model"
+      ],
+      "role": "海外短剧平台 / 出海验证锚",
+      "tier": "validation_node",
+      "attention_level": "leader",
+      "attention_label": "海外平台龙头候选",
+      "leader_reason": "投资者关系材料披露 DramaWave 短剧业务 ARR、单月流水和 2025 年预期，适合验证短剧出海平台模式。",
+      "current_view": "昆仑万维投资者关系材料披露，短剧业务 2025 上半年持续高速增长，ARR 超过 2.4 亿美元，单月流水超过 2000 万美元，DramaWave 自制能力提升，并预计 2025 年末 ARR 达到 3.6 亿美元。它是短剧出海和平台化变现的强验证锚，但仍要跟踪投流成本、利润兑现和海外合规。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报中短剧平台收入、毛利和费用",
+        "确认 DramaWave ARR 和流水是否继续增长",
+        "拆分短剧平台收入和 AI / 游戏等业务贡献",
+        "跟踪海外投流成本和净利润影响"
+      ],
+      "why_watch": "它能帮助小白理解短剧出海：核心不是把国内剧翻译出去，而是海外平台、付费模型、投流和本土化生产能力。",
+      "evidence_basis": [
+        "投资者关系材料披露短剧业务 ARR、单月流水和年末目标。",
+        "公开报道披露 2025 上半年短剧平台收入 5.83 亿元，较 2024 全年有明显增长。",
+        "DramaWave 采用付费和免费结合模式，强化自制和全球化发行。"
+      ],
+      "verification_focus": [
+        "ARR、流水、收入和利润的口径差异",
+        "海外买量费用和回收周期",
+        "自制内容占比和爆款持续性",
+        "海外监管、支付和版权风险"
+      ],
+      "risks": [
+        "海外流水不等于利润，买量成本可能很高。",
+        "平台增长可能受单一爆款和投放策略影响。",
+        "海外数据、隐私、版权和内容监管要求更复杂。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "昆仑万维 2025 年投资者关系活动记录表",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-08-28",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/28/1224601157.PDF",
+          "evidence_grade": "A",
+          "usage": "确认短剧业务 ARR、单月流水、DramaWave 自制能力和 2025 年目标。"
+        },
+        {
+          "title": "昆仑万维半年报报道",
+          "publisher": "证券时报",
+          "date": "2025-08-28",
+          "url": "https://www.stcn.com/article/detail/3319887.html",
+          "evidence_grade": "B",
+          "usage": "用于补充短剧平台收入、付费免费模型和海外业务增长线索。"
+        }
+      ]
+    },
+    {
+      "name": "芒果超媒",
+      "ts_code": "300413.SZ",
+      "nodes": [
+        "content-ip-pool",
+        "production-studio",
+        "compliance-review",
+        "platform-distribution",
+        "conversion-model"
+      ],
+      "role": "长视频平台 / 精品短剧与 IP 衍生验证锚",
+      "tier": "validation_node",
+      "attention_level": "leader",
+      "attention_label": "平台内容龙头",
+      "leader_reason": "2025 半年度报告披露芒果 TV 大芒计划上线微短剧 1179 部，短剧战略从精品化、剧场化和多平台分发推进。",
+      "current_view": "芒果超媒 2025 半年度报告披露微短剧战略布局加速推进，芒果 TV 大芒计划上线微短剧 1179 部，接近去年同期 7 倍，并推进精品化、剧场化、多平台分发。它适合作为长视频平台切入短剧、IP 衍生和合规平台化运营的验证锚，但短剧收入没有单独充分拆分，仍需跟踪收入贡献和利润率。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报是否拆分短剧收入和成本",
+        "跟踪大芒计划上线数量和爆款率",
+        "确认短剧与芒果 TV 会员、广告、品牌合作的联动",
+        "跟踪与 Red 果等平台合作分账"
+      ],
+      "why_watch": "它能展示另一种短剧路径：不是纯买量平台，而是长视频平台用 IP、制作体系和剧场运营做精品短剧。",
+      "evidence_basis": [
+        "2025 半年度报告披露微短剧战略推进和上线数量。",
+        "公开报道提到精品短剧、剧场化运营和多平台分发案例。",
+        "公司拥有内容制作、平台分发和合规运营基础。"
+      ],
+      "verification_focus": [
+        "短剧收入和利润是否单独披露",
+        "短剧对会员、广告和品牌收入的拉动",
+        "精品短剧成本和回收周期",
+        "平台合作分账和版权权益"
+      ],
+      "risks": [
+        "短剧对公司整体收入贡献可能仍需拆分验证。",
+        "精品化路径成本更高，回本周期可能长于竖屏买量短剧。",
+        "长视频主业波动会影响整体估值判断。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "芒果超媒 2025 半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-23",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-23/1224557713.PDF",
+          "evidence_grade": "A",
+          "usage": "确认微短剧战略推进、大芒计划上线数量和平台化布局。"
+        },
+        {
+          "title": "芒果超媒短剧布局报道",
+          "publisher": "证券时报",
+          "date": "2025-08-18",
+          "url": "https://www.stcn.com/article/detail/3251692.html",
+          "evidence_grade": "B",
+          "usage": "用于补充精品短剧、剧场合作和多平台分发案例。"
+        }
+      ]
+    },
+    {
+      "name": "欢瑞世纪",
+      "ts_code": "000892.SZ",
+      "nodes": [
+        "production-studio",
+        "traffic-buying",
+        "platform-distribution",
+        "conversion-model"
+      ],
+      "role": "短剧制作发行 / 充值分销候选",
+      "tier": "validation_node",
+      "attention_level": "core_candidate",
+      "attention_label": "短剧弹性候选",
+      "leader_reason": "半年度报告披露天津星链主营短剧制作销售，收入主要来自短剧充值和分销，是制作发行端证据较清楚的样本。",
+      "current_view": "欢瑞世纪 2025 半年度报告披露，天津星链为 100% 持有的重要子公司，主营短剧制作销售，收入主要来自短剧充值和分销，并已形成剧场账号和小程序矩阵的付费、免费运营探索。它适合作为制作发行和投流闭环候选，但体量、利润率和持续爆款能力仍需验证。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报中天津星链全年收入和利润",
+        "确认短剧充值、分销和免费模式收入结构",
+        "跟踪小程序矩阵和海外平台进展",
+        "验证短剧业务是否改善公司现金流"
+      ],
+      "why_watch": "它能让小白看到短剧公司不只是拍摄，还可能覆盖充值、分销、小程序和投流运营。",
+      "evidence_basis": [
+        "2025 半年度报告披露天津星链主营短剧制作销售。",
+        "报告披露收入主要来自短剧充值和分销。",
+        "公开报道披露短剧业务收入显著增长和天津星链收入规模。"
+      ],
+      "verification_focus": [
+        "短剧业务收入和利润持续性",
+        "充值收入、分销收入和广告收入结构",
+        "投流费用和项目回本周期",
+        "海外平台和小程序矩阵运营数据"
+      ],
+      "risks": [
+        "公司整体业务体量较小，短剧项目波动可能影响较大。",
+        "投流买量和内容失败会放大业绩波动。",
+        "历史影视业务和资产减值风险仍需关注。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "欢瑞世纪 2025 半年度报告",
+          "publisher": "新浪财经公告镜像",
+          "date": "2025-08-26",
+          "url": "http://file.finance.sina.com.cn/211.154.219.97:9494/MRGG/CNSESZ_STOCK/2025/2025-8/2025-08-26/11359211.PDF",
+          "evidence_grade": "A",
+          "usage": "确认天津星链主营短剧制作销售、充值分销收入和小程序运营探索。"
+        },
+        {
+          "title": "短剧业务驱动欢瑞世纪收入增长报道",
+          "publisher": "证券时报",
+          "date": "2025-08-28",
+          "url": "https://www.stcn.com/article/detail/3319887.html",
+          "evidence_grade": "B",
+          "usage": "用于补充短剧业务收入增长和天津星链收入规模线索。"
+        }
+      ]
+    },
+    {
+      "name": "华策影视",
+      "ts_code": "300133.SZ",
+      "nodes": [
+        "content-ip-pool",
+        "ai-production",
+        "production-studio",
+        "overseas-localization"
+      ],
+      "role": "影视 IP / 短剧与出海候选",
+      "tier": "flexible_candidate",
+      "attention_level": "core_candidate",
+      "attention_label": "内容制作候选",
+      "leader_reason": "半年度报告披露微短剧、动画和 AI 工具布局，并上线海外短剧产品 DailyShort，但短剧收入贡献仍需拆分。",
+      "current_view": "华策影视 2025 半年度报告披露，公司加速微短剧、动画和算力布局，推进规模化与精品化，并上线 DailyShort 等产品，AI 工具支持 14 种语言内容制作。它适合作为影视 IP 公司切入短剧和出海的候选，但短剧收入占比、利润贡献和海外流水仍需补证据。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "查 2025 年报是否披露短剧收入和 DailyShort 数据",
+        "确认短剧月产能、上线项目和爆款率",
+        "拆分海外收入中短剧贡献",
+        "验证 AI 工具对成本和效率的实际影响"
+      ],
+      "why_watch": "它代表传统影视公司从长剧制作走向短剧、动画和海外内容产品的转型路径。",
+      "evidence_basis": [
+        "2025 半年度报告披露微短剧、动画和 AI 工具布局。",
+        "公开报道提到月产能、DailyShort app 和海外收入增长。",
+        "当前短剧收入贡献尚未充分拆分，因此先按弱支持处理。"
+      ],
+      "verification_focus": [
+        "短剧收入和利润占比",
+        "DailyShort 用户和流水",
+        "AI 工具是否降低制作成本",
+        "传统影视主业与短剧业务协同"
+      ],
+      "risks": [
+        "短剧可能只是公司多元化布局中的一部分。",
+        "精品化内容成本和回收周期较长。",
+        "海外收入增长不一定全部来自短剧。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "华策影视 2025 半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-20",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-20/1224517705.PDF",
+          "evidence_grade": "A",
+          "usage": "确认微短剧、动画、AI 工具和海外产品布局。"
+        },
+        {
+          "title": "华策影视微短剧战略报道",
+          "publisher": "证券时报",
+          "date": "2025-08-12",
+          "url": "https://www.stcn.com/article/detail/3193937.html",
+          "evidence_grade": "B",
+          "usage": "用于补充月产能、DailyShort 和海外收入线索。"
+        }
+      ]
+    },
+    {
+      "name": "中文在线",
+      "ts_code": "300364.SZ",
+      "nodes": [
+        "content-ip-pool",
+        "ai-production",
+        "production-studio",
+        "platform-distribution",
+        "overseas-localization"
+      ],
+      "role": "数字阅读 IP / AI 剧本与出海平台线索",
+      "tier": "flexible_candidate",
+      "attention_level": "core_candidate",
+      "attention_label": "IP 与出海候选",
+      "leader_reason": "半年度报告披露 AI 写作工具在短剧剧本和动画剧本中规模化应用，并布局动漫短剧和 FlareFlow 短剧聚合；ReelShort 相关权益归属仍需核对。",
+      "current_view": "中文在线 2025 半年度报告披露，中文逍遥在短剧剧本和动画剧本中已内部规模化使用，并推进动漫短剧储备项目和 FlareFlow 短剧聚合。公司与海外短剧平台 ReelShort / Crazy Maple Studio 的市场关注度较高，但权益归属、并表口径和收入贡献需要回到公告与财报核对，因此当前按弱支持候选处理。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "查 2025 年报中短剧、动漫短剧和 FlareFlow 进展",
+        "核对 ReelShort / Crazy Maple Studio 权益和并表口径",
+        "确认短剧剧本 AI 工具是否带来外部收入",
+        "拆分 IP 授权、平台收入和投资收益"
+      ],
+      "why_watch": "它适合做教学样本：公司确实有 IP 和 AI 短剧线索，但市场热议的平台归属和财务贡献必须精确核对。",
+      "evidence_basis": [
+        "2025 半年度报告披露中文逍遥用于短剧剧本和动画剧本。",
+        "报告披露动漫短剧项目储备和 FlareFlow 聚合短剧内容。",
+        "ReelShort 相关线索需要继续确认权益、并表和收入归属，因此不直接升为强支持。"
+      ],
+      "verification_focus": [
+        "短剧业务收入和权益归属",
+        "ReelShort / Crazy Maple Studio 并表或投资收益口径",
+        "AI 工具在短剧中的商业化程度",
+        "版权纠纷和海外合规"
+      ],
+      "risks": [
+        "海外平台热度可能不完全归属于上市公司。",
+        "AI 工具使用不等于直接收入。",
+        "版权和内容合规风险较高。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中文在线 2025 半年度报告",
+          "publisher": "深交所公告镜像",
+          "date": "2025-08-23",
+          "url": "https://disc.static.szse.cn/disc/disk03/finalpage/2025-08-23/b62c8605-e81a-46f0-a2bf-041f2eaff674.PDF",
+          "evidence_grade": "A",
+          "usage": "确认 AI 写作工具在短剧剧本、动画剧本中的应用，以及动漫短剧和 FlareFlow 线索。"
+        },
+        {
+          "title": "海外短剧平台版权纠纷报道",
+          "publisher": "证券时报",
+          "date": "2025-06-04",
+          "url": "https://www.stcn.com/article/detail/2763117.html",
+          "evidence_grade": "B",
+          "usage": "作为 ReelShort、DramaBox 和版权风险线索，需继续回到公告核对权益归属。"
+        }
+      ]
+    },
+    {
+      "name": "引力传媒",
+      "ts_code": "603598.SH",
+      "nodes": [
+        "traffic-buying",
+        "data-feedback",
+        "conversion-model"
+      ],
+      "role": "短剧营销 / 投流服务候选",
+      "tier": "flexible_candidate",
+      "attention_level": "watch",
+      "attention_label": "营销投流候选",
+      "leader_reason": "年报和问询回复披露短剧营销、短剧小程序和创新业务线索，但收入体量、毛利和回款仍需持续验证。",
+      "current_view": "引力传媒公开披露短剧营销、短剧小程序平台和创新业务落地，短剧营销成为新增业务方向。它更像短剧产业链里的投流、内容营销和商业化服务候选，而不是内容 IP 或平台龙头。当前先按弱支持处理，重点看短剧营销收入、毛利率、应收账款和现金流。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "查 2025 年报和问询回复中的短剧营销收入",
+        "确认短剧营销客户、案例和毛利率",
+        "跟踪应收账款、预付款和现金流",
+        "区分广告营销主业和短剧新增业务"
+      ],
+      "why_watch": "它能补上短剧商业模式里最容易被忽略的一环：买量、素材、广告主和品牌预算。",
+      "evidence_basis": [
+        "公开披露材料提到短剧营销和短剧小程序平台。",
+        "公司主业是营销服务，和短剧投流、品牌定制、商业化服务有产业链关系。",
+        "短剧业务体量和利润质量需要进一步拆分验证。"
+      ],
+      "verification_focus": [
+        "短剧营销收入规模",
+        "毛利率和回款周期",
+        "客户和品牌合作案例",
+        "应收账款和媒体资源预付款"
+      ],
+      "risks": [
+        "营销服务公司容易受客户预算周期影响。",
+        "短剧业务可能只是新增业务的一部分。",
+        "应收账款和现金流质量需要重点核查。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "引力传媒 2024 年年度报告信息披露监管工作函回复",
+          "publisher": "新浪财经公告镜像",
+          "date": "2025-06-28",
+          "url": "http://file.finance.sina.com.cn/211.154.219.97:9494/MRGG/CNSESH_STOCK/2025/2025-6/2025-06-28/11208331.PDF",
+          "evidence_grade": "A",
+          "usage": "用于核对短剧营销、创新业务和财务质量相关披露。"
+        },
+        {
+          "title": "引力传媒 2025 半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-28",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-28/1224596794.PDF",
+          "evidence_grade": "A",
+          "usage": "用于继续核对短剧营销收入、客户和现金流。"
+        }
+      ]
+    },
+    {
+      "name": "幸福蓝海",
+      "ts_code": "300528.SZ",
+      "nodes": [
+        "content-ip-pool",
+        "production-studio",
+        "compliance-review"
+      ],
+      "role": "国资内容制作 / 短剧项目观察",
+      "tier": "flexible_candidate",
+      "attention_level": "watch",
+      "attention_label": "项目观察",
+      "leader_reason": "公司披露微短剧项目和播放数据线索，但短剧收入、利润和持续项目能力仍需确认。",
+      "current_view": "幸福蓝海公开资料披露参与多部微短剧项目，部分项目播放量较高，也有文旅和正能量短剧方向。当前更适合作为国资内容制作和项目储备观察样本，不适合作为短剧强受益结论。后续重点查短剧收入、项目权益、利润率和平台合作。",
+      "evidence_status": "candidate",
+      "next_checks": [
+        "查 2025 年报中短剧项目和收入披露",
+        "确认项目权益、分账和利润贡献",
+        "核对播放量与收入之间的关系",
+        "跟踪文旅短剧和平台合作订单"
+      ],
+      "why_watch": "它能提醒小白：播放量高不等于上市公司业绩贡献高，还要看权益、分账和收入确认。",
+      "evidence_basis": [
+        "公开年报和报道披露公司参与微短剧项目。",
+        "部分项目播放量较高，但短剧收入和利润贡献没有充分拆分。",
+        "因此作为观察样本，而不是核心强支持公司。"
+      ],
+      "verification_focus": [
+        "短剧收入和利润占比",
+        "项目权益比例",
+        "平台分账和回款",
+        "项目可持续性"
+      ],
+      "risks": [
+        "播放量和业绩贡献可能脱节。",
+        "项目制业务波动大。",
+        "影视主业和院线业务仍会影响整体利润。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "幸福蓝海 2024 年年度报告",
+          "publisher": "100est 公告镜像",
+          "date": "2025-04-11",
+          "url": "https://www.100est.com/res/financial-report/r2024/SZ300528_202504111654883625.pdf",
+          "evidence_grade": "A",
+          "usage": "用于确认微短剧项目披露和公司内容制作背景。"
+        },
+        {
+          "title": "幸福蓝海微短剧业务报道",
+          "publisher": "证券时报",
+          "date": "2025-04-22",
+          "url": "https://www.stcn.com/article/detail/2155100.html",
+          "evidence_grade": "B",
+          "usage": "用于补充微短剧播放量和项目线索，仍需回到公司年报确认收入贡献。"
+        }
+      ]
+    }
+  ],
+  "concept_diagrams": [
+    {
+      "id": "business-model",
+      "title": "短剧的钱从哪里来",
+      "subtitle": "先分清流水、收入和利润",
+      "icon": "system",
+      "node_ids": [
+        "platform-distribution",
+        "traffic-buying",
+        "conversion-model"
+      ],
+      "takeaway": "短剧项目赚不赚钱，最终看用户付费或广告收入能否覆盖内容成本、渠道分成和买量费用。",
+      "parts": [
+        {
+          "label": "用户进入",
+          "role": "流量",
+          "description": "通过 APP、小程序、短视频平台或广告素材进入短剧。"
+        },
+        {
+          "label": "产生流水",
+          "role": "收入池",
+          "description": "用户充值、广告展示、会员或品牌合作形成商业化收入。"
+        },
+        {
+          "label": "扣除成本",
+          "role": "利润",
+          "description": "还要扣内容成本、平台分成、渠道费、投流费和版权成本。"
+        }
+      ]
+    },
+    {
+      "id": "content-factory",
+      "title": "短剧为什么像内容工厂",
+      "subtitle": "快速上新、快速测试、快速复盘",
+      "icon": "control",
+      "node_ids": [
+        "content-ip-pool",
+        "ai-production",
+        "data-feedback"
+      ],
+      "takeaway": "短剧的壁垒不只是会拍，而是能不能持续用数据提高题材、素材和投放命中率。",
+      "parts": [
+        {
+          "label": "题材库",
+          "role": "供给",
+          "description": "IP、网文、热点题材和原创剧本形成内容池。"
+        },
+        {
+          "label": "快速制作",
+          "role": "效率",
+          "description": "AI 工具、剧场化团队和标准化流程提高上新速度。"
+        },
+        {
+          "label": "数据复盘",
+          "role": "迭代",
+          "description": "用完播、充值、留存和 ROI 反推下一批内容。"
+        }
+      ]
+    }
+  ],
+  "common_misreads": [
+    {
+      "title": "把短剧当普通影视制作",
+      "correction": "短剧当然需要制作，但真正决定盈亏的是内容命中率、渠道分成、买量成本和复购。"
+    },
+    {
+      "title": "看到播放量就当业绩",
+      "correction": "播放量不能直接等于收入，更不能等于利润。要看权益归属、分账、广告填充、充值和成本。"
+    },
+    {
+      "title": "把海外流水当上市公司收入",
+      "correction": "海外平台要先确认权益归属、并表口径、分成和投流费用，再判断上市公司受益。"
+    },
+    {
+      "title": "忽略监管和版权",
+      "correction": "短剧已经进入备案和审核周期，版权纠纷、内容违规和平台限流都会影响商业化。"
+    }
+  ],
+  "financial_translations": [
+    {
+      "node_id": "content-ip-pool",
+      "title": "内容 IP：看版权储备和改编效率",
+      "watch": "IP 数量、短剧上线部数、爆款率、版权成本、无形资产摊销。",
+      "source_hint": "年报、版权资产披露、短剧项目清单。",
+      "risk": "IP 多不等于爆款多，版权成本也可能拖累利润。"
+    },
+    {
+      "node_id": "production-studio",
+      "title": "制作发行：看项目回本和分账",
+      "watch": "单部成本、上线数量、分账收入、充值收入、项目毛利和回款。",
+      "source_hint": "年报、半年度报告、项目公告、投资者关系。",
+      "risk": "项目制波动大，爆款率下降会快速影响利润。"
+    },
+    {
+      "node_id": "platform-distribution",
+      "title": "平台分发：看用户和平台收入质量",
+      "watch": "APP 用户、付费率、广告收入、平台分成、自制和采购比例。",
+      "source_hint": "年报、平台运营披露、投资者关系。",
+      "risk": "用户增长如果依赖高买量，利润质量会打折。"
+    },
+    {
+      "node_id": "traffic-buying",
+      "title": "投流：看销售费用率和 ROI",
+      "watch": "销售费用率、买量成本、投流 ROI、素材点击率、充值回收周期。",
+      "source_hint": "财报费用科目、管理层讨论、投放合作披露。",
+      "risk": "收入增长可能被买量费用吞掉。"
+    },
+    {
+      "node_id": "conversion-model",
+      "title": "变现：看流水、收入和利润的区别",
+      "watch": "短剧收入占比、毛利率、净利率、经营现金流、渠道分成。",
+      "source_hint": "年报、半年报、财报附注、投资者问答。",
+      "risk": "流水高不等于上市公司确认收入高，更不等于利润高。"
+    },
+    {
+      "node_id": "compliance-review",
+      "title": "合规：看备案、版权和下架风险",
+      "watch": "备案号、许可证、版权纠纷、监管通报、平台治理政策。",
+      "source_hint": "国家广电总局、平台规则、公司公告、诉讼披露。",
+      "risk": "内容违规或版权纠纷会直接影响上线、投流和收入确认。"
+    }
+  ],
+  "catalysts": [
+    {
+      "horizon": "短期",
+      "title": "短剧收入进入财报主线",
+      "why": "当公司开始披露短剧收入、收入占比或短剧成为第一大业务板块，市场会更容易从概念转向业绩验证。",
+      "watch": "掌阅科技、昆仑万维、欢瑞世纪等公司的短剧收入、毛利和现金流。",
+      "risk": "收入高增长可能同时伴随高买量费用和利润压力。"
+    },
+    {
+      "horizon": "中期",
+      "title": "免费短剧和平台合作扩大",
+      "why": "免费短剧依赖广告变现和平台流量，如果广告填充和 eCPM 稳定，可能扩大用户规模。",
+      "watch": "红果、河马、长视频平台剧场、APP 用户时长和广告收入。",
+      "risk": "广告预算周期、平台分成和流量规则变化会影响收入。"
+    },
+    {
+      "horizon": "中期",
+      "title": "短剧出海平台放量",
+      "why": "海外短剧如果 ARR、流水和用户持续提升，能为内容平台打开新增长曲线。",
+      "watch": "DramaWave、ReelShort 等海外平台流水、ARR、买量成本和本土化制作。",
+      "risk": "海外流水归属、并表口径和投流费用必须逐项核对。"
+    },
+    {
+      "horizon": "长期",
+      "title": "监管出清后精品化和合规平台受益",
+      "why": "备案、审核和版权治理会挤出粗放内容，规范平台和专业制作方可能获得更稳定份额。",
+      "watch": "国家广电总局政策、平台白名单、备案数量、版权纠纷和下架情况。",
+      "risk": "监管收紧短期可能压制上线速度和题材空间。"
+    }
+  ],
+  "tracking_metrics": [
+    {
+      "name": "短剧收入占比和增速",
+      "why": "判断短剧是否已经从概念进入财报主线。",
+      "source_hint": "年报、半年度报告、财报附注、投资者关系。"
+    },
+    {
+      "name": "销售费用率和投流 ROI",
+      "why": "短剧收入如果主要靠买量，必须确认利润是否被投流吃掉。",
+      "source_hint": "财报费用科目、管理层讨论、平台投放数据。"
+    },
+    {
+      "name": "APP / 小程序用户和人均时长",
+      "why": "用户时长和留存决定平台商业化空间。",
+      "source_hint": "行业报告、第三方数据、平台披露。"
+    },
+    {
+      "name": "上线部数、爆款率和回本周期",
+      "why": "短剧项目制波动大，项目组合质量比单部播放量更重要。",
+      "source_hint": "公司公告、项目清单、平台榜单、投资者关系。"
+    },
+    {
+      "name": "海外 ARR、流水和买量成本",
+      "why": "出海平台要同时看增长和成本，流水不能直接当利润。",
+      "source_hint": "投资者关系、年报、海外平台数据。"
+    },
+    {
+      "name": "备案、版权和监管风险",
+      "why": "合规决定短剧能否稳定上线和持续投放。",
+      "source_hint": "国家广电总局、平台规则、公司公告、诉讼披露。"
+    }
+  ],
+  "sources": [
+    {
+      "title": "关于进一步统筹发展和安全促进网络微短剧行业健康繁荣发展的通知",
+      "publisher": "国家广播电视总局",
+      "date": "2025-02-05",
+      "url": "https://www.nrta.gov.cn/art/2025/2/5/art_113_70148.html",
+      "source_type": "regulation",
+      "usage": "用于确认微短剧分类分层审核、白名单、总编辑负责制和备案审核等监管口径。"
+    },
+    {
+      "title": "中国微短剧行业发展白皮书（2025）发布",
+      "publisher": "中国网络视听协会",
+      "date": "2025-11-11",
+      "url": "http://www.cnsa.cn/art/2025/11/11/art_1955_47836.html",
+      "source_type": "industry_report",
+      "usage": "用于确认微短剧企业数量、用户时长、免费短剧份额和行业精品化、国际化趋势。"
+    },
+    {
+      "title": "第十三届中国网络视听大会发布行业报告",
+      "publisher": "新华社",
+      "date": "2026-04-16",
+      "url": "https://www.news.cn/politics/20260416/cac5d121fdbf4dd88a92f22bc2218e9d/c.html",
+      "source_type": "industry_report",
+      "usage": "用于确认网络视听市场规模、微短剧用户时长和行业增长背景。"
+    },
+    {
+      "title": "微短剧行业规模和 A 股布局报道",
+      "publisher": "证券时报",
+      "date": "2025-10-30",
+      "url": "https://www.stcn.com/article/detail/2264859.html",
+      "source_type": "media_industry_clue",
+      "usage": "用于辅助理解短剧市场规模、用户规模和 A 股公司布局线索，不能单独支撑强结论。"
+    },
+    {
+      "title": "掌阅科技 2025 半年度报告",
+      "publisher": "腾讯财经公告镜像",
+      "date": "2025-08-28",
+      "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/28/1224593945.PDF",
+      "source_type": "company_report",
+      "usage": "用于确认掌阅科技短剧等衍生业务增长、AI 应用和业务结构变化。"
+    },
+    {
+      "title": "昆仑万维 2025 年投资者关系活动记录表",
+      "publisher": "腾讯财经公告镜像",
+      "date": "2025-08-28",
+      "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/28/1224601157.PDF",
+      "source_type": "investor_relations",
+      "usage": "用于确认 DramaWave 的 ARR、单月流水、自制能力和短剧出海平台进展。"
+    },
+    {
+      "title": "芒果超媒 2025 半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-23",
+      "url": "http://static.cninfo.com.cn/finalpage/2025-08-23/1224557713.PDF",
+      "source_type": "company_report",
+      "usage": "用于确认芒果 TV 微短剧战略、大芒计划上线数量和剧场化运营。"
+    },
+    {
+      "title": "欢瑞世纪 2025 半年度报告",
+      "publisher": "新浪财经公告镜像",
+      "date": "2025-08-26",
+      "url": "http://file.finance.sina.com.cn/211.154.219.97:9494/MRGG/CNSESZ_STOCK/2025/2025-8/2025-08-26/11359211.PDF",
+      "source_type": "company_report",
+      "usage": "用于确认天津星链主营短剧制作销售、充值分销和小程序矩阵探索。"
+    },
+    {
+      "title": "华策影视 2025 半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-20",
+      "url": "https://static.cninfo.com.cn/finalpage/2025-08-20/1224517705.PDF",
+      "source_type": "company_report",
+      "usage": "用于确认微短剧、动画、AI 工具和海外产品布局。"
+    },
+    {
+      "title": "中文在线 2025 半年度报告",
+      "publisher": "深交所公告镜像",
+      "date": "2025-08-23",
+      "url": "https://disc.static.szse.cn/disc/disk03/finalpage/2025-08-23/b62c8605-e81a-46f0-a2bf-041f2eaff674.PDF",
+      "source_type": "company_report",
+      "usage": "用于确认 AI 写作工具在短剧剧本和动画剧本中的应用、动漫短剧和 FlareFlow 线索。"
+    }
+  ]
+}

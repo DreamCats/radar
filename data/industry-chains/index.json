@@ -28,6 +28,89 @@
       "audience_level": "beginner_to_research",
       "evidence_level": "secondary_sources_first_draft",
       "summary": "高功耗 GPU 和高密度 AI 服务器推动数据中心从风冷走向液冷，核心观察点是冷板、CDU、UQD、manifold、系统可靠性和客户验证。"
+    },
+    {
+      "chain_id": "solid-state-battery",
+      "title": "固态电池",
+      "category": "新能源车 / 动力电池材料与设备",
+      "aliases": [
+        "全固态电池",
+        "半固态电池",
+        "准固态电池",
+        "固态锂电池"
+      ],
+      "status": "draft",
+      "sort_order": 20,
+      "content_path": "chains/solid-state-battery.md",
+      "data_path": "chains/solid-state-battery.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "新能源车",
+        "动力电池",
+        "固态电解质",
+        "干法电极",
+        "中试线"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "company_reports_first_draft",
+      "summary": "固态电池从高安全、高能量密度需求出发，核心观察点是路线选择、固态电解质、固固界面、正负极适配、干法电极设备和中试量产验证。"
+    },
+    {
+      "chain_id": "short-drama-entertainment",
+      "title": "微短剧 / 影视娱乐",
+      "category": "传媒娱乐 / 内容平台与营销",
+      "aliases": [
+        "短剧",
+        "微短剧",
+        "短剧出海",
+        "互动剧",
+        "AI 漫剧"
+      ],
+      "status": "draft",
+      "sort_order": 30,
+      "content_path": "chains/short-drama-entertainment.md",
+      "data_path": "chains/short-drama-entertainment.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "传媒",
+        "内容 IP",
+        "短剧平台",
+        "投流买量",
+        "出海",
+        "监管合规"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "company_reports_and_regulation_first_draft",
+      "summary": "微短剧不是传统制造链，而是内容命中率、平台分发、投流 ROI、付费/广告转化和监管合规共同决定的商业模式链。"
+    },
+    {
+      "chain_id": "humanoid-robotics",
+      "title": "人形机器人 / 具身智能",
+      "category": "AI 硬件 / 智能制造与机器人",
+      "aliases": [
+        "人形机器人",
+        "具身智能机器人",
+        "通用机器人",
+        "机器人执行器",
+        "灵巧手"
+      ],
+      "status": "draft",
+      "sort_order": 40,
+      "content_path": "chains/humanoid-robotics.md",
+      "data_path": "chains/humanoid-robotics.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "具身智能",
+        "人形机器人",
+        "执行器",
+        "谐波减速器",
+        "六维力传感器",
+        "3D 视觉",
+        "灵巧手"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "company_reports_and_policy_first_draft",
+      "summary": "人形机器人从具身智能需求出发，核心观察点是场景验证、大脑/小脑、关节执行器、减速器、电机、力/视觉传感器、灵巧手和整机量产。"
     }
   ]
 }

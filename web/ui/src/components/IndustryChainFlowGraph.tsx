@@ -1,11 +1,13 @@
+import { useEffect, useRef, useState } from "react";
+
 import {
   Background,
   Controls,
-  MarkerType,
   Position,
   ReactFlow,
   type Edge as FlowEdge,
   type Node as FlowNode,
+  type ReactFlowInstance,
 } from "@xyflow/react";
 
 import type {
@@ -14,13 +16,17 @@ import type {
   IndustryChainLearningStep,
   IndustryChainNode,
 } from "../types";
+import { buildGraphEdges, FlowNodeLabel, isGraphMetaNode, type GraphColumn } from "./IndustryChainGraphShared";
+import { buildKnowledgeGraphEdges, buildKnowledgeGraphNodes } from "./IndustryChainKnowledgeGraph";
 
 const COLUMN_X = 190;
 const MAIN_Y = 74;
 const BRANCH_Y = 104;
 const COLUMN_LABEL_Y = -72;
 
-const GRAPH_COLUMNS = [
+type GraphViewMode = "map" | "path";
+
+const LEGACY_GRAPH_COLUMNS: GraphColumn[] = [
   { key: "demand", label: "需求牵引", description: "AI 为什么拉动算力", nodeIds: ["demand-ai-compute"] },
   { key: "server", label: "服务器功耗", description: "功耗和热密度上升", nodeIds: ["ai-server"] },
   { key: "scenario", label: "场景压力", description: "风冷开始不够用", nodeIds: ["high-density-rack"] },
@@ -48,20 +54,6 @@ const NODE_LAYOUT: Record<string, { column: number; row: number }> = {
   "pump-valve-pipe": { column: 5, row: 3 },
 };
 
-const NODE_BADGE_LABELS: Record<string, string> = {
-  "demand-ai-compute": "驱动",
-  "ai-server": "功耗",
-  "high-density-rack": "压力",
-  "liquid-system": "方案",
-  "cold-plate": "卡点",
-  uqd: "卡点",
-  manifold: "卡点",
-  cdu: "卡点",
-  monitoring: "卡点",
-  coolant: "支撑",
-  "pump-valve-pipe": "支撑",
-};
-
 export function IndustryChainGraph({
   activeStep,
   data,
@@ -75,28 +67,59 @@ export function IndustryChainGraph({
   selectedNode: IndustryChainNode | null;
   onSelectNode: (nodeId: string) => void;
 }) {
+  const [viewMode, setViewMode] = useState<GraphViewMode>("map");
+  const columns = graphColumnsForData(data);
+  const nodeLayouts = buildNodeLayouts(data, columns);
   const activeNodeIds = new Set(activeStep?.node_ids ?? []);
   const relatedNodeIds = new Set(relatedEdges.flatMap((edge) => [edge.source, edge.target]));
-  const nodes = buildFlowNodes(data, selectedNode?.id, activeNodeIds, relatedNodeIds);
-  const edges = buildFlowEdges(data, selectedNode?.id, activeNodeIds, relatedEdges);
+  const nodes =
+    viewMode === "map"
+      ? buildKnowledgeGraphNodes(data, selectedNode?.id, activeNodeIds, relatedNodeIds, columns)
+      : buildFlowNodes(data, selectedNode?.id, activeNodeIds, relatedNodeIds, columns, nodeLayouts);
+  const edges =
+    viewMode === "map"
+      ? buildKnowledgeGraphEdges(data, selectedNode?.id, activeNodeIds, relatedEdges, columns)
+      : buildGraphEdges(data, selectedNode?.id, activeNodeIds, relatedEdges);
   const nodesById = new Map(data.nodes.map((node) => [node.id, node]));
 
   return (
     <section className="industry-chain-graph-panel">
       <div className="industry-chain-section-head">
         <div>
-          <span className="eyebrow">全局关系链</span>
-          <h2>{activeStep ? `${activeStep.title}：${activeStep.question}` : "从外部需求到内部卡点"}</h2>
+          <span className="eyebrow">全局知识图谱</span>
+          <h2>{graphTitle(viewMode, data.title, activeStep)}</h2>
         </div>
-        <span className="industry-chain-status-pill">{activeStep ? "当前分镜" : statusLabel(data.status)}</span>
+        <div className="industry-chain-graph-actions">
+          <div className="industry-chain-segmented" role="tablist" aria-label="图谱视图">
+            <button
+              className={viewMode === "map" ? "active" : ""}
+              type="button"
+              role="tab"
+              aria-selected={viewMode === "map"}
+              onClick={() => setViewMode("map")}
+            >
+              全量图谱
+            </button>
+            <button
+              className={viewMode === "path" ? "active" : ""}
+              type="button"
+              role="tab"
+              aria-selected={viewMode === "path"}
+              onClick={() => setViewMode("path")}
+            >
+              学习路径
+            </button>
+          </div>
+          <span className="industry-chain-status-pill">{viewMode === "map" ? "知识图谱" : "路径分镜"}</span>
+        </div>
       </div>
-      <MobileChainRail data={data} selectedNodeId={selectedNode?.id} onSelectNode={onSelectNode} />
+      <MobileChainRail columns={columns} data={data} selectedNodeId={selectedNode?.id} onSelectNode={onSelectNode} />
       <div className="industry-chain-flow-desktop">
-        <FlowCanvas edges={edges} nodes={nodes} onSelectNode={onSelectNode} />
+        <FlowCanvas edges={edges} graphKey={data.chain_id} mode={viewMode} nodes={nodes} onSelectNode={onSelectNode} />
       </div>
       <details className="industry-chain-flow-mobile-details">
         <summary>展开完整图谱</summary>
-        <FlowCanvas edges={edges} nodes={nodes} onSelectNode={onSelectNode} />
+        <FlowCanvas edges={edges} graphKey={data.chain_id} mode={viewMode} nodes={nodes} onSelectNode={onSelectNode} />
       </details>
       <CausalRelationStrip edges={relatedEdges} nodesById={nodesById} onSelectNode={onSelectNode} />
     </section>
@@ -105,15 +128,28 @@ export function IndustryChainGraph({
 
 function FlowCanvas({
   edges,
+  graphKey,
+  mode,
   nodes,
   onSelectNode,
 }: {
   edges: FlowEdge[];
+  graphKey: string;
+  mode: GraphViewMode;
   nodes: FlowNode[];
   onSelectNode: (nodeId: string) => void;
 }) {
+  const flowRef = useRef<ReactFlowInstance | null>(null);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      void flowRef.current?.fitView({ padding: 0.12, duration: 220 });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [graphKey, mode]);
+
   return (
-    <div className="industry-chain-flow-canvas">
+    <div className={`industry-chain-flow-canvas ${mode === "map" ? "knowledge-map" : "path-map"}`}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -125,8 +161,11 @@ function FlowCanvas({
         nodesConnectable={false}
         elementsSelectable
         proOptions={{ hideAttribution: true }}
+        onInit={(instance) => {
+          flowRef.current = instance;
+        }}
         onNodeClick={(_, node) => {
-          if (!node.id.startsWith("column-")) {
+          if (!isGraphMetaNode(node.id)) {
             onSelectNode(node.id);
           }
         }}
@@ -138,11 +177,20 @@ function FlowCanvas({
   );
 }
 
+function graphTitle(mode: GraphViewMode, title: string, activeStep: IndustryChainLearningStep | null): string {
+  if (mode === "map") {
+    return `${title} 的核心关系地图`;
+  }
+  return activeStep ? `${activeStep.title}：${activeStep.question}` : "从外部需求到内部卡点";
+}
+
 function MobileChainRail({
+  columns,
   data,
   selectedNodeId,
   onSelectNode,
 }: {
+  columns: GraphColumn[];
   data: IndustryChainData;
   selectedNodeId?: string;
   onSelectNode: (nodeId: string) => void;
@@ -150,7 +198,7 @@ function MobileChainRail({
   const nodesById = new Map(data.nodes.map((node) => [node.id, node]));
   return (
     <div className="industry-chain-mobile-rail" aria-label="移动端简化产业链">
-      {GRAPH_COLUMNS.map((column, index) => {
+      {columns.map((column, index) => {
         const columnNodes = column.nodeIds
           .map((nodeId) => nodesById.get(nodeId))
           .filter((node): node is IndustryChainNode => Boolean(node));
@@ -188,8 +236,10 @@ function buildFlowNodes(
   selectedNodeId: string | undefined,
   activeNodeIds: Set<string>,
   relatedNodeIds: Set<string>,
+  columns: GraphColumn[],
+  nodeLayouts: Map<string, { column: number; row: number }>,
 ): FlowNode[] {
-  const columnHeaderNodes = GRAPH_COLUMNS.map((column, index) => ({
+  const columnHeaderNodes = columns.map((column, index) => ({
     id: `column-${column.key}`,
     position: { x: index * COLUMN_X, y: COLUMN_LABEL_Y },
     data: { label: <ColumnLabel description={column.description} label={column.label} /> },
@@ -198,7 +248,7 @@ function buildFlowNodes(
     selectable: false,
   }));
   const chainNodes = data.nodes.map((node) => {
-    const layout = NODE_LAYOUT[node.id] ?? fallbackNodeLayout(node);
+    const layout = nodeLayouts.get(node.id) ?? { column: 0, row: 0 };
     const selected = node.id === selectedNodeId;
     const active = activeNodeIds.has(node.id);
     const related = relatedNodeIds.has(node.id);
@@ -224,9 +274,63 @@ function buildFlowNodes(
   return [...columnHeaderNodes, ...chainNodes];
 }
 
-function fallbackNodeLayout(node: IndustryChainNode): { column: number; row: number } {
-  const column = GRAPH_COLUMNS.findIndex((item) => item.nodeIds.includes(node.id));
-  return { column: Math.max(0, column), row: 0 };
+function graphColumnsForData(data: IndustryChainData): GraphColumn[] {
+  if (!data.flow_columns?.length) {
+    return LEGACY_GRAPH_COLUMNS;
+  }
+  return data.flow_columns.map((column) => ({
+    key: column.key,
+    label: column.label,
+    description: column.description,
+    nodeIds: column.node_ids,
+  }));
+}
+
+function buildNodeLayouts(data: IndustryChainData, columns: GraphColumn[]): Map<string, { column: number; row: number }> {
+  const layouts = new Map<string, { column: number; row: number }>();
+  const nextRowByColumn = new Map<number, number>();
+
+  if (!data.flow_columns?.length) {
+    Object.entries(NODE_LAYOUT).forEach(([nodeId, layout]) => {
+      layouts.set(nodeId, layout);
+      nextRowByColumn.set(layout.column, Math.max(nextRowByColumn.get(layout.column) ?? 0, layout.row + 1));
+    });
+    data.nodes.forEach((node) => {
+      if (layouts.has(node.id)) {
+        return;
+      }
+      const column = Math.max(
+        0,
+        columns.findIndex((item) => item.nodeIds.includes(node.id)),
+      );
+      const row = nextRowByColumn.get(column) ?? 0;
+      layouts.set(node.id, { column, row });
+      nextRowByColumn.set(column, row + 1);
+    });
+    return layouts;
+  }
+
+  columns.forEach((column, columnIndex) => {
+    column.nodeIds.forEach((nodeId, rowIndex) => {
+      layouts.set(nodeId, { column: columnIndex, row: rowIndex });
+      nextRowByColumn.set(columnIndex, Math.max(nextRowByColumn.get(columnIndex) ?? 0, rowIndex + 1));
+    });
+  });
+
+  data.nodes.forEach((node) => {
+    if (layouts.has(node.id)) {
+      return;
+    }
+    const column = Math.max(
+      0,
+      columns.findIndex((item) => item.nodeIds.includes(node.id)),
+    );
+    const row = nextRowByColumn.get(column) ?? 0;
+    layouts.set(node.id, { column, row });
+    nextRowByColumn.set(column, row + 1);
+  });
+
+  return layouts;
 }
 
 function ColumnLabel({ description, label }: { description: string; label: string }) {
@@ -236,73 +340,6 @@ function ColumnLabel({ description, label }: { description: string; label: strin
       <em>{description}</em>
     </div>
   );
-}
-
-function FlowNodeLabel({ node }: { node: IndustryChainNode }) {
-  const badge = flowNodeBadge(node);
-  return (
-    <div className="industry-chain-flow-node-label">
-      <span>{node.label}</span>
-      <em>{node.beginner_explanation}</em>
-      <b aria-label={badge.title} title={badge.title}>
-        {badge.label}
-      </b>
-    </div>
-  );
-}
-
-function flowNodeBadge(node: IndustryChainNode): { label: string; title: string } {
-  const label = NODE_BADGE_LABELS[node.id] ?? fallbackBadgeLabel(node.group);
-  return { label, title: `${label}节点，产业链关键度 ${node.bottleneck_strength}/5` };
-}
-
-function fallbackBadgeLabel(group: string): string {
-  const labels: Record<string, string> = {
-    demand: "驱动",
-    scenario: "压力",
-    system: "方案",
-    core_component: "卡点",
-    core_equipment: "卡点",
-    reliability: "卡点",
-    component: "支撑",
-    material: "支撑",
-  };
-  return labels[group] ?? "节点";
-}
-
-function buildFlowEdges(
-  data: IndustryChainData,
-  selectedNodeId: string | undefined,
-  activeNodeIds: Set<string>,
-  relatedEdges: IndustryChainEdge[],
-): FlowEdge[] {
-  const relatedKeys = new Set(relatedEdges.map((edge) => `${edge.source}-${edge.target}`));
-  return data.edges.map((edge) => {
-    const related = relatedKeys.has(`${edge.source}-${edge.target}`);
-    const active = activeNodeIds.has(edge.source) && activeNodeIds.has(edge.target);
-    const selected = edge.source === selectedNodeId || edge.target === selectedNodeId;
-    const color = edgeColor(selected || active, related);
-    const primary = selected || active || related;
-    return {
-      id: `${edge.source}-${edge.target}`,
-      source: edge.source,
-      target: edge.target,
-      type: "straight",
-      animated: false,
-      markerEnd: { type: MarkerType.ArrowClosed, color },
-      style: { stroke: color, strokeWidth: selected || active ? 2.2 : 1.4, opacity: primary ? 1 : 0.2 },
-    };
-  });
-}
-
-function edgeColor(primary: boolean, related: boolean): string {
-  if (primary) {
-    return "rgba(130, 143, 255, 0.92)";
-  }
-  if (related) {
-    return "rgba(138, 143, 152, 0.62)";
-  }
-  return "rgba(98, 102, 109, 0.32)";
 }
 
 function CausalRelationStrip({
@@ -344,8 +381,4 @@ function CausalRelationStrip({
       </div>
     </div>
   );
-}
-
-function statusLabel(status: string): string {
-  return status === "draft" ? "草案" : status === "active" ? "已发布" : status;
 }

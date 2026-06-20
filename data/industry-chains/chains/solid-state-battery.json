@@ -1,0 +1,1196 @@
+{
+  "version": 1,
+  "chain_id": "solid-state-battery",
+  "title": "固态电池",
+  "category": "新能源车 / 动力电池材料与设备",
+  "status": "draft",
+  "updated_at": "2026-06-20",
+  "summary": "固态电池解决的是传统液态锂电在安全性、能量密度和极限快充上的边界问题。学习重点不是谁喊固态概念，而是路线选择、固态电解质、固固界面、正负极适配、干法电极设备和中试量产验证。",
+  "quick_read": {
+    "headline": "先看量产验证，再看材料和设备卡点",
+    "summary": "固态电池不是简单把电解液换成固体。它牵动电解质体系、正负极材料、界面工程、干法电极、致密化设备和中试良率。A 股研究里，电芯厂是商业化节奏验证锚，材料和设备才更可能是弹性卡点。",
+    "logic_chain": [
+      "高安全、高能量密度和高端车型需求推动新电池路线",
+      "液态锂电在安全性和能量密度上接近阶段性约束",
+      "半固态先落地，全固态仍处中试和小规模量产验证期",
+      "固态电解质、固固界面和正负极适配决定技术路线能不能跑通",
+      "干法电极、叠片、等静压和中试良率决定能不能从实验室走向制造",
+      "公司研究必须回到客户验证、订单、收入占比和风险提示"
+    ],
+    "takeaways": [
+      "先问：这是半固态、准固态，还是全固态？三者商业化难度和证据要求不同。",
+      "电芯龙头适合看产业节奏，材料和设备公司才更需要拆具体产品。",
+      "固态电池概念很容易被蹭，收入占比小、还在小试或样品阶段的公司不能直接当强受益。"
+    ]
+  },
+  "learning_steps": [
+    {
+      "id": "demand",
+      "title": "先看需求",
+      "subtitle": "为什么电池路线还要继续升级",
+      "question": "为什么市场会重新关注固态电池？",
+      "answer": "新能源汽车、低空经济、机器人和储能都在追求更安全、更高能量密度、更快补能的电池。需求先把传统液态锂电的边界推到台前。",
+      "node_ids": [
+        "high-energy-demand",
+        "liquid-battery-limit"
+      ]
+    },
+    {
+      "id": "route",
+      "title": "再分路线",
+      "subtitle": "半固态和全固态不是一回事",
+      "question": "为什么不能把所有固态电池混在一起看？",
+      "answer": "半固态更接近现有锂电体系，落地更快；全固态对电解质、界面、负极和制造工艺要求更高，仍需要中试和良率验证。",
+      "node_ids": [
+        "route-selection",
+        "pilot-line-validation"
+      ]
+    },
+    {
+      "id": "materials",
+      "title": "拆材料卡点",
+      "subtitle": "固态电解质和界面决定能不能工作",
+      "question": "材料端最先看哪里？",
+      "answer": "先看固态电解质，再看正极包覆、负极适配和固固界面。固体和固体接触不像液体浸润那样天然充分，界面阻抗和循环寿命会变成关键。",
+      "node_ids": [
+        "solid-electrolyte",
+        "interface-engineering",
+        "cathode-material",
+        "anode-material"
+      ]
+    },
+    {
+      "id": "manufacturing",
+      "title": "看制造放大",
+      "subtitle": "实验室样品和量产线之间隔着设备和良率",
+      "question": "为什么设备也是重要环节？",
+      "answer": "固态电池需要新的电极制备、复合、叠片、致密化和检测工艺。干法电极、固态电解质膜、等静压等设备决定能否规模化制造。",
+      "node_ids": [
+        "dry-electrode-equipment",
+        "densification-equipment",
+        "pilot-line-validation"
+      ]
+    },
+    {
+      "id": "a-share",
+      "title": "最后落到公司",
+      "subtitle": "先分角色，再补证据",
+      "question": "怎么判断 A 股公司是真受益还是蹭概念？",
+      "answer": "先分清电芯验证锚、材料卡点、设备卡点和风险样本，再用年报、公告、投资者关系、订单、收入占比和客户导入补证据。",
+      "node_ids": [
+        "battery-cell",
+        "solid-electrolyte",
+        "cathode-material",
+        "dry-electrode-equipment"
+      ]
+    }
+  ],
+  "flow_columns": [
+    {
+      "key": "demand",
+      "label": "需求牵引",
+      "description": "为什么出现新路线",
+      "node_ids": [
+        "high-energy-demand"
+      ]
+    },
+    {
+      "key": "constraint",
+      "label": "旧路线约束",
+      "description": "液态锂电卡在哪里",
+      "node_ids": [
+        "liquid-battery-limit"
+      ]
+    },
+    {
+      "key": "route",
+      "label": "路线选择",
+      "description": "半固态到全固态",
+      "node_ids": [
+        "route-selection"
+      ]
+    },
+    {
+      "key": "materials",
+      "label": "材料卡点",
+      "description": "电解质和界面",
+      "node_ids": [
+        "solid-electrolyte",
+        "interface-engineering",
+        "cathode-material",
+        "anode-material"
+      ]
+    },
+    {
+      "key": "equipment",
+      "label": "制造设备",
+      "description": "从样品到产线",
+      "node_ids": [
+        "dry-electrode-equipment",
+        "densification-equipment"
+      ]
+    },
+    {
+      "key": "validation",
+      "label": "量产验证",
+      "description": "中试、良率、客户",
+      "node_ids": [
+        "pilot-line-validation",
+        "battery-cell"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "default_status": "candidate",
+    "status_values": [
+      "supported",
+      "weakly_supported",
+      "candidate",
+      "unsupported"
+    ],
+    "upgrade_rule": "公司角色升级为 supported 前，必须能落到年报、公告、投资者关系记录、客户验证、订单、产线进度或收入占比等可追溯证据。",
+    "labels": [
+      {
+        "status": "supported",
+        "label": "强支持",
+        "meaning": "已经有比较明确的一手或高可信证据，能支撑这个节点或公司角色。",
+        "evidence_needed": "年报、公告、投资者关系记录、订单、客户认证、产线进度或量产数据。"
+      },
+      {
+        "status": "weakly_supported",
+        "label": "弱支持",
+        "meaning": "产业逻辑和公开资料支持方向，但还缺收入、客户、订单或量产规模拆分。",
+        "evidence_needed": "继续补公告、IR、财报分部、客户认证、样品到订单的转化证据。"
+      },
+      {
+        "status": "candidate",
+        "label": "待验证",
+        "meaning": "逻辑上相关，市场也提到过，但暂时不能当成确认受益。",
+        "evidence_needed": "先确认具体产品、技术路线、客户导入、收入占比和商业化阶段。"
+      },
+      {
+        "status": "unsupported",
+        "label": "证据不足",
+        "meaning": "目前只剩概念联想，缺少可验证事实，不能作为产业链映射结论。",
+        "evidence_needed": "需要找到公司公告、业务披露或可追溯客户项目，否则降级或移除。"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "high-energy-demand",
+      "label": "高安全/高能量密度需求",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "新能源汽车、高端消费电子和新应用希望电池更安全、续航更高。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "下游希望电池在安全性、能量密度、快充和循环寿命上继续提升。",
+        "why_matters": "没有明确需求，固态电池就只是技术储备；有高端车型、低空经济、机器人等应用拉动，产业链才有商业化动力。",
+        "benefit_logic": "需求越明确，电芯厂越愿意投中试线，材料和设备厂才有导入机会。",
+        "watch": [
+          "车企固态电池车型规划",
+          "高端动力电池能量密度目标",
+          "低空经济和机器人电池需求",
+          "电芯厂资本开支"
+        ],
+        "common_misread": "不能因为固态电池听起来先进，就默认所有环节都会同时放量。"
+      }
+    },
+    {
+      "id": "liquid-battery-limit",
+      "label": "液态锂电边界",
+      "layer": "downstream",
+      "group": "scenario",
+      "beginner_explanation": "液态锂电在安全性、能量密度和极限快充上逐步遇到边界。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "传统液态锂电依赖液态电解液和隔膜体系，成熟度高，但安全性和能量密度继续提升会变难。",
+        "why_matters": "旧方案的边界越明显，新路线才越有必要。",
+        "benefit_logic": "当车企和电芯厂认为液态体系难以满足下一代高端产品，固态电池投入会增加。",
+        "watch": [
+          "电池安全事故和监管要求",
+          "能量密度提升速度",
+          "快充和热管理瓶颈",
+          "车企技术路线发布"
+        ],
+        "common_misread": "液态锂电不会突然消失，固态电池更像高端和新场景先导入。"
+      }
+    },
+    {
+      "id": "route-selection",
+      "label": "半固态到全固态路线",
+      "layer": "midstream",
+      "group": "system",
+      "beginner_explanation": "半固态更接近现有体系，全固态更难但长期空间更大。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "半固态、准固态和全固态代表不同技术阶段，液态成分、制造难度和商业化进度不同。",
+        "why_matters": "同样叫固态电池，商业化难度、供应链增量和估值逻辑完全不同。",
+        "benefit_logic": "半固态先验证市场，全固态如果跑通，会带来更深的材料和设备变化。",
+        "watch": [
+          "半固态装车量",
+          "全固态中试线进度",
+          "良率和成本",
+          "路线从氧化物、硫化物到聚合物的选择"
+        ],
+        "common_misread": "把半固态订单直接等同于全固态产业化，是最常见误读。"
+      }
+    },
+    {
+      "id": "solid-electrolyte",
+      "label": "固态电解质",
+      "layer": "material",
+      "group": "material",
+      "beginner_explanation": "替代传统液态电解液，是固态电池最核心的材料变化之一。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "固态电解质承担锂离子传导功能，常见路线包括氧化物、硫化物、聚合物和复合路线。",
+        "why_matters": "离子电导率、稳定性、成本、制备难度和界面兼容性都会影响全固态电池能否商业化。",
+        "benefit_logic": "如果固态电池从中试走向量产，固态电解质和前驱材料可能成为最需要验证的增量材料。",
+        "watch": [
+          "吨级/百吨级中试线",
+          "客户认证和导入",
+          "氧化物或硫化物路线选择",
+          "收入占比和毛利率"
+        ],
+        "common_misread": "公司说布局固态电解质，不等于已经规模化供货；小试、中试、量产是三种完全不同证据。"
+      }
+    },
+    {
+      "id": "interface-engineering",
+      "label": "固固界面工程",
+      "layer": "material",
+      "group": "core_component",
+      "beginner_explanation": "固体和固体接触不充分，界面阻抗和循环寿命会成为难点。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "固态电池里电极和电解质都是固体，界面接触、稳定性和锂枝晶控制都需要材料和工艺协同。",
+        "why_matters": "界面问题解决不好，电池容量、倍率、寿命和安全性都会受影响。",
+        "benefit_logic": "正极包覆、电解质复合、压力控制和制造工艺都围绕界面问题展开。",
+        "watch": [
+          "正极包覆和表面修饰技术",
+          "循环寿命",
+          "倍率性能",
+          "客户测试结果"
+        ],
+        "common_misread": "固态电池不是只换一种材料，界面工程往往决定系统能不能跑。"
+      }
+    },
+    {
+      "id": "cathode-material",
+      "label": "高镍/富锂锰基正极",
+      "layer": "material",
+      "group": "material",
+      "beginner_explanation": "固态路线仍需要更高电压、更高容量、更稳定界面的正极材料。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "固态电池正极可能继续使用高镍、超高镍、富锂锰基、钴酸锂等体系，并需要表面修饰适配固态电解质。",
+        "why_matters": "正极决定能量密度上限，也影响固态电解质界面稳定性。",
+        "benefit_logic": "具备固态电池专用正极材料、客户验证和中试供货的企业，更容易成为材料端验证锚。",
+        "watch": [
+          "固态专用正极供货",
+          "客户认证",
+          "吨级或批量出货",
+          "正极材料毛利率"
+        ],
+        "common_misread": "普通三元正极公司不一定等于固态正极受益，要看是否有固态专用产品和客户验证。"
+      }
+    },
+    {
+      "id": "anode-material",
+      "label": "硅碳/锂金属负极",
+      "layer": "material",
+      "group": "material",
+      "beginner_explanation": "更高能量密度往往需要硅碳负极或长期的锂金属负极路线。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "半固态和全固态路线可能提高硅碳负极用量，长期还可能走向锂金属负极。",
+        "why_matters": "负极决定能量密度提升空间，也带来膨胀、枝晶和界面稳定性问题。",
+        "benefit_logic": "硅碳负极、锂金属保护和相关工艺如果被客户导入，可能形成材料增量。",
+        "watch": [
+          "硅碳负极渗透率",
+          "锂金属负极中试",
+          "循环寿命和膨胀控制",
+          "客户验证"
+        ],
+        "common_misread": "锂金属负极仍偏长期，不应把实验室突破直接等同于近期业绩。"
+      }
+    },
+    {
+      "id": "dry-electrode-equipment",
+      "label": "干法电极 / 涂布设备",
+      "layer": "equipment",
+      "group": "core_equipment",
+      "beginner_explanation": "帮助固态电池减少溶剂体系，提升电极制备效率和一致性。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "干法电极绕开传统湿法涂布中的溶剂和烘干环节，适配高固含和固态电池电极制造。",
+        "why_matters": "设备能否稳定、高速、宽幅运行，决定实验室工艺能不能进产线。",
+        "benefit_logic": "电芯厂建设中试和量产线时，干法电极、复合、转印、叠片等设备商可能优先受益。",
+        "watch": [
+          "设备订单",
+          "客户复购",
+          "产线宽幅和速度",
+          "设备收入占比"
+        ],
+        "common_misread": "设备发样或展示不等于量产订单，要看是否进入客户产线和重复订单。"
+      }
+    },
+    {
+      "id": "densification-equipment",
+      "label": "叠片 / 等静压 / 致密化设备",
+      "layer": "equipment",
+      "group": "core_equipment",
+      "beginner_explanation": "固态电池需要更好的层间接触和压力控制，制造设备更复杂。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "固态电池制造可能需要无隔膜叠片、冷/热压、等静压、预锂化和检测等设备。",
+        "why_matters": "固体界面需要更高一致性和接触质量，制造设备直接影响良率。",
+        "benefit_logic": "中试线和量产线扩建会带动固态专用设备需求。",
+        "watch": [
+          "中试线设备导入",
+          "量产线设计和招标",
+          "良率指标",
+          "设备回款"
+        ],
+        "common_misread": "只要是锂电设备商就受益过于粗糙，必须看是否有固态专用工艺和客户订单。"
+      }
+    },
+    {
+      "id": "pilot-line-validation",
+      "label": "中试线 / 良率 / 客户验证",
+      "layer": "midstream",
+      "group": "reliability",
+      "beginner_explanation": "固态电池从样品到量产，中试线贯通和良率是最关键验证。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "中试线用于验证材料体系、工艺路线、设备组合、良率和成本。",
+        "why_matters": "样品性能好不代表能量产，中试线是商业化前最重要的证据层。",
+        "benefit_logic": "中试线贯通、良率提升、客户认证和量产线设计，会拉动材料、设备和电芯供应链。",
+        "watch": [
+          "中试线贯通",
+          "良品率",
+          "客户验证",
+          "量产线设计或投产时间"
+        ],
+        "common_misread": "发布样品、通过测试、建中试线和量产交付，证据强度逐级上升。"
+      }
+    },
+    {
+      "id": "battery-cell",
+      "label": "固态/半固态电芯",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "电芯厂决定路线节奏，是产业链商业化最直接的验证锚。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "电芯厂负责把材料、设备和工艺整合成可交付电池。",
+        "why_matters": "电芯厂的中试线、良率、客户和量产规划，决定上游材料设备什么时候真正放量。",
+        "benefit_logic": "电芯龙头不是每个材料卡点的最大弹性，但它们是判断行业从主题走向订单的核心验证锚。",
+        "watch": [
+          "半固态装车",
+          "全固态中试线",
+          "量产线设计",
+          "客户和车型",
+          "单位成本"
+        ],
+        "common_misread": "电芯厂固态进展强，不等于所有上游概念股都同步强。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "high-energy-demand",
+      "target": "liquid-battery-limit",
+      "relation_type": "demand_pull",
+      "label": "推高旧路线要求",
+      "description": "高安全和高能量密度需求让液态锂电的边界更明显。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "liquid-battery-limit",
+      "target": "route-selection",
+      "relation_type": "technology_upgrade",
+      "label": "催生新技术路线",
+      "description": "液态体系约束推动半固态和全固态路线投入。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "route-selection",
+      "target": "solid-electrolyte",
+      "relation_type": "key_material",
+      "label": "核心材料替换",
+      "description": "固态路线的关键变化之一是用固态电解质承担离子传导。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "solid-electrolyte",
+      "target": "interface-engineering",
+      "relation_type": "material_constraint",
+      "label": "带来固固界面难题",
+      "description": "固体电解质和电极接触会引入界面阻抗、稳定性和循环寿命挑战。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "interface-engineering",
+      "target": "cathode-material",
+      "relation_type": "material_adaptation",
+      "label": "正极需要适配",
+      "description": "高镍、富锂锰基等正极需要表面修饰和固态体系适配。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "interface-engineering",
+      "target": "anode-material",
+      "relation_type": "material_adaptation",
+      "label": "负极打开空间",
+      "description": "硅碳和锂金属负极有机会提升能量密度，但也带来膨胀和枝晶问题。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "route-selection",
+      "target": "dry-electrode-equipment",
+      "relation_type": "manufacturing_upgrade",
+      "label": "制造工艺改变",
+      "description": "固态电池放大生产需要干法电极、复合、涂布等新工艺设备。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "dry-electrode-equipment",
+      "target": "densification-equipment",
+      "relation_type": "process_dependency",
+      "label": "需要层间致密化",
+      "description": "叠片、冷/热压、等静压等设备用于提高固体界面接触和一致性。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "densification-equipment",
+      "target": "pilot-line-validation",
+      "relation_type": "scale_validation",
+      "label": "进入中试验证",
+      "description": "设备组合最终要在中试线里验证良率、成本和客户可用性。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "solid-electrolyte",
+      "target": "pilot-line-validation",
+      "relation_type": "customer_validation",
+      "label": "材料需要客户导入",
+      "description": "固态电解质和正负极材料最终要通过电芯厂测试和导入。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "pilot-line-validation",
+      "target": "battery-cell",
+      "relation_type": "commercialization",
+      "label": "走向电芯交付",
+      "description": "中试线贯通、良率提升和量产线设计，是固态电芯商业化的关键证据。",
+      "evidence_status": "supported"
+    }
+  ],
+  "companies": [
+    {
+      "name": "宁德时代",
+      "ts_code": "300750.SZ",
+      "nodes": [
+        "battery-cell",
+        "pilot-line-validation"
+      ],
+      "role": "电芯龙头 / 商业化节奏验证锚",
+      "tier": "validation_node",
+      "attention_level": "leader",
+      "attention_label": "全球动力电池龙头",
+      "leader_reason": "宁德时代是全球动力电池龙头，固态电池进展更适合作为行业节奏和商业化难度的验证锚，而不是上游材料弹性标的。",
+      "current_view": "公司年报和半年报能确认其电池技术研发平台和全球龙头地位；公开投资者交流和行业报道显示，公司对全固态商业化保持审慎节奏，市场普遍关注其 2027 小规模量产、2030 前后更大规模化的时间表。当前应把宁德时代作为固态电池产业化节奏验证锚，不应把它简单等同于材料端弹性最大环节。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查最新投资者关系记录中关于全固态研发成熟度和量产时间表的原文",
+        "跟踪 2026 年报和 2027 年中试/小规模量产披露",
+        "确认是否披露固态电池客户、车型和产线资本开支",
+        "区分凝聚态电池、半固态和全固态口径"
+      ],
+      "why_watch": "它能回答一个最基础问题：固态电池什么时候从主题进入产业化。如果宁德时代节奏仍谨慎，很多上游材料和设备公司的业绩兑现也不能过度前置。",
+      "evidence_basis": [
+        "2025 半年度报告确认公司研发平台、动力电池全球份额和持续投入。",
+        "公开投资者交流资料和行业报道多次提到公司对全固态电池小规模量产节奏的审慎表述。",
+        "公司更适合作为电芯商业化验证锚，不是单一材料或设备卡点。"
+      ],
+      "verification_focus": [
+        "全固态与凝聚态电池是否混用口径",
+        "中试线、良率、成本和客户验证是否有公司级披露",
+        "是否有明确量产线资本开支和订单",
+        "固态业务对收入和利润的实际贡献时间"
+      ],
+      "risks": [
+        "全固态商业化可能慢于市场预期。",
+        "电芯龙头体量大，固态主题对短期业绩弹性有限。",
+        "行业报道口径需要回到公司公告和投资者关系原文确认。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "宁德时代 2025 半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-07-31",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-07-31/1224342874.PDF",
+          "evidence_grade": "A",
+          "usage": "确认公司动力电池龙头地位、研发投入和技术平台背景。"
+        },
+        {
+          "title": "宁德时代投资者关系活动记录表",
+          "publisher": "巨潮资讯",
+          "date": "2025-07-31",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-07-31/1224343388.PDF",
+          "evidence_grade": "A",
+          "usage": "用于继续核对固态电池商业化时间表和研发进度口径。"
+        }
+      ]
+    },
+    {
+      "name": "国轩高科",
+      "ts_code": "002074.SZ",
+      "nodes": [
+        "battery-cell",
+        "pilot-line-validation",
+        "route-selection"
+      ],
+      "role": "电芯验证节点 / 全固态中试线样本",
+      "tier": "validation_node",
+      "attention_level": "leader",
+      "attention_label": "中试线验证锚",
+      "leader_reason": "投资者关系记录披露全固态中试线贯通、良率和量产线设计，是当前 A 股里较适合讲解“样品到中试再到量产线”的验证样本。",
+      "current_view": "国轩高科 2025 年投资者关系记录披露首条全固态中试线已贯通，金石全固态电池处于中试量产阶段，良品率达到 90%，并启动第一代全固态电池 2GWh 量产线设计。它不是上游单点材料卡点，但能很好验证固态电池从技术展示走向中试和产线规划的阶段。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "继续跟踪 2GWh 全固态量产线设计进展",
+        "核对良率、成本和量产节奏是否在后续公告中更新",
+        "确认客户、车型和交付规模",
+        "区分准固态、半固态和全固态产品收入"
+      ],
+      "why_watch": "它能给小白一个清楚参照：固态电池不是看 PPT，而是看中试线是否贯通、良率多少、是否开始量产线设计。",
+      "evidence_basis": [
+        "2025-004 投资者关系记录披露首条全固态中试线贯通。",
+        "同一记录披露金石全固态电池处于中试量产阶段，良率达到 90%。",
+        "同一记录披露启动第一代全固态电池 2GWh 量产线设计。"
+      ],
+      "verification_focus": [
+        "2GWh 量产线设计到投产的时间表",
+        "中试良率和量产良率是否可持续",
+        "客户认证和订单",
+        "固态电池收入占比"
+      ],
+      "risks": [
+        "中试线贯通不等于大规模商业化。",
+        "全固态成本、良率和客户验证仍可能反复。",
+        "电芯厂自身利润受动力电池价格竞争影响。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "国轩高科 2025-004 投资者关系活动记录表",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-09-03",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/09/03/1224635589.PDF",
+          "evidence_grade": "A",
+          "usage": "确认全固态中试线贯通、良率和 2GWh 量产线设计等关键验证信息。"
+        },
+        {
+          "title": "国轩高科 2025 半年度报告",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-08-30",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/30/1224628140.PDF",
+          "evidence_grade": "A",
+          "usage": "确认公司全产业链布局、固态电池关键材料研发和半固态技术迭代背景。"
+        }
+      ]
+    },
+    {
+      "name": "当升科技",
+      "ts_code": "300073.SZ",
+      "nodes": [
+        "cathode-material",
+        "solid-electrolyte",
+        "interface-engineering"
+      ],
+      "role": "正极材料验证节点 / 固态电解质候选",
+      "tier": "validation_node",
+      "attention_level": "leader",
+      "attention_label": "固态正极材料龙头候选",
+      "leader_reason": "公司半年度报告直接披露半固态和全固态正极材料、氧化物电解质百吨级中试线、硫化物电解质小试线和客户导入信息，是材料端证据最清晰的样本之一。",
+      "current_view": "当升科技 2025 半年度报告披露，公司半固态正极材料采用新一代双相复合工艺，全固态正极材料采用快离子导体修饰工艺；全固态电池专用钴酸锂、富锂锰基正极材料卡位国内车企和电池客户；固态电解质方面完成氧化物电解质年产百吨级中试线和硫化物固态电解质小试线建设，并实现吨级稳定制备和多家客户认证导入。当前可以作为固态材料端强支持样本。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分固态正极和固态电解质实际收入",
+        "确认客户导入是否转为批量订单",
+        "跟踪氧化物电解质百吨级中试线产能利用率",
+        "核对硫化物电解质从小试到中试的进展"
+      ],
+      "why_watch": "它是小白理解材料端的好样本：同一家公司可以同时覆盖固态专用正极和固态电解质，但仍要追问收入占比和客户转化。",
+      "evidence_basis": [
+        "2025 半年度报告披露半固态和全固态正极材料工艺。",
+        "报告披露全固态专用钴酸锂、富锂锰基正极材料卡位国内车企和电池客户。",
+        "报告披露氧化物固态电解质百吨级中试线、硫化物固态电解质小试线，以及吨级稳定制备和客户认证导入。"
+      ],
+      "verification_focus": [
+        "固态材料收入占比",
+        "客户认证转订单的节奏",
+        "氧化物和硫化物路线的产品结构",
+        "毛利率和产能利用率"
+      ],
+      "risks": [
+        "材料验证强，不代表短期收入占比已经高。",
+        "固态电池路线未定，材料路线可能反复。",
+        "正极主业仍受锂电材料周期和价格竞争影响。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "当升科技 2025 半年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-27",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-27/1224575498.PDF",
+          "evidence_grade": "A",
+          "usage": "确认固态正极材料、氧化物电解质中试线、硫化物电解质小试线和客户认证导入。"
+        }
+      ]
+    },
+    {
+      "name": "厦钨新能",
+      "ts_code": "688778.SH",
+      "nodes": [
+        "cathode-material",
+        "solid-electrolyte"
+      ],
+      "role": "正极材料 / 氧化物电解质验证节点",
+      "tier": "validation_node",
+      "attention_level": "core_candidate",
+      "attention_label": "材料端核心候选",
+      "leader_reason": "投资者交流材料披露公司在固态电池领域重点布局正极材料和电解质，氧化物路线正极已供货，氧化物固态电解质实现吨级生产。",
+      "current_view": "厦钨新能 2025 年投资者交流材料披露，公司在固态电池领域重点布局正极材料和电解质，匹配氧化物路线固态电池的正极材料已实现供货，硫化物路线正极向国内外头部客户提供多批次样品验证，氧化物固态电解质实现吨级生产和稳定可靠产品性能，并开发硫化锂合成工艺。当前可作为材料端核心候选，但仍要补收入占比和订单规模。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报和 2026 中报是否披露固态相关收入",
+        "确认氧化物路线正极供货规模",
+        "跟踪硫化物路线样品验证进展",
+        "确认固态电解质吨级生产是否转订单"
+      ],
+      "why_watch": "它能帮助区分“材料端有产品验证”和“材料端已经大规模贡献利润”这两件事。",
+      "evidence_basis": [
+        "投资者交流材料披露正极材料和电解质双线布局。",
+        "氧化物路线固态电池正极材料已实现供货。",
+        "氧化物固态电解质实现吨级生产，硫化物路线正极提供多批次样品验证。"
+      ],
+      "verification_focus": [
+        "固态相关收入和毛利",
+        "供货客户和订单规模",
+        "氧化物与硫化物路线进展",
+        "硫化锂工艺是否商业化"
+      ],
+      "risks": [
+        "供货和样品验证的收入体量可能仍小。",
+        "路线选择变化会影响材料需求结构。",
+        "主业仍受正极材料周期影响。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "厦钨新能 2025 年半年度业绩说明会投资者关系活动记录表",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-09-15",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/09/15/f734d30a921711f0940ffa163e39923a.pdf",
+          "evidence_grade": "A",
+          "usage": "确认固态正极材料、电解质、氧化物路线供货、硫化物路线样品验证和吨级生产。"
+        }
+      ]
+    },
+    {
+      "name": "先导智能",
+      "ts_code": "300450.SZ",
+      "nodes": [
+        "dry-electrode-equipment",
+        "densification-equipment",
+        "pilot-line-validation"
+      ],
+      "role": "锂电设备龙头 / 固态制造设备验证节点",
+      "tier": "validation_node",
+      "attention_level": "leader",
+      "attention_label": "设备龙头",
+      "leader_reason": "公开资料显示公司固态电池设备覆盖干法电极、固态电解质膜、叠片、致密化、化成分容等全流程，适合作为制造设备端的验证锚。",
+      "current_view": "先导智能被多篇公开资料描述为固态电池设备全线方案商，覆盖干法电极制备、固态电解质膜、复合转印、无隔膜叠片、冷/热压、等静压和化成分容等环节。当前产业角色较清晰，但本页仍把证据状态设为强支持里的待跟踪项：需要继续用公告、年报和投资者关系确认固态设备订单、客户复购、收入占比和回款。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报全文中固态设备订单和收入拆分",
+        "核对干法电极、固态电解质膜和等静压设备是否有客户复购",
+        "确认固态设备订单占新签订单比例",
+        "观察设备验收、回款和毛利率"
+      ],
+      "why_watch": "材料讲的是“能不能做出来”，设备讲的是“能不能稳定批量做出来”。固态电池从中试走向量产时，设备验证会很关键。",
+      "evidence_basis": [
+        "公开报道披露公司 2024 年发布固态电池整线解决方案，覆盖全固态电极制备、电解质膜制备和复合设备。",
+        "公开资料披露公司干法电极涂布宽幅、速度和能耗指标，以及固态电解质膜复合设备、无隔膜叠片和等静压设备。",
+        "仍需要用公司公告和年报拆出固态设备订单与收入占比。"
+      ],
+      "verification_focus": [
+        "固态设备订单是否真实放量",
+        "客户是否复购",
+        "设备验收和回款",
+        "毛利率是否高于传统锂电设备"
+      ],
+      "risks": [
+        "设备订单从签约到验收确认收入存在周期。",
+        "固态电池量产延期会拖累设备兑现。",
+        "公开报道中的客户和订单需要回到公司公告验证。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "先导智能固态电池智能整线解决方案公开报道",
+          "publisher": "21 经济网",
+          "date": "2025-10-11",
+          "url": "https://m.21jingji.com/article/20251011/4c7ac43a21b10180c3e318c2f78d1119.html",
+          "evidence_grade": "B",
+          "usage": "用于确认固态电池设备覆盖范围、干法电极、固态电解质膜、等静压和订单线索。"
+        },
+        {
+          "title": "先导智能固态电池量产设备公开资料",
+          "publisher": "新浪财经",
+          "date": "2025-09-12",
+          "url": "https://finance.sina.com.cn/roll/2025-09-12/doc-infqfnmm2841275.shtml",
+          "evidence_grade": "B",
+          "usage": "用于交叉验证干法电极、复合转印、叠片、冷/热压和化成分容等设备环节。"
+        }
+      ]
+    },
+    {
+      "name": "瑞泰新材",
+      "ts_code": "301238.SZ",
+      "nodes": [
+        "solid-electrolyte"
+      ],
+      "role": "电解质材料 / 锂盐候选",
+      "tier": "flexible_candidate",
+      "attention_level": "core_candidate",
+      "attention_label": "电解质材料候选",
+      "leader_reason": "公司半年度报告披露固态电池材料研发和部分固态电解质小试开发，互动资料提到 LiTFSI 在固态电池批量应用线索，但收入占比仍需谨慎。",
+      "current_view": "瑞泰新材 2025 半年度报告披露开发其他固态电池材料，部分固态电解质产品已完成小试开发；公开互动资料提到 LiTFSI 在固态锂电池中已有批量应用、固态电解质材料收入占比较小。当前适合作为电解质材料候选观察，不宜直接按强业绩兑现处理。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "查互动易和公告原文确认 LiTFSI 批量应用口径",
+        "确认固态电解质材料收入占比",
+        "跟踪小试到中试的进展",
+        "核对客户认证和批量订单"
+      ],
+      "why_watch": "它适合小白理解“强相关但收入很小”的情况：产业位置可能对，但投资结论还要等收入和客户证据。",
+      "evidence_basis": [
+        "2025 半年度报告披露部分固态电解质产品完成小试开发。",
+        "公开互动资料提到 LiTFSI 在固态锂电池中的应用线索。",
+        "公司也提示固态电解质材料收入占比较小，技术和商业路线仍需发展。"
+      ],
+      "verification_focus": [
+        "固态材料收入占比",
+        "LiTFSI 是否持续批量应用",
+        "固态电解质小试到中试",
+        "客户和订单"
+      ],
+      "risks": [
+        "收入占比小，短期业绩弹性可能有限。",
+        "固态电解质路线不确定。",
+        "公司传统电解液和锂盐业务仍受行业周期影响。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "瑞泰新材 2025 半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-23",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-23/1224559524.PDF",
+          "evidence_grade": "A",
+          "usage": "确认固态电池材料研发、部分固态电解质小试开发和项目建设背景。"
+        },
+        {
+          "title": "瑞泰新材互动资料摘要",
+          "publisher": "新浪财经",
+          "date": "2025-03-22",
+          "url": "https://finance.sina.com.cn/7x24/2025-03-22/doc-ineqpefp8708365.shtml",
+          "evidence_grade": "C",
+          "usage": "作为 LiTFSI 和固态材料应用线索，需继续回到互动易或公告原文验证。"
+        }
+      ]
+    },
+    {
+      "name": "容百科技",
+      "ts_code": "688005.SH",
+      "nodes": [
+        "cathode-material",
+        "solid-electrolyte"
+      ],
+      "role": "高镍正极 / 固态正极候选",
+      "tier": "flexible_candidate",
+      "attention_level": "core_candidate",
+      "attention_label": "正极材料候选",
+      "leader_reason": "公开资料显示公司有固态正极材料出货和硫化物电解质布局线索，但本页还缺年报/公告原文确认，因此先按弱支持处理。",
+      "current_view": "容百科技在公开资料中被描述为布局半固态和全固态正极材料，部分固态正极材料已有吨级或近吨级出货，并推进硫化物固态电解质中试线。由于当前本页尚未完成公司公告和年报原文核对，先列为弱支持候选，后续重点补一手证据和收入占比。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "查 2025 年报和投资者关系记录原文",
+        "确认固态正极材料出货规模和客户",
+        "确认硫化物固态电解质中试线进展",
+        "拆分固态相关收入占比"
+      ],
+      "why_watch": "它能代表高镍正极龙头切入固态正极的方向，但当前证据还需要升级。",
+      "evidence_basis": [
+        "公开报道提到公司 8/9 系正极材料适配半固态和全固态路线。",
+        "公开报道提到部分固态正极材料吨级出货和硫化物固态电解质布局。",
+        "本页尚未完成公司公告/年报原文核对，因此暂不升为强支持。"
+      ],
+      "verification_focus": [
+        "固态正极出货是否由公司公告确认",
+        "客户验证和订单",
+        "硫化物电解质中试线",
+        "收入占比和毛利"
+      ],
+      "risks": [
+        "公开报道强，但缺一手证据会导致结论不稳。",
+        "正极材料行业竞争激烈，价格和库存周期影响利润。",
+        "固态路线变化可能影响产品适配。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "容百科技固态电池材料公开报道",
+          "publisher": "证券时报",
+          "date": "2026-01-08",
+          "url": "https://stcn.com/article/detail/2531222.html",
+          "evidence_grade": "B",
+          "usage": "作为固态正极材料出货、硫化物路线和电解质布局线索，需继续补公司公告原文。"
+        }
+      ]
+    },
+    {
+      "name": "上海洗霸",
+      "ts_code": "603200.SH",
+      "nodes": [
+        "solid-electrolyte",
+        "anode-material"
+      ],
+      "role": "概念风险样本 / 材料候选",
+      "tier": "flexible_candidate",
+      "attention_level": "watch",
+      "attention_label": "风险观察",
+      "leader_reason": "公司有固态相关披露和研发线索，但公开报道同时指出相关业务尚未形成稳定收入、投资金额较小且曾被监管关注，适合做概念风险教学样本。",
+      "current_view": "上海洗霸多次被市场放进固态电池概念，但证券时报报道提示，公司固态电池相关项目仍偏研发和小规模投入，相关业务尚未形成稳定收入，且曾因信息披露口径受到监管关注。当前不适合作为核心受益股，更适合作为小白学习“为什么不能只看概念标签”的风险样本。",
+      "evidence_status": "candidate",
+      "next_checks": [
+        "查公司公告和问询/监管函原文",
+        "确认固态电池相关业务是否形成收入",
+        "核对研发投入和产线建设规模",
+        "观察后续公告是否有客户订单"
+      ],
+      "why_watch": "它能提醒用户：越热门的产业链，越要防止把研发线索、概念表述和业绩兑现混在一起。",
+      "evidence_basis": [
+        "公开报道提到公司多次披露固态电池相关进展。",
+        "同类报道也提示相关业务未形成稳定收入，投资金额较小，曾被监管关注。",
+        "因此本页保留为风险样本，而非核心映射公司。"
+      ],
+      "verification_focus": [
+        "公告原文是否支持具体产品和客户",
+        "相关业务收入是否稳定",
+        "研发投入和产能规模",
+        "监管关注事项是否已消化"
+      ],
+      "risks": [
+        "容易被主题情绪放大。",
+        "业务体量和收入兑现可能很小。",
+        "信息披露风险会影响市场信任。"
+      ],
+      "evidence_refs": [
+        {
+          "title": "上海洗霸固态电池概念风险报道",
+          "publisher": "证券时报",
+          "date": "2026-02-24",
+          "url": "https://www.stcn.com/article/detail/2355022.html",
+          "evidence_grade": "B",
+          "usage": "用于提示概念风险、收入未稳定和监管关注线索。"
+        }
+      ]
+    }
+  ],
+  "concept_diagrams": [
+    {
+      "id": "route-map",
+      "title": "半固态和全固态怎么区分",
+      "subtitle": "先判断商业化阶段，不要把所有固态口径混在一起",
+      "icon": "system",
+      "node_ids": [
+        "route-selection",
+        "pilot-line-validation",
+        "battery-cell"
+      ],
+      "takeaway": "半固态更偏过渡方案，全固态更考验材料、界面和制造工艺。",
+      "parts": [
+        {
+          "label": "半固态",
+          "role": "先落地",
+          "description": "保留部分液态成分，和现有锂电体系兼容度更高，适合先装车验证。"
+        },
+        {
+          "label": "全固态",
+          "role": "长期方向",
+          "description": "对固态电解质、界面和制造一致性要求更高，仍要看中试和良率。"
+        },
+        {
+          "label": "中试线",
+          "role": "证据分水岭",
+          "description": "样品之后要看中试线贯通、良率、客户验证和量产线设计。"
+        }
+      ]
+    },
+    {
+      "id": "materials-map",
+      "title": "材料端到底看什么",
+      "subtitle": "固态电池不是只换电解液，而是材料系统重构",
+      "icon": "connector",
+      "node_ids": [
+        "solid-electrolyte",
+        "interface-engineering",
+        "cathode-material",
+        "anode-material"
+      ],
+      "takeaway": "固态电解质是入口，界面工程决定能不能稳定循环，正负极决定能量密度和寿命。",
+      "parts": [
+        {
+          "label": "固态电解质",
+          "role": "核心变化",
+          "description": "承担离子传导，路线包括氧化物、硫化物、聚合物和复合体系。"
+        },
+        {
+          "label": "固固界面",
+          "role": "隐形卡点",
+          "description": "固体接触不充分会带来阻抗、稳定性和寿命问题。"
+        },
+        {
+          "label": "正负极适配",
+          "role": "性能上限",
+          "description": "高镍、富锂锰基、硅碳和锂金属都要和固态体系重新适配。"
+        }
+      ]
+    },
+    {
+      "id": "manufacturing-map",
+      "title": "为什么设备会被点亮",
+      "subtitle": "从实验室到量产线，最大变化在一致性和良率",
+      "icon": "control",
+      "node_ids": [
+        "dry-electrode-equipment",
+        "densification-equipment",
+        "pilot-line-validation"
+      ],
+      "takeaway": "设备端要看客户产线导入、复购、验收和回款，不能只看设备发布。",
+      "parts": [
+        {
+          "label": "干法电极",
+          "role": "工艺变化",
+          "description": "减少溶剂和烘干环节，适合高固含和固态电池电极制备。"
+        },
+        {
+          "label": "叠片/等静压",
+          "role": "提高接触",
+          "description": "改善层间接触和致密度，影响固体界面一致性。"
+        },
+        {
+          "label": "中试验证",
+          "role": "商业化门槛",
+          "description": "设备最终要在客户产线里跑出良率、成本和稳定性。"
+        }
+      ]
+    }
+  ],
+  "common_misreads": [
+    {
+      "title": "把半固态当成全固态",
+      "correction": "半固态商业化更快，但对供应链的重构深度通常弱于全固态。研究时先确认公司披露的具体口径。"
+    },
+    {
+      "title": "看到样品就当量产",
+      "correction": "样品、客户测试、中试线、良率、量产线设计、批量交付是不同证据层级，不能跳级推结论。"
+    },
+    {
+      "title": "把所有锂电材料公司都算受益",
+      "correction": "必须落到固态专用产品、客户导入、收入占比和路线适配。普通三元、负极、电解液业务不能自动映射。"
+    },
+    {
+      "title": "只看概念热度，不看监管和风险提示",
+      "correction": "固态电池是高热主题，概念股容易被放大。公司如果明确提示收入占比小、尚未量产或被监管关注，应降级处理。"
+    }
+  ],
+  "financial_translations": [
+    {
+      "node_id": "battery-cell",
+      "title": "电芯厂：看产线和客户，不只看发布会",
+      "watch": "中试线贯通、良率、量产线设计、客户车型、资本开支。",
+      "source_hint": "公司年报、投资者关系、公告、客户车型发布。",
+      "risk": "中试进展不等于量产收入，电芯厂还受价格战和主业毛利影响。"
+    },
+    {
+      "node_id": "solid-electrolyte",
+      "title": "固态电解质：看小试、中试、吨级和客户导入",
+      "watch": "产线规模、吨级稳定制备、客户认证、收入占比、毛利率。",
+      "source_hint": "年报、半年度报告、投资者关系记录、客户认证公告。",
+      "risk": "路线不确定，小试产品可能长期无法规模化。"
+    },
+    {
+      "node_id": "cathode-material",
+      "title": "固态正极：看专用产品和供货规模",
+      "watch": "固态专用正极材料、表面修饰工艺、吨级出货、客户验证。",
+      "source_hint": "年报、公告、投资者关系、行业客户验证资料。",
+      "risk": "传统正极收入大，固态相关收入可能仍很小。"
+    },
+    {
+      "node_id": "dry-electrode-equipment",
+      "title": "设备：看订单、验收和回款",
+      "watch": "固态设备订单、新签订单占比、客户复购、验收节奏、应收账款。",
+      "source_hint": "年报、公告、投资者关系、合同负债和现金流。",
+      "risk": "设备订单确认收入周期长，量产延期会影响验收。"
+    },
+    {
+      "node_id": "pilot-line-validation",
+      "title": "中试线：看良率是否可复制",
+      "watch": "良品率、成本、连续生产稳定性、量产线设计、产能规划。",
+      "source_hint": "公司公告、投资者关系、客户认证、产线投产公告。",
+      "risk": "一次性良率或样品性能不能代表规模化量产能力。"
+    }
+  ],
+  "catalysts": [
+    {
+      "horizon": "短期",
+      "title": "电芯厂中试线和量产线设计进展",
+      "why": "中试线贯通、良率提升和量产线设计会把主题从故事推进到产业验证。",
+      "watch": "国轩高科等电芯厂的中试线、良率、2GWh 量产线设计和客户进展。",
+      "risk": "进度披露可能偏研发口径，收入贡献仍滞后。"
+    },
+    {
+      "horizon": "中期",
+      "title": "固态电解质和固态正极客户导入",
+      "why": "材料端如果从样品验证进入批量供货，弹性会比电芯龙头更明显。",
+      "watch": "当升科技、厦钨新能等公司固态材料收入、供货、认证和产线利用率。",
+      "risk": "路线选择可能变化，客户验证周期长。"
+    },
+    {
+      "horizon": "中期",
+      "title": "干法电极和固态设备订单放量",
+      "why": "固态电池从中试走向量产需要设备先行，设备订单通常早于材料收入兑现。",
+      "watch": "先导智能等设备商固态设备订单、客户复购、验收和回款。",
+      "risk": "设备订单可能受客户量产延期影响。"
+    },
+    {
+      "horizon": "长期",
+      "title": "全固态路线确定和成本下降",
+      "why": "只有技术路线、成本和良率逐步清晰，产业链才可能从主题投资走向业绩投资。",
+      "watch": "全固态电池成本、循环寿命、快充、安全性、量产线利用率。",
+      "risk": "全固态商业化可能慢于市场预期，半固态可能长期作为过渡路线。"
+    }
+  ],
+  "tracking_metrics": [
+    {
+      "name": "全固态中试线贯通和良率",
+      "why": "判断是否从样品阶段进入工程化验证。",
+      "source_hint": "电芯厂公告、投资者关系记录、年报。"
+    },
+    {
+      "name": "固态电解质中试产能和客户认证",
+      "why": "判断核心材料是否具备规模化供货可能。",
+      "source_hint": "材料公司年报、公告、投资者关系。"
+    },
+    {
+      "name": "固态正极材料出货和收入占比",
+      "why": "判断正极材料公司是否从技术储备进入商业供货。",
+      "source_hint": "年报、半年度报告、客户验证资料。"
+    },
+    {
+      "name": "干法电极和固态专用设备订单",
+      "why": "设备订单可能领先材料和电芯收入，是产业化前置信号。",
+      "source_hint": "设备公司公告、订单披露、合同负债、投资者关系。"
+    },
+    {
+      "name": "客户车型和装车进度",
+      "why": "最终要看电池是否进入真实应用场景。",
+      "source_hint": "车企发布、工信部目录、公司公告。"
+    },
+    {
+      "name": "相关业务收入占比和毛利率",
+      "why": "防止把小体量研发线索当成业绩主线。",
+      "source_hint": "年报、半年度报告、财报附注、投资者问答。"
+    }
+  ],
+  "sources": [
+    {
+      "title": "当升科技 2025 半年度报告摘要",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-27",
+      "url": "https://static.cninfo.com.cn/finalpage/2025-08-27/1224575498.PDF",
+      "source_type": "company_report",
+      "usage": "用于确认固态正极材料、氧化物固态电解质百吨级中试线、硫化物电解质小试线和客户认证导入。"
+    },
+    {
+      "title": "国轩高科 2025-004 投资者关系活动记录表",
+      "publisher": "腾讯财经公告镜像",
+      "date": "2025-09-03",
+      "url": "https://file.finance.qq.com/finance/hs/pdf/2025/09/03/1224635589.PDF",
+      "source_type": "investor_relations",
+      "usage": "用于确认全固态中试线贯通、良率和 2GWh 量产线设计。"
+    },
+    {
+      "title": "厦钨新能 2025 年半年度业绩说明会投资者关系活动记录表",
+      "publisher": "腾讯财经公告镜像",
+      "date": "2025-09-15",
+      "url": "https://file.finance.qq.com/finance/hs/pdf/2025/09/15/f734d30a921711f0940ffa163e39923a.pdf",
+      "source_type": "investor_relations",
+      "usage": "用于确认固态正极、电解质、氧化物路线供货和硫化物路线样品验证。"
+    },
+    {
+      "title": "瑞泰新材 2025 半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-23",
+      "url": "http://static.cninfo.com.cn/finalpage/2025-08-23/1224559524.PDF",
+      "source_type": "company_report",
+      "usage": "用于确认固态电池材料研发和部分固态电解质小试开发。"
+    },
+    {
+      "title": "宁德时代 2025 半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-07-31",
+      "url": "https://static.cninfo.com.cn/finalpage/2025-07-31/1224342874.PDF",
+      "source_type": "company_report",
+      "usage": "用于确认电芯龙头地位、研发投入和产业验证锚背景。"
+    },
+    {
+      "title": "先导智能固态电池智能整线解决方案公开报道",
+      "publisher": "21 经济网",
+      "date": "2025-10-11",
+      "url": "https://m.21jingji.com/article/20251011/4c7ac43a21b10180c3e318c2f78d1119.html",
+      "source_type": "media_industry_clue",
+      "usage": "用于设备链条和订单线索，仍需公告和年报继续验证。"
+    },
+    {
+      "title": "上海洗霸固态电池概念风险报道",
+      "publisher": "证券时报",
+      "date": "2026-02-24",
+      "url": "https://www.stcn.com/article/detail/2355022.html",
+      "source_type": "media_risk_clue",
+      "usage": "用于提示概念风险、收入未稳定和监管关注线索。"
+    },
+    {
+      "title": "固态电池行业研报",
+      "publisher": "东兴证券",
+      "date": "2025-06-25",
+      "url": "https://tjjd.dxzq.net/upload/20250625/20250625153610198059.pdf",
+      "source_type": "broker_industry_reference",
+      "usage": "用于辅助理解半固态、全固态、氧化物路线和材料体系，不能单独支撑公司强结论。"
+    }
+  ]
+}

@@ -64,6 +64,12 @@
   display: none;
 }
 
+.industry-chain-graph-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .industry-chain-flow-canvas {
   height: clamp(430px, 52vh, 620px);
   min-height: 430px;
@@ -71,6 +77,14 @@
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-canvas) 78%, black);
   overflow: hidden;
+}
+
+.industry-chain-flow-canvas.knowledge-map {
+  height: clamp(520px, 60vh, 700px);
+  min-height: 520px;
+  background:
+    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 34%),
+    color-mix(in srgb, var(--color-canvas) 80%, black);
 }
 
 .industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node {
@@ -84,6 +98,12 @@
   box-shadow: inset 3px 0 0 var(--color-hairline-strong);
 }
 
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.knowledge-node {
+  box-shadow:
+    inset 3px 0 0 var(--color-hairline-strong),
+    0 14px 30px rgb(0 0 0 / 0.18);
+}
+
 .industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-column-label {
   width: 168px;
   border: 1px solid color-mix(in srgb, var(--color-hairline) 70%, transparent);
@@ -92,6 +112,84 @@
   color: var(--color-ink-muted);
   padding: 0;
   text-align: left;
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-map-root {
+  width: 164px;
+  border: 1px solid color-mix(in srgb, var(--color-primary-hover) 62%, var(--color-hairline));
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 24%, transparent), transparent),
+    color-mix(in srgb, var(--color-surface-2) 92%, black);
+  color: var(--color-ink);
+  padding: 0;
+  text-align: center;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary-hover) 16%, transparent),
+    0 18px 42px rgb(0 0 0 / 0.24);
+}
+
+.industry-chain-map-root-label {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 14px 12px;
+}
+
+.industry-chain-map-root-label span {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.industry-chain-map-root-label em {
+  color: var(--color-ink-subtle);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.industry-chain-map-root-label b {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  border: 1px solid color-mix(in srgb, var(--color-primary-hover) 40%, var(--color-hairline));
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  color: var(--color-primary-hover);
+  padding: 0 7px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-map-group-label {
+  width: 168px;
+  border: 1px solid color-mix(in srgb, var(--color-hairline) 70%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface-1) 74%, transparent);
+  color: var(--color-ink-muted);
+  padding: 0;
+  text-align: left;
+}
+
+.industry-chain-map-group-label-inner {
+  display: grid;
+  gap: 3px;
+  padding: 8px 10px;
+}
+
+.industry-chain-map-group-label-inner span {
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.industry-chain-map-group-label-inner em {
+  color: var(--color-ink-subtle);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.35;
 }
 
 .industry-chain-flow-column-label-inner {
@@ -128,11 +226,16 @@
 }
 
 .industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.dimmed {
-  opacity: 0.34;
+  border-color: color-mix(in srgb, var(--color-hairline) 62%, black);
+  background: color-mix(in srgb, var(--color-surface-1) 90%, black);
+  color: var(--color-ink-tertiary);
+  opacity: 1;
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--color-hairline-strong) 58%, black);
 }
 
 .industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.dimmed:hover {
-  opacity: 0.82;
+  border-color: color-mix(in srgb, var(--color-hairline-strong) 76%, black);
+  background: color-mix(in srgb, var(--color-surface-2) 84%, black);
 }
 
 .industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.supported {
@@ -194,6 +297,20 @@
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.dimmed .industry-chain-flow-node-label span {
+  color: color-mix(in srgb, var(--color-ink-muted) 70%, black);
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.dimmed .industry-chain-flow-node-label em {
+  color: color-mix(in srgb, var(--color-ink-subtle) 64%, black);
+}
+
+.industry-chain-flow-canvas .react-flow__node-default.industry-chain-flow-node.dimmed .industry-chain-flow-node-label b {
+  border-color: color-mix(in srgb, var(--color-hairline) 70%, black);
+  background: color-mix(in srgb, var(--color-surface-1) 92%, black);
+  color: color-mix(in srgb, var(--color-ink-subtle) 60%, black);
 }
 
 .industry-chain-flow-canvas .react-flow__handle {
@@ -327,5 +444,14 @@
   .industry-chain-flow-canvas {
     height: 390px;
     min-height: 390px;
+  }
+
+  .industry-chain-graph-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .industry-chain-graph-actions .industry-chain-status-pill {
+    display: none;
   }
 }

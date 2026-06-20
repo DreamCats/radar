@@ -254,6 +254,13 @@ export type IndustryChainLearningStep = {
   node_ids: string[];
 };
 
+export type IndustryChainFlowColumn = {
+  key: string;
+  label: string;
+  description: string;
+  node_ids: string[];
+};
+
 export type IndustryChainData = {
   version: number;
   chain_id: string;
@@ -265,6 +272,7 @@ export type IndustryChainData = {
   quick_read?: IndustryChainQuickRead | null;
   learning_steps?: IndustryChainLearningStep[];
   evidence_policy?: IndustryChainEvidencePolicy | null;
+  flow_columns?: IndustryChainFlowColumn[];
   nodes: IndustryChainNode[];
   edges: IndustryChainEdge[];
   companies: IndustryChainCompany[];

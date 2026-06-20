@@ -16,6 +16,12 @@ def test_industry_chains_endpoint_lists_content_assets(tmp_path):
     data = response.json()
     assert data["items"][0]["chain_id"] == "ai-liquid-cooling"
     assert data["items"][0]["data_path"] == "chains/ai-liquid-cooling.json"
+    assert [item["chain_id"] for item in data["items"]] == [
+        "ai-liquid-cooling",
+        "solid-state-battery",
+        "short-drama-entertainment",
+        "humanoid-robotics",
+    ]
 
 
 def test_industry_chain_detail_endpoint_returns_markdown_and_graph(tmp_path):
@@ -30,6 +36,48 @@ def test_industry_chain_detail_endpoint_returns_markdown_and_graph(tmp_path):
     assert data["data"]["learning_steps"][0]["id"] == "why-now"
     assert data["data"]["nodes"][0]["id"] == "demand-ai-compute"
     assert data["data"]["companies"][0]["ts_code"] == "002837.SZ"
+
+
+def test_industry_chain_detail_endpoint_returns_custom_flow_columns(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+
+    response = client.get("/api/industry-chains/solid-state-battery")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["item"]["chain_id"] == "solid-state-battery"
+    assert "固态电池产业链学习页" in data["content_markdown"]
+    assert data["data"]["flow_columns"][0]["node_ids"] == ["high-energy-demand"]
+    assert data["data"]["nodes"][0]["id"] == "high-energy-demand"
+    assert data["data"]["companies"][0]["ts_code"] == "300750.SZ"
+
+
+def test_industry_chain_detail_endpoint_returns_commercial_model_chain(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+
+    response = client.get("/api/industry-chains/short-drama-entertainment")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["item"]["chain_id"] == "short-drama-entertainment"
+    assert "微短剧 / 影视娱乐产业链学习页" in data["content_markdown"]
+    assert data["data"]["flow_columns"][0]["node_ids"] == ["fragmented-attention-demand"]
+    assert data["data"]["nodes"][0]["id"] == "fragmented-attention-demand"
+    assert data["data"]["companies"][0]["ts_code"] == "603533.SH"
+
+
+def test_industry_chain_detail_endpoint_returns_humanoid_robotics_chain(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+
+    response = client.get("/api/industry-chains/humanoid-robotics")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["item"]["chain_id"] == "humanoid-robotics"
+    assert "人形机器人 / 具身智能产业链学习页" in data["content_markdown"]
+    assert data["data"]["flow_columns"][0]["node_ids"] == ["embodied-ai-demand"]
+    assert data["data"]["nodes"][0]["id"] == "embodied-ai-demand"
+    assert data["data"]["companies"][0]["ts_code"] == "688017.SH"
 
 
 def test_industry_chain_detail_endpoint_returns_404_for_unknown_chain(tmp_path):
