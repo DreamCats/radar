@@ -549,8 +549,9 @@
 
 @media (max-width: 720px) {
   .workspace-shell {
+    --mobile-nav-height: calc(62px + env(safe-area-inset-bottom, 0px));
     display: block;
-    padding-bottom: calc(62px + env(safe-area-inset-bottom));
+    padding-bottom: var(--mobile-nav-height);
   }
 
   .sidebar {
@@ -576,7 +577,7 @@
 
   .side-nav {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 4px;
     margin: 0;
   }
@@ -626,7 +627,7 @@
   }
 
   .workspace-shell.active-tab-dashboard .workspace-main {
-    height: calc(100dvh - 62px - env(safe-area-inset-bottom, 0px));
+    height: calc(100dvh - var(--mobile-nav-height));
     min-height: 0;
     overflow: hidden;
   }
