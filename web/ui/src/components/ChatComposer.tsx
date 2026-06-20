@@ -27,6 +27,7 @@ type ChatComposerProps = {
   followUpSuggestion?: string | null;
   placeholder?: string;
   quickPrompts?: { label: string; prompt: string }[];
+  readingHidden?: boolean;
   onAcceptFollowUpSuggestion: () => void;
   onDraftChange: (value: string) => void;
   onDismissFollowUpSuggestion: () => void;
@@ -48,6 +49,7 @@ export function ChatComposer({
   followUpSuggestion,
   placeholder,
   quickPrompts,
+  readingHidden,
   onAcceptFollowUpSuggestion,
   onDraftChange,
   onDismissFollowUpSuggestion,
@@ -95,7 +97,7 @@ export function ChatComposer({
   }, [modelMenuOpen]);
 
   return (
-    <div className={quickPrompts && quickPrompts.length > 0 ? "chat-composer with-shortcuts" : "chat-composer"}>
+    <div className={composerClassName(quickPrompts, readingHidden)}>
       <div className="chat-composer-field">
         <textarea
           value={draft}
@@ -223,6 +225,16 @@ export function ChatComposer({
       ) : null}
     </div>
   );
+}
+
+function composerClassName(quickPrompts: { label: string; prompt: string }[] | undefined, readingHidden: boolean | undefined): string {
+  return [
+    "chat-composer",
+    quickPrompts && quickPrompts.length > 0 ? "with-shortcuts" : "",
+    readingHidden ? "is-reading-hidden" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function labelForModelOption(option: ChatModelOption | undefined): string {

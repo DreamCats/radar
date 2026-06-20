@@ -652,6 +652,10 @@
     min-height: 0;
   }
 
+  .overview-chat-workspace .chat-composer textarea {
+    font-size: 16px;
+  }
+
   .overview-chat-body,
   .overview-chat-body.with-history,
   .overview-chat-body.with-context-rail,

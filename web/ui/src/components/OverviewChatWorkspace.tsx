@@ -89,6 +89,7 @@ export function OverviewChatWorkspace(props: OverviewChatWorkspaceProps) {
             followUpSuggestion={controller.followUpSuggestion}
             placeholder={props.composerPlaceholder}
             quickPrompts={props.quickPrompts}
+            readingHidden={controller.composerHidden}
             sending={controller.sending}
             onAcceptFollowUpSuggestion={controller.acceptFollowUpSuggestion}
             onDraftChange={controller.setDraft}

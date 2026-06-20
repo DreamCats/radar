@@ -24,6 +24,7 @@ export type ChatController = {
   draft: string;
   error: string | null;
   hasNewMessagesBelow: boolean;
+  composerHidden: boolean;
   historyOpen: boolean;
   followUpSuggestion: string | null;
   loadingSessions: boolean;

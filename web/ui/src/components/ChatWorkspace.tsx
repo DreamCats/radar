@@ -119,6 +119,7 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
             evidence={props.evidence}
             followUpSuggestion={controller.followUpSuggestion}
             quickPrompts={props.quickPrompts}
+            readingHidden={controller.composerHidden}
             sending={controller.sending}
             onAcceptFollowUpSuggestion={controller.acceptFollowUpSuggestion}
             onDraftChange={controller.setDraft}

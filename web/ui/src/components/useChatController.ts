@@ -39,6 +39,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   const [autoFollowBottom, setAutoFollowBottom] = useState(true);
   const [hasNewMessagesBelow, setHasNewMessagesBelow] = useState(false);
   const visibleContext = props.context.filter((item) => item.value !== undefined && item.value !== null && `${item.value}`.trim() !== "");
+  const composerHidden = !autoFollowBottom && messages.length > 0 && !draft.trim() && !sending && !canContinue;
 
   useEffect(() => {
     if (!active) {
@@ -465,6 +466,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     error,
     followUpSuggestion,
     hasNewMessagesBelow,
+    composerHidden,
     historyOpen,
     loadingSessions,
     messageListRef,
