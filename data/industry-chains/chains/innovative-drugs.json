@@ -1,0 +1,1488 @@
+{
+  "version": 1,
+  "chain_id": "innovative-drugs",
+  "title": "创新药 / ADC / 双抗出海",
+  "category": "医药生物 / 创新药研发与商业化",
+  "status": "draft",
+  "updated_at": "2026-06-20",
+  "summary": "创新药产业链不是单纯看某个药名，而是从未满足临床需求出发，经过靶点和技术平台、临床试验、注册审评、CMC 生产、BD 出海和商业化销售，最后落到收入、利润、现金流和失败风险。学习重点是分清管线进展、交易金额、销售兑现和服务端受益之间的证据强度。",
+  "quick_read": {
+    "headline": "先看病人需求，再看临床数据，最后看钱有没有到账",
+    "summary": "创新药的核心逻辑是用新机制、新靶点或新技术解决旧药效果不够、安全性不够或用药不便的问题。小白理解这条链，要先分清三件事：药有没有真实临床价值，能不能通过审批并卖出去，公司能不能把授权、销售和利润兑现到财报里。",
+    "logic_chain": [
+      "未满足临床需求决定研发方向，肿瘤、自免、罕见病等领域更容易出现高价值创新药",
+      "靶点和作用机制决定药物有没有差异化，ADC、双抗、多抗、小分子等只是技术路线",
+      "临床前和临床 I/II/III 期逐步验证安全性、有效性和适应症边界",
+      "注册审批和医保支付决定从研发结果走向患者可及",
+      "BD 出海能验证全球药企是否认可资产，但总金额不等于现金到账",
+      "商业化销售、毛利、销售费用和现金流，才是最终财务兑现",
+      "临床失败、竞品挤压、医保降价和现金消耗，是创新药最核心的反向风险"
+    ],
+    "takeaways": [
+      "创新药不是看概念，而是看临床价值、审批进展、商业化和财务兑现。",
+      "ADC 和双抗是重要方向，但每个资产仍要回到靶点、数据、适应症和竞争格局。",
+      "License-out 是强验证线索，但要拆成首付款、里程碑和销售分成来看。"
+    ]
+  },
+  "learning_steps": [
+    {
+      "id": "why-now",
+      "title": "先看需求",
+      "subtitle": "为什么需要新药",
+      "question": "创新药为什么会成为产业链机会？",
+      "answer": "如果现有治疗方案疗效有限、副作用大、复发率高或用药不方便，就会产生新药需求。真正有价值的创新药，是在明确疾病场景里解决临床问题，而不是只有一个新名词。",
+      "node_ids": [
+        "unmet-clinical-need",
+        "policy-payment-support"
+      ]
+    },
+    {
+      "id": "science-platform",
+      "title": "再看技术",
+      "subtitle": "靶点、机制和平台",
+      "question": "为什么 ADC、双抗这些词会被市场关注？",
+      "answer": "ADC 把抗体识别和毒素杀伤结合起来，双抗/多抗尝试同时调动多个生物通路。它们能提高疗效想象空间，但能不能成为好药，仍取决于靶点选择、连接子、毒素、抗体设计、临床数据和安全性。",
+      "node_ids": [
+        "target-mechanism-selection",
+        "modality-platforms",
+        "adc-platform",
+        "bispecific-platform"
+      ]
+    },
+    {
+      "id": "clinical-validation",
+      "title": "进入临床",
+      "subtitle": "从实验室到人体证据",
+      "question": "为什么临床阶段这么关键？",
+      "answer": "临床试验是创新药从故事变成证据的过程。I 期主要看安全性和剂量，II 期看初步有效性，III 期验证能否支撑注册。阶段越靠后，证据越强，但研发成本、时间和失败损失也越大。",
+      "node_ids": [
+        "preclinical-cro",
+        "clinical-trials",
+        "registration-approval"
+      ]
+    },
+    {
+      "id": "bd-commercialization",
+      "title": "看出海和销售",
+      "subtitle": "全球药企认可和真实商业化",
+      "question": "License-out 和销售收入分别说明什么？",
+      "answer": "License-out 说明海外药企愿意为资产支付首付款、里程碑和分成，是研发价值的外部验证。销售收入说明药品已经进入商业化，能被医生、患者和支付方接受。二者都重要，但证据含义不同。",
+      "node_ids": [
+        "bd-license-out",
+        "commercialization-sales",
+        "financial-validation"
+      ]
+    },
+    {
+      "id": "risk-check",
+      "title": "最后查风险",
+      "subtitle": "失败、竞争、降价和现金流",
+      "question": "创新药研究最容易忽略什么？",
+      "answer": "很多新手只看管线数量和交易总金额，容易忽略临床失败概率、适应症竞争、医保降价、销售费用、研发现金消耗和股权融资压力。创新药必须同时看上行空间和失败成本。",
+      "node_ids": [
+        "failure-risk",
+        "financial-validation"
+      ]
+    }
+  ],
+  "flow_columns": [
+    {
+      "key": "demand",
+      "label": "需求和支付",
+      "description": "先确认为什么需要新药",
+      "node_ids": [
+        "unmet-clinical-need",
+        "policy-payment-support"
+      ]
+    },
+    {
+      "key": "discovery",
+      "label": "发现和平台",
+      "description": "靶点、机制和技术路线",
+      "node_ids": [
+        "target-mechanism-selection",
+        "modality-platforms",
+        "adc-platform",
+        "bispecific-platform"
+      ]
+    },
+    {
+      "key": "development",
+      "label": "研发验证",
+      "description": "从临床前走到人体试验",
+      "node_ids": [
+        "preclinical-cro",
+        "clinical-trials"
+      ]
+    },
+    {
+      "key": "approval",
+      "label": "注册和生产",
+      "description": "能不能获批和稳定供应",
+      "node_ids": [
+        "registration-approval",
+        "cmc-cdmo"
+      ]
+    },
+    {
+      "key": "globalization",
+      "label": "出海和销售",
+      "description": "海外授权和商业化兑现",
+      "node_ids": [
+        "bd-license-out",
+        "commercialization-sales"
+      ]
+    },
+    {
+      "key": "validation",
+      "label": "财务和风险",
+      "description": "最后落到财报和失败概率",
+      "node_ids": [
+        "financial-validation",
+        "failure-risk"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "default_status": "candidate",
+    "status_values": [
+      "supported",
+      "weakly_supported",
+      "candidate",
+      "unsupported"
+    ],
+    "upgrade_rule": "创新药公司角色升级前，必须能落到年报、半年报、公告、注册批件、临床数据、授权协议、首付款/里程碑、销售收入或监管政策等可追溯证据。只有会议传闻、概念文章或管线名称，不能直接升级为强支持。",
+    "labels": [
+      {
+        "status": "supported",
+        "label": "强支持",
+        "meaning": "已有较明确的一手或高可信证据支持节点或公司角色。",
+        "evidence_needed": "上市公司披露、注册审批、临床数据、BD 协议、销售收入、年报分部或监管政策。"
+      },
+      {
+        "status": "weakly_supported",
+        "label": "弱支持",
+        "meaning": "产业逻辑和公开线索支持方向，但仍缺关键商业化或财务拆分。",
+        "evidence_needed": "继续补临床阶段、交易条款、收入占比、客户/合作方和现金流证据。"
+      },
+      {
+        "status": "candidate",
+        "label": "待验证",
+        "meaning": "逻辑上相关，暂时不能当成确认受益。",
+        "evidence_needed": "先确认具体管线、临床阶段、合作协议、收入贡献和竞争位置。"
+      },
+      {
+        "status": "unsupported",
+        "label": "证据不足",
+        "meaning": "目前只有概念联想或证据过弱，不能作为产业链映射结论。",
+        "evidence_needed": "需要找到公司公告、业务披露、注册信息或可靠临床/商业化证据，否则降级或移除。"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "unmet-clinical-need",
+      "label": "未满足临床需求",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "患者现有治疗效果不够、复发率高、副作用大或无药可用，才会产生新药机会。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "临床需求是创新药的起点。",
+        "why_matters": "没有明确疾病场景和未满足需求，技术再新也很难形成真实商业价值。",
+        "benefit_logic": "需求越强、患者基数越明确、支付方越愿意覆盖，创新药上市后的放量基础越好。",
+        "watch": [
+          "疾病负担和患者基数",
+          "现有标准治疗疗效",
+          "复发率和不良反应",
+          "指南和专家共识变化"
+        ],
+        "common_misread": "把热门靶点等同于真实需求。靶点热不代表患者一定需要，也不代表商业化一定成功。"
+      }
+    },
+    {
+      "id": "policy-payment-support",
+      "label": "政策 / 医保 / 支付环境",
+      "layer": "downstream",
+      "group": "payment",
+      "beginner_explanation": "药品获批后还要被医保、商保、医院和患者接受，支付环境会影响放量速度。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "支付环境决定药品可及性和价格体系。",
+        "why_matters": "创新药价格高，如果支付端不支持，医生和患者可及性会受到限制。",
+        "benefit_logic": "医保目录、商保创新药目录、特例单议和合理支付机制改善时，优质创新药更容易从获批走向销售。",
+        "watch": [
+          "医保目录调整",
+          "商业健康保险创新药品目录",
+          "支付范围和谈判价格",
+          "医院准入和处方放量"
+        ],
+        "common_misread": "把纳入医保简单理解为大利好。医保能提升可及性，也可能带来价格下降。"
+      }
+    },
+    {
+      "id": "target-mechanism-selection",
+      "label": "靶点和作用机制",
+      "layer": "upstream",
+      "group": "research",
+      "beginner_explanation": "靶点是药物作用的生物学对象，机制决定药物如何影响疾病过程。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "靶点和机制决定创新药有没有差异化起点。",
+        "why_matters": "同质化靶点竞争激烈，即使获批也可能很快被价格和疗效竞争压缩。",
+        "benefit_logic": "新机制、新靶点或更优适应症选择，能提高临床成功和 BD 出海的可能性。",
+        "watch": [
+          "靶点是否已被验证",
+          "同靶点竞品数量",
+          "适应症选择",
+          "临床终点设计"
+        ],
+        "common_misread": "把 first-in-class 和 best-in-class 混为一谈。第一个不一定最好，疗效和安全性才是关键。"
+      }
+    },
+    {
+      "id": "modality-platforms",
+      "label": "小分子 / 抗体 / ADC / 双抗等平台",
+      "layer": "upstream",
+      "group": "platform",
+      "beginner_explanation": "同一个疾病可以用不同药物形式解决，平台能力决定公司能否持续产出候选药。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "技术平台是持续做药的工具箱。",
+        "why_matters": "一个药成功有偶然性，平台能力强才可能持续迭代多个管线。",
+        "benefit_logic": "平台越成熟，药物设计、筛选、CMC 和临床推进效率越高，也更容易被海外药企认可。",
+        "watch": [
+          "平台是否已有获批或临床验证产品",
+          "管线数量和阶段分布",
+          "同平台二代/三代产品",
+          "对外授权和合作记录"
+        ],
+        "common_misread": "把平台数量当实力。真正要看平台有没有产出临床数据、获批药和交易。"
+      }
+    },
+    {
+      "id": "adc-platform",
+      "label": "ADC 平台",
+      "layer": "upstream",
+      "group": "platform",
+      "beginner_explanation": "ADC 像把抗体导航和毒素载荷绑在一起，目标是把杀伤更精准地送到肿瘤细胞附近。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "ADC 是抗体、连接子和载荷的组合系统。",
+        "why_matters": "ADC 是国产创新药出海的重要方向之一，但设计难度和安全性要求很高。",
+        "benefit_logic": "如果 ADC 在疗效、安全性、适应症和联用上有优势，就可能带来 BD 出海、获批和销售弹性。",
+        "watch": [
+          "靶点和适应症",
+          "连接子稳定性",
+          "毒素载荷和安全窗",
+          "临床数据和竞品对比"
+        ],
+        "common_misread": "把所有 ADC 都当成同一赛道。不同靶点、载荷、连接子和适应症差异很大。"
+      }
+    },
+    {
+      "id": "bispecific-platform",
+      "label": "双抗 / 多抗平台",
+      "layer": "upstream",
+      "group": "platform",
+      "beginner_explanation": "双抗尝试让一个药物同时识别两个靶点或调动两个机制，提高疗效或改变免疫反应。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "双抗/多抗是复杂抗体工程平台。",
+        "why_matters": "双抗可能提高疗效，也可能带来制造、稳定性和安全性挑战。",
+        "benefit_logic": "临床数据优异、差异化明确的双抗资产，更容易进入海外授权和全球开发。",
+        "watch": [
+          "双靶点组合逻辑",
+          "剂量爬坡和安全性",
+          "有效率和生存获益",
+          "生产稳定性"
+        ],
+        "common_misread": "以为多一个靶点就更强。多靶点也可能提高毒性和开发复杂度。"
+      }
+    },
+    {
+      "id": "preclinical-cro",
+      "label": "临床前研究 / CRO",
+      "layer": "midstream",
+      "group": "service",
+      "beginner_explanation": "药物进入人体试验前，需要体外、动物、药效、毒理、药代等研究。",
+      "bottleneck_strength": 3,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "临床前 CRO 帮药企完成早期研究和申报前数据准备。",
+        "why_matters": "研发活跃度提升时，早期外包服务需求可能增加。",
+        "benefit_logic": "如果创新药投融资和管线推进改善，CRO 订单、项目数量和产能利用率会受益。",
+        "watch": [
+          "新签订单",
+          "项目数量",
+          "毛利率",
+          "回款和应收账款"
+        ],
+        "common_misread": "把 CXO 公司等同创新药公司。服务商受益于行业研发活动，但不拥有药品销售上行。"
+      }
+    },
+    {
+      "id": "clinical-trials",
+      "label": "临床 I/II/III 期",
+      "layer": "midstream",
+      "group": "clinical",
+      "beginner_explanation": "临床试验是药物在人体上验证安全性和有效性的过程。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "临床数据是创新药最核心证据。",
+        "why_matters": "资本市场常围绕临床读出定价，因为数据好坏会直接影响获批、BD 和销售预期。",
+        "benefit_logic": "关键临床终点成功、疗效优于竞品或安全性更好，会提升公司资产价值。",
+        "watch": [
+          "I/II/III 期阶段",
+          "主要终点和次要终点",
+          "有效率、PFS、OS 等指标",
+          "不良反应和停药率"
+        ],
+        "common_misread": "把 I 期进入临床等同于快上市。多数创新药会在临床阶段失败或延期。"
+      }
+    },
+    {
+      "id": "registration-approval",
+      "label": "注册申报 / 审评审批",
+      "layer": "midstream",
+      "group": "regulatory",
+      "beginner_explanation": "临床数据达到要求后，公司向药监部门申报上市，获得批准后才能销售。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "注册审批决定药能不能合法上市。",
+        "why_matters": "获批是从研发资产转为商业资产的关键节点。",
+        "benefit_logic": "审批制度优化、优先审评和新药获批数量提升，会改善创新药公司的兑现路径。",
+        "watch": [
+          "NDA/BLA 受理",
+          "优先审评",
+          "获批适应症",
+          "上市后承诺研究"
+        ],
+        "common_misread": "把获批等同于卖爆。获批只是入场券，销售还要看竞争、医保和渠道。"
+      }
+    },
+    {
+      "id": "bd-license-out",
+      "label": "BD 出海 / License-out",
+      "layer": "midstream",
+      "group": "commercial",
+      "beginner_explanation": "国内药企把海外权益授权给跨国药企，通常包括首付款、里程碑和销售分成。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "BD 出海是创新药资产被外部验证的一种方式。",
+        "why_matters": "跨国药企愿意付款，说明资产在全球开发和商业化上有潜在价值。",
+        "benefit_logic": "首付款能改善现金流，里程碑和分成带来远期弹性，但兑现取决于临床、注册和销售进度。",
+        "watch": [
+          "首付款金额",
+          "里程碑触发条件",
+          "地区权益",
+          "合作方开发进度"
+        ],
+        "common_misread": "把总交易额当成已经到账。大部分总额是未来里程碑，可能永远不会触发。"
+      }
+    },
+    {
+      "id": "cmc-cdmo",
+      "label": "CMC / CDMO / 生产放大",
+      "layer": "midstream",
+      "group": "manufacturing",
+      "beginner_explanation": "药品要从实验室样品变成稳定、合规、可批量生产的产品，需要工艺、质量和产能体系。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "CMC 和 CDMO 解决药品能不能稳定生产的问题。",
+        "why_matters": "复杂药物如 ADC、双抗、生物药，对工艺放大和质量控制要求很高。",
+        "benefit_logic": "创新药临床后期和商业化项目增加时，CDMO 验证批、商业化订单和产能利用率可能改善。",
+        "watch": [
+          "临床后期项目数量",
+          "PPQ 验证批",
+          "商业化订单",
+          "产能利用率"
+        ],
+        "common_misread": "把产能扩张等同于订单增长。CDMO 更要看在手订单和商业化项目。"
+      }
+    },
+    {
+      "id": "commercialization-sales",
+      "label": "商业化销售",
+      "layer": "downstream",
+      "group": "sales",
+      "beginner_explanation": "药品获批后，还要进入医院、医生处方、医保/商保支付和患者用药，才能形成销售收入。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "商业化销售是创新药价值兑现的重要阶段。",
+        "why_matters": "没有销售收入，管线价值仍主要停留在预期和估值里。",
+        "benefit_logic": "销售持续增长、毛利稳定、费用率下降，说明创新药从研发投入走向经营回报。",
+        "watch": [
+          "单品销售额",
+          "医保和医院准入",
+          "毛利率",
+          "销售费用率"
+        ],
+        "common_misread": "只看收入不看费用。创新药商业化早期销售费用可能很高。"
+      }
+    },
+    {
+      "id": "financial-validation",
+      "label": "财务兑现",
+      "layer": "downstream",
+      "group": "validation",
+      "beginner_explanation": "最后要看创新药是否真的让公司收入、利润、现金流或资产价值改善。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "财务兑现把产业故事变成公司经营结果。",
+        "why_matters": "资本市场会提前交易预期，但长期仍要回到现金流和盈利质量。",
+        "benefit_logic": "首付款、销售收入、里程碑、分成和利润改善，能验证公司不是只有研发投入。",
+        "watch": [
+          "创新药收入",
+          "首付款和里程碑",
+          "经营现金流",
+          "研发费用和现金储备"
+        ],
+        "common_misread": "只看营收增长，不看是否由一次性授权款贡献。"
+      }
+    },
+    {
+      "id": "failure-risk",
+      "label": "临床失败 / 竞争 / 降价风险",
+      "layer": "validation",
+      "group": "risk",
+      "beginner_explanation": "创新药高收益对应高失败率，还要面对同质化竞争、价格压力和现金消耗。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "风险节点是创新药研究必须单独拆出来的一环。",
+        "why_matters": "一个关键临床失败、竞品数据更好或医保价格超预期下降，都可能重估公司价值。",
+        "benefit_logic": "能持续降低失败风险、保持差异化并控制现金消耗的公司，更容易穿越周期。",
+        "watch": [
+          "临床失败和暂停",
+          "竞品数据",
+          "医保谈判价格",
+          "现金 runway"
+        ],
+        "common_misread": "只看管线数量多。管线多也可能意味着研发费用高、资源分散和失败暴露大。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "unmet-clinical-need",
+      "target": "target-mechanism-selection",
+      "relation_type": "drives",
+      "label": "需求牵引靶点选择",
+      "description": "临床痛点决定药企优先选择哪些疾病、靶点和适应症。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "policy-payment-support",
+      "target": "registration-approval",
+      "relation_type": "enables",
+      "label": "政策影响获批和可及",
+      "description": "审评审批、医保和商保政策共同影响创新药从研发到患者可及的路径。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "target-mechanism-selection",
+      "target": "modality-platforms",
+      "relation_type": "selects",
+      "label": "靶点决定技术路线",
+      "description": "不同靶点和疾病场景会选择小分子、抗体、ADC、双抗等不同形式。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "modality-platforms",
+      "target": "adc-platform",
+      "relation_type": "includes",
+      "label": "ADC 是重要平台分支",
+      "description": "ADC 把抗体识别、连接子和毒素载荷组合，成为肿瘤创新药出海重点方向之一。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "modality-platforms",
+      "target": "bispecific-platform",
+      "relation_type": "includes",
+      "label": "双抗是复杂抗体分支",
+      "description": "双抗/多抗试图通过多靶点机制提高疗效或改变免疫反应。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "modality-platforms",
+      "target": "preclinical-cro",
+      "relation_type": "requires",
+      "label": "早期研究验证",
+      "description": "候选药进入人体前需要药效、毒理、药代和工艺研究。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "preclinical-cro",
+      "target": "clinical-trials",
+      "relation_type": "advances_to",
+      "label": "从临床前到临床",
+      "description": "临床前数据支撑 IND，进入 I/II/III 期人体试验。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "clinical-trials",
+      "target": "registration-approval",
+      "relation_type": "supports",
+      "label": "临床数据支撑申报",
+      "description": "关键临床数据达到要求后，药企才能申请上市。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "clinical-trials",
+      "target": "bd-license-out",
+      "relation_type": "validates",
+      "label": "临床数据推动 BD",
+      "description": "有差异化临床数据的资产更容易获得海外药企授权合作。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "cmc-cdmo",
+      "target": "registration-approval",
+      "relation_type": "supports",
+      "label": "工艺和质量支撑注册",
+      "description": "注册申报不仅看临床，也要看生产工艺、质量控制和供应稳定性。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "cmc-cdmo",
+      "target": "commercialization-sales",
+      "relation_type": "supports",
+      "label": "产能支撑商业化",
+      "description": "获批后必须有稳定生产和质量体系，才能持续供货。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "registration-approval",
+      "target": "commercialization-sales",
+      "relation_type": "enables",
+      "label": "获批后进入销售",
+      "description": "药品获批后才能进入商业化销售和支付准入。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "bd-license-out",
+      "target": "financial-validation",
+      "relation_type": "monetizes",
+      "label": "授权款进入财务验证",
+      "description": "首付款、里程碑和销售分成会在不同阶段影响收入、现金流和利润。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "commercialization-sales",
+      "target": "financial-validation",
+      "relation_type": "monetizes",
+      "label": "销售形成持续收入",
+      "description": "商业化药品收入、毛利和费用率决定最终经营质量。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "failure-risk",
+      "target": "financial-validation",
+      "relation_type": "can_break",
+      "label": "失败会重估资产价值",
+      "description": "临床失败、竞品压制、医保降价和现金消耗会直接影响估值和财务兑现。",
+      "evidence_status": "supported"
+    }
+  ],
+  "concept_diagrams": [
+    {
+      "id": "drug-development-funnel",
+      "title": "创新药研发漏斗",
+      "subtitle": "越往后证据越强，成本也越高",
+      "icon": "system",
+      "node_ids": [
+        "target-mechanism-selection",
+        "preclinical-cro",
+        "clinical-trials",
+        "registration-approval",
+        "commercialization-sales"
+      ],
+      "takeaway": "创新药不是从立项直接到上市，而是经过多级淘汰和验证。",
+      "parts": [
+        {
+          "label": "发现",
+          "role": "找靶点和候选药",
+          "description": "决定药物方向和差异化起点。"
+        },
+        {
+          "label": "临床",
+          "role": "验证人体数据",
+          "description": "安全性、疗效和剂量逐步清晰。"
+        },
+        {
+          "label": "上市",
+          "role": "审批和销售",
+          "description": "获批、医保、医院准入和商业化决定最终兑现。"
+        }
+      ]
+    },
+    {
+      "id": "license-out-meaning",
+      "title": "License-out 怎么看",
+      "subtitle": "总金额、首付款和里程碑不是一回事",
+      "icon": "connector",
+      "node_ids": [
+        "bd-license-out",
+        "financial-validation"
+      ],
+      "takeaway": "首付款最确定，里程碑取决于后续开发和销售，销售分成最远期。",
+      "parts": [
+        {
+          "label": "首付款",
+          "role": "确定性最高",
+          "description": "签约后通常较快确认现金或收入，是最直接的财务支持。"
+        },
+        {
+          "label": "里程碑",
+          "role": "条件触发",
+          "description": "临床、注册、销售达到约定节点后才可能收到。"
+        },
+        {
+          "label": "销售分成",
+          "role": "远期弹性",
+          "description": "依赖海外商业化成功，时间长且不确定性更高。"
+        }
+      ]
+    },
+    {
+      "id": "adc-simple",
+      "title": "ADC 可以怎么理解",
+      "subtitle": "抗体导航、连接子稳定、载荷杀伤",
+      "icon": "chip",
+      "node_ids": [
+        "adc-platform",
+        "target-mechanism-selection",
+        "clinical-trials"
+      ],
+      "takeaway": "ADC 的关键不是名字，而是抗体、连接子、载荷和临床安全窗。",
+      "parts": [
+        {
+          "label": "抗体",
+          "role": "找目标",
+          "description": "识别肿瘤细胞相关靶点，决定选择性。"
+        },
+        {
+          "label": "连接子",
+          "role": "控制释放",
+          "description": "太不稳定会毒性大，太稳定可能释放不足。"
+        },
+        {
+          "label": "载荷",
+          "role": "杀伤细胞",
+          "description": "决定杀伤能力，也决定安全风险。"
+        }
+      ]
+    }
+  ],
+  "companies": [
+    {
+      "name": "百济神州",
+      "ts_code": "688235.SH",
+      "nodes": [
+        "commercialization-sales",
+        "financial-validation",
+        "clinical-trials"
+      ],
+      "role": "全球商业化验证节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "全球化龙头",
+      "leader_reason": "A 股中少数已用自研创新药实现全球销售放量和盈利拐点的公司，适合用来观察创新药从研发到全球商业化的完整兑现。",
+      "current_view": "公司 2025 半年报披露收入增长和净利润转正，百悦泽全球销售继续放量，百泽安也贡献商业化收入。它更像创新药产业链的结果验证节点：看一款药能否从临床、获批走到全球销售和利润兑现。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪百悦泽全球销售增速",
+        "拆分中国、美国和欧洲收入",
+        "关注百泽安海外放量",
+        "观察研发费用率和经营现金流"
+      ],
+      "why_watch": "它能帮助小白理解创新药最终不是看管线数量，而是看全球销售、利润和现金流。",
+      "evidence_basis": [
+        "2025 半年报披露百悦泽全球销售和公司盈利变化",
+        "公司公告披露主要产品全球市场拓展"
+      ],
+      "verification_focus": [
+        "核心产品销售持续性",
+        "新适应症和海外市场",
+        "利润率和现金流"
+      ],
+      "risks": [
+        "单品依赖",
+        "海外竞品竞争",
+        "研发和商业化费用持续投入"
+      ],
+      "evidence_refs": [
+        {
+          "title": "百济神州有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-30",
+          "url": "http://dataclouds.cninfo.com.cn/shgonggao/2025/2025-08-30/e3738adb84c011f08a19fa163e957f7a.pdf",
+          "evidence_grade": "A",
+          "usage": "验证全球销售、利润和商业化进展"
+        },
+        {
+          "title": "百济神州有限公司 2025 年半年度业绩公告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-07",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-07/1224414281.PDF",
+          "evidence_grade": "A",
+          "usage": "验证核心产品销售数据"
+        }
+      ]
+    },
+    {
+      "name": "恒瑞医药",
+      "ts_code": "600276.SH",
+      "nodes": [
+        "modality-platforms",
+        "adc-platform",
+        "bispecific-platform",
+        "registration-approval",
+        "commercialization-sales"
+      ],
+      "role": "综合创新药平台龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "平台型龙头",
+      "leader_reason": "长期研发投入、创新药获批数量、ADC/双抗/小核酸等平台布局较完整，是观察中国大型药企创新转型的核心样本。",
+      "current_view": "公司 2025 年报摘要披露已有多款 1 类创新药和 2 类新药获批，年报披露 ADC、双/多抗、蛋白降解剂、小核酸、口服多肽等平台。它适合作为平台型药企样本，但仍要分单品看销售、出海和利润贡献。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分创新药收入和传统药收入",
+        "跟踪 ADC/双抗关键临床数据",
+        "查看海外授权和国际多中心临床",
+        "关注销售费用率和研发费用率"
+      ],
+      "why_watch": "大型药企的优势在研发平台、临床推进、注册和商业化体系，能验证创新药从管线到销售的全链路能力。",
+      "evidence_basis": [
+        "2025 年报披露多技术平台和创新药获批",
+        "公司持续披露全球化和临床进展"
+      ],
+      "verification_focus": [
+        "创新药收入占比",
+        "关键管线海外数据",
+        "BD 或全球权益合作"
+      ],
+      "risks": [
+        "大公司管线复杂，单一主题弹性被摊薄",
+        "集采和医保价格压力",
+        "海外开发周期长"
+      ],
+      "evidence_refs": [
+        {
+          "title": "江苏恒瑞医药股份有限公司 2025 年年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2026-03-26",
+          "url": "http://static.cninfo.com.cn/finalpage/2026-03-26/1225032585.PDF",
+          "evidence_grade": "A",
+          "usage": "验证创新药平台和研发管线布局"
+        },
+        {
+          "title": "江苏恒瑞医药股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-03-26",
+          "url": "http://static.cninfo.com.cn/finalpage/2026-03-26/1225032582.PDF",
+          "evidence_grade": "A",
+          "usage": "验证创新药获批和经营概况"
+        }
+      ]
+    },
+    {
+      "name": "百利天恒",
+      "ts_code": "688506.SH",
+      "nodes": [
+        "adc-platform",
+        "bispecific-platform",
+        "bd-license-out",
+        "clinical-trials"
+      ],
+      "role": "双抗 ADC / BD 出海验证节点",
+      "tier": "核心验证节点",
+      "attention_level": "leader",
+      "attention_label": "BD 出海样本",
+      "leader_reason": "BL-B01D1 双抗 ADC 与海外药企合作是国产 ADC 出海的标志性案例之一，适合用来教学总交易额、首付款和临床兑现的区别。",
+      "current_view": "公开资料显示公司 BL-B01D1 是 EGFR×HER3 双抗 ADC，曾与 BMS 达成大额授权合作。公司年报摘要和半年报披露其围绕全球生物医药前沿进行创新药研发。研究时应重点看临床推进、合作方开发进度、里程碑触发和现金消耗。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪 BL-B01D1 临床阶段和数据读出",
+        "确认 BMS 合作开发进度",
+        "拆分首付款、里程碑和收入确认",
+        "关注现金储备和研发费用"
+      ],
+      "why_watch": "它能帮助理解创新药公司如何用单个高价值资产打开全球 BD 估值空间。",
+      "evidence_basis": [
+        "公司定期报告披露创新药研发方向",
+        "高可信财经资料披露 BL-B01D1 与 BMS 合作金额和资产属性"
+      ],
+      "verification_focus": [
+        "临床数据质量",
+        "里程碑兑现",
+        "后续管线是否接力"
+      ],
+      "risks": [
+        "单一核心资产依赖",
+        "临床失败或延期",
+        "授权款一次性贡献后利润波动"
+      ],
+      "evidence_refs": [
+        {
+          "title": "四川百利天恒药业股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-20",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-20/1224519388.PDF",
+          "evidence_grade": "A",
+          "usage": "验证公司创新药研发和管线披露"
+        },
+        {
+          "title": "四川百利天恒药业股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-04-27",
+          "url": "http://dataclouds.cninfo.com.cn/shgonggao/hsomarket/2026/20260427/b0e0e050368746bf87c88dd509795f37.PDF",
+          "evidence_grade": "A",
+          "usage": "验证年度研发方向和经营概况"
+        },
+        {
+          "title": "首付款 8 亿美元，国产 ADC 出海刷新纪录",
+          "publisher": "21 经济网",
+          "date": "2023-12-13",
+          "url": "https://www.21jingji.com/article/20231213/herald/1a722c24c72e0d092ac94ce36994906d.html",
+          "evidence_grade": "B",
+          "usage": "作为 BL-B01D1 授权合作线索，仍需配合公司公告和财报验证收入确认"
+        }
+      ]
+    },
+    {
+      "name": "科伦药业",
+      "ts_code": "002422.SZ",
+      "nodes": [
+        "adc-platform",
+        "bd-license-out",
+        "registration-approval",
+        "commercialization-sales"
+      ],
+      "role": "ADC 管线 / 默沙东合作验证节点",
+      "tier": "核心验证节点",
+      "attention_level": "leader",
+      "attention_label": "ADC 合作样本",
+      "leader_reason": "子公司科伦博泰拥有 ADC 平台和多条临床管线，并与默沙东开展多个 ADC 合作，是国产 ADC 资产海外开发的重要样本。",
+      "current_view": "公司 2025 半年报披露科伦博泰在 ADC 领域长期积累，拥有 OptiDC 平台和多条 ADC/新型偶联药物管线。SKB264 等资产的适应症获批和默沙东合作进展，是观察 ADC 从研发到注册、出海和商业化的关键。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪 SKB264/MK-2870 国内获批适应症",
+        "跟踪默沙东海外临床进展",
+        "拆分创新药和输液业务贡献",
+        "关注授权收入和分成条款"
+      ],
+      "why_watch": "它把传统药企、创新药子公司、ADC 平台和海外合作放在同一家公司体系里，适合看创新转型。",
+      "evidence_basis": [
+        "2025 半年报披露科伦博泰 ADC 平台和临床管线",
+        "公告披露 SKB264 新适应症获批"
+      ],
+      "verification_focus": [
+        "核心 ADC 管线临床数据",
+        "获批适应症放量",
+        "海外合作里程碑"
+      ],
+      "risks": [
+        "传统业务和创新业务估值逻辑不同",
+        "海外临床进展不确定",
+        "同靶点 ADC 竞争加剧"
+      ],
+      "evidence_refs": [
+        {
+          "title": "四川科伦药业股份有限公司 2025 年半年度报告全文",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-29",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-29/1224614177.PDF",
+          "evidence_grade": "A",
+          "usage": "验证科伦博泰 ADC 平台和管线披露"
+        },
+        {
+          "title": "关于创新药物芦康沙妥珠单抗获批新适应症的公告",
+          "publisher": "巨潮资讯",
+          "date": "2025-10-13",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-10-13/1224707219.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 SKB264 国内注册和商业化进展"
+        }
+      ]
+    },
+    {
+      "name": "荣昌生物",
+      "ts_code": "688331.SH",
+      "nodes": [
+        "adc-platform",
+        "commercialization-sales",
+        "bd-license-out",
+        "financial-validation"
+      ],
+      "role": "ADC / 自免商业化验证节点",
+      "tier": "核心验证节点",
+      "attention_level": "leader",
+      "attention_label": "商业化兑现样本",
+      "leader_reason": "泰它西普和维迪西妥单抗已经进入商业化阶段，既能观察创新药销售放量，也能观察 ADC 产品和海外合作价值。",
+      "current_view": "公司 2025 半年报披露收入增长主要来自泰它西普和维迪西妥单抗销售，年报摘要披露收入大幅增长和盈利改善。维迪西妥单抗作为 HER2 ADC 产品，是国产 ADC 商业化和出海线索的重要样本。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分泰它西普和维迪西妥单抗销售",
+        "跟踪海外合作和临床开发进度",
+        "关注销售费用率",
+        "确认利润是否可持续"
+      ],
+      "why_watch": "它能帮助理解创新药从获批、医保、销售到盈利改善的路径。",
+      "evidence_basis": [
+        "2025 半年报披露两款核心产品销售拉动收入增长",
+        "2025 年报摘要披露收入增长和盈利改善"
+      ],
+      "verification_focus": [
+        "核心产品销售曲线",
+        "海外合作兑现",
+        "研发投入和现金流"
+      ],
+      "risks": [
+        "销售费用投入较高",
+        "自免和肿瘤竞争格局变化",
+        "海外合作和注册不确定"
+      ],
+      "evidence_refs": [
+        {
+          "title": "荣昌生物制药（烟台）股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-23",
+          "url": "http://dataclouds.cninfo.com.cn/shgonggao/2025/2025-08-23/292529bc7f3a11f0b172fa163e957f7a.pdf",
+          "evidence_grade": "A",
+          "usage": "验证核心产品销售和收入增长"
+        },
+        {
+          "title": "荣昌生物制药（烟台）股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-03-27",
+          "url": "http://dataclouds.cninfo.com.cn/shgonggao/hsomarket/2026/20260327/ae1798608c754f5682806185d2fa5e9e.PDF",
+          "evidence_grade": "A",
+          "usage": "验证年度商业化和盈利改善"
+        }
+      ]
+    },
+    {
+      "name": "君实生物",
+      "ts_code": "688180.SH",
+      "nodes": [
+        "registration-approval",
+        "commercialization-sales",
+        "clinical-trials"
+      ],
+      "role": "PD-1 出海商业化验证节点",
+      "tier": "验证节点",
+      "attention_level": "core_candidate",
+      "attention_label": "海外获批样本",
+      "leader_reason": "特瑞普利单抗已在海外获批并开展商业化，是观察中国创新药海外注册和商业化落地的重要样本。",
+      "current_view": "公司 2024 年报和 2025 行动计划披露特瑞普利单抗在美国、欧盟等市场获批或商业化供应，并持续推进新适应症和后续管线。研究时要看海外销售贡献、合作方推广能力和国内外竞争。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪特瑞普利单抗海外销售",
+        "查看新增适应症获批",
+        "关注 PD-1/VEGF 双抗等后续管线",
+        "验证盈利和现金流改善"
+      ],
+      "why_watch": "它能把海外审批、供应、合作商业化和国内创新药竞争放在一起观察。",
+      "evidence_basis": [
+        "2024 年报披露特瑞普利单抗海外获批和商业化状态",
+        "2025 行动计划披露适应症和海外供应进展"
+      ],
+      "verification_focus": [
+        "海外收入贡献",
+        "国内 PD-1 竞争",
+        "后续管线接力"
+      ],
+      "risks": [
+        "PD-1 赛道竞争激烈",
+        "海外商业化投入和回款周期",
+        "新管线临床风险"
+      ],
+      "evidence_refs": [
+        {
+          "title": "上海君实生物医药科技股份有限公司 2024 年年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-03-28",
+          "url": "http://dataclouds.cninfo.com.cn/shgonggao/2025/2025-03-28/2f9deec50afe11f08bb1fa163e957f7a.pdf",
+          "evidence_grade": "A",
+          "usage": "验证特瑞普利单抗海外获批和商业化基础"
+        },
+        {
+          "title": "上海君实生物医药科技股份有限公司 2025 年半年度提质增效重回报行动方案评估报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-27",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-27/1224581087.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 2025 年核心产品和海外供应进展"
+        }
+      ]
+    },
+    {
+      "name": "药明康德",
+      "ts_code": "603259.SH",
+      "nodes": [
+        "preclinical-cro",
+        "cmc-cdmo",
+        "clinical-trials"
+      ],
+      "role": "CRO/CDMO 服务端验证节点",
+      "tier": "服务端龙头",
+      "attention_level": "leader",
+      "attention_label": "研发外包龙头",
+      "leader_reason": "公司提供新药研发和生产一体化服务，适合作为观察全球创新药研发活跃度和服务端订单的龙头样本。",
+      "current_view": "公司 2025 年报披露端到端新药研发和生产服务，Q3 报告披露小分子 D&M/CDMO、临床 CRO/SMO 等业务表现。它不是创新药权益公司，而是服务端受益者，要看订单、项目数量、产能利用率和海外客户风险。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪新签订单和在手订单",
+        "拆分小分子 CDMO 与临床 CRO",
+        "关注海外监管和客户结构",
+        "查看毛利率和产能利用率"
+      ],
+      "why_watch": "服务端公司能验证行业研发活跃度，但逻辑和拥有药品权益的创新药企不同。",
+      "evidence_basis": [
+        "2025 年报披露端到端新药研发生产服务",
+        "2025 Q3 报告披露业务板块和项目推进"
+      ],
+      "verification_focus": [
+        "订单质量",
+        "海外客户稳定性",
+        "商业化项目数量"
+      ],
+      "risks": [
+        "地缘和监管风险",
+        "创新药融资周期影响订单",
+        "价格竞争压缩毛利"
+      ],
+      "evidence_refs": [
+        {
+          "title": "无锡药明康德新药开发股份有限公司 2025 年年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2026-03-24",
+          "url": "https://static.cninfo.com.cn/finalpage/2026-03-24/1225025225.PDF",
+          "evidence_grade": "A",
+          "usage": "验证端到端研发生产服务定位"
+        },
+        {
+          "title": "无锡药明康德新药开发股份有限公司 2025 年第三季度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-10-27",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-10-27/1224737987.PDF",
+          "evidence_grade": "A",
+          "usage": "验证业务板块和项目推进"
+        }
+      ]
+    },
+    {
+      "name": "泰格医药",
+      "ts_code": "300347.SZ",
+      "nodes": [
+        "clinical-trials"
+      ],
+      "role": "临床 CRO 验证节点",
+      "tier": "服务端龙头",
+      "attention_level": "leader",
+      "attention_label": "临床试验龙头",
+      "leader_reason": "公司专注临床试验全过程专业服务，是观察创新药临床推进、国内外项目景气度和临床 CRO 订单变化的典型公司。",
+      "current_view": "公司 2024 年报摘要披露主营临床试验技术服务和相关服务；2025 年投资者关系活动记录披露 2025 年度临床试验技术服务收入及国内创新药临床运营变化。它适合作为服务端观察，但不应当和拥有药品权益的创新药公司混淆。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪临床试验技术服务收入",
+        "查看新签订单和在手订单",
+        "拆分国内创新药和海外项目",
+        "关注毛利率和应收账款"
+      ],
+      "why_watch": "临床 CRO 是创新药研发活跃度的温度计。",
+      "evidence_basis": [
+        "年报摘要披露临床试验全过程 CRO 定位",
+        "投资者关系记录披露临床试验技术服务收入和国内创新药项目变化"
+      ],
+      "verification_focus": [
+        "临床项目数量",
+        "订单恢复情况",
+        "国内创新药投融资环境"
+      ],
+      "risks": [
+        "国内创新药融资周期波动",
+        "临床项目延期或取消",
+        "服务价格竞争"
+      ],
+      "evidence_refs": [
+        {
+          "title": "杭州泰格医药科技股份有限公司 2024 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2025-03-28",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-03-28/1222923277.PDF",
+          "evidence_grade": "A",
+          "usage": "验证临床 CRO 主营业务"
+        },
+        {
+          "title": "杭州泰格医药科技股份有限公司投资者关系活动记录表",
+          "publisher": "巨潮资讯",
+          "date": "2026-04-01",
+          "url": "http://static.cninfo.com.cn/finalpage/2026-04-01/1225070195.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 2025 年临床试验技术服务收入和行业变化"
+        }
+      ]
+    },
+    {
+      "name": "凯莱英",
+      "ts_code": "002821.SZ",
+      "nodes": [
+        "cmc-cdmo",
+        "commercialization-sales"
+      ],
+      "role": "CDMO / 商业化生产验证节点",
+      "tier": "服务端龙头",
+      "attention_level": "leader",
+      "attention_label": "CDMO 龙头",
+      "leader_reason": "公司披露多个临床前、临床和商业化项目，并覆盖小分子、制剂、生物大分子、多肽、小核酸等方向，是创新药生产放大和商业化订单的观察样本。",
+      "current_view": "公司 2025 半年报摘要披露制剂 CDMO、生物大分子 CDMO、商业项目和临床后期项目情况，并提到在手订单增长。它反映的是创新药项目从临床后期走向工艺验证和商业化供应的服务端机会。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪在手订单和境外订单占比",
+        "关注 PPQ 验证批和商业化项目",
+        "拆分小分子、制剂和生物大分子 CDMO",
+        "查看产能利用率和毛利率"
+      ],
+      "why_watch": "CDMO 是创新药临床后期和上市后生产放大的关键支撑。",
+      "evidence_basis": [
+        "2025 半年报摘要披露制剂和生物大分子 CDMO 收入、项目交付和商业化供应",
+        "公告披露在手订单和临床后期项目储备"
+      ],
+      "verification_focus": [
+        "商业化订单",
+        "PPQ 项目数量",
+        "新技术平台收入"
+      ],
+      "risks": [
+        "大客户项目波动",
+        "产能利用率不足",
+        "CDMO 价格竞争"
+      ],
+      "evidence_refs": [
+        {
+          "title": "凯莱英医药集团（天津）股份有限公司 2025 年半年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-26",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-26/1224565237.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 CDMO 项目、订单和商业化供应"
+        }
+      ]
+    },
+    {
+      "name": "美迪西",
+      "ts_code": "688202.SH",
+      "nodes": [
+        "preclinical-cro"
+      ],
+      "role": "临床前 CRO 观察节点",
+      "tier": "弹性候选",
+      "attention_level": "core_candidate",
+      "attention_label": "临床前服务候选",
+      "leader_reason": "临床前 CRO 与创新药早期研发直接相关，但弹性取决于订单恢复、客户结构和盈利能力。",
+      "current_view": "公司属于临床前研发服务方向，可作为创新药早期研发活跃度的观察节点。相比龙头药企，它更需要验证订单、毛利率、应收账款和客户预算恢复，暂不直接等同于创新药核心资产。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "查 2025 年报和半年报",
+        "确认临床前 CRO 收入和订单",
+        "关注毛利率和应收账款",
+        "跟踪创新药融资环境"
+      ],
+      "why_watch": "早期研发外包可能受创新药投融资和管线启动影响，弹性较强但波动也大。",
+      "evidence_basis": [
+        "公司披露文件和行业分类显示其与临床前研发服务相关"
+      ],
+      "verification_focus": [
+        "新签订单",
+        "收入恢复",
+        "盈利质量"
+      ],
+      "risks": [
+        "早期研发需求波动",
+        "服务价格竞争",
+        "回款压力"
+      ],
+      "evidence_refs": [
+        {
+          "title": "上海美迪西生物医药股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-29",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-29/1224611062.PDF",
+          "evidence_grade": "A",
+          "usage": "待补全文核对临床前 CRO 业务、订单和盈利质量"
+        }
+      ]
+    }
+  ],
+  "common_misreads": [
+    {
+      "title": "把 License-out 总金额当成已经到账",
+      "correction": "总金额通常包含大量未来里程碑和销售分成，首付款才是最确定的现金和收入线索。"
+    },
+    {
+      "title": "把进入临床 I 期当成快上市",
+      "correction": "I 期主要看安全性和剂量，距离注册上市仍有 II/III 期、申报、审批和商业化多个关口。"
+    },
+    {
+      "title": "把 ADC、双抗这些技术词当成确定受益",
+      "correction": "技术路线只是工具，真正要看靶点、临床数据、安全性、适应症和竞争格局。"
+    },
+    {
+      "title": "把 CXO/CDMO 等同创新药公司",
+      "correction": "服务商受益于研发和生产外包，但一般不拥有药品全球销售上行，估值和风险逻辑不同。"
+    },
+    {
+      "title": "只看获批，不看商业化",
+      "correction": "获批是入场券，销售放量还要看医保、医院准入、医生认知、竞品和费用率。"
+    }
+  ],
+  "financial_translations": [
+    {
+      "node_id": "clinical-trials",
+      "title": "临床试验：看研发费用和关键读出",
+      "watch": "研发费用、临床阶段、主要终点、入组进度、数据读出时间。",
+      "source_hint": "年报、半年报、临床试验登记、学术会议摘要、公司公告。",
+      "risk": "临床失败可能导致资产减值、项目终止和估值下修。"
+    },
+    {
+      "node_id": "bd-license-out",
+      "title": "BD 出海：拆首付款、里程碑和分成",
+      "watch": "首付款、里程碑触发条件、权益地区、合作方开发进度、收入确认方式。",
+      "source_hint": "公司公告、年报财务附注、合作方公告。",
+      "risk": "总交易额大不代表现金到账，后续临床失败会影响里程碑。"
+    },
+    {
+      "node_id": "commercialization-sales",
+      "title": "商业化：看单品收入和费用率",
+      "watch": "核心产品销售额、医保准入、医院覆盖、毛利率、销售费用率。",
+      "source_hint": "年报、半年报、业绩公告、医保目录。",
+      "risk": "放量可能伴随价格下降和销售费用上升。"
+    },
+    {
+      "node_id": "cmc-cdmo",
+      "title": "CDMO：看订单和商业化项目",
+      "watch": "新签订单、在手订单、PPQ 验证批、商业化项目数量、产能利用率。",
+      "source_hint": "年报、半年报、投资者关系、项目公告。",
+      "risk": "客户项目取消或延期会影响收入和产能利用率。"
+    },
+    {
+      "node_id": "failure-risk",
+      "title": "风险：看现金 runway 和竞品",
+      "watch": "货币资金、经营现金流、研发费用、竞品数据、医保谈判价格、项目终止公告。",
+      "source_hint": "财报、公告、临床登记、医保文件、行业会议。",
+      "risk": "创新药估值可能在临床失败或竞品超预期时快速重估。"
+    }
+  ],
+  "catalysts": [
+    {
+      "horizon": "短期",
+      "title": "ASCO / ESMO / AACR 等临床数据读出",
+      "why": "关键数据能直接改变市场对药物有效性和安全性的判断。",
+      "watch": "摘要、口头报告、主要终点、竞品对比和专家解读。",
+      "risk": "数据口径不完整或样本量小，容易被市场过度解读。"
+    },
+    {
+      "horizon": "短期",
+      "title": "BD 出海和 NewCo 交易",
+      "why": "海外合作能快速验证资产价值并改善现金流预期。",
+      "watch": "首付款、里程碑、权益区域、合作方实力和开发责任。",
+      "risk": "大额总交易金额可能主要是远期里程碑。"
+    },
+    {
+      "horizon": "中期",
+      "title": "NMPA / FDA / EMA 获批",
+      "why": "获批是从研发资产转入商业化资产的关键节点。",
+      "watch": "受理、优先审评、获批适应症、标签范围和上市后承诺。",
+      "risk": "获批后仍可能面临准入慢、销售费用高和竞品挤压。"
+    },
+    {
+      "horizon": "中期",
+      "title": "医保目录和商业健康保险创新药目录",
+      "why": "支付环境会影响药品可及性和销售放量。",
+      "watch": "谈判价格、支付范围、商保目录、特例单议和医院执行。",
+      "risk": "支付准入可能以降价为代价。"
+    },
+    {
+      "horizon": "兑现",
+      "title": "核心产品销售和利润拐点",
+      "why": "收入、毛利、费用率和现金流是最终财务证据。",
+      "watch": "单品销售额、毛利率、销售费用率、经营现金流和净利润。",
+      "risk": "一次性授权收入可能掩盖主营销售压力。"
+    }
+  ],
+  "tracking_metrics": [
+    {
+      "name": "关键临床数据读出",
+      "why": "决定药物是否具备差异化和后续获批/出海可能。",
+      "source_hint": "ASCO、ESMO、AACR、公司公告、临床登记平台。"
+    },
+    {
+      "name": "License-out 首付款和里程碑",
+      "why": "验证海外药企是否认可资产，并影响现金流。",
+      "source_hint": "上市公司公告、合作方公告、年报财务附注。"
+    },
+    {
+      "name": "NMPA/FDA/EMA 受理和获批",
+      "why": "决定管线能否进入商业化阶段。",
+      "source_hint": "NMPA、FDA、EMA、公司公告。"
+    },
+    {
+      "name": "核心创新药销售收入",
+      "why": "判断获批药品是否真正放量。",
+      "source_hint": "年报、半年报、业绩公告、产品收入拆分。"
+    },
+    {
+      "name": "医保和商保支付变化",
+      "why": "影响创新药价格、可及性和放量速度。",
+      "source_hint": "国家医保局、医保目录、商保创新药目录。"
+    },
+    {
+      "name": "研发费用和现金 runway",
+      "why": "判断公司能否支撑长期临床开发。",
+      "source_hint": "财报、现金流量表、融资公告。"
+    },
+    {
+      "name": "CXO/CDMO 新签订单和在手订单",
+      "why": "观察服务端是否跟随创新药研发周期恢复。",
+      "source_hint": "药明康德、泰格医药、凯莱英等公司公告和 IR。"
+    }
+  ],
+  "sources": [
+    {
+      "title": "国家医保局 人力资源社会保障部关于印发《国家基本医疗保险、生育保险和工伤保险药品目录》以及《商业健康保险创新药品目录》（2025年）的通知",
+      "publisher": "国家医保局 / 中国政府网",
+      "date": "2025-12-07",
+      "url": "https://www.gov.cn/zhengce/zhengceku/202512/content_7050533.htm",
+      "source_type": "policy",
+      "usage": "验证创新药支付环境和商保创新药目录"
+    },
+    {
+      "title": "国家医疗保障局关于公布 2025 年药品目录及商业健康保险创新药品目录调整工作方案",
+      "publisher": "中国政府网",
+      "date": "2025-07-11",
+      "url": "https://www.gov.cn/zhengce/zhengceku/202507/content_7031575.htm",
+      "source_type": "policy",
+      "usage": "验证医保目录和商保目录调整机制"
+    },
+    {
+      "title": "国家药监局：助力创新药“中国首发”",
+      "publisher": "国家药监局",
+      "date": "2026-01-08",
+      "url": "https://www.nmpa.gov.cn/yaowen/ypjgyw/zhyw/20260108085003119.html?type=pc&m=",
+      "source_type": "policy",
+      "usage": "验证创新药审评审批和获批数量背景"
+    },
+    {
+      "title": "国家药监局关于优化创新药临床试验审评审批有关事项的公告",
+      "publisher": "国家药监局",
+      "date": "2025-09-12",
+      "url": "https://www.nmpa.gov.cn/xxgk/ggtg/ypggtg/ypqtggtg/20250912092255131.html?type=pc&m=",
+      "source_type": "policy",
+      "usage": "验证临床试验审评审批优化方向"
+    },
+    {
+      "title": "首付款 8 亿美元，国产 ADC 出海刷新纪录",
+      "publisher": "21 经济网",
+      "date": "2023-12-13",
+      "url": "https://www.21jingji.com/article/20231213/herald/1a722c24c72e0d092ac94ce36994906d.html",
+      "source_type": "industry_media",
+      "usage": "辅助解释 ADC 出海和百利天恒案例，不单独作为强结论"
+    },
+    {
+      "title": "ADC 出海交易盘点",
+      "publisher": "北京医药行业协会",
+      "date": "2025",
+      "url": "http://www.bppa.org.cn/xhdt/227.html",
+      "source_type": "industry_association",
+      "usage": "辅助确认 ADC license-out 交易方向"
+    },
+    {
+      "title": "百济神州有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-30",
+      "url": "http://dataclouds.cninfo.com.cn/shgonggao/2025/2025-08-30/e3738adb84c011f08a19fa163e957f7a.pdf",
+      "source_type": "company_report",
+      "usage": "验证百济神州全球商业化和财务兑现"
+    },
+    {
+      "title": "江苏恒瑞医药股份有限公司 2025 年年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2026-03-26",
+      "url": "http://static.cninfo.com.cn/finalpage/2026-03-26/1225032585.PDF",
+      "source_type": "company_report",
+      "usage": "验证恒瑞创新药平台和管线布局"
+    },
+    {
+      "title": "四川百利天恒药业股份有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-20",
+      "url": "https://static.cninfo.com.cn/finalpage/2025-08-20/1224519388.PDF",
+      "source_type": "company_report",
+      "usage": "验证百利天恒研发和管线披露"
+    },
+    {
+      "title": "四川科伦药业股份有限公司 2025 年半年度报告全文",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-29",
+      "url": "http://static.cninfo.com.cn/finalpage/2025-08-29/1224614177.PDF",
+      "source_type": "company_report",
+      "usage": "验证科伦博泰 ADC 平台和管线披露"
+    },
+    {
+      "title": "荣昌生物制药（烟台）股份有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-23",
+      "url": "http://dataclouds.cninfo.com.cn/shgonggao/2025/2025-08-23/292529bc7f3a11f0b172fa163e957f7a.pdf",
+      "source_type": "company_report",
+      "usage": "验证荣昌生物核心产品销售和商业化"
+    },
+    {
+      "title": "上海君实生物医药科技股份有限公司 2024 年年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-03-28",
+      "url": "http://dataclouds.cninfo.com.cn/shgonggao/2025/2025-03-28/2f9deec50afe11f08bb1fa163e957f7a.pdf",
+      "source_type": "company_report",
+      "usage": "验证君实生物海外获批和商业化基础"
+    },
+    {
+      "title": "无锡药明康德新药开发股份有限公司 2025 年年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2026-03-24",
+      "url": "https://static.cninfo.com.cn/finalpage/2026-03-24/1225025225.PDF",
+      "source_type": "company_report",
+      "usage": "验证 CRO/CDMO 服务端定位"
+    },
+    {
+      "title": "杭州泰格医药科技股份有限公司投资者关系活动记录表",
+      "publisher": "巨潮资讯",
+      "date": "2026-04-01",
+      "url": "http://static.cninfo.com.cn/finalpage/2026-04-01/1225070195.PDF",
+      "source_type": "investor_relations",
+      "usage": "验证临床 CRO 服务收入和行业变化"
+    },
+    {
+      "title": "凯莱英医药集团（天津）股份有限公司 2025 年半年度报告摘要",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-26",
+      "url": "https://static.cninfo.com.cn/finalpage/2025-08-26/1224565237.PDF",
+      "source_type": "company_report",
+      "usage": "验证 CDMO 项目、订单和商业化供应"
+    }
+  ]
+}

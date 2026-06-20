@@ -35,6 +35,10 @@ data/industry-chains/
     short-drama-entertainment.json
     humanoid-robotics.md
     humanoid-robotics.json
+    low-altitude-economy.md
+    low-altitude-economy.json
+    innovative-drugs.md
+    innovative-drugs.json
   templates/
     chain-page-template.md
 ```

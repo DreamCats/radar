@@ -1,0 +1,1355 @@
+{
+  "version": 1,
+  "chain_id": "low-altitude-economy",
+  "title": "低空经济 / eVTOL",
+  "category": "先进制造 / 通航与低空基础设施",
+  "status": "draft",
+  "updated_at": "2026-06-20",
+  "summary": "低空经济不是单一飞行器行业，而是空域规则、适航认证、飞行器制造、低空智联网、起降基础设施和运营场景共同打开的系统性产业。学习重点是先判断能不能安全、合规、规模化地飞，再看无人机、eVTOL、通航运营、空管信息化和核心部件如何受益。",
+  "quick_read": {
+    "headline": "先看能不能飞，再看谁造、谁管、谁运营",
+    "summary": "低空经济的底层约束不是只有飞行器性能，而是低空空域如何开放、谁来监管、飞行器能否取证、航线和起降点能否成网、运营场景能否算清 ROI。A 股映射要分清四类公司：飞行器和通航运营、低空空管/信息化、无人机成熟应用、复材/电驱/检测等配套环节。",
+    "logic_chain": [
+      "政策把低空空域从管制资源变成可开发的经济资源",
+      "但飞行安全要求极高，空域、适航、运营许可和监管平台先决定能不能飞",
+      "无人机在物流、巡检、农业、测绘和应急等场景更早商业化",
+      "eVTOL 代表更远期的载人/中短途交通方向，但取证、成本和运营网络仍是瓶颈",
+      "规模化飞行需要低空智联网、飞行服务平台、起降点、充换电和维保体系",
+      "硬件端关注飞行器整机、飞控导航、电池电驱、复合材料和检测认证",
+      "公司研究要看订单、适航进度、项目落地、收入占比和现金流，而不是只看低空概念"
+    ],
+    "takeaways": [
+      "低空经济先是规则和基础设施问题，然后才是飞行器放量问题。",
+      "无人机应用比载人 eVTOL 更早兑现，eVTOL 更偏中长期弹性。",
+      "空管信息化和运营平台是低空经济区别于普通制造链的关键节点。"
+    ]
+  },
+  "learning_steps": [
+    {
+      "id": "policy-airspace",
+      "title": "先看空域",
+      "subtitle": "为什么低空经济以前起不来",
+      "question": "为什么不是有飞机就能发展低空经济？",
+      "answer": "低空飞行占用公共空域，必须解决审批、航线、识别、避障、通信和监管。以前的核心限制是空域可用性和管理体系不完善，所以低空经济不是单纯买飞机的问题。",
+      "node_ids": [
+        "policy-airspace-opening",
+        "airspace-management"
+      ]
+    },
+    {
+      "id": "certification",
+      "title": "再看取证",
+      "subtitle": "能不能安全合法地飞",
+      "question": "为什么 eVTOL 商业化要等适航？",
+      "answer": "载人或大型无人航空器要面向商业运营，必须证明设计、生产、运行和维护符合安全标准。适航取证、运行许可和监管接入，是从演示飞行走向常态化收费运营的分水岭。",
+      "node_ids": [
+        "airworthiness-certification",
+        "operation-service"
+      ]
+    },
+    {
+      "id": "scenario",
+      "title": "进入场景",
+      "subtitle": "先载货、巡检、应急，再看载人",
+      "question": "哪些场景更容易先落地？",
+      "answer": "更早落地的一般是风险可控、路线相对固定、客户愿意付费的场景，例如电力巡检、测绘、农林植保、物流配送、医疗样本、应急救援和景区观光。载人 eVTOL 的想象空间大，但安全和运营要求更高。",
+      "node_ids": [
+        "scenario-logistics-inspection",
+        "industrial-uav",
+        "evtol-aircraft"
+      ]
+    },
+    {
+      "id": "system",
+      "title": "拆开系统",
+      "subtitle": "低空不是一架飞机，而是一张网",
+      "question": "为什么要看低空智联网和起降点？",
+      "answer": "规模化飞行需要知道谁在飞、往哪飞、是否冲突、哪里起降、如何补能、出了问题怎么处置。低空智联网、飞行服务平台、起降设施和运维体系，是低空经济从试点走向网络化运营的基础。",
+      "node_ids": [
+        "low-altitude-iot",
+        "takeoff-landing-infra",
+        "operation-service"
+      ]
+    },
+    {
+      "id": "components",
+      "title": "再看硬件",
+      "subtitle": "整机、电驱、复材、飞控各自卡什么",
+      "question": "硬件端真正的卡点在哪里？",
+      "answer": "飞行器要轻、稳、安全、可维护。eVTOL 重点看电池能量密度、电推进、飞控导航、复合材料和适航可靠性；无人机重点看飞控、载荷、续航、通信链路和场景适配。",
+      "node_ids": [
+        "aircraft-platform",
+        "battery-electric-propulsion",
+        "flight-control-navigation",
+        "composite-structure"
+      ]
+    },
+    {
+      "id": "a-share",
+      "title": "最后落公司",
+      "subtitle": "先分角色，再补证据",
+      "question": "怎么判断 A 股公司是不是低空经济真受益？",
+      "answer": "先看公司处在整机、无人机、空管信息化、运营、材料、部件、检测哪一环，再查年报、公告和投资者关系记录里的订单、项目、适航进度、客户、收入占比和毛利变化。",
+      "node_ids": [
+        "commercial-validation",
+        "airspace-management",
+        "operation-service",
+        "composite-structure"
+      ]
+    }
+  ],
+  "flow_columns": [
+    {
+      "key": "rules",
+      "label": "规则入口",
+      "description": "空域和适航先决定能不能飞",
+      "node_ids": [
+        "policy-airspace-opening",
+        "airworthiness-certification",
+        "airspace-management"
+      ]
+    },
+    {
+      "key": "scenarios",
+      "label": "应用场景",
+      "description": "先找能算账的飞行需求",
+      "node_ids": [
+        "scenario-logistics-inspection",
+        "operation-service"
+      ]
+    },
+    {
+      "key": "aircraft",
+      "label": "飞行器",
+      "description": "无人机先兑现，eVTOL 看取证",
+      "node_ids": [
+        "industrial-uav",
+        "evtol-aircraft",
+        "aircraft-platform"
+      ]
+    },
+    {
+      "key": "components",
+      "label": "核心部件",
+      "description": "轻量化、动力和控制",
+      "node_ids": [
+        "battery-electric-propulsion",
+        "flight-control-navigation",
+        "composite-structure"
+      ]
+    },
+    {
+      "key": "infra",
+      "label": "低空基建",
+      "description": "把单次飞行变成网络运营",
+      "node_ids": [
+        "low-altitude-iot",
+        "takeoff-landing-infra"
+      ]
+    },
+    {
+      "key": "validation",
+      "label": "商业验证",
+      "description": "订单、航线、收入和安全记录",
+      "node_ids": [
+        "commercial-validation"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "default_status": "candidate",
+    "status_values": [
+      "supported",
+      "weakly_supported",
+      "candidate",
+      "unsupported"
+    ],
+    "upgrade_rule": "低空经济公司角色升级前，必须能落到年报、公告、投资者关系记录、适航取证、低空项目、订单合同、运营航线、收入占比或客户验证等可追溯证据。只在新闻或概念文章中出现，不足以升级为强支持。",
+    "labels": [
+      {
+        "status": "supported",
+        "label": "强支持",
+        "meaning": "已有较明确的一手或高可信证据支持节点或公司角色。",
+        "evidence_needed": "年报、公告、投资者关系记录、适航取证、订单、项目落地、运营航线、收入占比或客户验证。"
+      },
+      {
+        "status": "weakly_supported",
+        "label": "弱支持",
+        "meaning": "产业逻辑和公开资料支持方向，但还缺收入、订单、项目规模或客户拆分。",
+        "evidence_needed": "继续补公告、IR、财报分部、订单合同、适航进度和项目验收。"
+      },
+      {
+        "status": "candidate",
+        "label": "待验证",
+        "meaning": "逻辑上相关，市场也提到过，但暂时不能当成确认受益。",
+        "evidence_needed": "先确认具体产品、客户导入、收入占比、商业化阶段和竞争位置。"
+      },
+      {
+        "status": "unsupported",
+        "label": "证据不足",
+        "meaning": "目前只剩概念联想，缺少可验证事实，不能作为产业链映射结论。",
+        "evidence_needed": "需要找到公司公告、业务披露或可追溯客户项目，否则降级或移除。"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "policy-airspace-opening",
+      "label": "政策和空域开放",
+      "layer": "upstream",
+      "group": "rules",
+      "beginner_explanation": "低空经济的第一步，是让低空空域从难以使用变成可管理、可申请、可运营的资源。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "政策和空域开放决定低空飞行活动能否从试点变成常态化。",
+        "why_matters": "没有空域和规则，飞行器再先进也只能演示，不能形成可复制商业模式。",
+        "benefit_logic": "空域规则越清晰，地方低空项目、空管平台、运营航线和起降设施越容易启动。",
+        "watch": [
+          "国家和地方低空经济政策",
+          "低空空域分类分级管理",
+          "地方试点城市和适飞空域地图",
+          "跨区域飞行审批效率"
+        ],
+        "common_misread": "把政策支持等同于公司业绩兑现。政策只是开门，订单和收入还要单独验证。"
+      }
+    },
+    {
+      "id": "airworthiness-certification",
+      "label": "适航 / 运行许可",
+      "layer": "upstream",
+      "group": "rules",
+      "beginner_explanation": "飞行器要商业化，必须证明设计、生产、运行和维护足够安全。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "适航认证和运行许可，是载人 eVTOL、大型无人机进入商业运营前的安全门槛。",
+        "why_matters": "样机首飞和公开演示不能替代商业运营许可，取证节奏决定交付和收费运营节奏。",
+        "benefit_logic": "取证推进会带动检测、验证、材料可靠性、飞控冗余和运营服务体系需求。",
+        "watch": [
+          "型号合格证 TC",
+          "生产许可证 PC",
+          "单机适航证 AC",
+          "运营合格证 OC",
+          "适航审定阶段和试飞数据"
+        ],
+        "common_misread": "把演示飞行当成量产交付，忽略取证和运行许可之间的时间差。"
+      }
+    },
+    {
+      "id": "airspace-management",
+      "label": "低空空管 / 飞服平台",
+      "layer": "midstream",
+      "group": "infrastructure",
+      "beginner_explanation": "低空飞行多了以后，需要系统知道谁在飞、往哪飞、会不会撞、如何处置异常。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "低空空管和飞行服务平台负责计划申报、飞行监视、冲突预警、应急处置和军地民协同。",
+        "why_matters": "低空经济越规模化，越需要数字化监管和运行服务，否则安全风险和审批成本会压制需求。",
+        "benefit_logic": "空域管理从人工审批走向平台化，会利好空管系统、低空信息化和通导监融合厂商。",
+        "watch": [
+          "地方飞服平台建设",
+          "低空监管平台招投标",
+          "空管系统验收",
+          "通导监融合和无人机识别标准"
+        ],
+        "common_misread": "只看飞行器，不看低空交通管理系统。规模化飞行一定需要管控平台。"
+      }
+    },
+    {
+      "id": "scenario-logistics-inspection",
+      "label": "物流 / 巡检 / 应急场景",
+      "layer": "downstream",
+      "group": "scenario",
+      "beginner_explanation": "最先落地的往往不是城市空中的士，而是能降本增效的固定场景。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "低空应用包括物流配送、医疗样本、农林植保、电力巡检、测绘、安防、应急救援和文旅观光。",
+        "why_matters": "场景决定谁愿意付费，也决定飞行器规格、航线、载荷和监管要求。",
+        "benefit_logic": "场景越标准化，越容易形成固定航线和重复订单，产业链越容易从试点走向运营。",
+        "watch": [
+          "常态化运营航线数量",
+          "单航线飞行频次",
+          "客户复购和补贴依赖度",
+          "单位配送/巡检成本"
+        ],
+        "common_misread": "只看载人飞行想象空间，忽略无人机物流、巡检和农业已经更接近商业化。"
+      }
+    },
+    {
+      "id": "industrial-uav",
+      "label": "工业级无人机",
+      "layer": "midstream",
+      "group": "aircraft",
+      "beginner_explanation": "无人机是低空经济里更早成熟的载体，用于农业、测绘、巡检、物流和安防。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "工业无人机强调可靠性、载荷、续航、飞控、通信链路和场景适配。",
+        "why_matters": "相比载人 eVTOL，无人机监管风险和商业化门槛更低，是低空经济更早兑现的环节。",
+        "benefit_logic": "订单来自农林植保、巡检、测绘、物流、应急和特殊行业客户。",
+        "watch": [
+          "工业无人机订单",
+          "民用场景收入占比",
+          "飞控和载荷能力",
+          "海外市场和行业客户"
+        ],
+        "common_misread": "把所有无人机都当成低空经济高弹性标的，要区分消费级、工业级、军贸和民用运营场景。"
+      }
+    },
+    {
+      "id": "evtol-aircraft",
+      "label": "eVTOL 飞行器",
+      "layer": "midstream",
+      "group": "aircraft",
+      "beginner_explanation": "eVTOL 是电动垂直起降航空器，面向低空载人交通、短途通勤和特种场景。",
+      "bottleneck_strength": 5,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "eVTOL 结合电推进、垂直起降和航空级安全设计，是低空经济中想象空间最大的飞行器方向。",
+        "why_matters": "它可能打开载人低空交通，但商业化取决于适航、成本、航线、补能和运营许可。",
+        "benefit_logic": "取证和量产会带动整机、复材、电驱、电池、飞控、检测和起降设施。",
+        "watch": [
+          "适航取证进度",
+          "订单是否转交付",
+          "单机成本和维护成本",
+          "运营航线和载客/载货数据"
+        ],
+        "common_misread": "把 eVTOL 订单意向当成确定收入，忽略取证、交付和运营许可。"
+      }
+    },
+    {
+      "id": "aircraft-platform",
+      "label": "通航 / 飞行器平台",
+      "layer": "midstream",
+      "group": "aircraft",
+      "beginner_explanation": "通航飞机、直升机和新型航空器平台为低空运行提供已有制造和运营基础。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "飞行器平台包括通航固定翼、直升机、无人机和 eVTOL 整机研发制造。",
+        "why_matters": "低空经济不是凭空开始，通航制造和运营基础会影响新型飞行器量产和适航能力。",
+        "benefit_logic": "已有航空制造、供应链和适航经验的公司，更容易承接低空飞行器开发和运营需求。",
+        "watch": [
+          "新机型研发",
+          "适航取证",
+          "产能和交付",
+          "海外资产整合和供应链安全"
+        ],
+        "common_misread": "把汽车零部件或普通机械加工直接等同于航空级制造能力。"
+      }
+    },
+    {
+      "id": "battery-electric-propulsion",
+      "label": "电池 / 电驱 / 电机",
+      "layer": "upstream",
+      "group": "component",
+      "beginner_explanation": "电动飞行器需要高能量密度电池和高可靠电推进系统，要求比普通地面车辆更严。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "电池、电机、电控和电推进系统决定飞行器续航、载重、安全冗余和维护成本。",
+        "why_matters": "飞行比地面行驶更怕故障，电驱系统必须满足航空可靠性和重量约束。",
+        "benefit_logic": "eVTOL 取证和量产会带动航空级电驱、控制器、电池系统和热管理需求。",
+        "watch": [
+          "航空质量体系认证",
+          "头部整机厂定点",
+          "电推进平台量产",
+          "低空业务收入占比"
+        ],
+        "common_misread": "把新能源汽车电驱经验直接平移到航空，忽略适航和冗余设计要求。"
+      }
+    },
+    {
+      "id": "flight-control-navigation",
+      "label": "飞控 / 导航 / 通信",
+      "layer": "upstream",
+      "group": "component",
+      "beginner_explanation": "飞控和导航通信让飞行器稳定飞、知道自己在哪、能和监管系统连接。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "飞控导航通信包括控制算法、传感器、北斗/GNSS、通信链路、避障和远程识别。",
+        "why_matters": "低空飞行密度上升后，飞控可靠性和监管接入会成为安全底线。",
+        "benefit_logic": "空域开放和无人机规模化，会提升飞控、通信、导航和识别设备需求。",
+        "watch": [
+          "无人机识别标准",
+          "通感一体建设",
+          "飞控系统认证",
+          "空管平台接入能力"
+        ],
+        "common_misread": "只看电池和机体，不看飞控和通信链路。低空安全本质上是系统工程。"
+      }
+    },
+    {
+      "id": "composite-structure",
+      "label": "复合材料 / 轻量化结构",
+      "layer": "upstream",
+      "group": "component",
+      "beginner_explanation": "飞行器越轻，续航和载重越好，因此复材和结构件是重要配套。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "复合材料、预浸料、碳纤维和航空结构件用于降低机体重量、提升强度和可靠性。",
+        "why_matters": "eVTOL 对重量极敏感，材料既影响性能，也影响成本和适航可靠性。",
+        "benefit_logic": "整机取证和量产会带来预浸料、碳纤维、结构件和工艺验证需求。",
+        "watch": [
+          "eVTOL 客户数量",
+          "预浸料/碳纤维低空收入",
+          "材料认证和客户定点",
+          "量产价格竞争"
+        ],
+        "common_misread": "只要是碳纤维公司就算 eVTOL 受益，必须看具体客户、产品和收入占比。"
+      }
+    },
+    {
+      "id": "low-altitude-iot",
+      "label": "低空智联网",
+      "layer": "midstream",
+      "group": "infrastructure",
+      "beginner_explanation": "低空智联网把通信、导航、感知、监管和算力连成一张低空运行网络。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "低空智联网通常包括通、导、感、管一体化能力，为低空飞行提供通信、定位、监视和管理服务。",
+        "why_matters": "低空飞行从少量试点变成高频网络后，必须有基础设施承载实时监管和安全运行。",
+        "benefit_logic": "地方低空项目建设会带动飞服平台、通感设备、数据平台和运营商基础设施投入。",
+        "watch": [
+          "低空智联网项目招标",
+          "5G-A 低空覆盖",
+          "通感一体基站",
+          "城市级飞服平台验收"
+        ],
+        "common_misread": "把低空基建理解成只修起降点，实际还包括通信、感知、监管和数据平台。"
+      }
+    },
+    {
+      "id": "takeoff-landing-infra",
+      "label": "起降点 / 补能 / 维保",
+      "layer": "midstream",
+      "group": "infrastructure",
+      "beginner_explanation": "飞行器要常态化运营，需要起降点、充换电、维修和地面保障。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "低空基础设施包括通用机场、垂直起降点、无人机起降点、充换电设施、维保和运营调度场站。",
+        "why_matters": "没有起降和补能网络，飞行器无法高频运行，也无法形成稳定收入。",
+        "benefit_logic": "地方基础设施规划落地，会拉动建设、运维、调度系统和运营服务需求。",
+        "watch": [
+          "城市起降点规划数量",
+          "航线开通数量",
+          "充换电和维保站建设",
+          "单点利用率"
+        ],
+        "common_misread": "只看建设数量，不看利用率和商业化运营频次。"
+      }
+    },
+    {
+      "id": "operation-service",
+      "label": "低空运营服务",
+      "layer": "downstream",
+      "group": "operation",
+      "beginner_explanation": "最终要有人运营航线、维护机队、管理安全，并把飞行服务卖给客户。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "运营服务包括通航运输、空中游览、医疗/应急、物流配送、巡检作业、飞行培训和机队运维。",
+        "why_matters": "飞行器卖出只是开始，能否高频、安全、低成本运营决定商业模式是否成立。",
+        "benefit_logic": "有机队、航线、安全记录和客户资源的运营商，可能成为低空场景放量验证节点。",
+        "watch": [
+          "常态化运营航线",
+          "飞行小时数",
+          "客户结构",
+          "运营毛利率和安全记录"
+        ],
+        "common_misread": "把运营试飞当成商业化运营，必须看收费、频次、证照和客户复购。"
+      }
+    },
+    {
+      "id": "commercial-validation",
+      "label": "订单 / 收入 / 安全验证",
+      "layer": "downstream",
+      "group": "validation",
+      "beginner_explanation": "真正兑现要看订单、收入、毛利、航线频次和安全运行记录。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "商业验证是把低空经济从政策和试点，转成公司财报里的收入、利润和现金流。",
+        "why_matters": "低空经济主题容易炒预期，只有订单、项目验收、交付、运营和收入占比能证明真受益。",
+        "benefit_logic": "验证越充分，产业链公司从概念股变成业绩股的概率越高。",
+        "watch": [
+          "合同订单和中标",
+          "项目验收",
+          "收入占比",
+          "毛利率",
+          "经营现金流",
+          "安全事故和监管处罚"
+        ],
+        "common_misread": "只看市场规模预测，不看公司自己到底卖了多少、赚了多少。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "policy-airspace-opening",
+      "target": "airspace-management",
+      "relation_type": "enables",
+      "label": "空域可用后需要管理",
+      "description": "低空空域开放会带来飞行活动增加，必须建设飞服平台和低空监管能力。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "policy-airspace-opening",
+      "target": "airworthiness-certification",
+      "relation_type": "requires",
+      "label": "政策落地依赖安全规则",
+      "description": "飞行器商业运营需要适航、生产和运行许可配套。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "airworthiness-certification",
+      "target": "evtol-aircraft",
+      "relation_type": "gates",
+      "label": "适航决定 eVTOL 交付节奏",
+      "description": "eVTOL 从样机到商业化运营的关键门槛是适航取证和运营许可。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "scenario-logistics-inspection",
+      "target": "industrial-uav",
+      "relation_type": "pulls",
+      "label": "成熟场景拉动无人机",
+      "description": "巡检、测绘、农林、物流和应急等场景更早拉动工业无人机需求。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "scenario-logistics-inspection",
+      "target": "operation-service",
+      "relation_type": "validates",
+      "label": "场景验证运营价值",
+      "description": "固定航线和高频任务验证低空运营服务是否能赚钱。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "aircraft-platform",
+      "target": "evtol-aircraft",
+      "relation_type": "evolves_to",
+      "label": "通航能力迁移到新型飞行器",
+      "description": "已有通航制造、适航和供应链基础可以向 eVTOL 等新机型延展。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "battery-electric-propulsion",
+      "target": "evtol-aircraft",
+      "relation_type": "supports",
+      "label": "电推进决定续航和可靠性",
+      "description": "电池、电机和电控系统影响 eVTOL 载重、航程、冗余和维护成本。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "flight-control-navigation",
+      "target": "industrial-uav",
+      "relation_type": "controls",
+      "label": "飞控支撑无人机规模化",
+      "description": "无人机在复杂低空环境运行需要飞控、导航、通信和识别能力。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "composite-structure",
+      "target": "evtol-aircraft",
+      "relation_type": "lightweights",
+      "label": "轻量化提升飞行性能",
+      "description": "复材和航空结构件影响 eVTOL 的重量、强度和适航可靠性。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "low-altitude-iot",
+      "target": "airspace-management",
+      "relation_type": "feeds",
+      "label": "低空智联网支撑监管",
+      "description": "通导感管一体化能力为低空监管平台提供实时数据和运行服务。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "takeoff-landing-infra",
+      "target": "operation-service",
+      "relation_type": "enables",
+      "label": "起降补能支撑高频运营",
+      "description": "起降点、充换电和维保网络决定航线能否常态化运营。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "operation-service",
+      "target": "commercial-validation",
+      "relation_type": "proves",
+      "label": "运营数据证明商业化",
+      "description": "飞行小时、航线频次、收费订单和安全记录是商业化验证核心。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "commercial-validation",
+      "target": "aircraft-platform",
+      "relation_type": "feeds_back",
+      "label": "运营反馈推动整机迭代",
+      "description": "真实运营数据会反向定义飞行器载重、航程、可靠性和维护设计。",
+      "evidence_status": "supported"
+    }
+  ],
+  "concept_diagrams": [
+    {
+      "id": "fly-before-profit",
+      "title": "低空经济先问三件事",
+      "subtitle": "能不能飞、能不能管、能不能赚钱",
+      "icon": "system",
+      "node_ids": [
+        "policy-airspace-opening",
+        "airspace-management",
+        "commercial-validation"
+      ],
+      "takeaway": "低空经济不是先看市场空间，而是先看规则、监管和商业闭环。",
+      "parts": [
+        {
+          "label": "能不能飞",
+          "role": "空域和适航",
+          "description": "空域开放、适航取证和运行许可决定商业化门槛。"
+        },
+        {
+          "label": "能不能管",
+          "role": "飞服和智联网",
+          "description": "飞行多了以后，必须实时识别、监视、调度和处置风险。"
+        },
+        {
+          "label": "能不能赚钱",
+          "role": "场景和运营",
+          "description": "只有航线频次、客户付费和收入毛利能证明低空经济兑现。"
+        }
+      ]
+    },
+    {
+      "id": "uav-vs-evtol",
+      "title": "无人机和 eVTOL 不同",
+      "subtitle": "一个偏近端兑现，一个偏远期弹性",
+      "icon": "wind",
+      "node_ids": [
+        "industrial-uav",
+        "evtol-aircraft",
+        "scenario-logistics-inspection"
+      ],
+      "takeaway": "小白不要把无人机和载人 eVTOL 混成一条线，它们的监管、客户和兑现节奏不同。",
+      "parts": [
+        {
+          "label": "工业无人机",
+          "role": "成熟应用",
+          "description": "用于巡检、测绘、农业、物流和应急，商业化更早。"
+        },
+        {
+          "label": "eVTOL",
+          "role": "未来交通",
+          "description": "载人和中短途交通想象空间大，但取证和运营难度高。"
+        },
+        {
+          "label": "共同底座",
+          "role": "空域和监管",
+          "description": "两者都依赖低空空管、起降设施和安全规则。"
+        }
+      ]
+    }
+  ],
+  "companies": [
+    {
+      "name": "万丰奥威",
+      "ts_code": "002085.SZ",
+      "nodes": [
+        "aircraft-platform",
+        "evtol-aircraft",
+        "commercial-validation"
+      ],
+      "role": "整机平台 / eVTOL 验证节点",
+      "tier": "验证节点",
+      "attention_level": "leader",
+      "attention_label": "整机龙头线索",
+      "leader_reason": "A 股里少数披露通航飞机、新型航空器、eVTOL 研发和 Volocopter 资产整合的公司，适合作为整机方向的验证节点。",
+      "current_view": "公司 2025 年半年报和 2025 年报摘要均提到推进 eVTOL、eDA40、无人机等新机型研发及适航取证，并披露收购 Volocopter GmbH 核心资产。它是低空整机方向的重要观察对象，但仍要验证 eVTOL 取证、交付和收入贡献。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报全文",
+        "跟踪 Volocopter 资产整合进度",
+        "确认 eVTOL/电动飞机适航取证节点",
+        "确认低空业务收入占比和订单交付"
+      ],
+      "why_watch": "整机是产业链最显性的验证节点，能证明低空经济从政策走向产品化。",
+      "evidence_basis": [
+        "2025 半年报披露推进 eVTOL、eDA40、无人机、DART 系列新机型研发",
+        "2025 年报摘要披露收购 Volocopter GmbH 核心资产并推进适航取证"
+      ],
+      "verification_focus": [
+        "适航证和生产许可",
+        "订单从意向到交付",
+        "低空业务毛利和现金流"
+      ],
+      "risks": [
+        "eVTOL 商业化周期长",
+        "海外资产整合不确定",
+        "整机投入大且取证慢"
+      ],
+      "evidence_refs": [
+        {
+          "title": "浙江万丰奥威汽轮股份有限公司 2025 年半年度报告全文",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-26",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-26/1224565124.PDF",
+          "evidence_grade": "A",
+          "usage": "验证公司低空飞行器和 eVTOL 研发披露"
+        },
+        {
+          "title": "浙江万丰奥威汽轮股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-04-29",
+          "url": "https://static.cninfo.com.cn/finalpage/2026-04-29/1225243181.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 Volocopter 资产和适航取证方向"
+        }
+      ]
+    },
+    {
+      "name": "莱斯信息",
+      "ts_code": "688631.SH",
+      "nodes": [
+        "airspace-management",
+        "low-altitude-iot",
+        "commercial-validation"
+      ],
+      "role": "低空空管 / 飞服平台",
+      "tier": "验证节点",
+      "attention_level": "leader",
+      "attention_label": "空管信息化龙头",
+      "leader_reason": "公司传统优势在民航空管，公开资料披露低空飞行服务、空管、机场和低空三类产品，是低空经济中“谁来管飞”的关键验证节点。",
+      "current_view": "公司 2025 半年报披露面向民航局、空管局、机场集团和低空飞行管理部门提供空中交通管理、机场信息化和低空飞行服务产品，并提到发展低空飞行管服平台。需要继续验证低空项目收入、验收节奏和利润质量。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报",
+        "确认低空项目合同和验收",
+        "跟踪天牧等低空解决方案落地城市",
+        "关注应收账款和项目回款"
+      ],
+      "why_watch": "低空规模化后，监管和飞服平台可能先于载人 eVTOL 大规模商业化落地。",
+      "evidence_basis": [
+        "2025 半年报披露空中交通管理、机场信息化和低空飞行服务三类产品",
+        "投资者关系记录提到发布低空系列产品和低空智能网联基础设施网络"
+      ],
+      "verification_focus": [
+        "项目验收",
+        "低空业务收入拆分",
+        "地方财政和回款质量"
+      ],
+      "risks": [
+        "项目制收入波动",
+        "财政约束影响验收和回款",
+        "低空平台标准尚未完全统一"
+      ],
+      "evidence_refs": [
+        {
+          "title": "南京莱斯信息技术股份有限公司 2025 年半年度报告",
+          "publisher": "公司披露文件镜像",
+          "date": "2025-08",
+          "url": "http://qxb-pdf-osscache.qixin.com/AnBaseinfo/b4a9252d72822ca284a798b55fc02186.pdf",
+          "evidence_grade": "A",
+          "usage": "验证低空飞行服务和空管业务角色"
+        },
+        {
+          "title": "南京莱斯信息技术股份有限公司投资者关系活动记录表",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-09-18",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/09/18/c259ddc6947211f0b03ffa163e39923a.pdf",
+          "evidence_grade": "A",
+          "usage": "验证低空系列产品和智能网联基础设施表述"
+        }
+      ]
+    },
+    {
+      "name": "四川九洲",
+      "ts_code": "000801.SZ",
+      "nodes": [
+        "airspace-management",
+        "flight-control-navigation",
+        "low-altitude-iot"
+      ],
+      "role": "空管装备 / 低空基础设施方案",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "空管装备候选",
+      "leader_reason": "公司半年度报告披露空管、智能终端、微波射频三大主业，并重点布局低空经济，依托空管行业优势拓展低空赛道。",
+      "current_view": "四川九洲的低空逻辑来自空管装备和飞行安全运控整体解决方案，不是 eVTOL 整机。更适合放在低空空管、飞行安全和基础设施节点观察。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报",
+        "确认低空测试/飞服平台项目收入",
+        "核实低空物流示范项目进度",
+        "关注空管业务毛利和订单"
+      ],
+      "why_watch": "空管装备和低空运控是低空经济的安全底座。",
+      "evidence_basis": [
+        "2025 半年报披露重点布局低空经济",
+        "报告披露依托空管优势拓展低空经济新赛道和飞行安全运控整体解决方案"
+      ],
+      "verification_focus": [
+        "低空项目合同",
+        "空管装备收入",
+        "飞服平台验收"
+      ],
+      "risks": [
+        "低空收入占比不清晰",
+        "军民空管业务周期不同",
+        "项目落地依赖地方投入"
+      ],
+      "evidence_refs": [
+        {
+          "title": "四川九洲电器股份有限公司 2025 年半年度报告全文",
+          "publisher": "深交所披露文件",
+          "date": "2025-08-27",
+          "url": "https://disc.static.szse.cn/disc/disk03/finalpage/2025-08-27/dfd33ae6-120d-4923-8e52-8f7b7ca27f23.PDF",
+          "evidence_grade": "A",
+          "usage": "验证空管主业和低空经济布局"
+        }
+      ]
+    },
+    {
+      "name": "中航高科",
+      "ts_code": "600862.SH",
+      "nodes": [
+        "composite-structure",
+        "evtol-aircraft",
+        "commercial-validation"
+      ],
+      "role": "航空复材 / eVTOL 预浸料",
+      "tier": "核心候选",
+      "attention_level": "leader",
+      "attention_label": "复材验证节点",
+      "leader_reason": "2025 年报披露低空飞行器预浸料客户数量和市场份额线索，是复材环节证据相对强的 A 股验证节点。",
+      "current_view": "中航高科更接近低空经济的上游材料环节。2025 年报披露子公司拓展低空经济领域客户、成为多家 eVTOL 企业核心供应商，并提示未来 eVTOL 量产阶段预浸料价格竞争等风险。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报全文",
+        "确认低空飞行器预浸料收入",
+        "跟踪 eVTOL 客户量产节奏",
+        "关注价格竞争和毛利变化"
+      ],
+      "why_watch": "eVTOL 对轻量化要求高，复材是较容易形成实际订单的配套环节。",
+      "evidence_basis": [
+        "2025 年报披露低空飞行器预浸料客户和 eVTOL 供应商表述",
+        "公司提示 2028-2032 年 eVTOL 规模化量产阶段价格竞争风险"
+      ],
+      "verification_focus": [
+        "低空客户出货",
+        "预浸料收入占比",
+        "毛利率变化"
+      ],
+      "risks": [
+        "客户仍在取证或小批量阶段",
+        "材料价格竞争",
+        "低空收入可能仍占比有限"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中航航空高科技股份有限公司 2025 年年度报告",
+          "publisher": "巨潮资讯公告镜像",
+          "date": "2026-03-13",
+          "url": "http://dataclouds.cninfo.com.cn/shgonggao/hsomarket/2026/20260313/9d77df0c4f754809a66ee76975f8ee57.PDF",
+          "evidence_grade": "A",
+          "usage": "验证低空飞行器预浸料和 eVTOL 供应商角色"
+        }
+      ]
+    },
+    {
+      "name": "中无人机",
+      "ts_code": "688297.SH",
+      "nodes": [
+        "industrial-uav",
+        "scenario-logistics-inspection",
+        "commercial-validation"
+      ],
+      "role": "大型无人机整机 / 系统集成",
+      "tier": "验证节点",
+      "attention_level": "leader",
+      "attention_label": "无人机整机节点",
+      "leader_reason": "公司主营无人机系统，是 A 股无人机整机方向更直接的观察对象；但其业务属性与消费/物流无人机不同，需要区分军贸、特种和民用低空场景。",
+      "current_view": "中无人机适合作为无人机整机成熟度和交付验证节点，但不能简单等同于城市低空物流/eVTOL 受益。重点看产品谱系、系统集成、民用场景拓展和现金流质量。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "查 2025 年报原文",
+        "确认民用低空场景收入",
+        "区分军贸/特种/民用应用",
+        "跟踪现金流和存货"
+      ],
+      "why_watch": "无人机是低空经济更早兑现的飞行器方向。",
+      "evidence_basis": [
+        "公开财报快讯显示 2025 年收入大幅增长，来源需回到年报原文核实",
+        "商用无人机市场公开资料显示无人机应用更接近落地"
+      ],
+      "verification_focus": [
+        "民用客户和场景",
+        "订单和交付",
+        "经营现金流"
+      ],
+      "risks": [
+        "业务可能偏特种/军贸而非城市低空经济",
+        "现金流和存货波动",
+        "民用低空收入占比不清"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中无人机 2025 年年度报告财报快讯",
+          "publisher": "中国基金报",
+          "date": "2026-03-16",
+          "url": "https://www.chnfund.com/article/7b178ab6-6df3-c0c7-a91a-3a20091046a1",
+          "evidence_grade": "B",
+          "usage": "作为年报数据线索，需回到年报原文复核"
+        }
+      ]
+    },
+    {
+      "name": "中信海直",
+      "ts_code": "000099.SZ",
+      "nodes": [
+        "operation-service",
+        "takeoff-landing-infra",
+        "commercial-validation"
+      ],
+      "role": "通航运营 / 低空运营验证",
+      "tier": "验证节点",
+      "attention_level": "leader",
+      "attention_label": "运营端龙头",
+      "leader_reason": "公司有通航运营、机队、航线和安全运行经验，是观察低空经济运营端能否兑现的重要节点。",
+      "current_view": "中信海直的主业仍以通航运输、海上石油服务等为主。低空经济价值在于把成熟运营能力迁移到文旅、医疗、物流、eVTOL 场景，但要看真实航线、收费频次和收入占比。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查 2025 年报和半年报",
+        "确认低空经济事业部项目",
+        "跟踪 eVTOL 合作和运营证照",
+        "确认低空航线收入占比"
+      ],
+      "why_watch": "低空经济最终要靠运营服务变现，运营端比单纯概念更接近商业闭环。",
+      "evidence_basis": [
+        "公开资料披露公司将低空经济定位为第二增长曲线",
+        "披露参与 eVTOL 起降场技术要求和跨海飞行试验等运营探索"
+      ],
+      "verification_focus": [
+        "收费运营航线",
+        "飞行小时数",
+        "低空业务收入",
+        "运营安全记录"
+      ],
+      "risks": [
+        "现有收入仍主要来自传统通航",
+        "eVTOL 运营依赖适航和运营许可",
+        "低空新业务短期利润贡献可能有限"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中信海直“十四五”答卷：打造低空经济第二增长曲线",
+          "publisher": "中国上市公司协会",
+          "date": "2025-11-12",
+          "url": "https://www.capco.org.cn/hyzl/zthd/shangshigszxd/202511/20251111/j_2025111115194400017628457047178459.html",
+          "evidence_grade": "B",
+          "usage": "验证运营端低空经济战略和 eVTOL 场景探索"
+        }
+      ]
+    },
+    {
+      "name": "中科星图",
+      "ts_code": "688568.SH",
+      "nodes": [
+        "low-altitude-iot",
+        "airspace-management",
+        "commercial-validation"
+      ],
+      "role": "数字地球 / 低空数据与计算平台",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "低空数据平台候选",
+      "leader_reason": "公司定增预案披露低空空域从可通达到可计算的逻辑，适合作为低空数据和计算平台候选节点。",
+      "current_view": "中科星图不是飞行器公司，而是低空空域计算、数据和平台能力候选。它的价值取决于低空监管、飞服平台和城市级低空数字底座是否形成预算和订单。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "查定增预案项目明细",
+        "确认低空平台订单",
+        "核实低空数据业务收入占比",
+        "跟踪地方项目验收"
+      ],
+      "why_watch": "低空经济规模化需要可计算、可监管的空域数字底座。",
+      "evidence_basis": [
+        "2025 年定增预案披露低空空域可通达和可计算逻辑",
+        "披露数字地球、空天信息数据和低空飞行监管相关能力"
+      ],
+      "verification_focus": [
+        "低空相关募投项目",
+        "平台订单",
+        "收入和回款"
+      ],
+      "risks": [
+        "低空业务项目制属性强",
+        "地方预算波动",
+        "平台标准和竞争格局未定"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中科星图股份有限公司 2025 年度向特定对象发行 A 股股票预案",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-08-22",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/22/1224536709.PDF",
+          "evidence_grade": "A",
+          "usage": "验证低空空域计算和数字地球能力"
+        }
+      ]
+    },
+    {
+      "name": "英搏尔",
+      "ts_code": "300681.SZ",
+      "nodes": [
+        "battery-electric-propulsion",
+        "evtol-aircraft",
+        "commercial-validation"
+      ],
+      "role": "eVTOL 电推进 / 电控候选",
+      "tier": "弹性候选",
+      "attention_level": "core_candidate",
+      "attention_label": "电推进候选",
+      "leader_reason": "公开报道和业绩说明会提到公司 eVTOL 电推进平台、头部客户定点和航空质量体系认证，是电驱方向的重要线索。",
+      "current_view": "英搏尔的核心仍来自电驱和电控能力，低空经济逻辑要看 eVTOL 电推进系统是否进入批量应用、客户定点是否转订单、收入占比是否提升。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "查业绩说明会原文",
+        "确认客户定点公告或 IR",
+        "核实低空电推进收入",
+        "跟踪 AS9100D 和适航相关验证"
+      ],
+      "why_watch": "电推进是 eVTOL 量产的重要部件方向，弹性可能来自客户定点转批量。",
+      "evidence_basis": [
+        "证券时报报道提到 eVTOL 产品平台、头部客户项目定点和 AS9100D",
+        "需继续回到公告和投资者关系记录复核"
+      ],
+      "verification_focus": [
+        "客户定点",
+        "批量应用",
+        "收入拆分",
+        "航空级可靠性"
+      ],
+      "risks": [
+        "新能源汽车业务仍是主要收入来源",
+        "eVTOL 商业化节奏不确定",
+        "媒体报道需要一手资料补强"
+      ],
+      "evidence_refs": [
+        {
+          "title": "低空经济政策催化不断，英搏尔调研报道",
+          "publisher": "证券时报",
+          "date": "2026-04-20",
+          "url": "https://www.stcn.com/article/detail/3771662.html",
+          "evidence_grade": "C",
+          "usage": "作为电推进客户定点和平台进展线索，需公告/IR 复核"
+        }
+      ]
+    },
+    {
+      "name": "中复神鹰",
+      "ts_code": "688295.SH",
+      "nodes": [
+        "composite-structure",
+        "evtol-aircraft"
+      ],
+      "role": "碳纤维材料候选",
+      "tier": "二阶受益候选",
+      "attention_level": "watch",
+      "attention_label": "材料候选",
+      "leader_reason": "公司年报摘要提到 eVTOL 复合材料用量和低空经济趋势，但仍需验证具体客户、产品和收入占比。",
+      "current_view": "中复神鹰属于材料端二阶候选。碳纤维和复材逻辑成立，但不能因为行业需要轻量化就直接升级，需要看到 eVTOL 客户、认证和收入。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "查 2025 年报全文",
+        "确认低空客户和产品",
+        "核实航空复材收入占比",
+        "跟踪价格和产能利用率"
+      ],
+      "why_watch": "飞行器轻量化会带动碳纤维需求，但材料公司常见问题是泛应用多、低空收入小。",
+      "evidence_basis": [
+        "2025 年报摘要提到 eVTOL 复合材料用量和低空经济趋势"
+      ],
+      "verification_focus": [
+        "低空客户",
+        "产品认证",
+        "收入占比"
+      ],
+      "risks": [
+        "低空业务可能很小",
+        "材料价格竞争",
+        "客户取证慢导致订单延后"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中复神鹰碳纤维股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯公告镜像",
+          "date": "2026-03-25",
+          "url": "http://dataclouds.cninfo.com.cn/shgonggao/hsomarket/2026/20260325/200984e4fee840f2be9140516e61a84e.PDF",
+          "evidence_grade": "A",
+          "usage": "验证材料端低空经济和 eVTOL 复合材料线索"
+        }
+      ]
+    },
+    {
+      "name": "广电计量",
+      "ts_code": "002967.SZ",
+      "nodes": [
+        "airworthiness-certification",
+        "commercial-validation"
+      ],
+      "role": "检测认证候选",
+      "tier": "弹性候选",
+      "attention_level": "watch",
+      "attention_label": "检测候选",
+      "leader_reason": "公开市场资料提到其参与 eVTOL 环境可靠性和电磁兼容测试，逻辑上位于适航验证链条，但需要公告或 IR 佐证。",
+      "current_view": "低空飞行器商业化离不开检测验证，但广电计量在低空经济中的收入弹性需要谨慎验证。当前只能作为检测认证候选，不宜写成强受益。",
+      "evidence_status": "candidate",
+      "next_checks": [
+        "查 2025 年报",
+        "查投资者关系记录",
+        "确认 eVTOL 检测客户和收入",
+        "核实适航检测资质和项目规模"
+      ],
+      "why_watch": "适航取证会带动测试验证需求，检测环节可能比整机利润兑现更早。",
+      "evidence_basis": [
+        "概念资料提到 eVTOL 环境可靠性和电磁兼容测试",
+        "尚需公司一手披露补强"
+      ],
+      "verification_focus": [
+        "客户和项目",
+        "检测收入",
+        "资质范围"
+      ],
+      "risks": [
+        "低空检测收入可能很小",
+        "线索来自概念资料",
+        "竞争和资质壁垒需核实"
+      ],
+      "evidence_refs": [
+        {
+          "title": "eVTOL 概念股资料页",
+          "publisher": "特特股",
+          "date": "2025-10-13",
+          "url": "http://m.tetegu.com/gainiangu/eVTOL/",
+          "evidence_grade": "D",
+          "usage": "仅作为待核查线索，不能支撑强结论"
+        }
+      ]
+    }
+  ],
+  "common_misreads": [
+    {
+      "title": "误区一：低空经济就是飞行汽车",
+      "correction": "飞行汽车/eVTOL只是低空经济的一部分。更早兑现的可能是无人机物流、巡检、农林、应急、空管平台和低空基础设施。"
+    },
+    {
+      "title": "误区二：只要政策支持，公司就会受益",
+      "correction": "政策打开空间，但公司要转成订单、验收、收入和现金流才算受益。低空经济项目还受地方预算、适航和安全监管影响。"
+    },
+    {
+      "title": "误区三：首飞等于商业化",
+      "correction": "首飞、演示飞行、适航取证、交付、运营许可和收费运营是不同阶段，不能混为一谈。"
+    },
+    {
+      "title": "误区四：所有无人机公司都一样",
+      "correction": "消费级、工业级、军贸、大型无人机、物流无人机和载人 eVTOL 的客户、监管和财务兑现完全不同。"
+    }
+  ],
+  "financial_translations": [
+    {
+      "node_id": "evtol-aircraft",
+      "title": "eVTOL 从研发到收入",
+      "watch": "研发费用、资本开支、适航取证、订单转交付、存货和合同负债。",
+      "source_hint": "年报、公告、适航审定披露、客户订单",
+      "risk": "商业化周期长，订单意向不一定转收入。"
+    },
+    {
+      "node_id": "airspace-management",
+      "title": "空管平台看项目制兑现",
+      "watch": "中标合同、项目验收、应收账款、毛利率和回款周期。",
+      "source_hint": "招投标、年报分部、投资者关系记录",
+      "risk": "地方财政和项目验收节奏会造成收入波动。"
+    },
+    {
+      "node_id": "composite-structure",
+      "title": "复材看客户和价格",
+      "watch": "低空客户数量、材料认证、收入占比、毛利率和价格竞争。",
+      "source_hint": "年报、客户定点、公司公告",
+      "risk": "行业放量后可能进入价格竞争。"
+    },
+    {
+      "node_id": "operation-service",
+      "title": "运营看飞行小时和收费",
+      "watch": "航线数量、飞行小时、客单价、利用率、运营成本和安全记录。",
+      "source_hint": "年报、运营公告、地方航线披露",
+      "risk": "试点热闹但付费需求不足。"
+    }
+  ],
+  "catalysts": [
+    {
+      "horizon": "短期",
+      "title": "地方低空政策和起降点规划",
+      "why": "地方政策会直接带动飞服平台、起降点、测试场和示范航线建设。",
+      "watch": "深圳、上海、江苏、湖南等地区政策和招标",
+      "risk": "地方规划数量不等于实际利用率。"
+    },
+    {
+      "horizon": "中期",
+      "title": "eVTOL 适航取证和交付",
+      "why": "适航取证是从演示飞行走向商业化交付的关键节点。",
+      "watch": "TC/PC/AC/OC 进度、交付和运营航线",
+      "risk": "取证进度慢于市场预期。"
+    },
+    {
+      "horizon": "中期",
+      "title": "低空空管和飞服平台项目验收",
+      "why": "低空飞行密度上来后，监管平台和低空智联网可能先兑现订单。",
+      "watch": "地方平台中标、验收、回款和项目复制",
+      "risk": "项目制业务回款慢，利润质量不稳定。"
+    },
+    {
+      "horizon": "兑现",
+      "title": "运营航线从试点转常态化",
+      "why": "常态化飞行和收费运营能证明需求不是补贴驱动。",
+      "watch": "飞行频次、客单价、客户复购、安全记录",
+      "risk": "文旅和展示场景热度高，但长期付费能力不足。"
+    }
+  ],
+  "tracking_metrics": [
+    {
+      "name": "低空空域开放和地方试点",
+      "why": "决定低空经济从示范走向规模化的制度基础。",
+      "source_hint": "国家发改委、民航局、地方政府政策"
+    },
+    {
+      "name": "适航取证进度",
+      "why": "决定 eVTOL 和大型无人机能否商业化交付。",
+      "source_hint": "民航局、公司公告、适航审定信息"
+    },
+    {
+      "name": "低空飞服平台和智联网招标",
+      "why": "验证低空管理系统和基础设施是否真实投入。",
+      "source_hint": "招投标平台、地方政府、公司公告"
+    },
+    {
+      "name": "起降点、航线和飞行频次",
+      "why": "判断低空运营是否从试点走向常态化。",
+      "source_hint": "地方交通部门、运营公司公告、媒体公开报道"
+    },
+    {
+      "name": "A 股公司低空收入占比",
+      "why": "区分真受益和概念相关。",
+      "source_hint": "年报、半年报、投资者关系记录"
+    },
+    {
+      "name": "经营现金流和应收账款",
+      "why": "低空平台和基建项目可能项目制、回款慢，需要看利润质量。",
+      "source_hint": "公司财报"
+    }
+  ],
+  "sources": [
+    {
+      "title": "我国低空经济发展面临的问题与政策建议",
+      "publisher": "国家发展改革委",
+      "date": "2024-12-30",
+      "url": "https://www.ndrc.gov.cn/wsdwhfz/202412/t20241230_1395328.html",
+      "source_type": "policy_research",
+      "usage": "定义低空经济、解释基础设施、核心技术、市场体系和管理体系约束"
+    },
+    {
+      "title": "低空经济迈向体系化推进、规模化发展新阶段",
+      "publisher": "新华网",
+      "date": "2026-01-20",
+      "url": "https://www.news.cn/tech/20260120/022efb2fbec0450db7c4234d8f84da83/c.html",
+      "source_type": "mainstream_media",
+      "usage": "补充 2026 年政策、基础设施、eVTOL 取证和场景化趋势"
+    },
+    {
+      "title": "20 条措施支持低空经济高质量发展",
+      "publisher": "深圳市人民政府",
+      "date": "2023-12-28",
+      "url": "https://www.sz.gov.cn/cn/xxgk/zfxxgj/zwdt/content/post_11075099.html",
+      "source_type": "local_policy",
+      "usage": "说明地方对 eVTOL、无人机、适航取证和低空企业落地的支持方式"
+    },
+    {
+      "title": "深圳市低空基础设施高质量建设方案（2024—2026年）",
+      "publisher": "深圳市发展和改革委员会",
+      "date": "2025-07-31",
+      "url": "https://fgw.sz.gov.cn/zwgk/qt/tzgg/content/post_12305044.html",
+      "source_type": "local_policy",
+      "usage": "说明低空基础设施、起降设施和测试布局"
+    },
+    {
+      "title": "商用无人机市场再起飞",
+      "publisher": "国家科技信息资源综合服务系统",
+      "date": "2025-04-01",
+      "url": "https://www.ncsti.gov.cn/kjdt/ztbd/2025zgclt/202504/t20250401_200209.html",
+      "source_type": "industry_report_digest",
+      "usage": "解释商业无人机应用场景和技术限制"
+    },
+    {
+      "title": "浙江万丰奥威汽轮股份有限公司 2025 年半年度报告全文",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-26",
+      "url": "http://static.cninfo.com.cn/finalpage/2025-08-26/1224565124.PDF",
+      "source_type": "company_report",
+      "usage": "验证万丰奥威低空飞行器和 eVTOL 研发披露"
+    },
+    {
+      "title": "南京莱斯信息技术股份有限公司 2025 年半年度报告",
+      "publisher": "公司披露文件镜像",
+      "date": "2025-08",
+      "url": "http://qxb-pdf-osscache.qixin.com/AnBaseinfo/b4a9252d72822ca284a798b55fc02186.pdf",
+      "source_type": "company_report",
+      "usage": "验证莱斯信息低空飞行服务和空管产品"
+    },
+    {
+      "title": "四川九洲电器股份有限公司 2025 年半年度报告全文",
+      "publisher": "深交所披露文件",
+      "date": "2025-08-27",
+      "url": "https://disc.static.szse.cn/disc/disk03/finalpage/2025-08-27/dfd33ae6-120d-4923-8e52-8f7b7ca27f23.PDF",
+      "source_type": "company_report",
+      "usage": "验证四川九洲空管主业和低空经济布局"
+    },
+    {
+      "title": "中航航空高科技股份有限公司 2025 年年度报告",
+      "publisher": "巨潮资讯公告镜像",
+      "date": "2026-03-13",
+      "url": "http://dataclouds.cninfo.com.cn/shgonggao/hsomarket/2026/20260313/9d77df0c4f754809a66ee76975f8ee57.PDF",
+      "source_type": "company_report",
+      "usage": "验证 eVTOL 预浸料和复材供应链线索"
+    },
+    {
+      "title": "中科星图股份有限公司 2025 年度向特定对象发行 A 股股票预案",
+      "publisher": "腾讯财经公告镜像",
+      "date": "2025-08-22",
+      "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/22/1224536709.PDF",
+      "source_type": "company_filing",
+      "usage": "验证低空空域计算和数字地球能力"
+    },
+    {
+      "title": "中信海直“十四五”答卷：打造低空经济第二增长曲线",
+      "publisher": "中国上市公司协会",
+      "date": "2025-11-12",
+      "url": "https://www.capco.org.cn/hyzl/zthd/shangshigszxd/202511/20251111/j_2025111115194400017628457047178459.html",
+      "source_type": "association_article",
+      "usage": "验证通航运营商布局低空运营和 eVTOL 场景探索"
+    },
+    {
+      "title": "英搏尔低空经济调研报道",
+      "publisher": "证券时报",
+      "date": "2026-04-20",
+      "url": "https://www.stcn.com/article/detail/3771662.html",
+      "source_type": "media_clue",
+      "usage": "作为 eVTOL 电推进客户定点和平台进展线索，后续需公告/IR 复核"
+    }
+  ]
+}

@@ -111,6 +111,66 @@
       "audience_level": "beginner_to_research",
       "evidence_level": "company_reports_and_policy_first_draft",
       "summary": "人形机器人从具身智能需求出发，核心观察点是场景验证、大脑/小脑、关节执行器、减速器、电机、力/视觉传感器、灵巧手和整机量产。"
+    },
+    {
+      "chain_id": "low-altitude-economy",
+      "title": "低空经济 / eVTOL",
+      "category": "先进制造 / 通航与低空基础设施",
+      "aliases": [
+        "低空经济",
+        "eVTOL",
+        "飞行汽车",
+        "无人机",
+        "低空智联网",
+        "低空空管"
+      ],
+      "status": "draft",
+      "sort_order": 50,
+      "content_path": "chains/low-altitude-economy.md",
+      "data_path": "chains/low-altitude-economy.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "低空经济",
+        "eVTOL",
+        "无人机",
+        "空域管理",
+        "适航认证",
+        "低空智联网",
+        "通航运营"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "policy_and_company_reports_first_draft",
+      "summary": "低空经济从空域开放和适航监管出发，核心观察点是无人机和 eVTOL 场景、低空空管、飞服平台、起降基础设施、复材电驱部件和运营商业化验证。"
+    },
+    {
+      "chain_id": "innovative-drugs",
+      "title": "创新药 / ADC / 双抗出海",
+      "category": "医药生物 / 创新药研发与商业化",
+      "aliases": [
+        "创新药",
+        "ADC",
+        "双抗",
+        "License-out",
+        "BD 出海",
+        "创新药出海"
+      ],
+      "status": "draft",
+      "sort_order": 60,
+      "content_path": "chains/innovative-drugs.md",
+      "data_path": "chains/innovative-drugs.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "创新药",
+        "ADC",
+        "双抗",
+        "BD 出海",
+        "临床试验",
+        "医保支付",
+        "CXO"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "company_reports_policy_and_regulation_first_draft",
+      "summary": "创新药从未满足临床需求出发，核心观察点是靶点机制、ADC/双抗等平台、临床数据、注册审批、BD 出海、商业化销售、财务兑现和失败风险。"
     }
   ]
 }
