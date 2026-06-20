@@ -1,0 +1,1532 @@
+{
+  "version": 1,
+  "chain_id": "controlled-fusion-nuclear-equipment",
+  "title": "可控核聚变 / 核电设备",
+  "category": "未来能源 / 核能装备",
+  "status": "draft",
+  "updated_at": "2026-06-20",
+  "summary": "可控核聚变和核电设备产业链解决的是长期能源安全、低碳基荷电源和未来能源技术突破问题。学习重点是先区分成熟核裂变核电和长期核聚变，再看核准节奏、核岛常规岛设备、阀门管材、核电工程、运营服务，以及聚变装置中的超导磁体、偏滤器第一壁、真空低温和微波加热等卡点。",
+  "quick_read": {
+    "headline": "核电看当期订单，聚变看长期卡点",
+    "summary": "核电和聚变经常被市场放在一起炒，但研究时必须拆开。核电是已经商业化的成熟基荷电源，收入来自核电项目核准、设备招标、工程建设、运营发电和检维修。聚变还处在科研装置和工程验证阶段，收入主要来自大科学装置、材料设备和项目采购，不能直接当成发电商业化。",
+    "logic_chain": [
+      "AI、电气化和双碳目标提高对稳定低碳电源的关注",
+      "核电常态化核准带动核岛设备、常规岛设备、阀门、泵、管材和工程建设订单",
+      "核电运营商验证装机、发电量、利用小时、核能供汽和技术服务收入",
+      "聚变作为未来能源进入政策和资本视野，但仍处于实验堆和示范堆之前的工程验证阶段",
+      "聚变核心卡点集中在超导磁体、等离子体面对材料、偏滤器第一壁、真空低温、微波加热和工程建造",
+      "最终要用订单、收入占比、毛利、应收、存货和现金流区分真受益和概念暴露"
+    ],
+    "takeaways": [
+      "核电设备是当前更容易财务验证的主线，聚变是长期技术期权。",
+      "聚变的高价值节点不是泛能源公司，而是超导、偏滤器第一壁、真空低温、微波加热和大科学工程建造。",
+      "参股聚变平台只代表远期布局，不能等同于短期业绩弹性。"
+    ]
+  },
+  "learning_steps": [
+    {
+      "id": "why-now",
+      "title": "先看能源约束",
+      "subtitle": "为什么核能重新进入主线",
+      "question": "为什么现在要把核电和聚变放进产业链学习？",
+      "answer": "AI 算力、电气化和双碳目标提高了稳定低碳电源的重要性。核电能提供基荷电力，已经有持续核准和设备订单；聚变代表未来能源方向，但仍处在技术攻关和工程验证阶段。",
+      "node_ids": [
+        "energy-security-low-carbon-baseload",
+        "nuclear-approval-capex-cycle"
+      ]
+    },
+    {
+      "id": "fission-vs-fusion",
+      "title": "分清两条线",
+      "subtitle": "核电是现在，聚变是未来",
+      "question": "核裂变核电和可控核聚变有什么区别？",
+      "answer": "核裂变核电已经商业化，研究重点是核准、建设、设备、运营和检维修。可控核聚变还未完成发电商业化，研究重点是大科学装置、核心材料设备和示范工程节点。",
+      "node_ids": [
+        "nuclear-operation-multiuse",
+        "fusion-long-cycle-research"
+      ]
+    },
+    {
+      "id": "nuclear-equipment",
+      "title": "再看当期订单",
+      "subtitle": "核电项目怎么拉动设备公司",
+      "question": "核电项目核准后，哪些环节先受益？",
+      "answer": "核电项目会先进入工程设计、设备招标、核岛和常规岛主设备、阀门、泵、管材、控制系统和工程建设。设备公司要看中标、交付、收入确认和毛利，工程公司要看新签合同和回款。",
+      "node_ids": [
+        "nuclear-island-main-equipment",
+        "conventional-island-turbine-generator",
+        "nuclear-grade-valves-pumps",
+        "nuclear-grade-tubes-materials",
+        "nuclear-power-construction"
+      ]
+    },
+    {
+      "id": "fusion-bottleneck",
+      "title": "进入聚变卡点",
+      "subtitle": "聚变难在让装置长期稳定运行",
+      "question": "聚变装置里的关键卡点在哪里？",
+      "answer": "磁约束聚变需要超导磁体约束高温等离子体，需要偏滤器和第一壁承受极端热负荷，需要真空、低温、微波加热、燃料循环和远程维护。能进入这些节点的公司才更接近真卡点。",
+      "node_ids": [
+        "superconducting-magnets-wire",
+        "plasma-facing-materials-divertor-first-wall",
+        "vacuum-cryogenic-microwave-heating",
+        "tritium-blanket-fuel-cycle",
+        "demonstration-facility-best-craft-iter"
+      ]
+    },
+    {
+      "id": "financial-validation",
+      "title": "最后看兑现",
+      "subtitle": "别把长期技术期权当短期利润",
+      "question": "怎么判断公司是真受益，不是概念股？",
+      "answer": "核电设备看核准、订单、交付、收入、毛利和应收；聚变看是否进入 ITER、EAST、CRAFT、BEST 等项目，是否有中标和交付，收入占比有多大。参股型公司只看远期布局，不能直接算短期业绩。",
+      "node_ids": [
+        "order-revenue-cashflow-validation",
+        "safety-certification-long-cycle"
+      ]
+    }
+  ],
+  "flow_columns": [
+    {
+      "key": "demand",
+      "label": "能源约束",
+      "description": "低碳基荷、核准节奏和政策支持",
+      "node_ids": [
+        "energy-security-low-carbon-baseload",
+        "nuclear-approval-capex-cycle"
+      ]
+    },
+    {
+      "key": "fission_equipment",
+      "label": "核电设备",
+      "description": "核岛、常规岛、阀门泵和管材",
+      "node_ids": [
+        "nuclear-island-main-equipment",
+        "conventional-island-turbine-generator",
+        "nuclear-grade-valves-pumps",
+        "nuclear-grade-tubes-materials"
+      ]
+    },
+    {
+      "key": "construction_operation",
+      "label": "建设运营",
+      "description": "工程建造、运营发电和多用途利用",
+      "node_ids": [
+        "nuclear-power-construction",
+        "nuclear-operation-multiuse"
+      ]
+    },
+    {
+      "key": "fusion_core",
+      "label": "聚变卡点",
+      "description": "超导、第一壁偏滤器、真空低温和加热",
+      "node_ids": [
+        "fusion-long-cycle-research",
+        "superconducting-magnets-wire",
+        "plasma-facing-materials-divertor-first-wall",
+        "vacuum-cryogenic-microwave-heating",
+        "tritium-blanket-fuel-cycle"
+      ]
+    },
+    {
+      "key": "verification",
+      "label": "示范验证",
+      "description": "大科学装置、资质认证和财务兑现",
+      "node_ids": [
+        "demonstration-facility-best-craft-iter",
+        "safety-certification-long-cycle",
+        "order-revenue-cashflow-validation"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "default_status": "candidate",
+    "status_values": [
+      "supported",
+      "weakly_supported",
+      "candidate",
+      "unsupported"
+    ],
+    "upgrade_rule": "核能产业链公司升级前，必须能落到公告、年报、半年报、投资者关系、项目中标、设备交付、工程合同、收入占比、毛利或现金流。聚变概念只有政策、参股或技术储备，不足以升级为强支持。",
+    "labels": [
+      {
+        "status": "supported",
+        "label": "强支持",
+        "meaning": "已有较明确的一手资料支持公司在该节点的产品、项目、订单、运营或财务位置。",
+        "evidence_needed": "年报、半年报、公告、IR、中标、交付、合同、收入和毛利变化。"
+      },
+      {
+        "status": "weakly_supported",
+        "label": "弱支持",
+        "meaning": "方向和公开资料支持，但收入占比、订单规模或客户验证仍不够清晰。",
+        "evidence_needed": "继续补项目金额、收入占比、客户、交付节奏和回款。"
+      },
+      {
+        "status": "candidate",
+        "label": "待验证",
+        "meaning": "逻辑上相关，暂时不能当作确认受益。",
+        "evidence_needed": "先确认是否进入核电或聚变主链条，以及是否形成量产或项目收入。"
+      },
+      {
+        "status": "unsupported",
+        "label": "证据不足",
+        "meaning": "目前只有概念联想或二级市场说法。",
+        "evidence_needed": "需要找到公司披露或可信产业资料，否则降级或移除。"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "energy-security-low-carbon-baseload",
+      "label": "低碳基荷 / 能源安全需求",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "核能能提供稳定、低碳的大规模电力，适合承担电力系统里的基荷电源角色。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "整条链的需求源头。",
+        "why_matters": "新能源波动、AI 用电和电气化提高了对稳定电源的需求。",
+        "benefit_logic": "低碳基荷需求增强，会推动核电核准、核电设备订单和长期聚变研发投入。",
+        "watch": [
+          "核电核准节奏",
+          "电力负荷增长",
+          "低碳电源政策",
+          "AI 用电需求"
+        ],
+        "common_misread": "看到能源焦虑就直接等同于所有核能公司受益，仍要拆设备和财务。"
+      }
+    },
+    {
+      "id": "nuclear-approval-capex-cycle",
+      "label": "核电核准 / 资本开支周期",
+      "layer": "downstream",
+      "group": "approval",
+      "beginner_explanation": "核电项目从核准到开工、设备招标、建设和投运，有明确但较长的节奏。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "核电设备订单的前置信号。",
+        "why_matters": "没有核准和开工，设备公司很难出现持续新增订单。",
+        "benefit_logic": "连续核准会带动主设备、阀门、管材、工程建设和运维服务。",
+        "watch": [
+          "国务院核准项目",
+          "招标批次",
+          "设备中标",
+          "交付周期"
+        ],
+        "common_misread": "把核准当天当成收入确认，设备交付和收入确认通常滞后。"
+      }
+    },
+    {
+      "id": "nuclear-island-main-equipment",
+      "label": "核岛主设备",
+      "layer": "midstream",
+      "group": "fission_equipment",
+      "beginner_explanation": "核岛是核电站的核心，包含反应堆压力容器、蒸汽发生器、稳压器、堆内构件、主泵等设备。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "核电设备链条中技术门槛最高的部分之一。",
+        "why_matters": "核岛主设备安全等级高、认证周期长、供应商少。",
+        "benefit_logic": "核电批量建设会提高核岛主设备订单和产能利用率。",
+        "watch": [
+          "核岛主设备中标",
+          "交付台套",
+          "国产化率",
+          "毛利率"
+        ],
+        "common_misread": "把所有电力设备都当核岛设备，核岛设备资质门槛明显更高。"
+      }
+    },
+    {
+      "id": "conventional-island-turbine-generator",
+      "label": "常规岛汽轮机 / 发电机",
+      "layer": "midstream",
+      "group": "fission_equipment",
+      "beginner_explanation": "常规岛把核岛产生的蒸汽热能转成机械能，再通过发电机变成电能。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "核电站发电转换环节。",
+        "why_matters": "核电设备不只核岛，常规岛汽轮机、发电机和辅机也有持续需求。",
+        "benefit_logic": "核电建设节奏越稳定，常规岛设备订单越连续。",
+        "watch": [
+          "常规岛设备出产",
+          "汽轮机订单",
+          "发电机订单",
+          "交付周期"
+        ],
+        "common_misread": "只看核岛，忽略常规岛设备也是核电资本开支的重要组成。"
+      }
+    },
+    {
+      "id": "nuclear-grade-valves-pumps",
+      "label": "核级阀门 / 泵",
+      "layer": "upstream",
+      "group": "components",
+      "beginner_explanation": "核电站需要大量高可靠阀门和泵，用于控制介质流动、安全隔离和系统运行。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "核电设备里的高频关键部件。",
+        "why_matters": "核级阀门安全等级高，国产化、检维修和存量替换都有需求。",
+        "benefit_logic": "新机组建设和存量检维修会带动阀门、泵和法兰锻件订单。",
+        "watch": [
+          "核电阀门订单",
+          "在手订单",
+          "产能扩建",
+          "检维修服务"
+        ],
+        "common_misread": "只看新增机组，忽略存量机组维修更换也是持续需求。"
+      }
+    },
+    {
+      "id": "nuclear-grade-tubes-materials",
+      "label": "核级管材 / 特种材料",
+      "layer": "upstream",
+      "group": "materials",
+      "beginner_explanation": "核电和聚变装置都需要高可靠管材、合金材料和特殊结构件，要求耐腐蚀、耐高温和高一致性。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "设备制造的材料底座。",
+        "why_matters": "材料性能会影响设备寿命、安全性和认证周期。",
+        "benefit_logic": "核电建设和聚变实验装置推进，会带动高端管材、合金材料和特殊结构件需求。",
+        "watch": [
+          "核能管材订单",
+          "高端产品占比",
+          "客户认证",
+          "产能投放"
+        ],
+        "common_misread": "把普通钢管材料当核级材料，核级材料需要资质和项目验证。"
+      }
+    },
+    {
+      "id": "nuclear-power-construction",
+      "label": "核电工程建设",
+      "layer": "midstream",
+      "group": "construction",
+      "beginner_explanation": "核电项目需要土建、安装、调试、核岛施工和工程管理，工程能力本身就是稀缺资源。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "把核电项目从图纸变成电站。",
+        "why_matters": "核电工程安全要求高，连续建造经验和项目管理能力很重要。",
+        "benefit_logic": "核准机组越多，核电工程新签合同和收入越有持续性。",
+        "watch": [
+          "核电工程新签合同",
+          "在建机组数量",
+          "工程收入",
+          "回款质量"
+        ],
+        "common_misread": "只看工程收入增长，不看低毛利民用工程和回款压力。"
+      }
+    },
+    {
+      "id": "nuclear-operation-multiuse",
+      "label": "核电运营 / 多用途利用",
+      "layer": "downstream",
+      "group": "operation",
+      "beginner_explanation": "核电运营商通过发电售电获得收入，也在发展核能供汽、同位素和技术服务等多用途利用。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "核电产业链的需求和现金流验证端。",
+        "why_matters": "运营商的在运、在建、核准待建机组决定长期设备和服务需求。",
+        "benefit_logic": "装机增长、利用小时和核能多用途服务会验证核电产业景气。",
+        "watch": [
+          "在运装机",
+          "在建装机",
+          "发电量",
+          "核能供汽"
+        ],
+        "common_misread": "把运营商和设备商混为一谈，运营商利润逻辑更像电力资产。"
+      }
+    },
+    {
+      "id": "fusion-long-cycle-research",
+      "label": "聚变长期研发周期",
+      "layer": "downstream",
+      "group": "fusion",
+      "beginner_explanation": "可控核聚变仍在技术攻关和工程验证阶段，还没有完成发电商业化。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "聚变研究的基本前提。",
+        "why_matters": "聚变空间很大，但商业化周期长、技术难度高、资金需求大。",
+        "benefit_logic": "短中期受益更可能来自实验装置、示范工程和关键设备材料采购。",
+        "watch": [
+          "EAST",
+          "中国环流三号",
+          "CRAFT",
+          "BEST",
+          "中国聚变能源公司"
+        ],
+        "common_misread": "把聚变技术突破直接当成发电收入，当前主要还是科研和工程验证。"
+      }
+    },
+    {
+      "id": "superconducting-magnets-wire",
+      "label": "超导磁体 / 超导线材",
+      "layer": "upstream",
+      "group": "fusion_core",
+      "beginner_explanation": "磁约束聚变需要强磁场约束等离子体，超导线材和磁体是核心部件。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "磁约束聚变最重要的硬件底座之一。",
+        "why_matters": "磁场强度、稳定性和工程化生产能力决定装置性能和成本。",
+        "benefit_logic": "CRAFT、BEST、ITER 和未来实验堆会拉动 NbTi、Nb3Sn、高温超导线材和磁体订单。",
+        "watch": [
+          "Nb3Sn 线材",
+          "高温超导材料",
+          "磁体订单",
+          "批量生产能力"
+        ],
+        "common_misread": "只听超导概念，不看具体线材、磁体和项目交付。"
+      }
+    },
+    {
+      "id": "plasma-facing-materials-divertor-first-wall",
+      "label": "偏滤器 / 第一壁材料",
+      "layer": "upstream",
+      "group": "fusion_core",
+      "beginner_explanation": "偏滤器和第一壁直接面对高温等离子体，需要承受极端热负荷和辐照环境。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "聚变装置中最接近等离子体的材料卡点。",
+        "why_matters": "材料承受不住，装置就无法长期稳定运行。",
+        "benefit_logic": "EAST、CRAFT、BEST 和 ITER 等项目会拉动钨铜复合材料、偏滤器靶板和第一壁部件。",
+        "watch": [
+          "偏滤器订单",
+          "第一壁项目",
+          "样件验收",
+          "材料寿命"
+        ],
+        "common_misread": "把普通钨材料公司都当聚变材料供应商，必须看项目交付证据。"
+      }
+    },
+    {
+      "id": "vacuum-cryogenic-microwave-heating",
+      "label": "真空低温 / 微波加热",
+      "layer": "upstream",
+      "group": "fusion_core",
+      "beginner_explanation": "聚变装置需要高真空、低温冷却、微波加热和电真空器件等复杂系统。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "维持聚变装置运行环境的关键系统。",
+        "why_matters": "没有真空、低温和加热系统，等离子体难以形成和稳定维持。",
+        "benefit_logic": "ITER、CRAFT、BEST 等项目会带动真空设备、冷态测试、微波器件和加热系统。",
+        "watch": [
+          "ITER 配套设备",
+          "真空设备订单",
+          "微波器件订单",
+          "项目延期风险"
+        ],
+        "common_misread": "看到参与聚变项目就忽略订单延后和项目设计变更风险。"
+      }
+    },
+    {
+      "id": "tritium-blanket-fuel-cycle",
+      "label": "氚增殖包层 / 燃料循环",
+      "layer": "upstream",
+      "group": "fusion_core",
+      "beginner_explanation": "聚变商业化需要燃料循环和氚增殖能力，包层系统负责能量转换和氚增殖等关键任务。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "从实验堆走向商业堆的远期卡点。",
+        "why_matters": "没有燃料循环和包层系统，聚变发电难以闭环。",
+        "benefit_logic": "相关需求更多体现在未来实验堆、示范堆和材料研发，短期财务弹性较弱。",
+        "watch": [
+          "包层模块",
+          "氚相关技术",
+          "示范堆设计",
+          "监管要求"
+        ],
+        "common_misread": "把远期包层和燃料循环当短期收入，当前证据通常偏科研。"
+      }
+    },
+    {
+      "id": "demonstration-facility-best-craft-iter",
+      "label": "ITER / CRAFT / BEST 示范装置",
+      "layer": "validation",
+      "group": "verification",
+      "beginner_explanation": "大科学装置和实验装置是聚变设备材料从实验室走向工程化的验证平台。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "聚变产业链的项目验证入口。",
+        "why_matters": "进入重大装置项目，才说明产品有工程验证和客户认可。",
+        "benefit_logic": "项目中标、样件验收和交付会先体现到设备材料公司收入。",
+        "watch": [
+          "ITER",
+          "CRAFT",
+          "BEST",
+          "EAST",
+          "HL-3"
+        ],
+        "common_misread": "把科研装置参与资格等同于商业化放量，二者时间尺度不同。"
+      }
+    },
+    {
+      "id": "safety-certification-long-cycle",
+      "label": "核安全认证 / 长周期验证",
+      "layer": "validation",
+      "group": "risk",
+      "beginner_explanation": "核能设备安全等级高，认证、试验、审评和交付周期都很长。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这条链的确定性门槛。",
+        "why_matters": "核能设备不是普通工业品，质量和安全要求决定供应商替换慢。",
+        "benefit_logic": "已通过认证并有交付记录的公司更容易持续获得订单。",
+        "watch": [
+          "核级资质",
+          "试验验证",
+          "客户认证",
+          "质量事故"
+        ],
+        "common_misread": "只看技术先进，不看核级资质和客户验证。"
+      }
+    },
+    {
+      "id": "order-revenue-cashflow-validation",
+      "label": "订单 / 收入 / 现金流验证",
+      "layer": "validation",
+      "group": "financials",
+      "beginner_explanation": "核能主题最终要落到订单、交付、收入、毛利、应收、存货和经营现金流。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "从产业逻辑回到财报的关口。",
+        "why_matters": "核电和聚变都容易出现宏大叙事，财务兑现才是区分强弱的证据。",
+        "benefit_logic": "中标、交付、收入占比提升、毛利稳定、应收和现金流改善，才说明真实受益。",
+        "watch": [
+          "新签合同",
+          "收入占比",
+          "毛利率",
+          "应收账款",
+          "经营现金流"
+        ],
+        "common_misread": "只看概念热度和中标金额，不看收入确认、毛利和回款。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "energy-security-low-carbon-baseload",
+      "target": "nuclear-approval-capex-cycle",
+      "relation_type": "drives",
+      "label": "低碳基荷推动核电核准",
+      "description": "稳定低碳电源需求提高，推动核电项目保持积极安全有序发展。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "nuclear-approval-capex-cycle",
+      "target": "nuclear-island-main-equipment",
+      "relation_type": "drives",
+      "label": "核准带动核岛主设备",
+      "description": "核电项目核准后，核岛主设备进入设计、招标和交付周期。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "nuclear-approval-capex-cycle",
+      "target": "conventional-island-turbine-generator",
+      "relation_type": "drives",
+      "label": "核准带动常规岛设备",
+      "description": "核电站也需要汽轮机、发电机、辅机和常规岛系统。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "nuclear-island-main-equipment",
+      "target": "nuclear-grade-valves-pumps",
+      "relation_type": "requires",
+      "label": "核岛需要阀门和泵",
+      "description": "核岛系统需要大量核级阀门、泵和安全相关部件。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "nuclear-island-main-equipment",
+      "target": "nuclear-grade-tubes-materials",
+      "relation_type": "requires",
+      "label": "主设备需要核级材料",
+      "description": "核电设备和聚变装置都依赖高可靠管材和特殊合金材料。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "nuclear-approval-capex-cycle",
+      "target": "nuclear-power-construction",
+      "relation_type": "drives",
+      "label": "核准带动工程建设",
+      "description": "在建机组增加会提高核电工程施工、安装和调试需求。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "nuclear-power-construction",
+      "target": "nuclear-operation-multiuse",
+      "relation_type": "delivers",
+      "label": "建设转入运营",
+      "description": "机组建成后进入运营发电、核能供汽、同位素和技术服务阶段。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "energy-security-low-carbon-baseload",
+      "target": "fusion-long-cycle-research",
+      "relation_type": "supports",
+      "label": "未来能源推动聚变研发",
+      "description": "长期能源安全和低碳需求使聚变成为未来能源研发方向。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "fusion-long-cycle-research",
+      "target": "superconducting-magnets-wire",
+      "relation_type": "requires",
+      "label": "磁约束需要超导磁体",
+      "description": "托卡马克装置需要强磁场约束等离子体。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "fusion-long-cycle-research",
+      "target": "plasma-facing-materials-divertor-first-wall",
+      "relation_type": "requires",
+      "label": "等离子体面对材料是卡点",
+      "description": "偏滤器和第一壁材料影响装置能否长期稳定运行。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "fusion-long-cycle-research",
+      "target": "vacuum-cryogenic-microwave-heating",
+      "relation_type": "requires",
+      "label": "真空低温和加热系统",
+      "description": "聚变实验装置需要真空、低温、微波加热和电真空器件支持。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "fusion-long-cycle-research",
+      "target": "tritium-blanket-fuel-cycle",
+      "relation_type": "long_term_requires",
+      "label": "商业堆需要燃料循环",
+      "description": "氚增殖包层和燃料循环是远期商业化闭环的重要难题。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "superconducting-magnets-wire",
+      "target": "demonstration-facility-best-craft-iter",
+      "relation_type": "validated_by",
+      "label": "项目验证超导材料",
+      "description": "ITER、CRAFT、BEST 等项目验证超导线材和磁体工程能力。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "plasma-facing-materials-divertor-first-wall",
+      "target": "demonstration-facility-best-craft-iter",
+      "relation_type": "validated_by",
+      "label": "项目验证第一壁偏滤器",
+      "description": "大科学装置项目是聚变材料从研发走向工程化的关键验证。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "demonstration-facility-best-craft-iter",
+      "target": "order-revenue-cashflow-validation",
+      "relation_type": "translates_to",
+      "label": "项目转订单和收入",
+      "description": "大科学装置采购、验收和交付会先体现到设备材料公司收入。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "safety-certification-long-cycle",
+      "target": "order-revenue-cashflow-validation",
+      "relation_type": "checks",
+      "label": "认证和周期反证兑现",
+      "description": "核级认证、项目延期、应收和存货会反证主题兑现质量。",
+      "evidence_status": "supported"
+    }
+  ],
+  "concept_diagrams": [
+    {
+      "id": "fission-vs-fusion",
+      "title": "先分清核电和聚变",
+      "subtitle": "一个是成熟商业化，一个是未来能源研发",
+      "icon": "system",
+      "node_ids": [
+        "nuclear-operation-multiuse",
+        "fusion-long-cycle-research",
+        "order-revenue-cashflow-validation"
+      ],
+      "takeaway": "核电设备看当期核准和订单，聚变设备材料看大科学装置和工程验证。",
+      "parts": [
+        {
+          "label": "核电",
+          "role": "当期商业化",
+          "description": "核准、建设、设备、运营和检维修可以落到收入。"
+        },
+        {
+          "label": "聚变",
+          "role": "长期技术期权",
+          "description": "仍以实验装置、示范装置和关键部件采购为主。"
+        },
+        {
+          "label": "财务",
+          "role": "共同验证",
+          "description": "都要看订单、收入占比、毛利、应收和现金流。"
+        }
+      ]
+    },
+    {
+      "id": "nuclear-equipment-stack",
+      "title": "核电设备怎么拆",
+      "subtitle": "核岛、常规岛、阀门泵、管材和工程建设",
+      "icon": "control",
+      "node_ids": [
+        "nuclear-island-main-equipment",
+        "conventional-island-turbine-generator",
+        "nuclear-grade-valves-pumps",
+        "nuclear-power-construction"
+      ],
+      "takeaway": "核电项目核准后，不是只有运营商受益，主设备、部件和工程建设都会进入订单周期。",
+      "parts": [
+        {
+          "label": "核岛",
+          "role": "反应核心",
+          "description": "压力容器、蒸汽发生器、主泵和堆内构件。"
+        },
+        {
+          "label": "常规岛",
+          "role": "发电转换",
+          "description": "汽轮机、发电机和辅机把热能转成电能。"
+        },
+        {
+          "label": "部件工程",
+          "role": "保障交付",
+          "description": "阀门、泵、管材、安装和调试决定安全与进度。"
+        }
+      ]
+    },
+    {
+      "id": "fusion-core-stack",
+      "title": "聚变卡点在哪里",
+      "subtitle": "强磁场、耐极端热负荷、真空低温和加热系统",
+      "icon": "chip",
+      "node_ids": [
+        "superconducting-magnets-wire",
+        "plasma-facing-materials-divertor-first-wall",
+        "vacuum-cryogenic-microwave-heating",
+        "demonstration-facility-best-craft-iter"
+      ],
+      "takeaway": "聚变的真实受益先看能不能进入 EAST、ITER、CRAFT、BEST 等项目，而不是只看概念标签。",
+      "parts": [
+        {
+          "label": "超导",
+          "role": "约束等离子体",
+          "description": "超导线材和磁体决定磁场强度与稳定性。"
+        },
+        {
+          "label": "第一壁",
+          "role": "承受极端环境",
+          "description": "偏滤器、第一壁和钨铜复合材料是材料卡点。"
+        },
+        {
+          "label": "运行系统",
+          "role": "维持实验条件",
+          "description": "真空、低温、微波加热和测试系统支撑装置运行。"
+        }
+      ]
+    },
+    {
+      "id": "research-checklist",
+      "title": "研究时先问四个问题",
+      "subtitle": "是核电订单，还是聚变期权",
+      "icon": "connector",
+      "node_ids": [
+        "nuclear-approval-capex-cycle",
+        "demonstration-facility-best-craft-iter",
+        "order-revenue-cashflow-validation"
+      ],
+      "takeaway": "先定位公司在哪一环，再看证据到哪一步，最后用财务验证。",
+      "parts": [
+        {
+          "label": "位置",
+          "role": "哪一环",
+          "description": "运营、工程、设备、阀门、材料、超导还是聚变部件。"
+        },
+        {
+          "label": "证据",
+          "role": "到哪步",
+          "description": "研发、样件、中标、验收、交付和收入确认含义不同。"
+        },
+        {
+          "label": "财务",
+          "role": "有没有兑现",
+          "description": "看收入占比、毛利、应收、存货和经营现金流。"
+        }
+      ]
+    }
+  ],
+  "companies": [
+    {
+      "name": "上海电气",
+      "ts_code": "601727.SH",
+      "nodes": [
+        "nuclear-island-main-equipment",
+        "conventional-island-turbine-generator",
+        "vacuum-cryogenic-microwave-heating",
+        "demonstration-facility-best-craft-iter",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "核电设备和聚变大科学装置核心部件龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "核能装备龙头",
+      "leader_reason": "2025 半年报披露公司形成从核岛设备到常规岛设备、大型铸锻件、核级风机、配套电机和备件服务的完整核能装备制造链，并已交付 ITER 磁体冷态测试杜瓦，后续还将交付 CRAFT、BEST 等主机系统核心部件。",
+      "current_view": "上海电气是这条产业链里最适合做入口验证的公司：核电设备有当期订单和交付，聚变装置核心部件也有一手披露。研究重点是核电设备订单、交付台套、聚变核心部件项目节奏和毛利质量。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆核电设备订单和收入",
+        "跟踪核岛主设备交付台套",
+        "验证 CRAFT、BEST 核心部件交付进度",
+        "观察能源装备毛利和应收"
+      ],
+      "why_watch": "同时覆盖成熟核电设备和聚变大科学装置核心部件，能帮助判断核能装备景气是否兑现。",
+      "evidence_basis": [
+        "2025 半年报披露核电设备订单 67.7 亿元",
+        "报告披露承接核岛主设备 8 台、出产核岛主设备 9 台",
+        "报告披露 ITER 磁体冷态测试杜瓦交付及 CRAFT、BEST 后续主机核心部件"
+      ],
+      "verification_focus": [
+        "核岛主设备",
+        "常规岛设备",
+        "ITER",
+        "CRAFT",
+        "BEST"
+      ],
+      "risks": [
+        "集团业务庞杂，核能收入占比需要拆分",
+        "聚变项目交付节奏长",
+        "能源装备毛利和回款波动"
+      ],
+      "evidence_refs": [
+        {
+          "title": "上海电气集团股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-30",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-30/1224624904.PDF",
+          "evidence_grade": "A",
+          "usage": "验证核电设备产业链、核岛主设备交付、ITER 冷态测试杜瓦以及 CRAFT、BEST 聚变核心部件"
+        }
+      ]
+    },
+    {
+      "name": "东方电气",
+      "ts_code": "600875.SH",
+      "nodes": [
+        "nuclear-island-main-equipment",
+        "conventional-island-turbine-generator",
+        "nuclear-approval-capex-cycle",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "核电主设备和常规岛设备龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "核电设备龙头",
+      "leader_reason": "2025 半年报披露公司核电、气电市场占有率保持行业第一；募集说明书披露核岛设备包括反应堆压力容器、蒸汽发生器等，常规岛设备包括核能汽轮机、核能发电机、汽水分离再热器等。",
+      "current_view": "东方电气更偏成熟核电设备主线，适合作为核电常态化核准的验证节点。它的聚变弹性不是主逻辑，研究重点是核电订单、核岛和常规岛设备交付。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪新增生效订单结构",
+        "拆核电设备收入占比",
+        "确认核岛和常规岛设备交付",
+        "观察清洁高效能源装备毛利"
+      ],
+      "why_watch": "核电核准周期首先会验证主设备龙头的订单和交付。",
+      "evidence_basis": [
+        "2025 半年报披露核电市场占有率保持行业第一",
+        "募集说明书披露核岛和常规岛设备品类"
+      ],
+      "verification_focus": [
+        "核岛设备",
+        "常规岛设备",
+        "新增订单",
+        "设备交付"
+      ],
+      "risks": [
+        "大型设备交付周期长",
+        "收入确认滞后核准",
+        "业务板块较多，核电弹性需拆分"
+      ],
+      "evidence_refs": [
+        {
+          "title": "东方电气股份有限公司 2025 年半年度报告",
+          "publisher": "公开公告镜像",
+          "date": "2025-08-29",
+          "url": "https://stockmc.xueqiu.com/202508/600875_20250829_O2NU.pdf",
+          "evidence_grade": "A",
+          "usage": "验证核电市场占有率和新增订单结构"
+        },
+        {
+          "title": "东方电气股份有限公司募集说明书",
+          "publisher": "公开公告镜像",
+          "date": "2025-03-25",
+          "url": "https://stockn.xueqiu.com/SH600875/20250325389879.pdf",
+          "evidence_grade": "A",
+          "usage": "验证核岛设备和常规岛设备品类"
+        }
+      ]
+    },
+    {
+      "name": "中国核电",
+      "ts_code": "601985.SH",
+      "nodes": [
+        "nuclear-operation-multiuse",
+        "fusion-long-cycle-research",
+        "nuclear-approval-capex-cycle",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "核电运营龙头和聚变远期布局节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "运营验证节点",
+      "leader_reason": "2025 半年报披露公司以投资、建设、运营核电项目为核心业务；2025 年 7 月公告拟投资中国聚变能源公司 10 亿元，前瞻性布局核聚变能源领域。",
+      "current_view": "中国核电是核能需求端和运营端验证节点，利润主要来自核电运营和新能源发电，不是设备弹性公司。聚变投资提供远期布局，但中国聚变能源公司仍处研发投入阶段，不能当短期业绩。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪控股在运和在建核电装机",
+        "观察核电及相关业务利润",
+        "确认核能供汽和同位素进展",
+        "跟踪中国聚变能源公司投资进展"
+      ],
+      "why_watch": "运营商的装机、发电量和投资节奏会反向验证设备链条需求。",
+      "evidence_basis": [
+        "2025 半年报披露核电项目投资、建设、运营核心业务",
+        "公告披露投资中国聚变能源有限公司 10 亿元"
+      ],
+      "verification_focus": [
+        "核电运营",
+        "在建装机",
+        "核能多用途",
+        "聚变投资"
+      ],
+      "risks": [
+        "电价和利用小时波动",
+        "聚变投资商业化周期长",
+        "运营资产资本开支重"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中国核能电力股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-28",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-28/1224598498.PDF",
+          "evidence_grade": "A",
+          "usage": "验证核电运营、核能多用途利用和经营数据"
+        },
+        {
+          "title": "中国核电关于参股投资中国聚变能源有限公司的公告",
+          "publisher": "巨潮资讯",
+          "date": "2025-07-23",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-07-23/1224255239.PDF",
+          "evidence_grade": "A",
+          "usage": "验证中国核电聚变领域投资和风险提示"
+        }
+      ]
+    },
+    {
+      "name": "中国核建",
+      "ts_code": "601611.SH",
+      "nodes": [
+        "nuclear-power-construction",
+        "demonstration-facility-best-craft-iter",
+        "fusion-long-cycle-research",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "核电工程建设龙头和 ITER 工程验证节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "核电建设龙头",
+      "leader_reason": "2025 年报披露公司完成大科学工程 ITER 多个核心模块吊装，并持续巩固核电建造国家队地位；2025 年核电工程新签合同 564.14 亿元，营收 376.75 亿元。",
+      "current_view": "中国核建的基本盘是核电工程建设，聚变是工程能力验证和长期期权。研究重点是核电工程合同、收入、毛利和回款，不应只按 ITER 概念看。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪核电工程新签合同",
+        "观察核电工程收入和毛利",
+        "验证 ITER 核心模块进展",
+        "检查民用工程结构优化和回款"
+      ],
+      "why_watch": "核电常态化核准会直接反映到核电工程建设龙头的新签合同。",
+      "evidence_basis": [
+        "2025 年报披露 ITER 核心模块吊装",
+        "2025 年报披露核电工程新签合同和收入增长"
+      ],
+      "verification_focus": [
+        "核电工程",
+        "ITER",
+        "新签合同",
+        "工程回款"
+      ],
+      "risks": [
+        "工程业务毛利率不高",
+        "民用工程拖累",
+        "聚变工程商业化周期长"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中国核工业建设股份有限公司 2025 年年度报告",
+          "publisher": "新浪财经公告镜像",
+          "date": "2026-04-25",
+          "url": "http://file.finance.sina.com.cn/211.154.219.97:9494/MRGG/CNSESH_STOCK/2026/2026-4/2026-04-25/12190463.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 ITER 核心模块吊装、核电工程新签合同和收入"
+        },
+        {
+          "title": "中国核建 2025 年半年度报告",
+          "publisher": "新浪财经公告镜像",
+          "date": "2025-08-29",
+          "url": "http://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=601611&id=11409851",
+          "evidence_grade": "A",
+          "usage": "补充验证核电工程数智化和项目管理能力"
+        }
+      ]
+    },
+    {
+      "name": "西部超导",
+      "ts_code": "688122.SH",
+      "nodes": [
+        "superconducting-magnets-wire",
+        "demonstration-facility-best-craft-iter",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "聚变超导线材和磁体龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "超导材料龙头",
+      "leader_reason": "2025 半年报披露公司面向新一代聚变工程实验堆的高性能 Nb3Sn 线材取得重大突破并具备批量生产能力；2024 年报披露完成国内核聚变 CRAFT 项目超导线材交付并开始为 BEST 项目批量供货。",
+      "current_view": "西部超导是聚变链条里证据较硬的超导材料节点。它不是核电设备公司，主线是 NbTi、Nb3Sn、高温超导材料和磁体的工程化交付。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪 Nb3Sn 线材订单",
+        "确认 CRAFT 和 BEST 供货节奏",
+        "观察超导产品收入占比",
+        "跟踪磁体和线材毛利"
+      ],
+      "why_watch": "磁约束聚变需要超导磁体，超导线材是绕不开的材料卡点。",
+      "evidence_basis": [
+        "2025 半年报披露面向新一代聚变工程实验堆的 Nb3Sn 线材突破",
+        "2024 年报披露 CRAFT 交付和 BEST 批量供货"
+      ],
+      "verification_focus": [
+        "Nb3Sn",
+        "NbTi",
+        "高温超导",
+        "CRAFT",
+        "BEST"
+      ],
+      "risks": [
+        "聚变项目收入占比可能仍有限",
+        "航空钛合金等其他业务影响整体利润",
+        "项目交付节奏波动"
+      ],
+      "evidence_refs": [
+        {
+          "title": "西部超导材料科技股份有限公司 2025 年半年度报告",
+          "publisher": "公开公告镜像",
+          "date": "2025-08-28",
+          "url": "https://stockmc.xueqiu.com/202508/688122_20250828_N6XE.pdf",
+          "evidence_grade": "A",
+          "usage": "验证 Nb3Sn 线材、超导产品和聚变工程实验堆材料突破"
+        },
+        {
+          "title": "西部超导材料科技股份有限公司 2024 年年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-04-22",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-04-22/1223188084.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 CRAFT 超导线材交付和 BEST 批量供货"
+        }
+      ]
+    },
+    {
+      "name": "安泰科技",
+      "ts_code": "000969.SZ",
+      "nodes": [
+        "plasma-facing-materials-divertor-first-wall",
+        "demonstration-facility-best-craft-iter",
+        "nuclear-grade-tubes-materials",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "聚变偏滤器和第一壁材料龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "等离子体面对材料",
+      "leader_reason": "2025 半年报披露安泰中科深耕可控核聚变偏滤器、第一壁包层等技术开发，上半年成功中标 EAST 偏滤器、CRAFT 偏滤器、限制器等合同，合同总额近 4000 万元。",
+      "current_view": "安泰科技是聚变链条里偏滤器和第一壁材料的清晰映射，适合做等离子体面对材料节点的重点公司。需要注意聚变收入仍处项目制和长周期验证阶段，不能外推过快。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪 EAST、CRAFT、BEST 订单",
+        "确认偏滤器和第一壁收入占比",
+        "观察订单验收和毛利",
+        "验证后续国内外项目进入情况"
+      ],
+      "why_watch": "偏滤器和第一壁直接承受极端等离子体环境，是聚变装置长期运行的材料卡点。",
+      "evidence_basis": [
+        "2025 半年报披露 EAST、CRAFT、限制器合同近 4000 万元",
+        "投资者关系记录披露安泰中科具备钨铜偏滤器和包层第一壁等产品能力"
+      ],
+      "verification_focus": [
+        "钨铜偏滤器",
+        "第一壁包层",
+        "EAST",
+        "CRAFT",
+        "BEST"
+      ],
+      "risks": [
+        "聚变项目收入占比仍需拆分",
+        "项目制订单波动",
+        "市场预期可能领先财务兑现"
+      ],
+      "evidence_refs": [
+        {
+          "title": "安泰科技股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-26",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-26/1224569159.PDF",
+          "evidence_grade": "A",
+          "usage": "验证偏滤器、第一壁包层和 EAST、CRAFT、限制器合同"
+        },
+        {
+          "title": "安泰科技投资者关系活动记录",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-06-09",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/06/09/1223824497.PDF",
+          "evidence_grade": "A",
+          "usage": "补充验证安泰中科钨铜偏滤器、限制器和包层第一壁产品能力"
+        }
+      ]
+    },
+    {
+      "name": "国光电气",
+      "ts_code": "688776.SH",
+      "nodes": [
+        "vacuum-cryogenic-microwave-heating",
+        "plasma-facing-materials-divertor-first-wall",
+        "demonstration-facility-best-craft-iter",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "核工业设备、真空和微波电真空器件候选",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "真空微波部件",
+      "leader_reason": "2025 半年报披露公司核工业设备主要应用于核聚变领域，并强调 ITER 相关技术对高真空、低泄漏率、非金属材料焊接等能力要求很高；半年报摘要同时提示公司聚焦国内可控核聚变总体单位和重点项目。",
+      "current_view": "国光电气是聚变真空、微波、电真空器件和核工业设备的候选映射，但 2025 上半年受 ITER 设计变更、采购订单延后和微波器件订单延迟影响，业绩明显承压。适合观察，不适合直接写成确定放量。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "确认核工业设备订单恢复",
+        "跟踪 ITER 设计变更后的采购节奏",
+        "观察微波器件订单",
+        "检查收入、毛利和信用减值"
+      ],
+      "why_watch": "聚变装置需要高真空、微波加热和电真空器件，国光电气有明确产品方向和项目线索。",
+      "evidence_basis": [
+        "2025 半年报披露核工业设备主要应用于核聚变领域",
+        "半年报摘要提示核工业设备订单延后和聚变项目工程化准备"
+      ],
+      "verification_focus": [
+        "核工业设备",
+        "真空系统",
+        "微波器件",
+        "ITER"
+      ],
+      "risks": [
+        "订单延后",
+        "项目设计变更",
+        "2025 上半年收入和利润承压"
+      ],
+      "evidence_refs": [
+        {
+          "title": "成都国光电气股份有限公司 2025 年半年度报告",
+          "publisher": "公开公告镜像",
+          "date": "2025-08-28",
+          "url": "https://stockmc.xueqiu.com/202508/688776_20250829_8DUW.pdf",
+          "evidence_grade": "A",
+          "usage": "验证核工业设备、核聚变应用、高真空和微波电真空器件能力"
+        },
+        {
+          "title": "成都国光电气股份有限公司 2025 年半年度报告摘要",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-08-29",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/29/1224615563.PDF",
+          "evidence_grade": "A",
+          "usage": "验证聚变项目订单延后、工程化准备和经营压力"
+        }
+      ]
+    },
+    {
+      "name": "江苏神通",
+      "ts_code": "002438.SZ",
+      "nodes": [
+        "nuclear-grade-valves-pumps",
+        "nuclear-approval-capex-cycle",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "核电阀门和法兰锻件核心候选",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "核电阀门",
+      "leader_reason": "2025 半年度资料显示公司核电业务收入增长，神通核能新增订单占比较高，并已构建覆盖核级蝶阀、球阀、地坑过滤器、仪表阀、隔膜阀、调节阀等产品矩阵。",
+      "current_view": "江苏神通是核电阀门链条里比较清晰的公司，受核电核准节奏和阀门设备招标影响。需要继续以公司年报、订单和收入占比验证，而不能只看券商测算。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "核对公司半年报核电业务收入",
+        "跟踪神通核能新增订单",
+        "确认阀门设备招标节奏",
+        "观察应收和存货"
+      ],
+      "why_watch": "核级阀门是核电项目里高频且安全等级高的部件。",
+      "evidence_basis": [
+        "2025 半年报披露中核、中广核等客户和神通核能主体",
+        "公开研报资料披露核电业务收入、新增订单和产品矩阵"
+      ],
+      "verification_focus": [
+        "核级蝶阀",
+        "球阀",
+        "仪表阀",
+        "核电订单"
+      ],
+      "risks": [
+        "当前订单和产品矩阵细节部分来自研报",
+        "核电项目交付周期长",
+        "应收账款较高"
+      ],
+      "evidence_refs": [
+        {
+          "title": "江苏神通阀门股份有限公司 2025 年半年度报告",
+          "publisher": "新浪财经公告镜像",
+          "date": "2025-08-19",
+          "url": "http://vip.stock.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=002438&id=11310077",
+          "evidence_grade": "A",
+          "usage": "验证公司主体、神通核能、中核和中广核客户线索及财务风险"
+        },
+        {
+          "title": "江苏神通 2025 年半年度报告点评",
+          "publisher": "国元证券 / 新浪财经转载",
+          "date": "2025-08-23",
+          "url": "https://finance.sina.cn/2025-08-23/detail-infmyzhw4196226.d.html?vt=4&cid=76996&node_id=76996",
+          "evidence_grade": "C",
+          "usage": "补充核电收入、神通核能新增订单和阀门产品矩阵线索，需用公司后续披露复核"
+        }
+      ]
+    },
+    {
+      "name": "中核科技",
+      "ts_code": "000777.SZ",
+      "nodes": [
+        "nuclear-grade-valves-pumps",
+        "safety-certification-long-cycle",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "中核体系核电阀门验证节点",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "核电阀门",
+      "leader_reason": "2025 投资者关系活动记录披露公司核电在手订单近 30 亿元，核电产能三期建设完成后预计可同时满足 10 台机组阀门出产；公开资料显示核电与核化工阀门业务推动收入增长。",
+      "current_view": "中核科技适合放在核级阀门和核安全认证节点，逻辑比泛核能概念更实。研究重点是核电阀门在手订单、产能扩建、毛利率和中核体系资源。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪核电在手订单变化",
+        "确认三期产能扩建进度",
+        "观察核电与核化工阀门收入",
+        "检查毛利率和费用率"
+      ],
+      "why_watch": "核电阀门国产化和高端化是核电设备链条里的关键部件机会。",
+      "evidence_basis": [
+        "2025 投资者关系活动记录披露核电在手订单和产能规划",
+        "2025 半年报披露核能发展促进核电阀门国产化进程"
+      ],
+      "verification_focus": [
+        "核电阀门",
+        "在手订单",
+        "产能扩建",
+        "国产化"
+      ],
+      "risks": [
+        "核电阀门毛利波动",
+        "传统工业阀门竞争",
+        "收入确认滞后"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中核苏阀科技实业股份有限公司 2025 年半年度报告",
+          "publisher": "新浪财经公告镜像",
+          "date": "2025-08-28",
+          "url": "https://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=000777&id=11397755",
+          "evidence_grade": "A",
+          "usage": "验证核电阀门国产化、行业情况和公司业务基础"
+        },
+        {
+          "title": "中核科技投资者关系活动记录",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-05-09",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/05/09/1223513595.PDF",
+          "evidence_grade": "A",
+          "usage": "验证核电在手订单、产能扩建和项目招标进展"
+        }
+      ]
+    },
+    {
+      "name": "久立特材",
+      "ts_code": "002318.SZ",
+      "nodes": [
+        "nuclear-grade-tubes-materials",
+        "plasma-facing-materials-divertor-first-wall",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "核能管材和聚变材料候选",
+      "tier": "材料候选",
+      "attention_level": "watch",
+      "attention_label": "核能高端管材",
+      "leader_reason": "公开资料显示公司核电产品线涵盖核级配管、传热管和管道管等，并有核能及油气用高性能管材项目；可控核聚变相关 PF 导管等线索主要来自研报和 F10 资料，需继续用公司披露验证。",
+      "current_view": "久立特材适合放在核级管材和高端材料候选里，而不是聚变强支持。核电高端管材更容易财务验证，聚变材料弹性需要继续找公司公告、客户订单和收入占比。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "确认核能管材收入和订单",
+        "核对 PF 导管等聚变项目一手证据",
+        "跟踪核能及油气用高性能管材项目投产",
+        "观察高端产品占比和毛利"
+      ],
+      "why_watch": "核能设备对高可靠管材有长期需求，但聚变材料证据仍需补强。",
+      "evidence_basis": [
+        "F10 和研报资料披露核能管材、高性能管材项目和聚变 PF 导管线索",
+        "缺少足够明确的一手聚变订单证据，因此保守标为弱支持"
+      ],
+      "verification_focus": [
+        "核级管材",
+        "蒸发器传热管",
+        "高性能管材",
+        "PF 导管"
+      ],
+      "risks": [
+        "聚变证据来源偏二级资料",
+        "特钢和油气周期影响整体利润",
+        "海外和原材料价格波动"
+      ],
+      "evidence_refs": [
+        {
+          "title": "久立特材 F10 盈利预测和业务资料",
+          "publisher": "同花顺金融服务网",
+          "date": "2026-01-28",
+          "url": "http://basic.10jqka.com.cn/002318/worth.html",
+          "evidence_grade": "B",
+          "usage": "补充核能高端管材和可控核聚变 PF 导管线索，后续需以公司公告复核"
+        }
+      ]
+    },
+    {
+      "name": "浙能电力",
+      "ts_code": "600023.SH",
+      "nodes": [
+        "fusion-long-cycle-research",
+        "nuclear-operation-multiuse",
+        "order-revenue-cashflow-validation"
+      ],
+      "role": "参股中国聚变能源的远期布局节点",
+      "tier": "远期观察",
+      "attention_level": "watch",
+      "attention_label": "参股聚变平台",
+      "leader_reason": "2025 年 7 月公告披露公司拟投资 7.51 亿元参股中国聚变能源有限公司 5% 股权，聚变公司以磁约束托卡马克为路线，按照先导实验堆、示范堆、商用堆三步走推进。",
+      "current_view": "浙能电力是聚变资本参与和远期布局节点，不是聚变设备或材料公司。这个位置适合提示小白：参股是战略期权，不等于短期业绩弹性。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪股权交割和后续出资",
+        "观察中国聚变能源公司项目进展",
+        "确认是否有业务协同",
+        "不要把参股直接折算成短期利润"
+      ],
+      "why_watch": "大型能源企业参股可以验证聚变产业资本化，但财务兑现周期很长。",
+      "evidence_basis": [
+        "2025 年公告披露投资金额、持股比例和聚变公司三步走路线",
+        "公告明确提示聚变技术仍处发展阶段、周期长、存在商业化失败风险"
+      ],
+      "verification_focus": [
+        "参股投资",
+        "中国聚变能源",
+        "股权交割",
+        "远期商业化"
+      ],
+      "risks": [
+        "无短期业务收入",
+        "聚变商业化失败风险",
+        "投资周期长且资金投入大"
+      ],
+      "evidence_refs": [
+        {
+          "title": "浙能电力关于参股中国聚变能源有限公司暨关联交易的公告",
+          "publisher": "新浪财经公告镜像",
+          "date": "2025-07-23",
+          "url": "http://vip.stock.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=600023&id=11253384",
+          "evidence_grade": "A",
+          "usage": "验证参股中国聚变能源公司、持股比例、路线和风险提示"
+        }
+      ]
+    }
+  ],
+  "catalysts": [
+    {
+      "horizon": "短期",
+      "title": "核电项目常态化核准",
+      "why": "连续核准会带动核岛、常规岛、阀门、管材和工程建设订单。",
+      "watch": "国务院核准、项目开工、主设备招标、阀门招标和工程新签合同。",
+      "risk": "核准到收入确认存在较长滞后。"
+    },
+    {
+      "horizon": "中期",
+      "title": "核电设备订单和交付放量",
+      "why": "设备公司业绩兑现需要中标、生产、交付和验收。",
+      "watch": "核岛主设备台套、常规岛设备、阀门订单、管材订单和毛利率。",
+      "risk": "大设备交付节奏和应收回款可能波动。"
+    },
+    {
+      "horizon": "长期",
+      "title": "CRAFT / BEST / ITER 等聚变装置推进",
+      "why": "聚变设备材料先通过大科学装置形成项目收入和技术验证。",
+      "watch": "超导线材、偏滤器第一壁、真空低温、微波加热等项目中标和验收。",
+      "risk": "聚变商业化周期长，项目延期和设计变更会影响订单。"
+    },
+    {
+      "horizon": "反证",
+      "title": "财务质量验证",
+      "why": "核能主题宏大，必须用财报反证。",
+      "watch": "收入占比、毛利、合同负债、应收、存货、减值和经营现金流。",
+      "risk": "主题热度领先于财务兑现。"
+    }
+  ],
+  "financial_translations": [
+    {
+      "node_id": "nuclear-approval-capex-cycle",
+      "title": "核准怎么变成收入",
+      "watch": "核准后先看招标和新签合同，再看生产交付和收入确认。",
+      "source_hint": "国务院核准信息、公司公告、半年报、年报和订单披露。",
+      "risk": "核准到设备收入通常滞后。"
+    },
+    {
+      "node_id": "nuclear-grade-valves-pumps",
+      "title": "阀门公司怎么兑现",
+      "watch": "看在手订单、新增订单、产能扩建、核电收入占比、毛利和应收。",
+      "source_hint": "年报、半年报、投资者关系活动记录和招标信息。",
+      "risk": "核电项目交付周期长，应收和存货可能上升。"
+    },
+    {
+      "node_id": "superconducting-magnets-wire",
+      "title": "超导材料怎么兑现",
+      "watch": "看 CRAFT、BEST、ITER 等项目的线材和磁体供货、交付和收入占比。",
+      "source_hint": "公司年报、项目公告、投资者关系记录。",
+      "risk": "聚变项目收入占比可能低于市场想象。"
+    },
+    {
+      "node_id": "plasma-facing-materials-divertor-first-wall",
+      "title": "偏滤器第一壁怎么兑现",
+      "watch": "看偏滤器、限制器、第一壁包层中标金额、验收和后续订单。",
+      "source_hint": "公司公告、半年报、项目验收新闻和投资者关系记录。",
+      "risk": "项目制收入波动，商业化周期长。"
+    },
+    {
+      "node_id": "order-revenue-cashflow-validation",
+      "title": "最终财务验证",
+      "watch": "看收入、毛利、应收、存货、经营现金流和减值。",
+      "source_hint": "财报和审计报告。",
+      "risk": "只有中标没有回款，不能算高质量兑现。"
+    }
+  ],
+  "common_misreads": [
+    {
+      "title": "把核电和聚变混成一个确定性",
+      "correction": "核电是已商业化产业，聚变仍是长期研发和工程验证，财务确定性不同。"
+    },
+    {
+      "title": "把参股聚变平台等同于短期受益",
+      "correction": "参股只能说明远期布局，不能直接推导收入和利润。"
+    },
+    {
+      "title": "只看核准数量，不看交付周期",
+      "correction": "核电核准到设备招标、交付和收入确认有明显滞后。"
+    },
+    {
+      "title": "把普通材料公司当聚变材料公司",
+      "correction": "必须确认是否进入 EAST、ITER、CRAFT、BEST 等项目，并有订单或交付。"
+    },
+    {
+      "title": "只看中标不看现金流",
+      "correction": "核能设备项目周期长，应收、存货、减值和现金流同样重要。"
+    }
+  ],
+  "tracking_metrics": [
+    {
+      "name": "年度核电核准台数和开工节奏",
+      "why": "决定核电设备和工程建设订单总量。",
+      "source_hint": "国务院常务会议、国家能源局、中国核能行业协会、权威媒体"
+    },
+    {
+      "name": "核岛和常规岛主设备交付台套",
+      "why": "验证主设备龙头订单是否转为收入。",
+      "source_hint": "上海电气、东方电气年报和半年报"
+    },
+    {
+      "name": "核级阀门和管材订单",
+      "why": "验证部件材料环节是否受核电建设拉动。",
+      "source_hint": "公司公告、投资者关系记录、招标信息"
+    },
+    {
+      "name": "CRAFT / BEST / ITER 项目采购和验收",
+      "why": "验证聚变材料设备是否从科研概念走向工程订单。",
+      "source_hint": "公司公告、项目官方信息、年报、半年报"
+    },
+    {
+      "name": "收入占比、毛利、应收和现金流",
+      "why": "判断产业链逻辑是否真正进入财务报表。",
+      "source_hint": "年报、半年报、季度报告、审计报告"
+    }
+  ],
+  "sources": [
+    {
+      "title": "工业和信息化部等七部门关于推动未来产业创新发展的实施意见",
+      "publisher": "工业和信息化部等七部门",
+      "date": "2024-01-29",
+      "url": "https://www.mct.gov.cn/preview/whhlyqyzcxxfw/zhgl/202402/t20240204_951177.html",
+      "source_type": "policy",
+      "usage": "未来能源政策框架，明确聚焦核能、核聚变等重点领域"
+    },
+    {
+      "title": "加快建设新型能源体系",
+      "publisher": "国家能源局",
+      "date": "2025-12-22",
+      "url": "https://www.nea.gov.cn/20251222/66a44a06b779474684d365aa79e50380/c.html",
+      "source_type": "policy",
+      "usage": "说明可控核聚变、高温超导等前沿能源方向和新型能源体系建设"
+    },
+    {
+      "title": "国常会再核准！5大核电项目10台机组",
+      "publisher": "中国能源报",
+      "date": "2025-04-27",
+      "url": "https://cnenergynews.cn/hangye/2025/04/27/detail_news_20250427210962.html",
+      "source_type": "industry",
+      "usage": "核电核准节奏、近年核准台数和核电产业链背景"
+    },
+    {
+      "title": "瞭望：可控核聚变产业化推进",
+      "publisher": "新华社 / 瞭望",
+      "date": "2025-12-30",
+      "url": "http://www.news.cn/tech/20251230/5ecd641e7f91480f9df8599d64b089cd/c.html",
+      "source_type": "industry",
+      "usage": "聚变工程化节点、BEST、CRAFT、中国聚变能源公司和长期时间表"
+    },
+    {
+      "title": "2025年中国可控核聚变行业全景图谱",
+      "publisher": "前瞻产业研究院",
+      "date": "2025-04-08",
+      "url": "https://www.qianzhan.com/analyst/detail/220/250408-f346f629.html",
+      "source_type": "secondary",
+      "usage": "辅助梳理聚变产业链结构和企业线索，不能单独作为公司强结论"
+    }
+  ]
+}

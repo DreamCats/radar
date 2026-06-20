@@ -23,6 +23,11 @@ def test_industry_chains_endpoint_lists_content_assets(tmp_path):
         "humanoid-robotics",
         "low-altitude-economy",
         "innovative-drugs",
+        "ai-optical-interconnect",
+        "new-power-system-grid",
+        "domestic-ai-chip-semiconductor",
+        "commercial-space-satellite-internet",
+        "controlled-fusion-nuclear-equipment",
     ]
 
 
@@ -115,6 +120,91 @@ def test_industry_chain_detail_endpoint_returns_innovative_drugs_chain(tmp_path)
     ]
     assert data["data"]["nodes"][0]["id"] == "unmet-clinical-need"
     assert data["data"]["companies"][0]["ts_code"] == "688235.SH"
+
+
+def test_industry_chain_detail_endpoint_returns_ai_optical_interconnect_chain(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+
+    response = client.get("/api/industry-chains/ai-optical-interconnect")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["item"]["chain_id"] == "ai-optical-interconnect"
+    assert "AI 光模块 / CPO / 高速互联产业链学习页" in data["content_markdown"]
+    assert data["data"]["flow_columns"][0]["node_ids"] == [
+        "ai-cluster-bandwidth-demand",
+        "gpu-cluster-network",
+    ]
+    assert data["data"]["nodes"][0]["id"] == "ai-cluster-bandwidth-demand"
+    assert data["data"]["companies"][0]["ts_code"] == "300308.SZ"
+
+
+def test_industry_chain_detail_endpoint_returns_new_power_system_grid_chain(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+
+    response = client.get("/api/industry-chains/new-power-system-grid")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["item"]["chain_id"] == "new-power-system-grid"
+    assert "新型电力系统 / 特高压 / AIDC 供配电产业链学习页" in data["content_markdown"]
+    assert data["data"]["flow_columns"][0]["node_ids"] == [
+        "ai-and-electrification-load",
+        "renewable-base-grid-demand",
+    ]
+    assert data["data"]["nodes"][0]["id"] == "ai-and-electrification-load"
+    assert data["data"]["companies"][0]["ts_code"] == "600406.SH"
+
+
+def test_industry_chain_detail_endpoint_returns_domestic_ai_chip_semiconductor_chain(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+
+    response = client.get("/api/industry-chains/domestic-ai-chip-semiconductor")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["item"]["chain_id"] == "domestic-ai-chip-semiconductor"
+    assert "国产 AI 芯片 / 半导体设备材料产业链学习页" in data["content_markdown"]
+    assert data["data"]["flow_columns"][0]["node_ids"] == [
+        "ai-compute-localization-demand",
+        "export-control-process-constraint",
+    ]
+    assert data["data"]["nodes"][0]["id"] == "ai-compute-localization-demand"
+    assert data["data"]["companies"][0]["ts_code"] == "002371.SZ"
+
+
+def test_industry_chain_detail_endpoint_returns_commercial_space_satellite_internet_chain(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+
+    response = client.get("/api/industry-chains/commercial-space-satellite-internet")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["item"]["chain_id"] == "commercial-space-satellite-internet"
+    assert "商业航天 / 卫星互联网产业链学习页" in data["content_markdown"]
+    assert data["data"]["flow_columns"][0]["node_ids"] == [
+        "orbit-spectrum-policy",
+        "constellation-buildout-demand",
+    ]
+    assert data["data"]["nodes"][0]["id"] == "orbit-spectrum-policy"
+    assert data["data"]["companies"][0]["ts_code"] == "600118.SH"
+
+
+def test_industry_chain_detail_endpoint_returns_controlled_fusion_nuclear_equipment_chain(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+
+    response = client.get("/api/industry-chains/controlled-fusion-nuclear-equipment")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["item"]["chain_id"] == "controlled-fusion-nuclear-equipment"
+    assert "可控核聚变 / 核电设备产业链学习页" in data["content_markdown"]
+    assert data["data"]["flow_columns"][0]["node_ids"] == [
+        "energy-security-low-carbon-baseload",
+        "nuclear-approval-capex-cycle",
+    ]
+    assert data["data"]["nodes"][0]["id"] == "energy-security-low-carbon-baseload"
+    assert data["data"]["companies"][0]["ts_code"] == "601727.SH"
 
 
 def test_industry_chain_detail_endpoint_returns_404_for_unknown_chain(tmp_path):

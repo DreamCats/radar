@@ -171,6 +171,167 @@
       "audience_level": "beginner_to_research",
       "evidence_level": "company_reports_policy_and_regulation_first_draft",
       "summary": "创新药从未满足临床需求出发，核心观察点是靶点机制、ADC/双抗等平台、临床数据、注册审批、BD 出海、商业化销售、财务兑现和失败风险。"
+    },
+    {
+      "chain_id": "ai-optical-interconnect",
+      "title": "AI 光模块 / CPO / 高速互联",
+      "category": "AI 硬件 / 数据中心高速互联",
+      "aliases": [
+        "光模块",
+        "CPO",
+        "硅光",
+        "800G",
+        "1.6T",
+        "高速互联",
+        "高速 PCB"
+      ],
+      "status": "draft",
+      "sort_order": 70,
+      "content_path": "chains/ai-optical-interconnect.md",
+      "data_path": "chains/ai-optical-interconnect.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "AI 算力",
+        "光模块",
+        "CPO",
+        "硅光",
+        "800G",
+        "1.6T",
+        "高速 PCB"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "company_reports_and_industry_sources_first_draft",
+      "summary": "AI 光模块从 GPU 集群带宽瓶颈出发，核心观察点是 800G/1.6T 出货、硅光、CPO/NPO、高端光芯片、光器件、封装测试、高速 PCB 和云厂商资本开支验证。"
+    },
+    {
+      "chain_id": "new-power-system-grid",
+      "title": "新型电力系统 / 特高压 / AIDC 供配电",
+      "category": "电力设备 / 智能电网与数据中心电源",
+      "aliases": [
+        "新型电力系统",
+        "特高压",
+        "智能电网",
+        "AIDC 供配电",
+        "电力设备",
+        "数据中心电源",
+        "HVDC",
+        "SST"
+      ],
+      "status": "draft",
+      "sort_order": 80,
+      "content_path": "chains/new-power-system-grid.md",
+      "data_path": "chains/new-power-system-grid.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "电力设备",
+        "智能电网",
+        "特高压",
+        "AIDC 供配电",
+        "变压器",
+        "UPS",
+        "HVDC"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "policy_company_reports_and_industry_sources_first_draft",
+      "summary": "新型电力系统从 AI 用电、新能源外送和电网安全稳定出发，核心观察点是特高压、变压器、GIS、换流阀、调度继保、配网智能化、储能构网和 AIDC 供配电。"
+    },
+    {
+      "chain_id": "domestic-ai-chip-semiconductor",
+      "title": "国产 AI 芯片 / 半导体设备材料",
+      "category": "半导体 / 国产算力与制造自主可控",
+      "aliases": [
+        "国产 AI 芯片",
+        "半导体设备",
+        "半导体材料",
+        "国产算力",
+        "先进封装",
+        "Chiplet",
+        "EDA",
+        "国产替代"
+      ],
+      "status": "draft",
+      "sort_order": 90,
+      "content_path": "chains/domestic-ai-chip-semiconductor.md",
+      "data_path": "chains/domestic-ai-chip-semiconductor.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "国产算力",
+        "AI 芯片",
+        "半导体设备",
+        "半导体材料",
+        "EDA",
+        "先进封装",
+        "Chiplet"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "policy_company_reports_and_industry_sources_first_draft",
+      "summary": "国产 AI 芯片和半导体设备材料从算力自主可控出发，核心观察点是 EDA/IP、AI 加速器、CPU/DCU、晶圆制造、刻蚀沉积、CMP 清洗、硅片材料、先进封装和客户验证。"
+    },
+    {
+      "chain_id": "commercial-space-satellite-internet",
+      "title": "商业航天 / 卫星互联网",
+      "category": "空天信息 / 商业航天与卫星通信",
+      "aliases": [
+        "商业航天",
+        "卫星互联网",
+        "低轨卫星",
+        "星座建设",
+        "卫星通信",
+        "遥感卫星",
+        "北斗导航",
+        "手机直连卫星"
+      ],
+      "status": "draft",
+      "sort_order": 100,
+      "content_path": "chains/commercial-space-satellite-internet.md",
+      "data_path": "chains/commercial-space-satellite-internet.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "商业航天",
+        "卫星互联网",
+        "低轨星座",
+        "卫星通信",
+        "T/R 组件",
+        "地面站",
+        "遥感数据"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "policy_company_reports_and_industry_sources_first_draft",
+      "summary": "商业航天和卫星互联网从频轨政策和星座建设出发，核心观察点是商业发射、卫星批量制造、星载载荷、T/R 组件、射频芯片、地面站、终端、运营应用和财务兑现。"
+    },
+    {
+      "chain_id": "controlled-fusion-nuclear-equipment",
+      "title": "可控核聚变 / 核电设备",
+      "category": "未来能源 / 核能装备",
+      "aliases": [
+        "可控核聚变",
+        "核电设备",
+        "核岛设备",
+        "核级阀门",
+        "超导磁体",
+        "偏滤器",
+        "第一壁",
+        "ITER",
+        "CRAFT",
+        "BEST"
+      ],
+      "status": "draft",
+      "sort_order": 110,
+      "content_path": "chains/controlled-fusion-nuclear-equipment.md",
+      "data_path": "chains/controlled-fusion-nuclear-equipment.json",
+      "updated_at": "2026-06-20",
+      "entry_tags": [
+        "核电",
+        "核电设备",
+        "可控核聚变",
+        "超导磁体",
+        "核级阀门",
+        "偏滤器",
+        "第一壁"
+      ],
+      "audience_level": "beginner_to_research",
+      "evidence_level": "policy_company_reports_and_industry_sources_first_draft",
+      "summary": "可控核聚变和核电设备从能源安全、低碳基荷和未来能源技术突破出发，核心观察点是核电核准、核岛常规岛设备、核级阀门管材、工程建设运营、聚变超导磁体、偏滤器第一壁、真空低温和项目财务验证。"
     }
   ]
 }

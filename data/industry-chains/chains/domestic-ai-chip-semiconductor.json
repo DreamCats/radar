@@ -1,0 +1,1671 @@
+{
+  "version": 1,
+  "chain_id": "domestic-ai-chip-semiconductor",
+  "title": "国产 AI 芯片 / 半导体设备材料",
+  "category": "半导体 / 国产算力与制造自主可控",
+  "status": "draft",
+  "updated_at": "2026-06-20",
+  "summary": "国产 AI 芯片和半导体设备材料产业链解决的是高端算力、先进制造、关键设备、核心材料和先进封装受外部约束后，国内产业如何形成可用、可量产、可验证的替代体系。学习重点不是把所有半导体公司混成一个概念，而是沿着芯片设计、EDA/IP、晶圆制造、设备材料、先进封装、客户验证和财务兑现逐层拆开。",
+  "quick_read": {
+    "headline": "国产算力不是只看芯片，真正难在制造生态闭环",
+    "summary": "AI 算力需求增加后，GPU、CPU、DCU、AI 加速卡、先进封装和晶圆制造都会被推到前台。但国产替代不是一家公司单点突破，而是 EDA 工具、芯片设计、晶圆代工、刻蚀沉积、CMP 清洗、硅片材料、封装测试和软件生态一起补短板。对小白来说，先记住一句话：芯片能不能用，取决于设计出来、造出来、封出来、跑起来、卖出去。",
+    "logic_chain": [
+      "AI 训练和推理需要更多本土可控算力，国产 AI 芯片需求提高",
+      "外部限制让先进制程、关键设备、EDA 和高端封装成为系统约束",
+      "芯片设计公司需要 EDA/IP、软件栈和服务器生态支持",
+      "晶圆制造需要刻蚀、薄膜沉积、CMP、清洗、硅片、抛光液和湿电子化学品",
+      "先进封装和 Chiplet 让系统性能继续提升，封测厂和相关设备材料受益",
+      "真正兑现要看客户验证、量产良率、订单、收入、毛利、库存和现金流"
+    ],
+    "takeaways": [
+      "国产 AI 芯片是需求侧，半导体设备材料是供给侧，两者要放在一条链里理解。",
+      "设备材料的核心指标不是概念热度，而是客户端验证、重复订单、反应腔/机台出货和收入占比。",
+      "先进封装不是传统封测升级一句话，而是 Chiplet、2.5D/3D、高密度互连和良率共同决定。"
+    ]
+  },
+  "learning_steps": [
+    {
+      "id": "why-now",
+      "title": "先看约束",
+      "subtitle": "为什么国产算力突然重要",
+      "question": "为什么 AI 时代要单独研究国产芯片和半导体设备？",
+      "answer": "因为 AI 训练和推理需要大量高性能芯片，而高端芯片、先进制程、设备、EDA 和封装都存在外部约束。国产替代的核心不是口号，而是能不能形成从设计到制造再到应用的可验证闭环。",
+      "node_ids": [
+        "ai-compute-localization-demand",
+        "export-control-process-constraint"
+      ]
+    },
+    {
+      "id": "design-layer",
+      "title": "再看设计",
+      "subtitle": "芯片先要设计出来",
+      "question": "AI 芯片公司为什么离不开 EDA 和软件生态？",
+      "answer": "芯片设计需要 EDA 工具完成电路设计、仿真、验证和物理实现，AI 芯片还需要编译器、算子库、驱动和训练推理框架。没有工具和软件生态，芯片就算流片成功，也很难被客户高效使用。",
+      "node_ids": [
+        "eda-ip-design-tools",
+        "ai-accelerator-chip-design",
+        "cpu-dcu-server-processor"
+      ]
+    },
+    {
+      "id": "manufacturing-layer",
+      "title": "进入制造",
+      "subtitle": "晶圆厂把设计变成芯片",
+      "question": "为什么设备材料是国产半导体的底座？",
+      "answer": "晶圆制造要经过沉积、光刻、刻蚀、离子注入、CMP、清洗等大量工序。设备和材料任何一环卡住，都会影响良率和产能。国产设备材料的价值，在于能进入客户产线并形成重复订单。",
+      "node_ids": [
+        "foundry-wafer-manufacturing",
+        "etch-deposition-equipment",
+        "cmp-cleaning-equipment",
+        "wafers-electronic-materials",
+        "cmp-slurry-wet-chemicals"
+      ]
+    },
+    {
+      "id": "packaging-layer",
+      "title": "理解封装",
+      "subtitle": "后摩尔时代看先进封装",
+      "question": "先进封装为什么和 AI 芯片绑定？",
+      "answer": "当单颗芯片继续缩小越来越难，Chiplet、2.5D/3D 封装和高密度互连可以把多个芯片组合成更强系统。AI 加速器和高性能计算会持续提高对先进封装和封测能力的要求。",
+      "node_ids": [
+        "advanced-packaging-chiplet",
+        "test-packaging-services"
+      ]
+    },
+    {
+      "id": "validation-layer",
+      "title": "最后看兑现",
+      "subtitle": "客户验证和财务质量",
+      "question": "怎么判断公司是真受益，不是概念股？",
+      "answer": "先看产品是否进入客户产线或服务器生态，再看是否批量出货、重复订单、收入占比、毛利率、存货和现金流。国产替代链条里，验证周期长、研发投入高、库存压力大，所以财务质量必须一起看。",
+      "node_ids": [
+        "customer-yield-validation",
+        "capex-order-cashflow",
+        "inventory-price-cycle-risk"
+      ]
+    }
+  ],
+  "flow_columns": [
+    {
+      "key": "demand",
+      "label": "需求牵引",
+      "description": "AI 和信创拉动本土可控算力",
+      "node_ids": [
+        "ai-compute-localization-demand",
+        "export-control-process-constraint"
+      ]
+    },
+    {
+      "key": "design",
+      "label": "芯片设计",
+      "description": "EDA、AI 芯片、CPU/DCU 和软件栈",
+      "node_ids": [
+        "eda-ip-design-tools",
+        "ai-accelerator-chip-design",
+        "cpu-dcu-server-processor"
+      ]
+    },
+    {
+      "key": "manufacturing",
+      "label": "晶圆制造",
+      "description": "晶圆厂承接设计并验证工艺",
+      "node_ids": [
+        "foundry-wafer-manufacturing"
+      ]
+    },
+    {
+      "key": "equipment",
+      "label": "设备材料",
+      "description": "刻蚀、沉积、CMP、清洗、硅片和化学材料",
+      "node_ids": [
+        "etch-deposition-equipment",
+        "cmp-cleaning-equipment",
+        "wafers-electronic-materials",
+        "cmp-slurry-wet-chemicals"
+      ]
+    },
+    {
+      "key": "packaging",
+      "label": "先进封装",
+      "description": "Chiplet、2.5D/3D 和封测服务",
+      "node_ids": [
+        "advanced-packaging-chiplet",
+        "test-packaging-services"
+      ]
+    },
+    {
+      "key": "validation",
+      "label": "财务验证",
+      "description": "客户、良率、订单、毛利和库存",
+      "node_ids": [
+        "customer-yield-validation",
+        "capex-order-cashflow",
+        "inventory-price-cycle-risk"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "default_status": "candidate",
+    "status_values": [
+      "supported",
+      "weakly_supported",
+      "candidate",
+      "unsupported"
+    ],
+    "upgrade_rule": "国产半导体产业链公司升级前，必须能落到公告、年报、半年报、投资者关系、客户验证、量产出货、重复订单、收入占比、毛利率或经营现金流。只在国产替代、AI 芯片、先进封装概念中出现，不足以升级。",
+    "labels": [
+      {
+        "status": "supported",
+        "label": "强支持",
+        "meaning": "已有较明确的一手资料支持公司在该节点的产品、客户验证或量产地位。",
+        "evidence_needed": "年报、半年报、公告、IR、客户验证、批量订单、收入和毛利变化。"
+      },
+      {
+        "status": "weakly_supported",
+        "label": "弱支持",
+        "meaning": "方向和公开资料支持，但还缺收入拆分、客户名单、订单或良率数据。",
+        "evidence_needed": "继续补产品收入占比、客户验证、量产规模、订单和现金流。"
+      },
+      {
+        "status": "candidate",
+        "label": "待验证",
+        "meaning": "逻辑上相关，暂时不能当作确认受益。",
+        "evidence_needed": "先确认产品是否进入国产半导体主链条，以及是否有量产财务贡献。"
+      },
+      {
+        "status": "unsupported",
+        "label": "证据不足",
+        "meaning": "目前只有概念联想或二级市场说法。",
+        "evidence_needed": "需要找到公司披露或可信产业资料，否则降级或移除。"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "ai-compute-localization-demand",
+      "label": "AI 算力国产化需求",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "大模型训练和推理需要大量高性能算力，本土可控芯片和服务器生态的重要性提升。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是整条链的需求源头。",
+        "why_matters": "如果高端 AI 芯片供应受限，国内云厂商、运营商、政企和模型公司会寻找本土替代。",
+        "benefit_logic": "需求先传导到 AI 芯片和服务器，再传导到晶圆制造、先进封装、设备材料和软件生态。",
+        "watch": [
+          "国产 AI 芯片订单",
+          "智算中心招标",
+          "服务器适配",
+          "模型框架适配"
+        ],
+        "common_misread": "把国产算力理解成只有芯片公司受益，忽略制造和封装生态。"
+      }
+    },
+    {
+      "id": "export-control-process-constraint",
+      "label": "外部限制 / 先进制程约束",
+      "layer": "downstream",
+      "group": "constraint",
+      "beginner_explanation": "高端芯片、先进制程、设备、材料、EDA 和封装技术受到外部限制后，国产替代从可选项变成必选项。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是国产替代的系统约束。",
+        "why_matters": "半导体不是买一台机器就能解决，工具链、工艺、材料和客户验证都需要补齐。",
+        "benefit_logic": "约束越明确，越会推动国内设备、材料、EDA、制造和封装环节被验证。",
+        "watch": [
+          "出口管制变化",
+          "关键设备供应",
+          "国产替代招标",
+          "晶圆厂扩产结构"
+        ],
+        "common_misread": "看到限制就直接买所有半导体股，实际上不同环节兑现节奏差别很大。"
+      }
+    },
+    {
+      "id": "eda-ip-design-tools",
+      "label": "EDA / IP / 设计工具",
+      "layer": "upstream",
+      "group": "design",
+      "beginner_explanation": "EDA 是芯片设计软件，用来做电路设计、仿真、验证、版图和物理实现。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "芯片设计的工具底座。",
+        "why_matters": "没有可靠 EDA，复杂芯片很难完成设计和验证。",
+        "benefit_logic": "国产芯片设计需求增加，会推动本土 EDA 在成熟工艺、先进封装和部分先进节点导入。",
+        "watch": [
+          "工具认证节点",
+          "头部设计公司客户",
+          "晶圆厂 PDK 适配",
+          "软件销售和技术服务收入"
+        ],
+        "common_misread": "把 EDA 当普通软件。EDA 要和工艺、客户和验证结果绑定。"
+      }
+    },
+    {
+      "id": "ai-accelerator-chip-design",
+      "label": "AI 加速器芯片",
+      "layer": "midstream",
+      "group": "chip",
+      "beginner_explanation": "AI 加速器面向训练和推理任务，需要芯片、加速卡、软件栈和服务器整机适配。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "国产算力最直接的承载体。",
+        "why_matters": "大模型需要高吞吐、低延迟、多卡互联和稳定软件生态。",
+        "benefit_logic": "如果国产 AI 芯片被更多客户采用，会带动封装、代工、服务器、液冷和供配电等链条。",
+        "watch": [
+          "云端产品收入",
+          "客户集中度",
+          "训练/推理软件生态",
+          "存货和合同负债"
+        ],
+        "common_misread": "只比较单卡参数，不看集群、软件生态和客户部署。"
+      }
+    },
+    {
+      "id": "cpu-dcu-server-processor",
+      "label": "服务器 CPU / DCU",
+      "layer": "midstream",
+      "group": "chip",
+      "beginner_explanation": "服务器 CPU 负责通用计算，DCU/GPGPU 用于并行计算和 AI/HPC 场景。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "国产服务器的核心部件。",
+        "why_matters": "信创、云计算、AI 和政企服务器需要国产 CPU 与加速器生态。",
+        "benefit_logic": "CPU 保生态兼容，DCU 提供 AI/HPC 加速，两者共同构成国产算力平台。",
+        "watch": [
+          "服务器出货",
+          "行业客户",
+          "软件生态适配",
+          "毛利率和研发投入"
+        ],
+        "common_misread": "把 CPU 和 AI 加速器混为一谈，它们解决的问题不同。"
+      }
+    },
+    {
+      "id": "foundry-wafer-manufacturing",
+      "label": "晶圆代工 / 工艺平台",
+      "layer": "midstream",
+      "group": "manufacturing",
+      "beginner_explanation": "晶圆厂把芯片设计变成硅片上的电路，是连接设计、设备和材料的核心场景。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "国产半导体制造能力的中心节点。",
+        "why_matters": "没有稳定量产的工艺平台，国产芯片和设备材料都难以形成闭环。",
+        "benefit_logic": "晶圆厂扩产和工艺迭代会带动设备、材料、EDA、IP、封装和测试。",
+        "watch": [
+          "产能利用率",
+          "资本开支",
+          "成熟/先进制程结构",
+          "毛利率和折旧"
+        ],
+        "common_misread": "只看先进制程，忽略成熟制程也是大量国产替代需求的承载地。"
+      }
+    },
+    {
+      "id": "etch-deposition-equipment",
+      "label": "刻蚀 / 薄膜沉积设备",
+      "layer": "upstream",
+      "group": "equipment",
+      "beginner_explanation": "刻蚀负责把图形刻到材料上，薄膜沉积负责在晶圆上形成各种功能薄膜。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "晶圆制造的核心前道设备。",
+        "why_matters": "制程越先进，刻蚀和沉积工艺越复杂，设备验证难度越高。",
+        "benefit_logic": "晶圆厂扩产和国产替代会让通过验证的刻蚀、PECVD、ALD、PVD 等设备获得订单。",
+        "watch": [
+          "客户验证",
+          "反应腔出货",
+          "重复订单",
+          "合同负债"
+        ],
+        "common_misread": "把设备收入增长都当先进制程突破，要看具体产品和客户节点。"
+      }
+    },
+    {
+      "id": "cmp-cleaning-equipment",
+      "label": "CMP / 清洗 / 减薄设备",
+      "layer": "upstream",
+      "group": "equipment",
+      "beginner_explanation": "CMP 用来抛光平坦化晶圆，清洗去除污染物，减薄和划切在先进封装中也很关键。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "良率和先进封装相关的关键设备。",
+        "why_matters": "晶圆表面是否平整、洁净，会直接影响后续工艺和良率。",
+        "benefit_logic": "CMP、减薄、划切、边缘抛光和清洗设备通过客户验证后，容易形成持续订单。",
+        "watch": [
+          "CMP 机台订单",
+          "减薄设备出货",
+          "先进封装客户",
+          "维保和耗材收入"
+        ],
+        "common_misread": "只看前道设备，忽略 CMP 和清洗对良率的影响。"
+      }
+    },
+    {
+      "id": "wafers-electronic-materials",
+      "label": "硅片 / 电子材料",
+      "layer": "upstream",
+      "group": "materials",
+      "beginner_explanation": "硅片是芯片制造的基础载体，电子材料还包括高纯化学品、靶材、气体、光刻胶配套材料等。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "晶圆制造的基础耗材。",
+        "why_matters": "材料纯度、缺陷控制和客户认证周期决定能否进入产线。",
+        "benefit_logic": "晶圆厂扩产会拉动硅片和关键材料，但价格周期和产能利用率也会影响利润。",
+        "watch": [
+          "300mm 硅片认证",
+          "正片批量销售",
+          "价格周期",
+          "客户数量"
+        ],
+        "common_misread": "把材料等同于稳定高利润，实际上价格和折旧周期很重要。"
+      }
+    },
+    {
+      "id": "cmp-slurry-wet-chemicals",
+      "label": "CMP 抛光液 / 湿电子化学品",
+      "layer": "upstream",
+      "group": "materials",
+      "beginner_explanation": "抛光液、清洗液、刻蚀液、电镀液等材料用于晶圆制造和先进封装的湿法工艺。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "高频消耗、客户粘性强的材料环节。",
+        "why_matters": "材料配方影响良率，客户验证周期长，一旦导入会有持续供应机会。",
+        "benefit_logic": "产品线扩展、关键原材料自主可控和客户上量，会推动收入和毛利改善。",
+        "watch": [
+          "抛光液产品线",
+          "功能性湿电子化学品",
+          "电镀液验证",
+          "原材料自主可控"
+        ],
+        "common_misread": "只看材料名字，不看它用于哪个工艺节点、是否通过客户验证。"
+      }
+    },
+    {
+      "id": "advanced-packaging-chiplet",
+      "label": "先进封装 / Chiplet",
+      "layer": "midstream",
+      "group": "packaging",
+      "beginner_explanation": "先进封装把多个芯片通过高密度互连组合成系统，是后摩尔时代提升性能的重要路线。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "AI 和高性能计算的系统级增量环节。",
+        "why_matters": "高端 AI 芯片常需要 2.5D/3D、HBM、Chiplet 和高密度封装来提升带宽和性能。",
+        "benefit_logic": "AI 芯片放量会带动先进封装产能、封装设备、基板、测试和材料需求。",
+        "watch": [
+          "2.5D/3D 产能",
+          "高性能计算客户",
+          "先进封装收入",
+          "资本开支"
+        ],
+        "common_misread": "把所有封测收入都当先进封装，必须拆 2.5D/3D、SiP、WLP、倒装等结构。"
+      }
+    },
+    {
+      "id": "test-packaging-services",
+      "label": "封装测试服务",
+      "layer": "midstream",
+      "group": "packaging",
+      "beginner_explanation": "封测厂把晶圆切割、封装、测试成可交付芯片，并为客户提供一站式量产服务。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "芯片从晶圆走向产品的最后制造环节。",
+        "why_matters": "封测决定芯片可靠性、散热、尺寸、成本和交付效率。",
+        "benefit_logic": "高性能计算、汽车电子、存储和 AI 芯片需求，会推动高端封测订单。",
+        "watch": [
+          "高端封装客户",
+          "产能利用率",
+          "资本开支",
+          "单一大客户依赖"
+        ],
+        "common_misread": "把封测当低端加工，先进封装已经是技术和资本密集环节。"
+      }
+    },
+    {
+      "id": "customer-yield-validation",
+      "label": "客户验证 / 良率爬坡",
+      "layer": "validation",
+      "group": "validation",
+      "beginner_explanation": "半导体产品进入客户产线后，需要经历验证、试产、良率提升和重复订单。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "国产替代从故事变成收入的关键桥梁。",
+        "why_matters": "没有客户验证和良率，产品很难进入大规模生产。",
+        "benefit_logic": "从送样、验证、首台套到重复订单，每一步都会提高确定性。",
+        "watch": [
+          "客户端验证",
+          "批量订单",
+          "良率",
+          "量产稳定性"
+        ],
+        "common_misread": "把送样当量产，把验证机台当收入确定。"
+      }
+    },
+    {
+      "id": "capex-order-cashflow",
+      "label": "资本开支 / 订单 / 现金流",
+      "layer": "validation",
+      "group": "validation",
+      "beginner_explanation": "晶圆厂资本开支决定设备订单，订单交付后再进入收入和现金流。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "产业逻辑落到财务报表的主线。",
+        "why_matters": "设备公司和材料公司最终要看订单、收入、毛利和回款。",
+        "benefit_logic": "资本开支上行、合同负债增加、收入增长和经营现金流改善，才说明景气兑现。",
+        "watch": [
+          "晶圆厂资本开支",
+          "合同负债",
+          "收入确认",
+          "经营现金流"
+        ],
+        "common_misread": "看到国产替代热度就忽略订单和回款质量。"
+      }
+    },
+    {
+      "id": "inventory-price-cycle-risk",
+      "label": "库存 / 价格 / 周期风险",
+      "layer": "validation",
+      "group": "risk",
+      "beginner_explanation": "半导体有周期，设备和材料公司也可能受库存、价格、折旧和客户扩产节奏影响。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这条链的主要反证项。",
+        "why_matters": "国产替代是长逻辑，但短期可能出现价格下行、客户扩产放缓、存货增加和毛利承压。",
+        "benefit_logic": "真正强的公司要能在周期波动中保持客户、技术和财务质量。",
+        "watch": [
+          "存货",
+          "应收账款",
+          "毛利率",
+          "产能利用率"
+        ],
+        "common_misread": "只看国产替代长期空间，不看短期周期和库存压力。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "ai-compute-localization-demand",
+      "target": "ai-accelerator-chip-design",
+      "relation_type": "drives",
+      "label": "国产算力拉动 AI 芯片",
+      "description": "本土训练和推理需求推动国产 AI 加速器验证和部署。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "ai-compute-localization-demand",
+      "target": "cpu-dcu-server-processor",
+      "relation_type": "drives",
+      "label": "服务器算力需求",
+      "description": "AI、云计算和信创推动服务器 CPU 与 DCU 需求。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "export-control-process-constraint",
+      "target": "eda-ip-design-tools",
+      "relation_type": "requires",
+      "label": "工具链自主可控",
+      "description": "设计工具受限会推动国产 EDA 和 IP 生态导入。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "eda-ip-design-tools",
+      "target": "ai-accelerator-chip-design",
+      "relation_type": "enables",
+      "label": "EDA 支撑芯片设计",
+      "description": "芯片设计需要 EDA 完成仿真、验证、版图和签核。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "ai-accelerator-chip-design",
+      "target": "foundry-wafer-manufacturing",
+      "relation_type": "requires",
+      "label": "芯片设计进入晶圆制造",
+      "description": "AI 芯片设计需要晶圆厂工艺平台完成流片和量产。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "cpu-dcu-server-processor",
+      "target": "foundry-wafer-manufacturing",
+      "relation_type": "requires",
+      "label": "服务器芯片需要代工",
+      "description": "CPU、DCU 等高端处理器也需要晶圆制造和封装测试支持。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "foundry-wafer-manufacturing",
+      "target": "etch-deposition-equipment",
+      "relation_type": "requires",
+      "label": "前道工艺设备",
+      "description": "晶圆制造需要刻蚀、沉积等核心设备。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "foundry-wafer-manufacturing",
+      "target": "cmp-cleaning-equipment",
+      "relation_type": "requires",
+      "label": "平坦化和洁净度",
+      "description": "CMP、清洗、减薄和划切影响良率和先进封装。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "foundry-wafer-manufacturing",
+      "target": "wafers-electronic-materials",
+      "relation_type": "requires",
+      "label": "基础材料",
+      "description": "硅片和电子材料是晶圆制造的耗材底座。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "cmp-cleaning-equipment",
+      "target": "cmp-slurry-wet-chemicals",
+      "relation_type": "requires",
+      "label": "设备带动工艺材料",
+      "description": "CMP、清洗、刻蚀和电镀工艺需要抛光液和湿电子化学品。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "ai-accelerator-chip-design",
+      "target": "advanced-packaging-chiplet",
+      "relation_type": "requires",
+      "label": "AI 芯片需要高密度封装",
+      "description": "高性能 AI 芯片依赖 Chiplet、2.5D/3D 和高带宽互连。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "advanced-packaging-chiplet",
+      "target": "test-packaging-services",
+      "relation_type": "delivered_by",
+      "label": "封测厂承接量产",
+      "description": "先进封装能力最终通过封测厂的产能、良率和客户订单兑现。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "etch-deposition-equipment",
+      "target": "customer-yield-validation",
+      "relation_type": "validated_by",
+      "label": "设备要过客户验证",
+      "description": "机台导入、稳定运行和重复订单决定设备公司确定性。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "wafers-electronic-materials",
+      "target": "customer-yield-validation",
+      "relation_type": "validated_by",
+      "label": "材料要过客户认证",
+      "description": "材料必须通过客户认证并形成稳定供货。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "customer-yield-validation",
+      "target": "capex-order-cashflow",
+      "relation_type": "translates_to",
+      "label": "验证转订单和收入",
+      "description": "客户验证通过后，订单、收入、毛利和现金流才会逐步体现。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "capex-order-cashflow",
+      "target": "inventory-price-cycle-risk",
+      "relation_type": "checked_by",
+      "label": "财务质量反证",
+      "description": "存货、价格、折旧和毛利率会反证景气兑现质量。",
+      "evidence_status": "supported"
+    }
+  ],
+  "concept_diagrams": [
+    {
+      "id": "chip-closed-loop",
+      "title": "芯片闭环五步",
+      "subtitle": "设计出来、造出来、封出来、跑起来、卖出去",
+      "icon": "cpu",
+      "node_ids": [
+        "eda-ip-design-tools",
+        "foundry-wafer-manufacturing",
+        "advanced-packaging-chiplet",
+        "customer-yield-validation"
+      ],
+      "takeaway": "国产芯片不是单点突破，而是从设计工具到制造封装再到客户部署的闭环。",
+      "parts": [
+        {
+          "label": "设计",
+          "role": "画图纸",
+          "description": "EDA、IP、架构和软件栈决定芯片能否设计和验证。"
+        },
+        {
+          "label": "制造",
+          "role": "做出来",
+          "description": "晶圆厂、设备和材料决定工艺、良率和产能。"
+        },
+        {
+          "label": "封测",
+          "role": "交付产品",
+          "description": "封装测试决定芯片系统性能、可靠性和交付。"
+        }
+      ]
+    },
+    {
+      "id": "equipment-material-stack",
+      "title": "设备材料怎么拆",
+      "subtitle": "设备是工具，材料是耗材，验证是门槛",
+      "icon": "factory",
+      "node_ids": [
+        "etch-deposition-equipment",
+        "cmp-cleaning-equipment",
+        "wafers-electronic-materials",
+        "cmp-slurry-wet-chemicals"
+      ],
+      "takeaway": "设备看机台和反应腔出货，材料看客户认证和持续供货，两者都要落到良率。",
+      "parts": [
+        {
+          "label": "前道设备",
+          "role": "改变晶圆结构",
+          "description": "刻蚀、沉积、CMP、清洗等设备完成关键工艺步骤。"
+        },
+        {
+          "label": "关键材料",
+          "role": "进入工艺",
+          "description": "硅片、抛光液、湿化学品等材料高频消耗、验证周期长。"
+        },
+        {
+          "label": "客户验证",
+          "role": "决定能否放量",
+          "description": "通过验证和重复订单后，才可能进入规模收入。"
+        }
+      ]
+    },
+    {
+      "id": "advanced-packaging-path",
+      "title": "先进封装为什么重要",
+      "subtitle": "制程继续缩小变难后，系统集成变成新战场",
+      "icon": "layers",
+      "node_ids": [
+        "advanced-packaging-chiplet",
+        "test-packaging-services",
+        "ai-accelerator-chip-design"
+      ],
+      "takeaway": "AI 芯片需要更大带宽和更高集成度，先进封装把多个芯片组合成高性能系统。",
+      "parts": [
+        {
+          "label": "Chiplet",
+          "role": "拆分再组合",
+          "description": "把不同芯片单元组合，降低单颗大芯片难度。"
+        },
+        {
+          "label": "2.5D/3D",
+          "role": "高密度互连",
+          "description": "通过中介层、堆叠和高带宽互连提升系统性能。"
+        },
+        {
+          "label": "封测量产",
+          "role": "良率和交付",
+          "description": "先进封装最终要靠封测厂的量产能力验证。"
+        }
+      ]
+    },
+    {
+      "id": "research-checklist",
+      "title": "研究时先问四个问题",
+      "subtitle": "别把国产替代当万能答案",
+      "icon": "checklist",
+      "node_ids": [
+        "customer-yield-validation",
+        "capex-order-cashflow",
+        "inventory-price-cycle-risk"
+      ],
+      "takeaway": "看公司时先问产品在哪个节点、有没有客户验证、能否形成收入、财务质量是否健康。",
+      "parts": [
+        {
+          "label": "产品位置",
+          "role": "在哪一环",
+          "description": "是芯片、EDA、设备、材料、制造还是封装。"
+        },
+        {
+          "label": "验证状态",
+          "role": "到哪一步",
+          "description": "送样、验证、首台套、重复订单、批量供应含义不同。"
+        },
+        {
+          "label": "财务兑现",
+          "role": "有没有钱",
+          "description": "看收入占比、毛利、订单、合同负债、库存和现金流。"
+        }
+      ]
+    }
+  ],
+  "companies": [
+    {
+      "name": "北方华创",
+      "ts_code": "002371.SZ",
+      "nodes": [
+        "etch-deposition-equipment",
+        "cmp-cleaning-equipment",
+        "customer-yield-validation",
+        "capex-order-cashflow"
+      ],
+      "role": "平台型半导体设备龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "设备平台龙头",
+      "leader_reason": "公司报告披露其专注半导体基础产品，电子工艺装备覆盖半导体装备等方向，公开资料显示其在刻蚀、薄膜沉积、清洗、热处理等多环节形成平台化布局。",
+      "current_view": "北方华创适合做国产半导体设备平台化能力的核心验证节点。它不是单一设备公司，研究时要拆刻蚀、薄膜沉积、清洗、热处理、订单和毛利质量。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分半导体装备收入",
+        "跟踪新签订单和合同负债",
+        "验证刻蚀、沉积、清洗、热处理客户进展",
+        "观察研发投入和毛利率"
+      ],
+      "why_watch": "国产晶圆厂扩产和工艺国产替代最先体现到设备平台型公司的订单。",
+      "evidence_basis": [
+        "2025 半年报披露电子工艺装备和电子元器件主业",
+        "2025 年报摘要披露半导体基础产品、电子工艺装备和产品迭代升级"
+      ],
+      "verification_focus": [
+        "刻蚀设备",
+        "薄膜沉积",
+        "清洗热处理",
+        "订单和毛利"
+      ],
+      "risks": [
+        "晶圆厂资本开支波动",
+        "部分高端设备验证周期长",
+        "估值和市场预期较高"
+      ],
+      "evidence_refs": [
+        {
+          "title": "北方华创科技集团股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-29",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-29/1224615664.PDF",
+          "evidence_grade": "A",
+          "usage": "验证公司主业、电子工艺装备和半导体装备布局"
+        },
+        {
+          "title": "北方华创科技集团股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-04-18",
+          "url": "https://static.cninfo.com.cn/finalpage/2026-04-18/1225122917.PDF",
+          "evidence_grade": "A",
+          "usage": "验证半导体基础产品和电子工艺装备定位"
+        }
+      ]
+    },
+    {
+      "name": "中微公司",
+      "ts_code": "688012.SH",
+      "nodes": [
+        "etch-deposition-equipment",
+        "customer-yield-validation",
+        "advanced-packaging-chiplet"
+      ],
+      "role": "刻蚀设备 / 薄膜设备龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "刻蚀设备龙头",
+      "leader_reason": "公司 2025 半年报披露等离子体刻蚀设备已应用于 65 至 5 纳米及其他先进生产线和先进封装生产线，新开发 LPCVD、ALD 等薄膜设备获得重复性订单。",
+      "current_view": "中微公司是国产刻蚀设备和部分薄膜设备最清晰的验证节点，适合观察先进逻辑、存储、先进封装和新设备品类拓展。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪刻蚀设备销售和占比",
+        "观察 LPCVD/ALD 重复订单",
+        "验证先进封装设备应用",
+        "检查研发投入和毛利"
+      ],
+      "why_watch": "刻蚀是先进制程核心设备，客户验证和重复订单含金量高。",
+      "evidence_basis": [
+        "2025 半年报披露高端半导体设备主业、刻蚀设备应用和薄膜设备重复订单",
+        "2025 年报摘要披露刻蚀、薄膜、MOCVD 和量检测等产品线"
+      ],
+      "verification_focus": [
+        "刻蚀设备",
+        "LPCVD/ALD",
+        "先进封装",
+        "重复订单"
+      ],
+      "risks": [
+        "先进客户验证进展不及预期",
+        "新品研发投入高",
+        "半导体设备周期波动"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中微半导体设备（上海）股份有限公司 2025 年半年度报告",
+          "publisher": "上海证券交易所科创板",
+          "date": "2025-08-29",
+          "url": "https://star.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-08-29/688012_20250829_BW75.pdf",
+          "evidence_grade": "A",
+          "usage": "验证刻蚀设备、MOCVD、LPCVD/ALD 薄膜设备和先进封装应用"
+        },
+        {
+          "title": "中微半导体设备（上海）股份有限公司 2025 年年度报告摘要",
+          "publisher": "公开公告镜像",
+          "date": "2026-03-31",
+          "url": "http://file.finance.sina.com.cn/211.154.219.97:9494/MRGG/CNSESH_STOCK/2026/2026-3/2026-03-31/12046095.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 2025 年产品线和年度经营线索"
+        }
+      ]
+    },
+    {
+      "name": "拓荆科技",
+      "ts_code": "688072.SH",
+      "nodes": [
+        "etch-deposition-equipment",
+        "advanced-packaging-chiplet",
+        "customer-yield-validation"
+      ],
+      "role": "薄膜沉积 / 三维集成设备龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "薄膜沉积龙头",
+      "leader_reason": "公司 2025 半年报披露形成 PECVD、ALD、SACVD、HDPCVD、Flowable CVD 等薄膜沉积设备，以及三维集成领域先进键合设备和配套量检测设备。",
+      "current_view": "拓荆科技适合观察薄膜沉积国产替代和三维集成设备放量。它的关键不是只看收入增长，而是看新工艺验证、反应腔出货、合同负债和毛利改善。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪 PECVD/ALD 产品验证",
+        "观察先进键合设备重复订单",
+        "检查合同负债和现金流",
+        "跟踪毛利率恢复"
+      ],
+      "why_watch": "薄膜沉积和先进键合都是先进制造与先进封装的重要节点。",
+      "evidence_basis": [
+        "2025 半年报披露薄膜沉积设备和三维集成设备产品线",
+        "半年报披露设备反应腔累计出货和客户产线情况"
+      ],
+      "verification_focus": [
+        "PECVD",
+        "ALD",
+        "先进键合",
+        "合同负债"
+      ],
+      "risks": [
+        "新产品验证毛利率波动",
+        "客户集中和交付节奏",
+        "研发投入较高"
+      ],
+      "evidence_refs": [
+        {
+          "title": "拓荆科技股份有限公司 2025 年半年度报告",
+          "publisher": "公开报告镜像",
+          "date": "2025-08-07",
+          "url": "http://qxb-pdf-osscache.qixin.com/AnBaseinfo/7fdfd715ebdd728a6faa460dea828350.pdf",
+          "evidence_grade": "A",
+          "usage": "验证 PECVD、ALD、SACVD、HDPCVD、Flowable CVD 和先进键合设备"
+        }
+      ]
+    },
+    {
+      "name": "华海清科",
+      "ts_code": "688120.SH",
+      "nodes": [
+        "cmp-cleaning-equipment",
+        "advanced-packaging-chiplet",
+        "customer-yield-validation"
+      ],
+      "role": "CMP / 减薄设备龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "CMP 设备龙头",
+      "leader_reason": "公司 2025 半年报和公开资料披露其产品包括 CMP 装备、减薄装备、划切装备、边缘抛光、湿法装备、晶圆再生和相关服务，CMP 与减薄设备是核心观察点。",
+      "current_view": "华海清科是 CMP 和减薄设备的核心验证节点，尤其适合连接前道 CMP、先进封装减薄和晶圆再生服务。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "确认 CMP 机台订单和先进制程占比",
+        "跟踪减薄设备和划切设备出货",
+        "观察晶圆再生业务",
+        "检查研发投入和现金流"
+      ],
+      "why_watch": "CMP、减薄和清洗关系到良率，也受先进封装需求拉动。",
+      "evidence_basis": [
+        "2025 半年报披露 CMP、减薄、划切和晶圆再生业务",
+        "业绩说明和媒体报道披露部分设备批量订单和客户验证线索"
+      ],
+      "verification_focus": [
+        "CMP 设备",
+        "减薄设备",
+        "先进封装",
+        "晶圆再生"
+      ],
+      "risks": [
+        "设备验证周期",
+        "新品量产节奏",
+        "晶圆厂扩产放缓"
+      ],
+      "evidence_refs": [
+        {
+          "title": "华海清科股份有限公司 2025 年半年度报告",
+          "publisher": "同花顺公告镜像",
+          "date": "2025-08-29",
+          "url": "http://notice.10jqka.com.cn/api/pdf/edcd5e3929b30639_1756378309/%E5%8D%8E%E6%B5%B7%E6%B8%85%E7%A7%91%EF%BC%9A2025%E5%B9%B4%E5%8D%8A%E5%B9%B4%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf",
+          "evidence_grade": "A",
+          "usage": "验证 CMP、减薄、划切、湿法和晶圆再生业务"
+        },
+        {
+          "title": "华海清科股份有限公司投资者关系活动记录表",
+          "publisher": "公开公告镜像",
+          "date": "2025-09-11",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/09/11/cb48fbfa8ef611f096f3fa163e39923a.pdf",
+          "evidence_grade": "A",
+          "usage": "补充业绩说明和客户验证线索"
+        }
+      ]
+    },
+    {
+      "name": "安集科技",
+      "ts_code": "688019.SH",
+      "nodes": [
+        "cmp-slurry-wet-chemicals",
+        "wafers-electronic-materials",
+        "customer-yield-validation"
+      ],
+      "role": "CMP 抛光液 / 湿电子化学品龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "抛光液材料龙头",
+      "leader_reason": "公司 2025 年报摘要披露 CMP 抛光材料和湿电子化学品行业背景，公开调研资料显示其化学机械抛光液、功能性湿电子化学品、电镀液及添加剂等产品线持续扩展。",
+      "current_view": "安集科技适合观察高端半导体材料的客户粘性和品类扩展。核心不是只看材料国产化，而是看产品通过客户验证后能否持续供货、提升份额并保持毛利。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分抛光液和湿电子化学品收入",
+        "验证电镀液和添加剂客户进展",
+        "跟踪核心原材料自主可控",
+        "观察毛利率和库存"
+      ],
+      "why_watch": "材料导入周期长，一旦形成稳定供应，客户粘性较强。",
+      "evidence_basis": [
+        "2025 年报摘要披露 CMP 抛光材料和湿电子化学品行业属性",
+        "调研记录披露抛光液、功能性湿电子化学品和电镀液产品进展"
+      ],
+      "verification_focus": [
+        "CMP 抛光液",
+        "湿电子化学品",
+        "电镀液",
+        "原材料自主可控"
+      ],
+      "risks": [
+        "客户验证周期长",
+        "海外材料竞争",
+        "原材料和库存压力"
+      ],
+      "evidence_refs": [
+        {
+          "title": "安集微电子科技（上海）股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-04-16",
+          "url": "http://static.cninfo.com.cn/finalpage/2026-04-16/1225108607.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 CMP 抛光材料、湿电子化学品和行业属性"
+        },
+        {
+          "title": "安集科技机构调研记录",
+          "publisher": "东方财富公开资料",
+          "date": "2025-09-15",
+          "url": "https://caifuhao.eastmoney.com/news/20250915142231258328170",
+          "evidence_grade": "B",
+          "usage": "补充抛光液、湿电子化学品、电镀液和原材料自主可控进展"
+        }
+      ]
+    },
+    {
+      "name": "沪硅产业",
+      "ts_code": "688126.SH",
+      "nodes": [
+        "wafers-electronic-materials",
+        "foundry-wafer-manufacturing",
+        "customer-yield-validation"
+      ],
+      "role": "半导体硅片龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "硅片龙头",
+      "leader_reason": "公开资料披露公司 300mm 半导体硅片产品规格和客户认证持续增加，上海和太原两地 300mm 半导体硅片产能位居国内第一梯队。",
+      "current_view": "沪硅产业是半导体基础材料验证节点，适合观察 300mm 硅片正片批量销售、客户认证、价格周期和产能利用率。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "补公司年报和半年报原文",
+        "确认 300mm 正片销售占比",
+        "跟踪客户认证数量",
+        "观察价格和毛利率"
+      ],
+      "why_watch": "硅片是晶圆制造底座，但短期受价格和折旧周期影响明显。",
+      "evidence_basis": [
+        "媒体引用半年报披露 300mm 产品认证和客户数量增加",
+        "投资者关系活动披露产能利用率和国产化率线索"
+      ],
+      "verification_focus": [
+        "300mm 硅片",
+        "客户认证",
+        "价格周期",
+        "产能利用率"
+      ],
+      "risks": [
+        "硅片价格承压",
+        "折旧和亏损压力",
+        "产能爬坡不及预期"
+      ],
+      "evidence_refs": [
+        {
+          "title": "沪硅产业二季度营收环比增长 12% 300mm 硅片产能达 75 万片/月",
+          "publisher": "证券时报",
+          "date": "2025-08-28",
+          "url": "https://www.stcn.com/article/detail/3296335.html",
+          "evidence_grade": "C",
+          "usage": "作为 300mm 硅片认证、客户和产能线索，仍需补公司报告原文"
+        },
+        {
+          "title": "上海硅产业集团股份有限公司投资者关系活动记录",
+          "publisher": "公开公告镜像",
+          "date": "2025-09-01",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/09/02/2025090215080241983420853.pdf",
+          "evidence_grade": "A",
+          "usage": "验证 300mm/200mm 硅片需求、产能利用率和国产化率"
+        }
+      ]
+    },
+    {
+      "name": "华大九天",
+      "ts_code": "301269.SZ",
+      "nodes": [
+        "eda-ip-design-tools",
+        "customer-yield-validation"
+      ],
+      "role": "国产 EDA 龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "EDA 龙头",
+      "leader_reason": "公司 2025 半年报披露其为国产 EDA 代表公司，产品覆盖模拟电路、存储电路、数字电路、平板显示、晶圆制造和先进封装相关 EDA 工具。",
+      "current_view": "华大九天是国产 EDA 的核心学习节点。研究时不能只看国产替代叙事，要看工具认证、客户数量、研发投入、收入结构和是否能从点工具走向流程闭环。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆 EDA 软件销售和技术服务收入",
+        "跟踪先进工艺认证",
+        "确认客户和晶圆厂适配",
+        "观察研发费用和股权激励影响"
+      ],
+      "why_watch": "EDA 是芯片设计卡点，国产设计生态越扩张，EDA 验证越重要。",
+      "evidence_basis": [
+        "2025 半年报披露公司产品线和客户应用",
+        "媒体报道补充工具认证、客户数量和研发投入线索"
+      ],
+      "verification_focus": [
+        "EDA 软件收入",
+        "工具认证",
+        "客户数量",
+        "研发投入"
+      ],
+      "risks": [
+        "高端全流程覆盖仍需时间",
+        "研发投入高导致利润波动",
+        "海外巨头竞争"
+      ],
+      "evidence_refs": [
+        {
+          "title": "北京华大九天科技股份有限公司 2025 年半年度报告",
+          "publisher": "同花顺公告镜像",
+          "date": "2025-08-16",
+          "url": "http://notice.10jqka.com.cn/api/pdf/44fa84301d0af6a6_1755259580/%E5%8D%8E%E5%A4%A7%E4%B9%9D%E5%A4%A9%EF%BC%9A2025%E5%B9%B4%E5%8D%8A%E5%B9%B4%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf",
+          "evidence_grade": "A",
+          "usage": "验证 EDA 产品线、客户应用和收入结构"
+        },
+        {
+          "title": "21 特写：华大九天，柳暗花明",
+          "publisher": "21 经济网",
+          "date": "2025-08-29",
+          "url": "https://www.21jingji.com/article/20250829/herald/8df123f66e29d4b5ce1471938cb064c8.html",
+          "evidence_grade": "C",
+          "usage": "补充工具认证、客户数量和先进封装 EDA 线索"
+        }
+      ]
+    },
+    {
+      "name": "中芯国际",
+      "ts_code": "688981.SH",
+      "nodes": [
+        "foundry-wafer-manufacturing",
+        "capex-order-cashflow",
+        "inventory-price-cycle-risk"
+      ],
+      "role": "晶圆代工龙头 / 产业验证节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "晶圆代工龙头",
+      "leader_reason": "公司 2025 半年报披露晶圆代工是半导体产业链核心环节，工艺技术、人才配置和持续资本投入构成壁垒；公司也是国产设备材料验证的重要需求端。",
+      "current_view": "中芯国际更像产业链验证节点：它验证国产设备材料是否能进产线，也反映成熟制程、先进封装和本土晶圆制造景气。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪资本开支",
+        "观察产能利用率",
+        "拆成熟制程和特色工艺需求",
+        "看毛利率和折旧压力"
+      ],
+      "why_watch": "晶圆厂扩产和工艺平台建设会向上游设备材料传导订单。",
+      "evidence_basis": [
+        "2025 半年报披露晶圆代工行业壁垒、供应链区域化和产业生态",
+        "行业媒体披露 2025 年财务与产能利用率线索"
+      ],
+      "verification_focus": [
+        "资本开支",
+        "产能利用率",
+        "成熟制程",
+        "毛利率"
+      ],
+      "risks": [
+        "折旧压力",
+        "价格竞争",
+        "先进设备获取约束"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中芯国际集成电路制造有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-29",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-29/1224608545.PDF",
+          "evidence_grade": "A",
+          "usage": "验证晶圆代工行业壁垒、产业链协同和供应链风险"
+        },
+        {
+          "title": "中芯国际 2025 财报出炉，净利增长",
+          "publisher": "国际电子商情",
+          "date": "2026-03-27",
+          "url": "https://www.esmchina.com/news/14046.html",
+          "evidence_grade": "C",
+          "usage": "补充 2025 年收入、产能利用率、毛利和研发线索"
+        }
+      ]
+    },
+    {
+      "name": "寒武纪",
+      "ts_code": "688256.SH",
+      "nodes": [
+        "ai-accelerator-chip-design",
+        "advanced-packaging-chiplet",
+        "customer-yield-validation"
+      ],
+      "role": "国产 AI 芯片验证节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "AI 芯片龙头",
+      "leader_reason": "公司 2025 年报披露其提供云边端一体、软硬件协同、训练推理融合的系列化智能芯片产品和平台化基础系统软件，具备训练和推理智能芯片产品。",
+      "current_view": "寒武纪是国产 AI 加速器最直观的验证节点，但波动也最大。研究要重点看客户集中度、云端产品收入、软件生态、存货、合同负债和供应链风险。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪云端产品收入",
+        "观察客户集中度",
+        "检查软件生态和模型适配",
+        "看存货和合同负债"
+      ],
+      "why_watch": "国产 AI 芯片需求变化会首先反映在芯片公司订单和收入上。",
+      "evidence_basis": [
+        "2025 年报披露智能芯片、基础系统软件、训练推理和知识产权布局",
+        "半年报媒体报道补充云端产品线收入和盈利线索"
+      ],
+      "verification_focus": [
+        "云端产品线",
+        "训练推理芯片",
+        "软件栈",
+        "客户集中度"
+      ],
+      "risks": [
+        "供应链和代工约束",
+        "客户集中度高",
+        "业绩持续性和估值预期"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中科寒武纪科技股份有限公司 2025 年年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2026-03-12",
+          "url": "http://dataclouds.cninfo.com.cn/shgonggao/hsomarket/2026/20260312/05ca784762a7401b9ed371d917e436dc.PDF",
+          "evidence_grade": "A",
+          "usage": "验证智能芯片、基础系统软件、训练推理融合和知识产权布局"
+        },
+        {
+          "title": "寒武纪上半年业绩增长，云端产品线贡献收入",
+          "publisher": "电子工程专辑",
+          "date": "2025-08-27",
+          "url": "https://www.eet-china.com/news/202508279141.html",
+          "evidence_grade": "C",
+          "usage": "补充 2025 半年报收入、云端产品线和风险线索"
+        }
+      ]
+    },
+    {
+      "name": "海光信息",
+      "ts_code": "688041.SH",
+      "nodes": [
+        "cpu-dcu-server-processor",
+        "customer-yield-validation"
+      ],
+      "role": "服务器 CPU / DCU 龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "CPU/DCU 龙头",
+      "leader_reason": "公司 2025 半年报披露产品包括海光通用处理器 CPU 和海光协处理器 DCU，CPU 兼容 x86 指令集，DCU 基于 GPGPU 架构，应用于大数据处理、人工智能和商业计算。",
+      "current_view": "海光信息适合观察国产服务器 CPU 与 DCU 双主线。它和纯 AI 芯片公司不同，CPU 生态兼容和 DCU 并行计算都要分别验证。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆 CPU 和 DCU 收入",
+        "跟踪服务器客户和生态适配",
+        "观察 AI 集群部署",
+        "检查研发投入和毛利率"
+      ],
+      "why_watch": "国产服务器生态里，CPU 和加速器是核心硬件入口。",
+      "evidence_basis": [
+        "2025 半年报披露 CPU/DCU 产品、x86 兼容、GPGPU 架构和下游应用",
+        "2025 年报披露 DCU 性能提升、软件生态和研发投入线索"
+      ],
+      "verification_focus": [
+        "CPU",
+        "DCU",
+        "服务器生态",
+        "软件适配"
+      ],
+      "risks": [
+        "竞争对手挤压",
+        "生态适配速度",
+        "先进制造和供应链约束"
+      ],
+      "evidence_refs": [
+        {
+          "title": "海光信息技术股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-06",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-06/1224401320.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 CPU、DCU、x86 兼容、GPGPU 架构和下游应用"
+        },
+        {
+          "title": "海光信息技术股份有限公司 2025 年年度报告",
+          "publisher": "公开公告镜像",
+          "date": "2026-04-08",
+          "url": "http://file.finance.sina.com.cn/211.154.219.97:9494/MRGG/CNSESH_STOCK/2026/2026-4/2026-04-08/12066610.PDF",
+          "evidence_grade": "A",
+          "usage": "补充 DCU 性能、软件生态和研发投入线索"
+        }
+      ]
+    },
+    {
+      "name": "长电科技",
+      "ts_code": "600584.SH",
+      "nodes": [
+        "advanced-packaging-chiplet",
+        "test-packaging-services",
+        "capex-order-cashflow"
+      ],
+      "role": "先进封装 / OSAT 龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "封测龙头",
+      "leader_reason": "公司 2025 年报披露其继续位列全球第三、中国大陆第一 OSAT，先进封装和高端应用领域技术积累与规模优势进一步巩固，并推进 2.5D/3D、超大尺寸器件等方向。",
+      "current_view": "长电科技是先进封装产业化能力的核心验证节点。研究时要拆先进封装收入、2.5D/3D 进展、资本开支、利润率和具体客户结构。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆先进封装收入结构",
+        "确认 2.5D/3D 产能和客户",
+        "观察资本开支和折旧",
+        "检查汇率和财务费用"
+      ],
+      "why_watch": "AI 和高性能计算提升先进封装需求，封测龙头能验证订单外溢和国产封装能力。",
+      "evidence_basis": [
+        "2025 年报披露全球 OSAT 排名、先进封装市场和公司 2.5D/3D 方向",
+        "媒体报道补充先进封装收入和利润压力线索"
+      ],
+      "verification_focus": [
+        "先进封装",
+        "2.5D/3D",
+        "高性能计算",
+        "资本开支"
+      ],
+      "risks": [
+        "先进封装产能爬坡",
+        "海外收入和汇率",
+        "利润率短期承压"
+      ],
+      "evidence_refs": [
+        {
+          "title": "江苏长电科技股份有限公司 2025 年年度报告",
+          "publisher": "雪球公告镜像",
+          "date": "2026-04-10",
+          "url": "https://stockmc.xueqiu.com/202604/600584_20260410_UBW0.pdf",
+          "evidence_grade": "A",
+          "usage": "验证 OSAT 排名、先进封装、2.5D/3D 和高端应用布局"
+        },
+        {
+          "title": "封测龙头长电科技业绩发布",
+          "publisher": "21 经济网",
+          "date": "2026-04-13",
+          "url": "https://www.21jingji.com/article/20260413/herald/33287922a9fc4ff1e20b9278409d2599.html",
+          "evidence_grade": "C",
+          "usage": "补充先进封装收入、利润压力和市场关注点"
+        }
+      ]
+    },
+    {
+      "name": "通富微电",
+      "ts_code": "002156.SZ",
+      "nodes": [
+        "advanced-packaging-chiplet",
+        "test-packaging-services",
+        "customer-yield-validation"
+      ],
+      "role": "高性能计算封测 / Chiplet 候选",
+      "tier": "弹性候选",
+      "attention_level": "high",
+      "attention_label": "HPC 封测候选",
+      "leader_reason": "公司 2025 半年报披露产品、技术和服务覆盖人工智能、高性能计算、大数据存储等领域，并积极布局 Chiplet、2D+ 等顶尖封装技术。",
+      "current_view": "通富微电适合观察高性能计算封测和大客户需求弹性。它不是纯国产 AI 芯片节点，更像全球客户先进封测需求和 Chiplet 技术进展的映射。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "确认高性能计算收入占比",
+        "跟踪 Chiplet 和 2D+ 量产进度",
+        "观察大客户依赖",
+        "检查原材料和毛利率"
+      ],
+      "why_watch": "AI/HPC 芯片封装需求提升，会推动高端封测厂产能和技术升级。",
+      "evidence_basis": [
+        "2025 半年报披露人工智能、高性能计算和 Chiplet 布局",
+        "2025 年报摘要披露先进封装市场、AI 算力超级周期和公司经营线索"
+      ],
+      "verification_focus": [
+        "HPC 封测",
+        "Chiplet",
+        "大客户",
+        "毛利率"
+      ],
+      "risks": [
+        "大客户依赖",
+        "高端原材料供应",
+        "先进封装投入周期"
+      ],
+      "evidence_refs": [
+        {
+          "title": "通富微电子股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-29",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-29/1224607849.PDF",
+          "evidence_grade": "A",
+          "usage": "验证人工智能、高性能计算、Chiplet 和封测业务布局"
+        },
+        {
+          "title": "通富微电子股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-04-17",
+          "url": "https://static.cninfo.com.cn/finalpage/2026-04-17/1225112761.PDF",
+          "evidence_grade": "A",
+          "usage": "补充先进封装市场、AI 算力周期和年度经营线索"
+        }
+      ]
+    }
+  ],
+  "common_misreads": [
+    {
+      "title": "把半导体公司都当 AI 芯片",
+      "wrong_view": "只要是半导体，就能直接受益于 AI 算力。",
+      "better_view": "AI 芯片、EDA、设备、材料、代工、封测的受益路径不同，必须分节点看。",
+      "node_ids": [
+        "ai-accelerator-chip-design",
+        "etch-deposition-equipment",
+        "advanced-packaging-chiplet"
+      ]
+    },
+    {
+      "title": "把送样当量产",
+      "wrong_view": "公司说产品送样或验证，就等于马上大规模收入。",
+      "better_view": "半导体验证周期长，要区分送样、验证通过、重复订单、批量供应和财务贡献。",
+      "node_ids": [
+        "customer-yield-validation",
+        "capex-order-cashflow"
+      ]
+    },
+    {
+      "title": "只看国产替代，不看周期",
+      "wrong_view": "国产替代空间大，所以短期财务都不用看。",
+      "better_view": "设备和材料仍受资本开支、价格、库存、折旧和客户扩产节奏影响。",
+      "node_ids": [
+        "inventory-price-cycle-risk",
+        "capex-order-cashflow"
+      ]
+    }
+  ],
+  "financial_translations": [
+    {
+      "node_id": "etch-deposition-equipment",
+      "financial_line": "合同负债 / 新签订单 / 半导体装备收入",
+      "why": "设备验证通过后通常先体现为订单和合同负债，再逐步确认收入。",
+      "watch_items": [
+        "合同负债",
+        "半导体装备收入",
+        "研发费用",
+        "毛利率"
+      ],
+      "risk_flags": [
+        "收入增长但现金流弱",
+        "新品验证成本拖累毛利",
+        "客户资本开支放缓"
+      ]
+    },
+    {
+      "node_id": "cmp-slurry-wet-chemicals",
+      "financial_line": "材料收入 / 毛利率 / 存货",
+      "why": "材料持续供货会体现在收入和毛利，原材料备货和客户验证会影响存货。",
+      "watch_items": [
+        "抛光液收入",
+        "湿电子化学品收入",
+        "毛利率",
+        "存货"
+      ],
+      "risk_flags": [
+        "产品验证不及预期",
+        "原材料依赖",
+        "价格竞争加剧"
+      ]
+    },
+    {
+      "node_id": "advanced-packaging-chiplet",
+      "financial_line": "先进封装收入 / 资本开支 / 折旧",
+      "why": "先进封装放量需要新增产线和设备投入，短期可能出现增收不增利。",
+      "watch_items": [
+        "先进封装收入",
+        "资本开支",
+        "折旧",
+        "财务费用"
+      ],
+      "risk_flags": [
+        "产能爬坡慢",
+        "大客户订单不确定",
+        "利润率被投入期压制"
+      ]
+    },
+    {
+      "node_id": "ai-accelerator-chip-design",
+      "financial_line": "云端产品收入 / 存货 / 合同负债",
+      "why": "AI 芯片需求兑现会先看产品收入和订单，但也要警惕存货和客户集中度。",
+      "watch_items": [
+        "云端产品收入",
+        "合同负债",
+        "存货",
+        "客户集中度"
+      ],
+      "risk_flags": [
+        "供应链受限",
+        "单一客户依赖",
+        "软件生态不足"
+      ]
+    }
+  ],
+  "catalysts": [
+    {
+      "title": "国产 AI 芯片订单和智算中心招标",
+      "type": "demand",
+      "why_it_matters": "直接验证国产算力需求是否从预期走向真实采购。",
+      "watch": [
+        "运营商和政企智算中心招标",
+        "AI 芯片服务器适配",
+        "云端产品收入"
+      ],
+      "node_ids": [
+        "ai-compute-localization-demand",
+        "ai-accelerator-chip-design"
+      ]
+    },
+    {
+      "title": "晶圆厂资本开支和国产设备重复订单",
+      "type": "order",
+      "why_it_matters": "决定设备公司订单和收入兑现速度。",
+      "watch": [
+        "资本开支",
+        "反应腔出货",
+        "合同负债",
+        "重复订单"
+      ],
+      "node_ids": [
+        "foundry-wafer-manufacturing",
+        "etch-deposition-equipment",
+        "cmp-cleaning-equipment"
+      ]
+    },
+    {
+      "title": "先进封装产能建设和高性能计算客户导入",
+      "type": "technology",
+      "why_it_matters": "AI 芯片和 Chiplet 需求会验证先进封装公司的技术和产能。",
+      "watch": [
+        "2.5D/3D 项目",
+        "高性能计算客户",
+        "资本开支",
+        "先进封装收入"
+      ],
+      "node_ids": [
+        "advanced-packaging-chiplet",
+        "test-packaging-services"
+      ]
+    },
+    {
+      "title": "材料客户验证和批量供应",
+      "type": "validation",
+      "why_it_matters": "材料替代的含金量主要体现在客户认证和持续供货。",
+      "watch": [
+        "300mm 硅片客户认证",
+        "CMP 抛光液上量",
+        "功能性湿电子化学品",
+        "电镀液验证"
+      ],
+      "node_ids": [
+        "wafers-electronic-materials",
+        "cmp-slurry-wet-chemicals"
+      ]
+    }
+  ],
+  "tracking_metrics": [
+    {
+      "name": "国产 AI 芯片出货和云端产品收入",
+      "why": "验证国产算力需求是否真实兑现。",
+      "source_hint": "公司年报、半年报、公告、招标信息"
+    },
+    {
+      "name": "晶圆厂资本开支和产能利用率",
+      "why": "决定半导体设备和材料订单强度。",
+      "source_hint": "晶圆厂财报、行业机构、公司公告"
+    },
+    {
+      "name": "设备反应腔 / 机台出货和重复订单",
+      "why": "判断设备是否从验证走向批量导入。",
+      "source_hint": "设备公司年报、半年报、IR"
+    },
+    {
+      "name": "材料客户认证和批量供应",
+      "why": "判断材料替代是否进入稳定收入阶段。",
+      "source_hint": "材料公司公告、投资者关系、年报"
+    },
+    {
+      "name": "先进封装收入和资本开支",
+      "why": "验证 AI/HPC 是否真正拉动封装升级。",
+      "source_hint": "封测公司年报、半年报、投资者交流"
+    },
+    {
+      "name": "存货、应收、毛利率和经营现金流",
+      "why": "反证产业景气的财务质量。",
+      "source_hint": "财务报表和附注"
+    }
+  ],
+  "sources": [
+    {
+      "title": "国务院关于印发新时期促进集成电路产业和软件产业高质量发展若干政策的通知",
+      "publisher": "中国政府网",
+      "date": "2020-08-04",
+      "url": "https://www.gov.cn/zhengce/content/2020-08/04/content_5532370.htm",
+      "evidence_grade": "A",
+      "usage": "政策底层框架，覆盖集成电路设计、装备、材料、封装、测试、软件等方向"
+    },
+    {
+      "title": "Global semiconductor equipment sales forecast / billings reports",
+      "publisher": "SEMI",
+      "date": "2025-2026",
+      "url": "https://www.semi.org/en/SEMI-Reports-Global-Semiconductor-Equipment-Billings-Reached-135-Billion-in-2025",
+      "evidence_grade": "B",
+      "usage": "验证全球半导体设备投资、AI/HBM/先进封装驱动和中国设备支出"
+    },
+    {
+      "title": "Advanced packaging market set to reach $79.4 billion by 2030",
+      "publisher": "Yole Group",
+      "date": "2025-09-01",
+      "url": "https://www.yolegroup.com/press-release/advanced-packaging-market-set-to-reach-79-4-billion-by-2030/",
+      "evidence_grade": "B",
+      "usage": "验证先进封装与 AI 加速器、GPU、Chiplet、云和数据中心需求关联"
+    },
+    {
+      "title": "北方华创科技集团股份有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-29",
+      "url": "http://static.cninfo.com.cn/finalpage/2025-08-29/1224615664.PDF",
+      "evidence_grade": "A",
+      "usage": "公司证据"
+    },
+    {
+      "title": "中微半导体设备（上海）股份有限公司 2025 年半年度报告",
+      "publisher": "上海证券交易所科创板",
+      "date": "2025-08-29",
+      "url": "https://star.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-08-29/688012_20250829_BW75.pdf",
+      "evidence_grade": "A",
+      "usage": "公司证据"
+    },
+    {
+      "title": "拓荆科技股份有限公司 2025 年半年度报告",
+      "publisher": "公开报告镜像",
+      "date": "2025-08-07",
+      "url": "http://qxb-pdf-osscache.qixin.com/AnBaseinfo/7fdfd715ebdd728a6faa460dea828350.pdf",
+      "evidence_grade": "A",
+      "usage": "公司证据"
+    },
+    {
+      "title": "海光信息技术股份有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-06",
+      "url": "http://static.cninfo.com.cn/finalpage/2025-08-06/1224401320.PDF",
+      "evidence_grade": "A",
+      "usage": "公司证据"
+    },
+    {
+      "title": "中科寒武纪科技股份有限公司 2025 年年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2026-03-12",
+      "url": "http://dataclouds.cninfo.com.cn/shgonggao/hsomarket/2026/20260312/05ca784762a7401b9ed371d917e436dc.PDF",
+      "evidence_grade": "A",
+      "usage": "公司证据"
+    }
+  ]
+}

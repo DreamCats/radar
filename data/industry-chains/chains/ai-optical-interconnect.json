@@ -1,0 +1,1464 @@
+{
+  "version": 1,
+  "chain_id": "ai-optical-interconnect",
+  "title": "AI 光模块 / CPO / 高速互联",
+  "category": "AI 硬件 / 数据中心高速互联",
+  "status": "draft",
+  "updated_at": "2026-06-20",
+  "summary": "AI 光模块产业链解决的是大模型训练和推理集群里 GPU、交换机、机柜和数据中心之间高速传输的问题。学习重点不是只记 800G、1.6T、CPO 这些词，而是理解带宽、延迟、功耗、良率和交付能力如何从云厂商资本开支传导到光模块、光芯片、光器件、硅光/CPO、高速 PCB 和封测设备。",
+  "quick_read": {
+    "headline": "液冷解决热，光互联解决算力之间怎么高速说话",
+    "summary": "AI 集群不是把很多 GPU 堆在一起就结束。模型训练需要大量 GPU 频繁交换参数和数据，互联速度跟不上，算力就会被网络拖慢。高速光模块把电信号和光信号互相转换，是数据中心高速互联的关键部件。800G、1.6T 是速率升级，硅光和 CPO 是为了进一步降低功耗、成本和封装复杂度。",
+    "logic_chain": [
+      "大模型训练和推理拉动 GPU 集群规模扩大",
+      "GPU 越多，服务器、交换机、机柜之间的数据交换越密集",
+      "带宽、延迟和功耗成为网络互联瓶颈，推动 400G 向 800G、1.6T 升级",
+      "高速光模块需求增加，同时提高对光芯片、激光器、光器件、耦合测试和良率的要求",
+      "硅光、LPO、CPO/NPO 是降低功耗和提升集成度的技术路线，但成熟度和量产节奏不同",
+      "高速 PCB、连接器、铜缆和交换机也会跟随 AI 服务器和网络架构升级",
+      "最终要看云厂商资本开支、订单、出货、产品结构、毛利率和库存周期"
+    ],
+    "takeaways": [
+      "光模块是 AI 数据中心里连接算力的关键环节，不是单纯通信概念。",
+      "800G/1.6T 是当前最容易财务验证的主线，CPO 更偏下一阶段架构变化。",
+      "公司映射要分清光模块龙头、光器件、光芯片、PCB 和设备，不要混成一类。"
+    ]
+  },
+  "learning_steps": [
+    {
+      "id": "why-now",
+      "title": "先看需求",
+      "subtitle": "为什么 AI 会拉动光模块",
+      "question": "GPU 很强了，为什么还需要高速光互联？",
+      "answer": "单个 GPU 只是一部分算力，大模型训练和推理需要大量 GPU、服务器和交换机协同。网络带宽不足时，GPU 会等数据，实际利用率下降，所以高速光互联成为 AI 集群扩容后的核心瓶颈之一。",
+      "node_ids": [
+        "ai-cluster-bandwidth-demand",
+        "gpu-cluster-network"
+      ]
+    },
+    {
+      "id": "speed-upgrade",
+      "title": "再看速率",
+      "subtitle": "400G 到 800G、1.6T",
+      "question": "800G、1.6T 到底是什么意思？",
+      "answer": "它们代表光模块传输速率等级。速率越高，单位时间传输数据越多，但功耗、散热、信号完整性、光电芯片、封装测试和良率要求也更高。",
+      "node_ids": [
+        "optical-module-system",
+        "speed-upgrade-800g-16t",
+        "capacity-yield-delivery"
+      ]
+    },
+    {
+      "id": "open-module",
+      "title": "拆开模块",
+      "subtitle": "光模块不是一个零件",
+      "question": "光模块里面有哪些关键东西？",
+      "answer": "光模块本质上是光电转换系统，里面涉及光芯片/激光器、电芯片、透镜、光纤阵列、连接器、PCB、封装、耦合和测试。速率越高，任何一个环节不过关都会影响良率和交付。",
+      "node_ids": [
+        "optical-chip-laser",
+        "optical-components",
+        "high-speed-pcb-copper",
+        "testing-coupling-equipment"
+      ]
+    },
+    {
+      "id": "cpo-silicon-photonics",
+      "title": "理解新路线",
+      "subtitle": "硅光、LPO、CPO 不是同一件事",
+      "question": "CPO 为什么经常和光模块一起被讨论？",
+      "answer": "可插拔光模块仍是主流，但随着速率继续提升，功耗和信号损耗压力上升。硅光提高集成度，LPO 试图减少 DSP 功耗，CPO/NPO 则把光引擎靠近交换芯片，是更深层的系统架构变化。",
+      "node_ids": [
+        "silicon-photonics",
+        "lpo-linear-drive",
+        "cpo-npo-architecture"
+      ]
+    },
+    {
+      "id": "financial-check",
+      "title": "最后看兑现",
+      "subtitle": "订单、产品结构、毛利和库存",
+      "question": "怎么判断公司是不是光模块真受益？",
+      "answer": "先看它处在哪个环节，再看高速产品是否出货、客户是否验证、产能是否跟得上、良率是否稳定、毛利率是否改善。只说 CPO、硅光、AI 服务器相关，不等于能体现在收入和利润里。",
+      "node_ids": [
+        "cloud-capex-validation",
+        "capacity-yield-delivery",
+        "inventory-price-cycle-risk"
+      ]
+    }
+  ],
+  "flow_columns": [
+    {
+      "key": "demand",
+      "label": "需求牵引",
+      "description": "AI 集群需要更大带宽",
+      "node_ids": [
+        "ai-cluster-bandwidth-demand",
+        "gpu-cluster-network"
+      ]
+    },
+    {
+      "key": "module",
+      "label": "模块升级",
+      "description": "可插拔光模块先兑现",
+      "node_ids": [
+        "optical-module-system",
+        "speed-upgrade-800g-16t"
+      ]
+    },
+    {
+      "key": "upstream",
+      "label": "上游核心",
+      "description": "光芯片和光器件决定性能和良率",
+      "node_ids": [
+        "optical-chip-laser",
+        "optical-components"
+      ]
+    },
+    {
+      "key": "architecture",
+      "label": "新架构",
+      "description": "硅光、LPO、CPO 降功耗提集成",
+      "node_ids": [
+        "silicon-photonics",
+        "lpo-linear-drive",
+        "cpo-npo-architecture"
+      ]
+    },
+    {
+      "key": "support",
+      "label": "二阶支撑",
+      "description": "PCB、铜缆、封测设备跟随升级",
+      "node_ids": [
+        "high-speed-pcb-copper",
+        "testing-coupling-equipment"
+      ]
+    },
+    {
+      "key": "validation",
+      "label": "财务验证",
+      "description": "订单、出货、良率和周期风险",
+      "node_ids": [
+        "capacity-yield-delivery",
+        "cloud-capex-validation",
+        "inventory-price-cycle-risk"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "default_status": "candidate",
+    "status_values": [
+      "supported",
+      "weakly_supported",
+      "candidate",
+      "unsupported"
+    ],
+    "upgrade_rule": "光模块产业链公司升级前，必须能落到年报、半年报、投资者关系、公告、客户验证、产能、订单、出货、收入占比或毛利率变化。只在概念板块、研报列表或媒体行情文章中出现，不足以升级为强支持。",
+    "labels": [
+      {
+        "status": "supported",
+        "label": "强支持",
+        "meaning": "已有较明确的一手或高可信证据支持节点或公司角色。",
+        "evidence_needed": "年报、半年报、公告、IR、客户验证、订单、出货、收入和毛利变化。"
+      },
+      {
+        "status": "weakly_supported",
+        "label": "弱支持",
+        "meaning": "产业逻辑和公开资料支持方向，但还缺收入占比、客户或订单拆分。",
+        "evidence_needed": "继续补高速产品收入、客户验证、产能、良率和毛利数据。"
+      },
+      {
+        "status": "candidate",
+        "label": "待验证",
+        "meaning": "逻辑上相关，暂时不能当成确认受益。",
+        "evidence_needed": "先确认产品是否进入 AI 数据中心链条，是否有量产和财务贡献。"
+      },
+      {
+        "status": "unsupported",
+        "label": "证据不足",
+        "meaning": "目前只有概念联想，不能作为产业链映射结论。",
+        "evidence_needed": "需要找到可追溯披露，否则降级或移除。"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "ai-cluster-bandwidth-demand",
+      "label": "AI 集群带宽需求",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "大模型训练和推理需要大量 GPU 协同，数据传输越密集，对网络带宽要求越高。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是光模块需求的根源。",
+        "why_matters": "如果 GPU 集群扩容但网络跟不上，算力利用率会下降。",
+        "benefit_logic": "云厂商继续建设 AI 数据中心时，会带动交换机、光模块和高速互联升级。",
+        "watch": [
+          "云厂商资本开支",
+          "AI 服务器出货",
+          "GPU 集群规模",
+          "训练和推理网络架构"
+        ],
+        "common_misread": "把光模块当传统通信周期。AI 数据中心数通需求和运营商通信需求不是一回事。"
+      }
+    },
+    {
+      "id": "gpu-cluster-network",
+      "label": "GPU / 交换机网络",
+      "layer": "downstream",
+      "group": "network",
+      "beginner_explanation": "GPU 服务器之间通过交换机和高速网络连接，网络架构决定需要多少光模块和什么速率。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "GPU 集群需要机内、机柜内、机柜间和数据中心间互联。",
+        "why_matters": "不同网络拓扑会显著影响光模块用量和速率结构。",
+        "benefit_logic": "集群规模越大、交换层级越多，高速光模块和高端 PCB 的需求越强。",
+        "watch": [
+          "交换机端口速率",
+          "网络拓扑",
+          "机柜密度",
+          "InfiniBand / Ethernet 方案变化"
+        ],
+        "common_misread": "只看 GPU 数量，不看交换机和网络端口数量。"
+      }
+    },
+    {
+      "id": "optical-module-system",
+      "label": "高速光模块",
+      "layer": "midstream",
+      "group": "module",
+      "beginner_explanation": "光模块把电信号和光信号互相转换，是服务器和交换机高速通信的关键部件。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "当前 A 股最清晰的 AI 光互联映射环节。",
+        "why_matters": "高速光模块直接面对云厂商和设备商需求，收入和毛利更容易验证。",
+        "benefit_logic": "800G/1.6T 产品出货提升，会带动收入、毛利率和经营现金流变化。",
+        "watch": [
+          "高速产品出货",
+          "海外客户需求",
+          "产品结构",
+          "产能和良率"
+        ],
+        "common_misread": "把低速电信光模块和 AI 数据中心高速光模块混为一谈。"
+      }
+    },
+    {
+      "id": "speed-upgrade-800g-16t",
+      "label": "800G / 1.6T 升级",
+      "layer": "midstream",
+      "group": "module",
+      "beginner_explanation": "800G、1.6T 是速率等级，速率升级会提高模块价值量和技术难度。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是当前最核心的产品迭代节奏。",
+        "why_matters": "从 400G 到 800G、1.6T，模块设计、光芯片、电芯片、封装测试和散热都更难。",
+        "benefit_logic": "产品结构向高端升级时，龙头公司更可能体现收入和毛利弹性。",
+        "watch": [
+          "800G 出货占比",
+          "1.6T 量产时间",
+          "客户认证",
+          "硅光比例"
+        ],
+        "common_misread": "只看有没有产品发布，不看是否批量出货和客户验证。"
+      }
+    },
+    {
+      "id": "optical-chip-laser",
+      "label": "光芯片 / 激光器",
+      "layer": "upstream",
+      "group": "chip",
+      "beginner_explanation": "光芯片和激光器提供光源和光电转换能力，是高速光模块的上游核心。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "高端光芯片是国产替代和硅光路线的重要瓶颈。",
+        "why_matters": "高速模块需求放大时，光芯片供应、性能和可靠性会影响模块厂出货。",
+        "benefit_logic": "如果国产光芯片进入高速模块量产，收入弹性和产业链地位会提升。",
+        "watch": [
+          "100G PAM4 EML",
+          "CW 激光器",
+          "DFB/VCSEL",
+          "客户认证和批量交付"
+        ],
+        "common_misread": "把低速光芯片能力直接外推到 800G/1.6T 高速场景。"
+      }
+    },
+    {
+      "id": "optical-components",
+      "label": "光器件 / 光零组件",
+      "layer": "upstream",
+      "group": "component",
+      "beginner_explanation": "透镜、隔离器、光纤阵列、连接器、封装件等零组件影响耦合效率、稳定性和良率。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "光器件是模块量产里的精密制造环节。",
+        "why_matters": "速率越高，对光路精度、低损耗和一致性要求越高。",
+        "benefit_logic": "模块厂扩产时，稳定供给高精度光器件的公司会受益。",
+        "watch": [
+          "客户结构",
+          "高速光器件收入",
+          "硅光配套产品",
+          "产能扩张"
+        ],
+        "common_misread": "只看光模块厂，不看上游光器件的良率约束。"
+      }
+    },
+    {
+      "id": "silicon-photonics",
+      "label": "硅光",
+      "layer": "midstream",
+      "group": "architecture",
+      "beginner_explanation": "硅光用半导体工艺把部分光学功能集成到硅基芯片上，提高集成度并降低功耗和成本。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "硅光是高速光模块降低功耗和提升集成度的重要路线。",
+        "why_matters": "800G、1.6T 之后，功耗、尺寸和制造一致性压力越来越大。",
+        "benefit_logic": "硅光比例提升时，具备硅光模块、CW 激光器和封装能力的公司会被重点验证。",
+        "watch": [
+          "硅光出货占比",
+          "CW 激光器需求",
+          "良率",
+          "客户认证"
+        ],
+        "common_misread": "把硅光等同于 CPO。硅光是技术平台，CPO 是系统封装架构。"
+      }
+    },
+    {
+      "id": "lpo-linear-drive",
+      "label": "LPO / 线性直驱",
+      "layer": "midstream",
+      "group": "architecture",
+      "beginner_explanation": "LPO 试图减少或简化 DSP，降低功耗和成本，但对链路和系统配合要求更高。",
+      "bottleneck_strength": 3,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "LPO 是降低模块功耗的一条路线。",
+        "why_matters": "数据中心越密集，功耗越敏感，低功耗方案会被持续评估。",
+        "benefit_logic": "如果客户采用 LPO，具备相关产品和验证经验的模块厂会受益。",
+        "watch": [
+          "客户部署节奏",
+          "链路稳定性",
+          "交换机适配",
+          "量产良率"
+        ],
+        "common_misread": "把 LPO 发布当成大规模采用。它仍要看客户系统验证。"
+      }
+    },
+    {
+      "id": "cpo-npo-architecture",
+      "label": "CPO / NPO 架构",
+      "layer": "midstream",
+      "group": "architecture",
+      "beginner_explanation": "CPO/NPO 把光引擎更靠近交换芯片，目标是降低高速电信号传输损耗和系统功耗。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "CPO 是更长期的系统架构变化。",
+        "why_matters": "当可插拔模块继续升速后，功耗、散热和信号完整性压力会推动更高集成方案。",
+        "benefit_logic": "如果 CPO 商业化，光引擎、硅光、封装、测试和交换芯片生态都会重构。",
+        "watch": [
+          "交换芯片厂路线",
+          "CPO 样机和商用时间",
+          "可维护性",
+          "生态标准"
+        ],
+        "common_misread": "把 CPO 作为当期业绩主线。当前更容易验证的仍是 800G/1.6T 可插拔模块。"
+      }
+    },
+    {
+      "id": "high-speed-pcb-copper",
+      "label": "高速 PCB / 铜连接",
+      "layer": "midstream",
+      "group": "support",
+      "beginner_explanation": "AI 服务器、交换机和光模块都需要高频高速 PCB 和连接方案来保证信号完整性。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是 AI 高速互联的二阶支撑环节。",
+        "why_matters": "高速信号对材料、层数、损耗、加工精度和可靠性要求更高。",
+        "benefit_logic": "AI 服务器和高速交换机放量时，高端 PCB、背板和高速铜连接需求提升。",
+        "watch": [
+          "AI 服务器 PCB 收入",
+          "交换机和路由器客户",
+          "HDI / 高多层板",
+          "产能和良率"
+        ],
+        "common_misread": "把所有 PCB 公司都算 AI 受益，必须看高端产品和客户验证。"
+      }
+    },
+    {
+      "id": "testing-coupling-equipment",
+      "label": "耦合 / 封装 / 测试设备",
+      "layer": "upstream",
+      "group": "equipment",
+      "beginner_explanation": "高速光模块量产需要贴片、耦合、封装、老化和测试设备，设备精度影响良率。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "模块扩产后，设备和自动化会成为产能效率约束。",
+        "why_matters": "高速模块产线不能只靠人工堆产能，自动化和测试能力影响交付。",
+        "benefit_logic": "光模块厂资本开支增加，会传导到耦合、测试和自动化设备。",
+        "watch": [
+          "模块厂 capex",
+          "设备订单",
+          "测试环节价值量",
+          "国产设备导入"
+        ],
+        "common_misread": "看到光模块扩产就默认设备公司全部受益，仍要看实际订单和客户。"
+      }
+    },
+    {
+      "id": "capacity-yield-delivery",
+      "label": "产能 / 良率 / 交付",
+      "layer": "validation",
+      "group": "validation",
+      "beginner_explanation": "高速光模块不只看有没有产品，还要看能不能稳定大批量生产并按时交付。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是从概念走向财务兑现的关键。",
+        "why_matters": "需求爆发时，真正能赚钱的是产品结构高端、良率稳定、交付能力强的公司。",
+        "benefit_logic": "产能和良率提升会体现在收入、毛利率、存货周转和现金流上。",
+        "watch": [
+          "产能扩张",
+          "良率",
+          "交付周期",
+          "经营现金流"
+        ],
+        "common_misread": "把客户需求当成公司收入，缺少产能和良率就无法兑现。"
+      }
+    },
+    {
+      "id": "cloud-capex-validation",
+      "label": "云厂商资本开支验证",
+      "layer": "downstream",
+      "group": "validation",
+      "beginner_explanation": "光模块需求最终来自云厂商和 AI 基础设施建设，资本开支是总需求的重要验证。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是需求端总开关。",
+        "why_matters": "如果云厂商放缓 AI capex，高速光模块订单和估值都会承压。",
+        "benefit_logic": "云厂商 capex 上行、AI 集群扩容和交换机升级，会支撑光模块出货。",
+        "watch": [
+          "北美云厂商 capex",
+          "国内云厂商智算投资",
+          "NVIDIA / ASIC 平台节奏",
+          "交换机升级"
+        ],
+        "common_misread": "只看光模块公司订单，不看下游云厂商 capex 周期。"
+      }
+    },
+    {
+      "id": "inventory-price-cycle-risk",
+      "label": "库存 / 降价 / 周期风险",
+      "layer": "validation",
+      "group": "risk",
+      "beginner_explanation": "高速光模块景气度高时也会有库存、价格、客户集中和技术迭代风险。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是光模块研究必须单独看的一环。",
+        "why_matters": "模块行业有速率迭代和价格下行规律，客户集中度也高。",
+        "benefit_logic": "能持续跟上新速率、保持良率和客户份额的公司，才可能穿越周期。",
+        "watch": [
+          "存货和应收账款",
+          "单价变化",
+          "客户集中度",
+          "新老产品切换"
+        ],
+        "common_misread": "只看高增长，不看库存和价格周期。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "ai-cluster-bandwidth-demand",
+      "target": "gpu-cluster-network",
+      "relation_type": "drives",
+      "label": "大模型拉动集群网络",
+      "description": "训练和推理集群规模扩大，使 GPU、服务器和交换机之间的数据交换增加。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "gpu-cluster-network",
+      "target": "optical-module-system",
+      "relation_type": "requires",
+      "label": "高速网络需要光模块",
+      "description": "高带宽、低延迟网络需要光模块完成光电转换。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "optical-module-system",
+      "target": "speed-upgrade-800g-16t",
+      "relation_type": "upgrades_to",
+      "label": "速率升级",
+      "description": "AI 数据中心推动光模块从 400G 向 800G、1.6T 演进。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "speed-upgrade-800g-16t",
+      "target": "optical-chip-laser",
+      "relation_type": "raises_requirements",
+      "label": "上游芯片要求提高",
+      "description": "高速模块提升对激光器、EML、CW 光源和电芯片的要求。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "speed-upgrade-800g-16t",
+      "target": "optical-components",
+      "relation_type": "raises_requirements",
+      "label": "精密器件要求提高",
+      "description": "速率升级提高对透镜、连接器、隔离器、光纤阵列和封装件的一致性要求。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "speed-upgrade-800g-16t",
+      "target": "silicon-photonics",
+      "relation_type": "enables",
+      "label": "硅光渗透",
+      "description": "高速率和低功耗需求推动硅光方案渗透。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "silicon-photonics",
+      "target": "lpo-linear-drive",
+      "relation_type": "adjacent_route",
+      "label": "低功耗路线",
+      "description": "LPO 和硅光都围绕功耗、成本和系统复杂度优化。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "silicon-photonics",
+      "target": "cpo-npo-architecture",
+      "relation_type": "supports",
+      "label": "支撑 CPO/NPO",
+      "description": "更高集成度的光引擎和硅光平台是 CPO/NPO 商业化的重要支撑。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "gpu-cluster-network",
+      "target": "high-speed-pcb-copper",
+      "relation_type": "requires",
+      "label": "高速信号链路",
+      "description": "AI 服务器和交换机升级带动高端 PCB、背板和高速铜连接需求。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "speed-upgrade-800g-16t",
+      "target": "testing-coupling-equipment",
+      "relation_type": "requires",
+      "label": "封测设备升级",
+      "description": "高速模块需要更高精度的耦合、封装、老化和测试设备。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "optical-module-system",
+      "target": "capacity-yield-delivery",
+      "relation_type": "validated_by",
+      "label": "量产交付验证",
+      "description": "高速产品能否稳定交付，是判断公司真受益的关键。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "cloud-capex-validation",
+      "target": "optical-module-system",
+      "relation_type": "drives",
+      "label": "云厂商投资驱动订单",
+      "description": "云厂商 AI capex 和数据中心建设决定光模块需求总量。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "inventory-price-cycle-risk",
+      "target": "capacity-yield-delivery",
+      "relation_type": "can_break",
+      "label": "周期风险影响兑现",
+      "description": "库存、降价、客户集中和速率切换可能削弱收入和利润质量。",
+      "evidence_status": "supported"
+    }
+  ],
+  "concept_diagrams": [
+    {
+      "id": "optical-module-simple",
+      "title": "光模块在干什么",
+      "subtitle": "把电信号和光信号互相转换",
+      "icon": "connector",
+      "node_ids": [
+        "optical-module-system",
+        "optical-chip-laser",
+        "optical-components"
+      ],
+      "takeaway": "光模块不是一块板，而是一套光电转换和封装测试系统。",
+      "parts": [
+        {
+          "label": "电侧",
+          "role": "接交换机/服务器",
+          "description": "处理高速电信号，关注信号完整性和功耗。"
+        },
+        {
+          "label": "光侧",
+          "role": "用光传数据",
+          "description": "激光器、调制器、探测器和光路决定性能。"
+        },
+        {
+          "label": "封装测试",
+          "role": "保证能量产",
+          "description": "耦合、老化、测试和良率决定交付能力。"
+        }
+      ]
+    },
+    {
+      "id": "speed-upgrade-map",
+      "title": "400G、800G、1.6T 怎么看",
+      "subtitle": "速率升级带来价值量，也带来制造难度",
+      "icon": "chip",
+      "node_ids": [
+        "speed-upgrade-800g-16t",
+        "silicon-photonics",
+        "capacity-yield-delivery"
+      ],
+      "takeaway": "从发布到批量出货，中间隔着客户认证、良率和产能。",
+      "parts": [
+        {
+          "label": "400G",
+          "role": "成熟基础",
+          "description": "许多厂商已具备量产能力，是升级前的基础。"
+        },
+        {
+          "label": "800G",
+          "role": "当前主线",
+          "description": "AI 数据中心高速模块的主要财务验证方向。"
+        },
+        {
+          "label": "1.6T",
+          "role": "下一阶段",
+          "description": "更高价值量，也更考验硅光、芯片、封装和客户认证。"
+        }
+      ]
+    },
+    {
+      "id": "cpo-vs-pluggable",
+      "title": "可插拔和 CPO 的区别",
+      "subtitle": "一个是当前主流，一个是系统级演进",
+      "icon": "system",
+      "node_ids": [
+        "optical-module-system",
+        "cpo-npo-architecture",
+        "silicon-photonics"
+      ],
+      "takeaway": "第一版研究先把 800G/1.6T 可插拔讲清楚，CPO 作为中长期跟踪。",
+      "parts": [
+        {
+          "label": "可插拔",
+          "role": "当前主流",
+          "description": "模块独立插在交换机端口上，维护和替换方便。"
+        },
+        {
+          "label": "NPO/CPO",
+          "role": "更高集成",
+          "description": "光引擎靠近交换芯片，目标是降低功耗和电信号损耗。"
+        },
+        {
+          "label": "难点",
+          "role": "系统协同",
+          "description": "涉及散热、维护、封装、测试、标准和生态成熟度。"
+        }
+      ]
+    }
+  ],
+  "companies": [
+    {
+      "name": "中际旭创",
+      "ts_code": "300308.SZ",
+      "nodes": [
+        "optical-module-system",
+        "speed-upgrade-800g-16t",
+        "silicon-photonics",
+        "capacity-yield-delivery"
+      ],
+      "role": "高速光模块全球龙头 / 需求验证节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "光模块龙头",
+      "leader_reason": "公司主营高端光通信收发模块，公开披露面向云数据中心客户提供 100G、200G、400G、800G 和 1.6T 高速光模块，并在 2025 年 IR 中披露 800G、1.6T 和硅光出货节奏。",
+      "current_view": "中际旭创是 A 股 AI 光模块最显性的验证节点。它能验证海外云厂商需求、高速产品结构升级、硅光比例和交付能力，但也需要关注客户集中、物料紧张、库存和估值预期是否过满。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪 800G/1.6T 出货占比",
+        "确认硅光产品毛利贡献",
+        "观察光芯片等物料供给",
+        "检查库存、应收和经营现金流"
+      ],
+      "why_watch": "龙头公司能最快验证 AI 光互联需求是否真实兑现到收入和利润。",
+      "evidence_basis": [
+        "2024 年报摘要披露公司主营高端光通信收发模块，并覆盖 100G 到 1.6T 高速光模块",
+        "2026 年初 IR 披露 2025 年四季度 800G、1.6T 和硅光出货情况及光芯片供给紧张"
+      ],
+      "verification_focus": [
+        "高端产品出货",
+        "毛利率",
+        "海外客户需求",
+        "物料供应"
+      ],
+      "risks": [
+        "客户集中",
+        "速率迭代导致旧产品降价",
+        "市场预期过高"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中际旭创股份有限公司 2024 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2025-04-21",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-04-21/1223155504.PDF",
+          "evidence_grade": "A",
+          "usage": "验证主营业务、高速光模块产品和 800G/400G 产品结构"
+        },
+        {
+          "title": "中际旭创股份有限公司投资者关系活动记录表",
+          "publisher": "巨潮资讯",
+          "date": "2026-02-01",
+          "url": "http://static.cninfo.com.cn/finalpage/2026-02-01/1224960917.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 2025 年四季度 800G、1.6T、硅光和物料供给情况"
+        }
+      ]
+    },
+    {
+      "name": "新易盛",
+      "ts_code": "300502.SZ",
+      "nodes": [
+        "optical-module-system",
+        "speed-upgrade-800g-16t",
+        "silicon-photonics",
+        "lpo-linear-drive"
+      ],
+      "role": "高速光模块龙头 / 产品升级验证节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "光模块龙头",
+      "leader_reason": "公司年报摘要披露提供 100G、200G、400G、800G 及 1.6T 光模块，并推出基于 VCSEL/EML、硅光和薄膜铌酸锂方案的高速光模块产品。",
+      "current_view": "新易盛适合观察高速光模块产品升级和多技术路线布局。它是强验证节点，但研究上仍要回到出货量、产品结构、客户认证、海外收入和毛利变化。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪高速率光模块出货量",
+        "确认 1.6T 产品量产节奏",
+        "观察硅光和薄膜铌酸锂路线进展",
+        "查看海外客户和毛利率"
+      ],
+      "why_watch": "它和中际旭创共同验证 A 股光模块龙头的需求景气和产品迭代速度。",
+      "evidence_basis": [
+        "2024 年报摘要披露 800G、1.6T 和多种技术方案",
+        "2025 年 IR 披露高速率光模块出货量持续提升"
+      ],
+      "verification_focus": [
+        "高速产品出货",
+        "客户认证",
+        "技术路线商业化",
+        "产品结构"
+      ],
+      "risks": [
+        "海外客户需求波动",
+        "价格竞争",
+        "技术路线切换"
+      ],
+      "evidence_refs": [
+        {
+          "title": "成都新易盛通信技术股份有限公司 2024 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2025-04-23",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-04-23/1223219381.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 100G 到 1.6T 光模块及硅光、薄膜铌酸锂方案"
+        },
+        {
+          "title": "成都新易盛通信技术股份有限公司投资者关系活动记录表",
+          "publisher": "巨潮资讯",
+          "date": "2025-09-13",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-09-13/1224659042.PDF",
+          "evidence_grade": "A",
+          "usage": "验证高速率光模块出货和 1.6T 相关问答"
+        }
+      ]
+    },
+    {
+      "name": "天孚通信",
+      "ts_code": "300394.SZ",
+      "nodes": [
+        "optical-components",
+        "silicon-photonics",
+        "capacity-yield-delivery"
+      ],
+      "role": "光器件 / 光零组件龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "光器件龙头",
+      "leader_reason": "公司年报摘要直接拆解光器件产业链，并披露主要产品包括光零组件、高速光器件，可服务可插拔光模块和 CPO 等。",
+      "current_view": "天孚通信不是完整光模块厂，而是上游光器件和光零组件龙头。它的价值在于模块厂高速产品放量后，对高精度光器件、硅光配套和良率的要求提升。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪高速光器件收入",
+        "确认硅光平台配套产品",
+        "观察客户集中度",
+        "检查产能和毛利率"
+      ],
+      "why_watch": "它能帮助理解光模块内部的精密器件约束。",
+      "evidence_basis": [
+        "2025 年报摘要披露光器件产业链和公司产品位置",
+        "2025 年 IR 披露传统器件和硅光技术平台均有对应产品和解决方案"
+      ],
+      "verification_focus": [
+        "光器件客户验证",
+        "硅光相关收入",
+        "毛利率持续性"
+      ],
+      "risks": [
+        "被模块厂议价",
+        "下游技术路线变化",
+        "汇兑和客户集中"
+      ],
+      "evidence_refs": [
+        {
+          "title": "苏州天孚光通信股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-04-08",
+          "url": "http://static.cninfo.com.cn/finalpage/2026-04-08/1225082704.PDF",
+          "evidence_grade": "A",
+          "usage": "验证光器件产业链位置和高速光器件产品"
+        },
+        {
+          "title": "苏州天孚光通信股份有限公司投资者关系活动记录表",
+          "publisher": "巨潮资讯",
+          "date": "2025-11-27",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-11-27/1224831855.PDF",
+          "evidence_grade": "A",
+          "usage": "验证传统器件平台和硅光平台配套产品"
+        }
+      ]
+    },
+    {
+      "name": "光迅科技",
+      "ts_code": "002281.SZ",
+      "nodes": [
+        "optical-module-system",
+        "speed-upgrade-800g-16t",
+        "optical-chip-laser",
+        "silicon-photonics"
+      ],
+      "role": "光器件和模块一体化验证节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "一体化龙头",
+      "leader_reason": "公司半年度报告披露数据通信产品用于云计算数据中心和 AI 智算中心，数据中心内光模块支持 100G 到 1.6T 等速率，并涉及光电子器件、模块和子系统。",
+      "current_view": "光迅科技适合作为一体化能力验证节点：既有模块，也有核心光芯片投入。它的研究重点是高速模块收入占比、核心光芯片自供/外供能力、现金流和研发投入是否匹配需求。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪数据通信产品收入",
+        "确认 800G/1.6T 客户进展",
+        "观察核心光芯片研发投入",
+        "查看现金流和回款"
+      ],
+      "why_watch": "它能验证国产光芯片和模块一体化在 AI 数据中心里的实际推进。",
+      "evidence_basis": [
+        "2025 半年报披露 AI 智算中心和 100G 到 1.6T 光模块能力",
+        "定增问询回复披露 800G、1.6T 高速光模块及核心光芯片研发投入"
+      ],
+      "verification_focus": [
+        "高速模块出货",
+        "核心光芯片",
+        "研发投入转化",
+        "经营现金流"
+      ],
+      "risks": [
+        "国内外竞争加剧",
+        "研发投入高",
+        "产品结构改善不及预期"
+      ],
+      "evidence_refs": [
+        {
+          "title": "武汉光迅科技股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-28",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-28/1224600367.pdf",
+          "evidence_grade": "A",
+          "usage": "验证 AI 智算中心应用和 100G 到 1.6T 光模块"
+        },
+        {
+          "title": "光迅科技向特定对象发行股票审核问询函回复",
+          "publisher": "巨潮资讯",
+          "date": "2025-12-25",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-12-25/1224895597.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 800G、1.6T 高速光模块和核心光芯片研发投入"
+        }
+      ]
+    },
+    {
+      "name": "华工科技",
+      "ts_code": "000988.SZ",
+      "nodes": [
+        "optical-module-system",
+        "speed-upgrade-800g-16t",
+        "optical-chip-laser",
+        "cpo-npo-architecture"
+      ],
+      "role": "光模块 / 光芯片 / CPO 综合验证节点",
+      "tier": "核心验证节点",
+      "attention_level": "leader",
+      "attention_label": "综合平台",
+      "leader_reason": "公司 2025 年报披露光模块是数据中心高速互联核心器件，并提到自研硅光芯片应用于 400G、800G 及 1.6T 光模块交付，以及 3.2T CPO/NPO 高集成方向。",
+      "current_view": "华工科技具备光模块、光芯片和 CPO/NPO 叙事，但它不是纯光模块公司。研究时要拆分联接业务收入、高速产品交付和其他业务对利润的影响。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分联接业务收入和利润",
+        "跟踪 800G/1.6T 光模块交付",
+        "确认 CPO/NPO 是否进入商业化订单",
+        "观察国内客户批量交付节奏"
+      ],
+      "why_watch": "它能帮助观察光模块从可插拔走向硅光/CPO 的中长期技术路线。",
+      "evidence_basis": [
+        "2025 年报披露光模块市场、800G/1.6T 和 CPO/NPO 方向",
+        "2025 半年报披露 200G/400G/800G 全系列高速产品和新材料布局"
+      ],
+      "verification_focus": [
+        "联接业务",
+        "高速产品交付",
+        "CPO/NPO 商业化阶段"
+      ],
+      "risks": [
+        "多业务摊薄主题弹性",
+        "CPO 商业化周期不确定",
+        "国内外客户节奏变化"
+      ],
+      "evidence_refs": [
+        {
+          "title": "华工科技产业股份有限公司 2025 年年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2026-03-26",
+          "url": "https://static.cninfo.com.cn/finalpage/2026-03-26/1225031509.PDF",
+          "evidence_grade": "A",
+          "usage": "验证光模块、硅光芯片和 CPO/NPO 方向"
+        },
+        {
+          "title": "华工科技产业股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-15",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-15/1224486978.PDF",
+          "evidence_grade": "A",
+          "usage": "验证高速光模块产品和材料路线"
+        }
+      ]
+    },
+    {
+      "name": "源杰科技",
+      "ts_code": "688498.SH",
+      "nodes": [
+        "optical-chip-laser",
+        "silicon-photonics",
+        "speed-upgrade-800g-16t"
+      ],
+      "role": "光芯片 / CW 激光器验证节点",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "光芯片候选",
+      "leader_reason": "公司 2025 年报摘要披露数据中心市场带动高速率、大功率芯片需求，CW 激光器产品在高速可插拔硅光模块中实现大批量出货。",
+      "current_view": "源杰科技更靠近上游光芯片瓶颈。它的弹性来自 CW 激光器、EML 和大功率激光器在 800G/1.6T 硅光路线中的导入，但仍要验证客户、收入占比、毛利和产能。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "确认 CW 激光器收入占比",
+        "跟踪数据中心客户导入",
+        "观察高端 EML 和大功率激光器进展",
+        "检查产能和毛利率"
+      ],
+      "why_watch": "上游光芯片如果成为紧缺环节，弹性可能比模块龙头更集中。",
+      "evidence_basis": [
+        "2025 年报摘要披露 CW 芯片大批量出货和硅光模块应用",
+        "2025 半年报披露 AI 推动 400G/800G 向 1.6T 演进及 CW 70mW 产品批量交付"
+      ],
+      "verification_focus": [
+        "CW 激光器批量交付",
+        "高端光芯片客户",
+        "毛利率",
+        "产能爬坡"
+      ],
+      "risks": [
+        "高端芯片客户验证周期长",
+        "海外供应商竞争",
+        "收入体量和客户集中度"
+      ],
+      "evidence_refs": [
+        {
+          "title": "陕西源杰半导体科技股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-03-25",
+          "url": "http://static.cninfo.com.cn/finalpage/2026-03-25/1225028587.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 CW 激光器、高速光芯片和硅光模块应用"
+        },
+        {
+          "title": "陕西源杰半导体科技股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-30",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-30/1224625582.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 AI 数据中心高速光模块带动光芯片需求"
+        }
+      ]
+    },
+    {
+      "name": "剑桥科技",
+      "ts_code": "603083.SH",
+      "nodes": [
+        "optical-module-system",
+        "speed-upgrade-800g-16t",
+        "silicon-photonics",
+        "capacity-yield-delivery"
+      ],
+      "role": "高速光模块弹性验证节点",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "弹性模块候选",
+      "leader_reason": "公司 2025 年报披露 800G/1.6T 硅光产品工程化落地与规模化生产，三季报披露高毛利 800G 光模块销量带动业绩。",
+      "current_view": "剑桥科技是比龙头更偏弹性的高速光模块候选。它需要重点验证 800G、1.6T 量产上量、核心物料锁定、北美客户订单和盈利持续性。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪 800G 光模块销量",
+        "确认 1.6T 量产上量",
+        "观察北美客户订单",
+        "检查毛利率和供应链稳定性"
+      ],
+      "why_watch": "它能观察高速模块二线厂商在 AI 需求中的份额变化和弹性。",
+      "evidence_basis": [
+        "2025 年报披露 800G/1.6T 硅光产品工程化落地与规模化生产",
+        "2025 三季报披露高速光模块业务和 800G 销量对业绩贡献"
+      ],
+      "verification_focus": [
+        "客户订单",
+        "量产良率",
+        "核心物料供应",
+        "盈利持续性"
+      ],
+      "risks": [
+        "客户集中",
+        "核心物料供应",
+        "二线厂商份额波动"
+      ],
+      "evidence_refs": [
+        {
+          "title": "上海剑桥科技股份有限公司 2025 年年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2026-03-30",
+          "url": "http://dataclouds.cninfo.com.cn/shgonggao/hsomarket/2026/20260330/c7c90c8feb684f9086c7bb1a0f9e2c8b.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 800G/1.6T 硅光产品和全球供应链角色"
+        },
+        {
+          "title": "上海剑桥科技股份有限公司 2025 年第三季度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-10-27",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-10-27/1224738019.PDF",
+          "evidence_grade": "A",
+          "usage": "验证高速光模块业务和 800G 销量贡献"
+        }
+      ]
+    },
+    {
+      "name": "胜宏科技",
+      "ts_code": "300476.SZ",
+      "nodes": [
+        "high-speed-pcb-copper",
+        "gpu-cluster-network"
+      ],
+      "role": "AI 服务器 / 高速 PCB 验证节点",
+      "tier": "二阶受益",
+      "attention_level": "core_candidate",
+      "attention_label": "PCB 二阶龙头",
+      "leader_reason": "公司年报摘要披露 AI 服务器相关 PCB 市场高增长，并在 2024 年报中披露 800G 交换机产品、1.6T 光模块等产业化作业线索。",
+      "current_view": "胜宏科技不是光模块公司，而是 AI 服务器、高速交换机和高速互联里的 PCB 二阶受益节点。研究要看 AI 相关 PCB 收入占比、高多层板/HDI、客户和产能。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分 AI 服务器 PCB 收入",
+        "跟踪高多层板和 HDI 产品",
+        "确认核心客户",
+        "观察产能利用率和毛利率"
+      ],
+      "why_watch": "光模块和交换机放量会同步提高高速 PCB 的技术要求。",
+      "evidence_basis": [
+        "2025 年报摘要披露 AI 服务器相关 PCB 市场增长",
+        "2024 年报披露 800G 交换机和 1.6T 光模块相关产品产业化"
+      ],
+      "verification_focus": [
+        "AI 相关收入",
+        "客户验证",
+        "高端 PCB 毛利",
+        "产能"
+      ],
+      "risks": [
+        "PCB 行业竞争",
+        "AI 收入占比不清",
+        "扩产导致供给压力"
+      ],
+      "evidence_refs": [
+        {
+          "title": "胜宏科技（惠州）股份有限公司 2025 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-03-13",
+          "url": "http://static.cninfo.com.cn/finalpage/2026-03-13/1225007454.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 AI 服务器相关 PCB 市场和公司应用领域"
+        },
+        {
+          "title": "胜宏科技（惠州）股份有限公司 2024 年年度报告全文",
+          "publisher": "巨潮资讯",
+          "date": "2025-03-29",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-03-29/1222949182.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 800G 交换机、1.6T 光模块和高速传输相关线索"
+        }
+      ]
+    },
+    {
+      "name": "沪电股份",
+      "ts_code": "002463.SZ",
+      "nodes": [
+        "high-speed-pcb-copper",
+        "gpu-cluster-network",
+        "cloud-capex-validation"
+      ],
+      "role": "AI 服务器 / 高速网络 PCB 验证节点",
+      "tier": "二阶受益",
+      "attention_level": "leader",
+      "attention_label": "高端 PCB 龙头",
+      "leader_reason": "公司年度报告摘要披露产品应用于 AI 服务器及 HPC、高速网络交换机及路由器等场景，是高速互联 PCB 的重要验证节点。",
+      "current_view": "沪电股份是 AI 高速互联的 PCB 二阶龙头，不是光模块厂。它的关键在于 AI 服务器、HPC、高速交换机和路由器需求是否持续带动高端 PCB 收入、毛利和产能利用率。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分 AI 服务器/HPC 相关收入",
+        "跟踪交换机和路由器客户",
+        "观察关键制程和瓶颈制程投资",
+        "检查毛利率和现金流"
+      ],
+      "why_watch": "高速互联升级不仅拉光模块，也拉高端 PCB 和背板。",
+      "evidence_basis": [
+        "2025 年度报告摘要披露 AI 服务器、HPC、高速网络交换机及路由器应用",
+        "2025 IR 披露关键制程和瓶颈制程投资、产能改善"
+      ],
+      "verification_focus": [
+        "高端 PCB 收入",
+        "关键制程产能",
+        "毛利率",
+        "客户结构"
+      ],
+      "risks": [
+        "PCB 周期波动",
+        "客户资本开支放缓",
+        "扩产后供需变化"
+      ],
+      "evidence_refs": [
+        {
+          "title": "沪士电子股份有限公司 2025 年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2026-03-25",
+          "url": "http://static.cninfo.com.cn/finalpage/2026-03-25/1225027831.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 AI 服务器、HPC 和高速网络交换机场景"
+        },
+        {
+          "title": "沪士电子股份有限公司投资者活动记录表",
+          "publisher": "巨潮资讯",
+          "date": "2025-07-28",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-07-28/1224317058.PDF",
+          "evidence_grade": "A",
+          "usage": "验证关键制程投资和产能改善"
+        }
+      ]
+    },
+    {
+      "name": "长芯博创",
+      "ts_code": "300548.SZ",
+      "nodes": [
+        "optical-module-system",
+        "silicon-photonics",
+        "capacity-yield-delivery"
+      ],
+      "role": "光模块 / 硅光观察节点",
+      "tier": "弹性候选",
+      "attention_level": "core_candidate",
+      "attention_label": "弹性候选",
+      "leader_reason": "公司曾推进硅光收发模块技改项目，2025 半年报需继续核对高速产品和收入贡献。",
+      "current_view": "长芯博创可作为中小型光模块弹性候选。当前一手证据能确认硅光收发模块项目线索，但还要补 2025 年报/半年报里高速产品、客户和收入占比，暂不按龙头处理。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "核对 2025 年报和半年报全文",
+        "确认硅光收发模块项目进展",
+        "查看 800G/1.6T 产品和客户",
+        "确认收入占比和毛利"
+      ],
+      "why_watch": "中小型光模块公司如果获得高速客户和订单，弹性可能较高，但证据强度要严格。 ",
+      "evidence_basis": [
+        "2024 半年报披露年产 245 万只硅光收发模块技改项目",
+        "2025 半年报为待补核对证据"
+      ],
+      "verification_focus": [
+        "高速产品收入",
+        "客户认证",
+        "项目投产",
+        "盈利质量"
+      ],
+      "risks": [
+        "收入占比不清",
+        "项目延期",
+        "竞争地位弱于头部"
+      ],
+      "evidence_refs": [
+        {
+          "title": "博创科技股份有限公司 2024 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2024-08-17",
+          "url": "https://static.cninfo.com.cn/finalpage/2024-08-17/1220895410.PDF",
+          "evidence_grade": "A",
+          "usage": "验证硅光收发模块技改项目线索"
+        },
+        {
+          "title": "长芯博创科技股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-29",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-29/1224611965.PDF",
+          "evidence_grade": "A",
+          "usage": "待补全文核对高速光模块、硅光和收入贡献"
+        }
+      ]
+    }
+  ],
+  "common_misreads": [
+    {
+      "title": "把 CPO 当成当期业绩主线",
+      "correction": "当前更容易验证的是 800G/1.6T 可插拔光模块，CPO/NPO 更偏中长期架构变化。"
+    },
+    {
+      "title": "把所有光通信公司都算 AI 受益",
+      "correction": "运营商通信、电信接入和 AI 数据中心数通不是同一需求，要看产品是否进入高速数通链条。"
+    },
+    {
+      "title": "只看发布，不看量产",
+      "correction": "高速光模块必须看客户认证、出货、良率、产能和毛利，发布样品不能证明财务兑现。"
+    },
+    {
+      "title": "把硅光和 CPO 混为一谈",
+      "correction": "硅光是技术平台，CPO 是封装架构；两者相关但不是同一层级。"
+    },
+    {
+      "title": "忽略周期风险",
+      "correction": "光模块有价格下行、库存和客户集中风险，高景气也要看现金流、存货和应收。"
+    }
+  ],
+  "financial_translations": [
+    {
+      "node_id": "optical-module-system",
+      "title": "光模块：看高速产品收入和毛利",
+      "watch": "800G/1.6T 出货、产品结构、海外收入、毛利率、经营现金流。",
+      "source_hint": "年报、半年报、季度报告、投资者关系。",
+      "risk": "客户集中和产品降价可能影响毛利持续性。"
+    },
+    {
+      "node_id": "optical-chip-laser",
+      "title": "光芯片：看客户导入和批量交付",
+      "watch": "CW 激光器、EML、DFB、VCSEL 出货，客户认证，收入占比和毛利率。",
+      "source_hint": "年报、半年报、募投项目、客户披露。",
+      "risk": "高端光芯片验证周期长，海外供应商竞争强。"
+    },
+    {
+      "node_id": "optical-components",
+      "title": "光器件：看光模块客户和硅光配套",
+      "watch": "高速光器件收入、硅光平台配套、客户结构、产能和良率。",
+      "source_hint": "年报、半年报、IR。",
+      "risk": "如果模块厂自制或技术路线变化，上游议价会变化。"
+    },
+    {
+      "node_id": "high-speed-pcb-copper",
+      "title": "PCB：看 AI 服务器和交换机收入",
+      "watch": "AI 服务器/HPC、高速交换机、路由器、高多层板、HDI、背板和毛利率。",
+      "source_hint": "年报、半年度报告、客户和产品披露。",
+      "risk": "普通 PCB 不能等同于 AI 高速 PCB，必须确认高端产品占比。"
+    },
+    {
+      "node_id": "inventory-price-cycle-risk",
+      "title": "周期：看库存、应收和价格",
+      "watch": "存货、应收账款、单价变化、客户集中度、产品迭代节奏。",
+      "source_hint": "资产负债表、现金流量表、IR、行业报告。",
+      "risk": "需求预期过热时，库存和估值可能先于订单转弱。"
+    }
+  ],
+  "catalysts": [
+    {
+      "horizon": "短期",
+      "title": "北美云厂商 AI capex 上修",
+      "why": "直接影响高速光模块订单预期。",
+      "watch": "云厂商财报、资本开支指引、AI 服务器订单。",
+      "risk": "capex 延后会压制订单和估值。"
+    },
+    {
+      "horizon": "短期",
+      "title": "800G 出货和 1.6T 上量",
+      "why": "这是当前最直接的收入和毛利验证。",
+      "watch": "公司 IR、季度报告、产品结构、客户验证。",
+      "risk": "出货增长可能被价格下降或物料紧张抵消。"
+    },
+    {
+      "horizon": "中期",
+      "title": "硅光比例提升",
+      "why": "硅光影响模块功耗、成本和上游 CW 激光器需求。",
+      "watch": "硅光出货比例、CW 激光器批量交付、良率。",
+      "risk": "技术路线和客户采用节奏可能低于预期。"
+    },
+    {
+      "horizon": "中期",
+      "title": "CPO/NPO 从展示走向订单",
+      "why": "如果 CPO 商业化，会重构光引擎、封装和测试链条。",
+      "watch": "交换芯片厂路线、样机、客户试点和标准生态。",
+      "risk": "维护、散热、标准和生态成熟度可能拖慢商用。"
+    },
+    {
+      "horizon": "兑现",
+      "title": "收入、毛利和现金流同步改善",
+      "why": "这是从主题行情走向公司业绩的关键。",
+      "watch": "营业收入、毛利率、经营现金流、存货和应收。",
+      "risk": "收入高增但库存、应收和客户集中恶化，需要降级。"
+    }
+  ],
+  "tracking_metrics": [
+    {
+      "name": "北美和国内云厂商资本开支",
+      "why": "决定 AI 光互联需求总量。",
+      "source_hint": "云厂商财报、服务器供应链数据、行业报告。"
+    },
+    {
+      "name": "800G / 1.6T 光模块出货",
+      "why": "验证产品升级是否真正兑现。",
+      "source_hint": "公司公告、IR、季度报告、行业机构数据。"
+    },
+    {
+      "name": "硅光出货占比和 CW 激光器需求",
+      "why": "判断硅光路线和上游光芯片弹性。",
+      "source_hint": "公司 IR、年报、半年度报告。"
+    },
+    {
+      "name": "产能、良率和交付周期",
+      "why": "判断公司能否把需求转成收入和毛利。",
+      "source_hint": "产能项目公告、IR、毛利率、存货。"
+    },
+    {
+      "name": "高速 PCB / 交换机相关收入",
+      "why": "验证二阶支撑环节是否真实受益。",
+      "source_hint": "沪电股份、胜宏科技等年报和 IR。"
+    },
+    {
+      "name": "库存、应收账款和价格变化",
+      "why": "光模块高景气后最需要防周期反噬。",
+      "source_hint": "资产负债表、现金流量表、季度报告。"
+    }
+  ],
+  "sources": [
+    {
+      "title": "中际旭创股份有限公司 2024 年年度报告摘要",
+      "publisher": "巨潮资讯",
+      "date": "2025-04-21",
+      "url": "https://static.cninfo.com.cn/finalpage/2025-04-21/1223155504.PDF",
+      "source_type": "company_report",
+      "usage": "验证中际旭创高端光模块产品和 800G/400G 产品结构"
+    },
+    {
+      "title": "中际旭创股份有限公司投资者关系活动记录表",
+      "publisher": "巨潮资讯",
+      "date": "2026-02-01",
+      "url": "http://static.cninfo.com.cn/finalpage/2026-02-01/1224960917.PDF",
+      "source_type": "investor_relations",
+      "usage": "验证 800G、1.6T、硅光出货和物料供给紧张"
+    },
+    {
+      "title": "成都新易盛通信技术股份有限公司 2024 年年度报告摘要",
+      "publisher": "巨潮资讯",
+      "date": "2025-04-23",
+      "url": "https://static.cninfo.com.cn/finalpage/2025-04-23/1223219381.PDF",
+      "source_type": "company_report",
+      "usage": "验证新易盛高速光模块和多技术路线"
+    },
+    {
+      "title": "苏州天孚光通信股份有限公司 2025 年年度报告摘要",
+      "publisher": "巨潮资讯",
+      "date": "2026-04-08",
+      "url": "http://static.cninfo.com.cn/finalpage/2026-04-08/1225082704.PDF",
+      "source_type": "company_report",
+      "usage": "验证天孚通信光器件产业链位置"
+    },
+    {
+      "title": "武汉光迅科技股份有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-28",
+      "url": "http://static.cninfo.com.cn/finalpage/2025-08-28/1224600367.pdf",
+      "source_type": "company_report",
+      "usage": "验证光迅科技 AI 智算中心和 100G 到 1.6T 光模块"
+    },
+    {
+      "title": "华工科技产业股份有限公司 2025 年年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2026-03-26",
+      "url": "https://static.cninfo.com.cn/finalpage/2026-03-26/1225031509.PDF",
+      "source_type": "company_report",
+      "usage": "验证华工科技光模块、硅光芯片和 CPO/NPO"
+    },
+    {
+      "title": "陕西源杰半导体科技股份有限公司 2025 年年度报告摘要",
+      "publisher": "巨潮资讯",
+      "date": "2026-03-25",
+      "url": "http://static.cninfo.com.cn/finalpage/2026-03-25/1225028587.PDF",
+      "source_type": "company_report",
+      "usage": "验证源杰科技 CW 激光器和高速光芯片"
+    },
+    {
+      "title": "上海剑桥科技股份有限公司 2025 年年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2026-03-30",
+      "url": "http://dataclouds.cninfo.com.cn/shgonggao/hsomarket/2026/20260330/c7c90c8feb684f9086c7bb1a0f9e2c8b.PDF",
+      "source_type": "company_report",
+      "usage": "验证剑桥科技 800G/1.6T 硅光产品和供应链角色"
+    },
+    {
+      "title": "胜宏科技（惠州）股份有限公司 2025 年年度报告摘要",
+      "publisher": "巨潮资讯",
+      "date": "2026-03-13",
+      "url": "http://static.cninfo.com.cn/finalpage/2026-03-13/1225007454.PDF",
+      "source_type": "company_report",
+      "usage": "验证 AI 服务器相关 PCB 市场和产品应用"
+    },
+    {
+      "title": "沪士电子股份有限公司 2025 年度报告摘要",
+      "publisher": "巨潮资讯",
+      "date": "2026-03-25",
+      "url": "http://static.cninfo.com.cn/finalpage/2026-03-25/1225027831.PDF",
+      "source_type": "company_report",
+      "usage": "验证 AI 服务器、HPC 和高速网络交换机场景"
+    },
+    {
+      "title": "光模块设备行业深度：AI 发展带动光模块需求爆发",
+      "publisher": "东方财富 PDF 研报镜像",
+      "date": "2026-03-16",
+      "url": "https://pdf.dfcfw.com/pdf/H3_AP202603161820571607_1.pdf",
+      "source_type": "broker_report",
+      "usage": "辅助理解光模块封测设备和 800G/1.6T 行业趋势，不作为公司强结论"
+    },
+    {
+      "title": "CPO 概念再度爆发，天孚通信、中际旭创等创新高",
+      "publisher": "证券时报",
+      "date": "2026-06-03",
+      "url": "https://www.stcn.com/article/detail/3940916.html",
+      "source_type": "market_media",
+      "usage": "辅助观察 CPO/光模块市场热度和行业机构数据，不能单独作为受益证据"
+    }
+  ]
+}

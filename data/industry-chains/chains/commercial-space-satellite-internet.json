@@ -1,0 +1,1522 @@
+{
+  "version": 1,
+  "chain_id": "commercial-space-satellite-internet",
+  "title": "商业航天 / 卫星互联网",
+  "category": "空天信息 / 商业航天与卫星通信",
+  "status": "draft",
+  "updated_at": "2026-06-20",
+  "summary": "商业航天和卫星互联网解决的是通信、遥感、导航和应急服务从地面网络延伸到天空的问题。学习重点不是把所有航天公司都当成一个概念，而是沿着频轨资源、星座建设、火箭发射、卫星制造、星载载荷、地面终端、运营应用和财务兑现逐层拆开。",
+  "quick_read": {
+    "headline": "商业航天不是只有火箭，真正的闭环是把卫星变成可收费服务",
+    "summary": "一条商业航天产业链可以先按三个问题理解：谁把卫星送上去，谁把卫星做出来，谁把卫星能力卖给客户。低轨卫星互联网会拉动火箭发射、卫星批量制造、T/R 组件、射频芯片、相控阵天线、地面站、终端、测运控和运营服务。对投资研究来说，最关键的是区分建设期受益和运营期受益。",
+    "logic_chain": [
+      "政策和频轨资源决定星座能不能建、建多快",
+      "低轨星座组网拉动火箭发射、卫星平台和载荷批量制造",
+      "卫星载荷、T/R 组件、射频芯片、相控阵天线和星间链路决定通信能力",
+      "地面站、信关站、测运控和终端决定卫星能力能否被用户使用",
+      "运营商和应用服务把卫星通信、遥感、北斗导航转成收入",
+      "真正兑现要看发射节奏、在轨验证、订单、收入占比、毛利和回款"
+    ],
+    "takeaways": [
+      "商业航天是系统工程，不能只看火箭或卫星制造单点。",
+      "低轨星座建设期更利好制造、载荷、T/R、地面站和终端；运营期要看客户付费和服务收入。",
+      "A 股映射必须拆证据：年报、半年报、IR、项目中标、在轨验证和收入占比，比题材标签更重要。"
+    ]
+  },
+  "learning_steps": [
+    {
+      "id": "why-now",
+      "title": "先看为什么",
+      "subtitle": "为什么商业航天突然变成主线",
+      "question": "为什么现在要研究商业航天和卫星互联网？",
+      "answer": "因为国家和地方政策开始把商业航天、低轨通信、导航增强、高分遥感和商业发射能力作为新基础设施来推动。星座建设一旦进入批量发射和组网阶段，就会带动火箭、卫星、载荷、天线、芯片、地面站、终端和运营服务。",
+      "node_ids": [
+        "orbit-spectrum-policy",
+        "constellation-buildout-demand"
+      ]
+    },
+    {
+      "id": "launch-and-manufacturing",
+      "title": "再看建设",
+      "subtitle": "卫星先要造出来、送上去",
+      "question": "商业航天建设期最先拉动哪些环节？",
+      "answer": "星座建设需要可持续发射能力和卫星批量制造能力。火箭负责把卫星送入轨道，卫星平台负责供电、姿控、热控和结构，载荷负责通信、遥感或导航功能。建设期最容易被市场点亮的是发射、卫星制造和星载部件。",
+      "node_ids": [
+        "launch-capacity-cost",
+        "satellite-platform-manufacturing",
+        "satellite-payload-antenna"
+      ]
+    },
+    {
+      "id": "payload-and-components",
+      "title": "进入部件",
+      "subtitle": "真正的卡点在载荷和射频链路",
+      "question": "为什么 T/R、射频芯片和相控阵天线重要？",
+      "answer": "卫星通信和遥感不是把盒子送上天就行。相控阵天线、T/R 组件、射频芯片、功放、低噪声放大器和数字波束形成决定信号收发、覆盖、功耗、重量和成本。低轨星座如果追求批量化和低成本，这些部件会成为关键观察点。",
+      "node_ids": [
+        "satellite-payload-antenna",
+        "tr-rf-chip-components",
+        "laser-inter-satellite-link",
+        "aerospace-electronics-navigation"
+      ]
+    },
+    {
+      "id": "ground-and-terminal",
+      "title": "连接地面",
+      "subtitle": "没有地面系统就没有商业服务",
+      "question": "卫星上天后，为什么还要看地面站和终端？",
+      "answer": "卫星能力要落地，需要地面站、信关站、测运控系统、用户终端和手机直连等入口。地面系统决定网络接入、任务控制、数据处理和用户连接，终端决定服务能不能规模化触达用户。",
+      "node_ids": [
+        "ground-station-ttc",
+        "terminal-direct-to-device",
+        "satellite-communication-operation"
+      ]
+    },
+    {
+      "id": "service-validation",
+      "title": "最后看兑现",
+      "subtitle": "从项目建设到收入现金流",
+      "question": "怎么判断公司是真受益，不是商业航天概念？",
+      "answer": "先确认公司产品属于哪一环，再看是否进入星座、在轨验证、批量交付、重大订单、收入占比和毛利。遥感和卫星通信服务还要看客户付费、回款和数据产品复购。商业航天热度高，但真正难的是商业闭环。",
+      "node_ids": [
+        "remote-sensing-data-service",
+        "beidou-navigation-augmentation",
+        "order-cashflow-application-validation"
+      ]
+    }
+  ],
+  "flow_columns": [
+    {
+      "key": "policy",
+      "label": "政策频轨",
+      "description": "决定星座能否建设和规模节奏",
+      "node_ids": [
+        "orbit-spectrum-policy",
+        "constellation-buildout-demand"
+      ]
+    },
+    {
+      "key": "launch",
+      "label": "发射能力",
+      "description": "把卫星送上轨道并降低单位成本",
+      "node_ids": [
+        "launch-capacity-cost"
+      ]
+    },
+    {
+      "key": "satellite",
+      "label": "卫星制造",
+      "description": "平台、载荷和批量交付",
+      "node_ids": [
+        "satellite-platform-manufacturing",
+        "satellite-payload-antenna"
+      ]
+    },
+    {
+      "key": "components",
+      "label": "核心部件",
+      "description": "T/R、射频、激光链路、航天电子",
+      "node_ids": [
+        "tr-rf-chip-components",
+        "laser-inter-satellite-link",
+        "aerospace-electronics-navigation"
+      ]
+    },
+    {
+      "key": "ground",
+      "label": "地面终端",
+      "description": "地面站、测运控、信关站和用户入口",
+      "node_ids": [
+        "ground-station-ttc",
+        "terminal-direct-to-device"
+      ]
+    },
+    {
+      "key": "service",
+      "label": "运营应用",
+      "description": "通信、遥感、北斗和财务验证",
+      "node_ids": [
+        "satellite-communication-operation",
+        "remote-sensing-data-service",
+        "beidou-navigation-augmentation",
+        "order-cashflow-application-validation"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "default_status": "candidate",
+    "status_values": [
+      "supported",
+      "weakly_supported",
+      "candidate",
+      "unsupported"
+    ],
+    "upgrade_rule": "商业航天产业链公司升级前，必须能落到公告、年报、半年报、投资者关系、星座项目、在轨验证、批量交付、收入占比、订单、毛利或现金流。只在商业航天、卫星互联网概念中出现，不足以升级。",
+    "labels": [
+      {
+        "status": "supported",
+        "label": "强支持",
+        "meaning": "已有较明确的一手资料支持公司在该节点的产品、交付、运营或财务位置。",
+        "evidence_needed": "年报、半年报、公告、IR、项目中标、在轨验证、批量交付、收入和毛利变化。"
+      },
+      {
+        "status": "weakly_supported",
+        "label": "弱支持",
+        "meaning": "方向和公开资料支持，但还缺收入拆分、客户、订单或规模化交付证据。",
+        "evidence_needed": "继续补产品收入占比、星座客户、交付节奏、订单和回款。"
+      },
+      {
+        "status": "candidate",
+        "label": "待验证",
+        "meaning": "逻辑上相关，暂时不能当作确认受益。",
+        "evidence_needed": "先确认产品是否进入商业航天主链条，以及是否有量产财务贡献。"
+      },
+      {
+        "status": "unsupported",
+        "label": "证据不足",
+        "meaning": "目前只有概念联想或二级市场说法。",
+        "evidence_needed": "需要找到公司披露或可信产业资料，否则降级或移除。"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "orbit-spectrum-policy",
+      "label": "频轨资源 / 政策准入",
+      "layer": "upstream",
+      "group": "policy",
+      "beginner_explanation": "卫星不是想发就发，轨道、频率、牌照、发射场和测控资源都需要规划和协调。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "商业航天的入场券。",
+        "why_matters": "低轨星座数量多、频率资源稀缺，政策和频轨协调会影响建设节奏。",
+        "benefit_logic": "政策支持会先提高产业关注度，再传导到星座建设、发射和设备采购。",
+        "watch": [
+          "国家商业航天政策",
+          "地方产业基金",
+          "星座规划",
+          "频轨申报和协调"
+        ],
+        "common_misread": "把政策支持直接等同于公司收入，实际上还要经过项目、订单和交付。"
+      }
+    },
+    {
+      "id": "constellation-buildout-demand",
+      "label": "低轨星座组网需求",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "低轨卫星要形成连续覆盖，需要很多颗卫星按计划发射、组网和运营。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "整条链的需求牵引。",
+        "why_matters": "星座从试验星走向组网，会把一次性研制需求变成批量制造和持续发射需求。",
+        "benefit_logic": "组网节奏越明确，越会拉动火箭、卫星平台、载荷、T/R、地面站和终端。",
+        "watch": [
+          "发射批次",
+          "在轨卫星数量",
+          "星座建设计划",
+          "组网测试结果"
+        ],
+        "common_misread": "只看规划颗数，不看真实发射、在轨验证和服务开通。"
+      }
+    },
+    {
+      "id": "launch-capacity-cost",
+      "label": "运载火箭 / 发射成本",
+      "layer": "upstream",
+      "group": "launch",
+      "beginner_explanation": "火箭负责把卫星送入轨道，低成本、高可靠、快响应发射能力决定星座建设速度。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "星座建设的运输能力。",
+        "why_matters": "低轨星座需要高频发射，发射成本和发射场能力会影响整体经济性。",
+        "benefit_logic": "发射次数增加会带动火箭、发动机、结构件、测发控和发射场配套。",
+        "watch": [
+          "商业火箭发射成功率",
+          "可复用火箭进展",
+          "商业发射场排期",
+          "单位发射成本"
+        ],
+        "common_misread": "只看火箭新闻热度，不看成功率、成本和可持续订单。"
+      }
+    },
+    {
+      "id": "satellite-platform-manufacturing",
+      "label": "卫星平台 / 批量制造",
+      "layer": "midstream",
+      "group": "satellite",
+      "beginner_explanation": "卫星平台提供结构、供电、姿态控制、热控和星务管理，是载荷工作的基础。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "把卫星从定制品变成批量产品。",
+        "why_matters": "星座建设需要更低成本、更短周期、更稳定质量的卫星生产能力。",
+        "benefit_logic": "批量制造会带动卫星平台、部组件、测试、总装和供应链管理。",
+        "watch": [
+          "批产能力",
+          "交付颗数",
+          "总装测试周期",
+          "成本和良率"
+        ],
+        "common_misread": "把卫星制造等同于高利润，批量低成本交付可能压缩毛利。"
+      }
+    },
+    {
+      "id": "satellite-payload-antenna",
+      "label": "星载载荷 / 相控阵天线",
+      "layer": "midstream",
+      "group": "payload",
+      "beginner_explanation": "载荷决定卫星具体能做什么，通信卫星看转发、波束和天线，遥感卫星看成像和数据处理。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "卫星能力的核心模块。",
+        "why_matters": "同样是卫星，载荷不同，商业价值和供应链完全不同。",
+        "benefit_logic": "低轨通信和遥感星座会拉动相控阵天线、载荷模块、数传、处理和测试设备。",
+        "watch": [
+          "载荷批量交付",
+          "在轨测试",
+          "相控阵天线",
+          "载荷自动化测试"
+        ],
+        "common_misread": "只看卫星平台，不拆载荷和射频链路。"
+      }
+    },
+    {
+      "id": "tr-rf-chip-components",
+      "label": "T/R 组件 / 射频芯片",
+      "layer": "upstream",
+      "group": "components",
+      "beginner_explanation": "T/R 组件和射频芯片负责信号收发、放大、切换和波束控制，是相控阵系统的关键部件。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "通信和遥感载荷的高价值部件。",
+        "why_matters": "低功耗、小型化、高可靠和可批量生产，会直接影响星座成本和性能。",
+        "benefit_logic": "星载和地面相控阵需求增加，会带动 T/R 组件、射频收发芯片、PA、LNA、ADC/DAC 和微系统模组。",
+        "watch": [
+          "星载订单",
+          "批量交付",
+          "毛利率",
+          "客户集中度"
+        ],
+        "common_misread": "看到 T/R 就当确定受益，要确认是星载、地面还是传统雷达需求。"
+      }
+    },
+    {
+      "id": "laser-inter-satellite-link",
+      "label": "星间激光链路",
+      "layer": "upstream",
+      "group": "components",
+      "beginner_explanation": "星间激光链路让卫星之间高速传输数据，减少对地面站的依赖。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "低轨星座组网的中长期增量。",
+        "why_matters": "跨区域通信和全球覆盖需要卫星之间互联，激光链路有利于提高带宽和降低时延。",
+        "benefit_logic": "如果星间链路成为大规模配置，会带动激光通信终端、光学部件、精密跟踪和测试设备。",
+        "watch": [
+          "星间链路配置比例",
+          "在轨验证",
+          "批量采购",
+          "可靠性"
+        ],
+        "common_misread": "把星间激光链路当作短期确定收入，当前很多公司还处于项目验证或小批量阶段。"
+      }
+    },
+    {
+      "id": "ground-station-ttc",
+      "label": "地面站 / 测运控 / 信关站",
+      "layer": "midstream",
+      "group": "ground",
+      "beginner_explanation": "地面系统负责卫星测控、任务管理、数据接收、网络接入和用户流量转发。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "卫星能力落地的接口。",
+        "why_matters": "卫星上天后仍要被控制、监测、接入网络和处理数据。",
+        "benefit_logic": "星座建设会带动地面站、信关站、测运控、数据处理中心和系统集成。",
+        "watch": [
+          "信关站建设",
+          "地面站订单",
+          "测运控资源",
+          "系统验收"
+        ],
+        "common_misread": "忽略地面系统，以为卫星发射成功就能直接商业化。"
+      }
+    },
+    {
+      "id": "satellite-communication-operation",
+      "label": "卫星通信运营",
+      "layer": "downstream",
+      "group": "service",
+      "beginner_explanation": "卫星通信运营商把卫星资源、频轨资源、地面网络和客户服务组合成可销售的通信服务。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "从建设转向服务收入的核心环节。",
+        "why_matters": "只有客户愿意为航空、海洋、应急、偏远地区和行业通信付费，星座才有商业闭环。",
+        "benefit_logic": "运营服务收入增长会验证卫星通信从项目建设走向持续经营。",
+        "watch": [
+          "卫星资源数量",
+          "带宽利用率",
+          "行业客户",
+          "服务收入和毛利"
+        ],
+        "common_misread": "把发射成功当作运营成功，运营还要看客户、资费和利用率。"
+      }
+    },
+    {
+      "id": "terminal-direct-to-device",
+      "label": "终端 / 手机直连卫星",
+      "layer": "downstream",
+      "group": "terminal",
+      "beginner_explanation": "终端是用户连接卫星的入口，包括手持、车载、船载、机载、物联网和手机直连卫星。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "卫星服务规模化的入口。",
+        "why_matters": "终端越便宜、越易用，卫星通信越可能从行业客户走向大众和物联网场景。",
+        "benefit_logic": "手机直连、车载、船载和低空通信需求，会带动终端芯片、天线、模组和整机。",
+        "watch": [
+          "终端出货",
+          "手机直连标准",
+          "车载/船载客户",
+          "模组价格"
+        ],
+        "common_misread": "把终端概念当成已经大规模消费化，短期仍要看标准、资费和真实出货。"
+      }
+    },
+    {
+      "id": "remote-sensing-data-service",
+      "label": "遥感数据 / 空天信息服务",
+      "layer": "downstream",
+      "group": "service",
+      "beginner_explanation": "遥感卫星采集地球观测数据，再通过平台和算法服务自然资源、应急、水利、农业、城市治理等场景。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "商业航天的数据服务方向。",
+        "why_matters": "遥感数据从能看见到能分析、能决策，才有商业价值。",
+        "benefit_logic": "自主卫星数据源、遥感云平台和行业应用结合，可能形成数据服务和项目收入。",
+        "watch": [
+          "在轨遥感卫星",
+          "数据产品挂牌",
+          "行业客户",
+          "回款和减值"
+        ],
+        "common_misread": "只看星座和平台，不看政府客户回款、项目周期和现金流风险。"
+      }
+    },
+    {
+      "id": "beidou-navigation-augmentation",
+      "label": "北斗导航增强",
+      "layer": "downstream",
+      "group": "service",
+      "beginner_explanation": "北斗提供定位、导航、授时和短报文能力，和卫星通信、低空经济、车载、应急等场景结合。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "空天信息的成熟应用底座。",
+        "why_matters": "北斗已经有较成熟产业链，商业航天会进一步推动通导遥一体化。",
+        "benefit_logic": "北斗芯片、终端、短报文、授时和行业解决方案会受益于低空、应急、交通和能源场景。",
+        "watch": [
+          "北斗芯片出货",
+          "行业终端",
+          "短报文应用",
+          "低空和车载场景"
+        ],
+        "common_misread": "把北斗导航和卫星互联网完全混同，它们有交叉但商业模式不同。"
+      }
+    },
+    {
+      "id": "aerospace-electronics-navigation",
+      "label": "航天电子 / 惯导测控",
+      "layer": "upstream",
+      "group": "components",
+      "beginner_explanation": "惯性导航、测控通信、微电子、传感器和有效载荷是航天系统的重要配套。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "航天系统的基础配套能力。",
+        "why_matters": "卫星、火箭和地面系统都需要高可靠电子、导航、测控和传感组件。",
+        "benefit_logic": "商业航天规模化会提升对高可靠航天电子和测控配套的需求。",
+        "watch": [
+          "航天电子订单",
+          "配套比例",
+          "微电子产品",
+          "应收和交付节奏"
+        ],
+        "common_misread": "把传统军工航天配套直接当商业航天增量，要拆商业航天收入占比。"
+      }
+    },
+    {
+      "id": "order-cashflow-application-validation",
+      "label": "订单 / 应用 / 现金流验证",
+      "layer": "validation",
+      "group": "validation",
+      "beginner_explanation": "产业链最终要落到订单、收入、毛利、应收、存货、现金流和客户续费。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "从题材到投资研究的最后一道门。",
+        "why_matters": "商业航天投入重、周期长、客户集中，概念热不代表财务兑现。",
+        "benefit_logic": "有订单、能交付、能确认收入、毛利稳定、回款改善，才说明公司真实受益。",
+        "watch": [
+          "商业航天收入占比",
+          "重大合同",
+          "应收账款",
+          "经营现金流"
+        ],
+        "common_misread": "只看中标和发射，不看收入确认和回款。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "orbit-spectrum-policy",
+      "target": "constellation-buildout-demand",
+      "relation_type": "enables",
+      "label": "政策频轨支撑星座建设",
+      "description": "频轨、发射场、测控和资本支持决定商业星座能否进入规模建设。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "constellation-buildout-demand",
+      "target": "launch-capacity-cost",
+      "relation_type": "drives",
+      "label": "组网拉动发射需求",
+      "description": "低轨星座需要高频次、低成本、高可靠发射。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "constellation-buildout-demand",
+      "target": "satellite-platform-manufacturing",
+      "relation_type": "drives",
+      "label": "星座拉动卫星批产",
+      "description": "组网需求把卫星从项目制推向批量制造。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "satellite-platform-manufacturing",
+      "target": "satellite-payload-antenna",
+      "relation_type": "requires",
+      "label": "卫星平台承载载荷",
+      "description": "通信、遥感和导航能力需要载荷、天线和数据处理模块实现。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "satellite-payload-antenna",
+      "target": "tr-rf-chip-components",
+      "relation_type": "requires",
+      "label": "载荷需要射频链路",
+      "description": "相控阵天线和通信载荷需要 T/R 组件、射频芯片、功放和微系统模组。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "satellite-payload-antenna",
+      "target": "laser-inter-satellite-link",
+      "relation_type": "optional_upgrade",
+      "label": "星间链路提升组网能力",
+      "description": "星间激光链路可以提升低轨星座跨区域高速传输能力。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "satellite-platform-manufacturing",
+      "target": "aerospace-electronics-navigation",
+      "relation_type": "requires",
+      "label": "平台需要航天电子配套",
+      "description": "姿控、惯导、测控、星务和微电子是卫星平台和火箭系统的基础配套。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "satellite-payload-antenna",
+      "target": "ground-station-ttc",
+      "relation_type": "connects_to",
+      "label": "载荷连接地面系统",
+      "description": "地面站、信关站和测运控负责接入、控制、数据转发和网络管理。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "ground-station-ttc",
+      "target": "terminal-direct-to-device",
+      "relation_type": "serves",
+      "label": "地面网络服务用户终端",
+      "description": "信关站和地面网络把卫星能力转给手持、车载、船载、机载和手机终端。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "ground-station-ttc",
+      "target": "satellite-communication-operation",
+      "relation_type": "enables",
+      "label": "地面系统支撑通信运营",
+      "description": "运营商需要卫星资源、地面站网和网络系统协同提供服务。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "satellite-platform-manufacturing",
+      "target": "remote-sensing-data-service",
+      "relation_type": "enables",
+      "label": "遥感卫星形成数据服务",
+      "description": "遥感卫星在轨后，数据源、平台和行业应用共同形成空天信息服务。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "satellite-communication-operation",
+      "target": "order-cashflow-application-validation",
+      "relation_type": "validated_by",
+      "label": "运营要看收入和回款",
+      "description": "卫星通信服务需要客户付费、利用率、收入、毛利和现金流验证。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "remote-sensing-data-service",
+      "target": "order-cashflow-application-validation",
+      "relation_type": "validated_by",
+      "label": "遥感应用要看项目质量",
+      "description": "遥感数据服务最终要看客户、项目验收、回款和减值风险。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "beidou-navigation-augmentation",
+      "target": "terminal-direct-to-device",
+      "relation_type": "integrates_with",
+      "label": "北斗和终端融合",
+      "description": "北斗短报文、导航增强和终端设备可以与卫星通信、低空和车载场景融合。",
+      "evidence_status": "supported"
+    }
+  ],
+  "concept_diagrams": [
+    {
+      "id": "space-network-map",
+      "title": "卫星互联网像一张天上的通信网",
+      "subtitle": "天上有卫星，地上有站，用户有终端",
+      "icon": "satellite",
+      "node_ids": [
+        "satellite-platform-manufacturing",
+        "ground-station-ttc",
+        "terminal-direct-to-device",
+        "satellite-communication-operation"
+      ],
+      "takeaway": "不要只看卫星本体，卫星、地面站、信关站、终端和运营服务一起构成网络。",
+      "parts": [
+        {
+          "label": "空间段",
+          "role": "天上的网络节点",
+          "description": "卫星平台和载荷负责覆盖、转发、成像和数据处理。"
+        },
+        {
+          "label": "地面段",
+          "role": "网络入口和控制中心",
+          "description": "地面站、信关站和测运控负责接入、控制和数据转发。"
+        },
+        {
+          "label": "用户段",
+          "role": "客户使用入口",
+          "description": "手机、车载、船载、机载和物联网终端决定服务能否规模化。"
+        }
+      ]
+    },
+    {
+      "id": "build-to-revenue",
+      "title": "从星座规划到收入",
+      "subtitle": "规划颗数只是起点，收入和现金流才是验证",
+      "icon": "route",
+      "node_ids": [
+        "orbit-spectrum-policy",
+        "constellation-buildout-demand",
+        "launch-capacity-cost",
+        "order-cashflow-application-validation"
+      ],
+      "takeaway": "研究顺序是规划、发射、在轨、组网、开通、客户、收入和回款。",
+      "parts": [
+        {
+          "label": "规划",
+          "role": "确定星座目标",
+          "description": "看频轨、政策、资金和建设主体。"
+        },
+        {
+          "label": "建设",
+          "role": "造星和发射",
+          "description": "看卫星批产、火箭发射、载荷和地面系统。"
+        },
+        {
+          "label": "运营",
+          "role": "卖服务",
+          "description": "看客户付费、带宽利用率、项目验收和回款。"
+        }
+      ]
+    },
+    {
+      "id": "payload-stack",
+      "title": "载荷和射频链路怎么拆",
+      "subtitle": "高价值部件往往藏在信号收发里",
+      "icon": "radio",
+      "node_ids": [
+        "satellite-payload-antenna",
+        "tr-rf-chip-components",
+        "laser-inter-satellite-link",
+        "aerospace-electronics-navigation"
+      ],
+      "takeaway": "通信卫星要看相控阵天线、T/R、射频芯片、功放、基带和测试；遥感卫星要看载荷、数传和处理。",
+      "parts": [
+        {
+          "label": "天线",
+          "role": "收发信号",
+          "description": "相控阵天线影响覆盖、波束控制、体积和功耗。"
+        },
+        {
+          "label": "射频",
+          "role": "放大和处理信号",
+          "description": "T/R、PA、LNA、ADC/DAC 和微系统决定性能和成本。"
+        },
+        {
+          "label": "测试",
+          "role": "保证可靠",
+          "description": "星载产品需要高可靠验证、自动化测试和在轨表现。"
+        }
+      ]
+    },
+    {
+      "id": "research-checklist",
+      "title": "研究时先问四个问题",
+      "subtitle": "先定位，再验证，最后看财务",
+      "icon": "checklist",
+      "node_ids": [
+        "order-cashflow-application-validation",
+        "satellite-communication-operation",
+        "remote-sensing-data-service"
+      ],
+      "takeaway": "公司到底卖火箭、卫星、部件、地面系统、终端还是服务，决定研究方法完全不同。",
+      "parts": [
+        {
+          "label": "在哪一环",
+          "role": "定位角色",
+          "description": "先分清建设期、运营期和应用期。"
+        },
+        {
+          "label": "证据到哪",
+          "role": "确认阶段",
+          "description": "区分研发、样机、在轨测试、批量交付和收入确认。"
+        },
+        {
+          "label": "能否赚钱",
+          "role": "财务验证",
+          "description": "看收入占比、毛利、应收、存货和现金流。"
+        }
+      ]
+    }
+  ],
+  "companies": [
+    {
+      "name": "中国卫星",
+      "ts_code": "600118.SH",
+      "nodes": [
+        "satellite-platform-manufacturing",
+        "satellite-payload-antenna",
+        "remote-sensing-data-service",
+        "aerospace-electronics-navigation",
+        "order-cashflow-application-validation"
+      ],
+      "role": "卫星制造和空间信息应用验证节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "卫星制造龙头",
+      "leader_reason": "2025 半年报披露公司具备小卫星/微小卫星平台型谱、复杂星座系统设计、组批生产和星上电子通信设备等能力，是商业航天卫星制造端最直观的 A 股验证节点之一。",
+      "current_view": "中国卫星适合用来观察卫星平台、部组件、星座系统和地面应用集成。但半年报也提示卫星系统收入确认节点减少、部分商业航天产品交付毛利偏低，所以不能只按商业航天热度给高确定性。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆卫星系统和部组件收入",
+        "跟踪商业航天产品毛利",
+        "确认组批生产和星座项目订单",
+        "观察地面应用系统收入和回款"
+      ],
+      "why_watch": "卫星制造是星座建设期的核心环节，中国卫星能帮助验证商业航天是否从规划走向批量交付。",
+      "evidence_basis": [
+        "2025 半年报披露小卫星/微小卫星平台、复杂星座设计和组批生产能力",
+        "报告披露星上导航接收机、空间太阳电池片、星上电子通信设备等部组件",
+        "报告同时提示商业航天产品交付毛利和收入确认节点压力"
+      ],
+      "verification_focus": [
+        "卫星平台",
+        "星座系统",
+        "部组件",
+        "商业航天毛利"
+      ],
+      "risks": [
+        "卫星系统收入确认节点波动",
+        "低毛利商业航天产品占比上升",
+        "应收和项目交付周期较长"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中国东方红卫星股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-23",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-23/1224557162.PDF",
+          "evidence_grade": "A",
+          "usage": "验证小卫星平台、复杂星座、组批生产、星上电子通信设备和商业航天毛利压力"
+        }
+      ]
+    },
+    {
+      "name": "中国卫通",
+      "ts_code": "601698.SH",
+      "nodes": [
+        "orbit-spectrum-policy",
+        "ground-station-ttc",
+        "satellite-communication-operation",
+        "terminal-direct-to-device",
+        "order-cashflow-application-validation"
+      ],
+      "role": "卫星通信运营龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "运营龙头",
+      "leader_reason": "2025 半年报披露公司拥有通信广播卫星、频率轨道和地面站网资源体系，是拥有自主可控通信广播卫星资源的基础电信运营企业，并运营管理 18 颗商用通信广播卫星。",
+      "current_view": "中国卫通更适合验证卫星通信运营服务，而不是低轨制造弹性。研究重点是高通量卫星互联网、海洋航空应急等应用平台、频轨资源和服务收入质量。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪卫星运营服务收入",
+        "观察高通量卫星互联网客户",
+        "跟踪海洋和航空应用平台",
+        "确认带宽利用率和毛利"
+      ],
+      "why_watch": "运营商代表从建设期走向服务收入的验证环节。",
+      "evidence_basis": [
+        "2025 半年报披露基础电信运营企业定位和 18 颗商用通信广播卫星",
+        "报告披露国内高轨 Ka 高通量卫星互联网和海星通全球网覆盖"
+      ],
+      "verification_focus": [
+        "卫星运营",
+        "高通量卫星互联网",
+        "地面站网",
+        "服务收入"
+      ],
+      "risks": [
+        "低轨卫星互联网竞争改变格局",
+        "带宽利用率和客户拓展不及预期",
+        "资本开支和折旧压力"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中国卫通集团股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-28",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-28/1224590936.PDF",
+          "evidence_grade": "A",
+          "usage": "验证卫星资源、频率轨道、地面站网、18 颗商用通信广播卫星和运营服务"
+        }
+      ]
+    },
+    {
+      "name": "航天电子",
+      "ts_code": "600879.SH",
+      "nodes": [
+        "aerospace-electronics-navigation",
+        "ground-station-ttc",
+        "satellite-payload-antenna",
+        "order-cashflow-application-validation"
+      ],
+      "role": "航天电子和测控通信配套龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "航天电子龙头",
+      "leader_reason": "2025 半年报披露惯性与导航、测控通信与网络信息、微电子、机电组件与传感系统、精导对抗与有效载荷等是公司传统优势专业，并保持较高配套比例。",
+      "current_view": "航天电子适合验证航天电子、惯导、测控通信、微电子和有效载荷配套能力。需要注意它不是纯商业航天公司，商业航天增量要从订单和收入结构里继续拆。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆航天电子信息业务收入",
+        "确认商业航天项目占比",
+        "跟踪微电子和测控通信订单",
+        "观察应收和交付节奏"
+      ],
+      "why_watch": "航天电子是卫星、火箭和地面系统的基础配套，能验证产业建设强度。",
+      "evidence_basis": [
+        "2025 半年报披露惯性导航、测控通信、微电子、传感系统和有效载荷优势专业",
+        "报告披露相关行业领域保持国内领先和较高配套比例"
+      ],
+      "verification_focus": [
+        "测控通信",
+        "惯性导航",
+        "微电子",
+        "有效载荷"
+      ],
+      "risks": [
+        "商业航天收入占比不清晰",
+        "军工订单周期波动",
+        "应收账款和交付周期压力"
+      ],
+      "evidence_refs": [
+        {
+          "title": "航天时代电子技术股份有限公司 2025 年半年度报告",
+          "publisher": "公开公告镜像",
+          "date": "2025-08-28",
+          "url": "https://stockmc.xueqiu.com/202508/600879_20250828_D15V.pdf",
+          "evidence_grade": "A",
+          "usage": "验证惯性导航、测控通信、微电子、传感系统和有效载荷业务"
+        }
+      ]
+    },
+    {
+      "name": "上海瀚讯",
+      "ts_code": "300762.SZ",
+      "nodes": [
+        "satellite-payload-antenna",
+        "ground-station-ttc",
+        "terminal-direct-to-device",
+        "order-cashflow-application-validation"
+      ],
+      "role": "低轨卫星通信分系统设备候选龙头",
+      "tier": "验证节点",
+      "attention_level": "core_candidate",
+      "attention_label": "低轨通信设备",
+      "leader_reason": "2025 半年报披露公司参与低轨卫星星座项目建设，负责通信分系统保障与支撑，研制并供给卫星通信载荷、信关站、卫星通信终端等关键通信设备。",
+      "current_view": "上海瀚讯是商业航天里比较清晰的低轨通信设备映射，覆盖空间段、地面段和用户段关键通信设备。但公司仍有亏损和毛利波动，需要把低轨业务收入、成本和交付节奏拆开。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "确认低轨卫星通信收入占比",
+        "跟踪载荷、信关站和终端交付",
+        "观察毛利率变化",
+        "检查经营现金流和亏损收窄"
+      ],
+      "why_watch": "它能把低轨星座建设具体落到载荷、信关站和终端设备。",
+      "evidence_basis": [
+        "2025 半年报披露参与低轨卫星星座通信分系统建设",
+        "报告披露空间段、地面段、用户段关键通信设备具备批产交付能力并完成多轮在轨测试"
+      ],
+      "verification_focus": [
+        "卫星通信载荷",
+        "信关站",
+        "卫星通信终端",
+        "低轨业务收入"
+      ],
+      "risks": [
+        "低轨业务毛利下降",
+        "公司仍处亏损状态",
+        "项目交付和客户集中度风险"
+      ],
+      "evidence_refs": [
+        {
+          "title": "上海瀚讯信息技术股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-27",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-27/1224580062.PDF",
+          "evidence_grade": "A",
+          "usage": "验证低轨卫星通信分系统、载荷、信关站、终端、批产交付和在轨测试"
+        }
+      ]
+    },
+    {
+      "name": "国博电子",
+      "ts_code": "688375.SH",
+      "nodes": [
+        "tr-rf-chip-components",
+        "satellite-payload-antenna",
+        "terminal-direct-to-device",
+        "order-cashflow-application-validation"
+      ],
+      "role": "T/R 组件和射频集成电路龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "T/R 组件龙头",
+      "leader_reason": "2025 半年报披露公司主要从事有源相控阵 T/R 组件和射频集成电路，产品覆盖芯片、模块、组件；在低轨卫星和商业航天领域开展技术研发和产品开发，多款 T/R 组件产品已开始交付客户。",
+      "current_view": "国博电子适合放在 T/R 组件、射频芯片和相控阵载荷节点。它是部件端龙头之一，研究时要区分传统雷达、移动通信、卫星通信和商业航天订单占比。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆 T/R 组件收入和订单",
+        "确认低轨卫星和商业航天交付规模",
+        "跟踪射频芯片在卫星通信和终端应用",
+        "观察毛利率和客户集中度"
+      ],
+      "why_watch": "T/R 组件和射频芯片直接决定相控阵系统的性能、成本和功耗。",
+      "evidence_basis": [
+        "2025 半年报披露 T/R 组件、射频芯片和低轨卫星商业航天产品交付",
+        "2025 年报摘要披露低轨卫星和商业航天 T/R 组件批量交付成为主要收入来源之一"
+      ],
+      "verification_focus": [
+        "T/R 组件",
+        "射频芯片",
+        "低轨卫星",
+        "商业航天订单"
+      ],
+      "risks": [
+        "传统特种需求占比较高",
+        "客户集中度",
+        "商业航天订单节奏波动"
+      ],
+      "evidence_refs": [
+        {
+          "title": "南京国博电子股份有限公司 2025 年半年度报告",
+          "publisher": "公开公告镜像",
+          "date": "2025-08-29",
+          "url": "https://stockmc.xueqiu.com/202508/688375_20250829_GUQY.pdf",
+          "evidence_grade": "A",
+          "usage": "验证 T/R 组件、射频芯片、低轨卫星和商业航天领域产品交付"
+        },
+        {
+          "title": "国博电子 2025 年年度报告摘要",
+          "publisher": "新浪财经公告镜像",
+          "date": "2026-04-10",
+          "url": "http://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=688375&id=12074042",
+          "evidence_grade": "A",
+          "usage": "补充验证低轨卫星和商业航天 T/R 组件批量交付及射频芯片应用"
+        }
+      ]
+    },
+    {
+      "name": "铖昌科技",
+      "ts_code": "001270.SZ",
+      "nodes": [
+        "tr-rf-chip-components",
+        "satellite-payload-antenna",
+        "order-cashflow-application-validation"
+      ],
+      "role": "相控阵 T/R 芯片高弹性候选",
+      "tier": "弹性候选",
+      "attention_level": "core_candidate",
+      "attention_label": "T/R 芯片弹性",
+      "leader_reason": "公开 IR 资料披露其星载、地面及低轨卫星通信领域订单按计划放量，部分遥感项目进入常态化批量交付；公司主营微波毫米波相控阵 T/R 芯片。",
+      "current_view": "铖昌科技是星载 T/R 芯片和低轨卫星通信链条中的高弹性公司。适合重点跟踪订单、批量交付和财务恢复，但同时要注意 *ST 风险、客户集中和波动。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "核对星载和低轨卫星通信订单",
+        "跟踪批量交付和收入确认",
+        "观察 ST 风险解除进展",
+        "检查客户集中和回款"
+      ],
+      "why_watch": "如果低轨星座进入批量制造，T/R 芯片可能具备较高业绩弹性。",
+      "evidence_basis": [
+        "投资者关系记录披露星载、地面及低轨卫星通信订单放量",
+        "公开报道披露 2025 上半年收入和利润显著增长，产品批量应用于相控阵雷达及卫星通信"
+      ],
+      "verification_focus": [
+        "T/R 芯片",
+        "星载应用",
+        "低轨卫星通信",
+        "订单放量"
+      ],
+      "risks": [
+        "ST 风险和财务波动",
+        "客户集中度",
+        "卫星项目交付不及预期"
+      ],
+      "evidence_refs": [
+        {
+          "title": "浙江铖昌科技股份有限公司投资者关系活动记录",
+          "publisher": "巨潮资讯",
+          "date": "2025-10-25",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-10-25/1224737947.PDF",
+          "evidence_grade": "A",
+          "usage": "验证星载、地面和低轨卫星通信订单放量及 T/R 芯片应用"
+        },
+        {
+          "title": "铖昌科技上半年营收净利大增",
+          "publisher": "证券时报",
+          "date": "2025-08-26",
+          "url": "https://stcn.com/article/detail/3323179.html",
+          "evidence_grade": "B",
+          "usage": "补充验证 2025 上半年收入利润和相控阵 T/R 芯片应用线索"
+        }
+      ]
+    },
+    {
+      "name": "臻镭科技",
+      "ts_code": "688270.SH",
+      "nodes": [
+        "tr-rf-chip-components",
+        "satellite-payload-antenna",
+        "terminal-direct-to-device",
+        "order-cashflow-application-validation"
+      ],
+      "role": "射频芯片和微系统模组候选",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "星载射频模组",
+      "leader_reason": "2025 半年报披露公司产品包括射频收发芯片、高速 ADC/DAC、电源管理芯片、终端射频前端芯片、微系统及模组，星载宽带载荷射频收发模块在轨运行情况良好。",
+      "current_view": "臻镭科技在射频芯片、微系统和星载模块上有较清晰披露，适合放在 T/R/RF 部件节点。重点看星载业务是否从小批量实验转向持续批量交付，以及卫星互联网订单占比。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆射频芯片和微系统收入",
+        "确认星载产品批量交付节奏",
+        "跟踪卫星互联网客户和订单",
+        "观察高毛利能否维持"
+      ],
+      "why_watch": "卫星小型化、轻量化和批量化会提高对高集成射频芯片和微系统模组的需求。",
+      "evidence_basis": [
+        "2025 半年报披露星载宽带载荷射频模块在轨运行和客户覆盖",
+        "半年报披露卫星批量发射和组网应用带动部分产品从小批量实验星阶段转入持续批量交付"
+      ],
+      "verification_focus": [
+        "射频收发芯片",
+        "ADC/DAC",
+        "微系统模组",
+        "星载模块"
+      ],
+      "risks": [
+        "特种业务占比较高",
+        "卫星互联网收入占比不清晰",
+        "研发投入和客户集中风险"
+      ],
+      "evidence_refs": [
+        {
+          "title": "浙江臻镭科技股份有限公司 2025 年半年度报告",
+          "publisher": "新浪财经公告镜像",
+          "date": "2025-08-13",
+          "url": "http://file.finance.sina.com.cn/211.154.219.97:9494/MRGG/CNSESH_STOCK/2025/2025-8/2025-08-13/11294210.PDF",
+          "evidence_grade": "A",
+          "usage": "验证射频芯片、微系统模组、星载宽带载荷模块和持续批量交付线索"
+        }
+      ]
+    },
+    {
+      "name": "海格通信",
+      "ts_code": "002465.SZ",
+      "nodes": [
+        "beidou-navigation-augmentation",
+        "terminal-direct-to-device",
+        "ground-station-ttc",
+        "satellite-communication-operation"
+      ],
+      "role": "北斗卫星通信终端和系统候选",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "通导终端",
+      "leader_reason": "2025 年报披露公司在卫星互联网领域已实现包括芯片、终端、信关站和系统运营的全产业链布局，并参与天通卫星通信系统与国家卫星互联网重大工程。",
+      "current_view": "海格通信适合放在北斗、天通、卫星通信终端和信关站节点。它的优势是通信和北斗基础较强，但 2025 半年报也显示受行业客户调整影响收入下滑，应收规模较高，需要重点看交付和回款。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆北斗导航和卫星通信收入",
+        "跟踪卫星互联网重大工程交付",
+        "观察应收账款和经营现金流",
+        "确认中国移动协同和卫星物联产品进展"
+      ],
+      "why_watch": "通导遥一体化、天通卫星通信和北斗终端是商业航天应用层的重要入口。",
+      "evidence_basis": [
+        "2025 半年报披露持续开展卫星互联网、北斗等新兴领域研发",
+        "2025 年报披露芯片、终端、信关站和系统运营布局，以及中国移动卫星物联合作"
+      ],
+      "verification_focus": [
+        "北斗终端",
+        "卫星通信终端",
+        "信关站",
+        "系统运营"
+      ],
+      "risks": [
+        "行业客户调整导致交付延迟",
+        "应收账款较高",
+        "卫星互联网业务收入占比需继续拆分"
+      ],
+      "evidence_refs": [
+        {
+          "title": "海格通信 2025 年半年度报告",
+          "publisher": "新浪财经公告镜像",
+          "date": "2025-08-09",
+          "url": "https://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=002465&id=11289772",
+          "evidence_grade": "A",
+          "usage": "验证卫星互联网、北斗研发投入和 2025 上半年经营压力"
+        },
+        {
+          "title": "海格通信 2025 年年度报告",
+          "publisher": "新浪财经公告镜像",
+          "date": "2026-03-28",
+          "url": "https://money.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=002465&id=12030570",
+          "evidence_grade": "A",
+          "usage": "验证芯片、终端、信关站、系统运营布局及中国移动卫星物联合作"
+        }
+      ]
+    },
+    {
+      "name": "华力创通",
+      "ts_code": "300045.SZ",
+      "nodes": [
+        "beidou-navigation-augmentation",
+        "terminal-direct-to-device",
+        "tr-rf-chip-components",
+        "order-cashflow-application-validation"
+      ],
+      "role": "卫星导航通信芯片和终端候选",
+      "tier": "弹性候选",
+      "attention_level": "watch",
+      "attention_label": "通导芯片终端",
+      "leader_reason": "2025 半年报披露公司较早深耕卫星导航与卫星通信融合应用技术，聚焦卫星导航、卫星通信等核心场景的芯片研制，并参与北斗导航、天通卫星通信等重点专项任务。",
+      "current_view": "华力创通更适合做北斗、天通和卫星通信导航基带芯片的候选映射。它有方向证据，但商业航天链条里的收入弹性和客户订单仍需继续验证。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "确认卫星通信导航芯片收入",
+        "跟踪天通和北斗项目交付",
+        "观察低轨星座相关订单",
+        "核对应收和利润质量"
+      ],
+      "why_watch": "如果手机直连、车载、低空和应急通信推动终端放量，通导芯片和终端能力会更重要。",
+      "evidence_basis": [
+        "2025 半年报披露卫星导航和卫星通信融合应用技术、芯片研制和重点专项任务",
+        "报告披露北斗机载终端及地面数据系统研发及产业化项目结项"
+      ],
+      "verification_focus": [
+        "卫星通信基带芯片",
+        "北斗终端",
+        "天通卫星通信",
+        "项目收入"
+      ],
+      "risks": [
+        "商业航天收入占比不清晰",
+        "终端放量节奏不确定",
+        "盈利能力和回款需要验证"
+      ],
+      "evidence_refs": [
+        {
+          "title": "北京华力创通科技股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-26",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-26/1224566404.PDF",
+          "evidence_grade": "A",
+          "usage": "验证卫星导航通信芯片、北斗、天通卫星通信和终端项目"
+        }
+      ]
+    },
+    {
+      "name": "航天智装",
+      "ts_code": "300455.SZ",
+      "nodes": [
+        "satellite-payload-antenna",
+        "aerospace-electronics-navigation",
+        "ground-station-ttc",
+        "order-cashflow-application-validation"
+      ],
+      "role": "智能测试仿真、微系统和控制部组件候选",
+      "tier": "弹性候选",
+      "attention_level": "watch",
+      "attention_label": "商业航天部组件",
+      "leader_reason": "投资者互动信息显示公司智能测试仿真系统、微系统和控制部组件可应用于商业航天领域，2025 年上半年商业航天业务确认收入约占当期营业收入 10%左右。",
+      "current_view": "航天智装能补充商业航天测试仿真、微系统和控制部组件这类容易被忽略的环节。但其 2025 年度经营业绩存在亏损风险，且业务规模和持续性仍要继续验证。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "确认商业航天收入占比和持续性",
+        "跟踪智能测试仿真系统订单",
+        "验证微系统和控制部组件客户",
+        "观察亏损和应收压力"
+      ],
+      "why_watch": "商业航天批量制造不只需要卫星和火箭，也需要测试、仿真和控制类配套。",
+      "evidence_basis": [
+        "2025 半年报披露公司从事宇航产品、卫星通信及测控测试设备等业务",
+        "互动平台披露商业航天业务收入占 2025 上半年营业收入约 10%"
+      ],
+      "verification_focus": [
+        "测试仿真系统",
+        "微系统",
+        "控制部组件",
+        "商业航天收入"
+      ],
+      "risks": [
+        "经营亏损风险",
+        "商业航天收入持续性不确定",
+        "二级市场情绪过热"
+      ],
+      "evidence_refs": [
+        {
+          "title": "航天智装 2025 年半年度报告",
+          "publisher": "新浪财经公告镜像",
+          "date": "2025-08-23",
+          "url": "http://vip.stock.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?stockid=300455&id=11342087",
+          "evidence_grade": "A",
+          "usage": "验证宇航产品、卫星通信及测控测试设备等基础业务"
+        },
+        {
+          "title": "航天智装投资者互动问答",
+          "publisher": "证券时报行情互动信息",
+          "date": "2026-03-26",
+          "url": "https://stcn.com/quotes/index/sz300455.html",
+          "evidence_grade": "B",
+          "usage": "补充商业航天应用产品和 2025 上半年收入占比线索"
+        }
+      ]
+    },
+    {
+      "name": "航天宏图",
+      "ts_code": "688066.SH",
+      "nodes": [
+        "remote-sensing-data-service",
+        "ground-station-ttc",
+        "order-cashflow-application-validation"
+      ],
+      "role": "遥感数据和空天信息服务候选",
+      "tier": "应用候选",
+      "attention_level": "watch",
+      "attention_label": "遥感数据服务",
+      "leader_reason": "2025 半年报披露公司围绕空间基础设施规划与建设、PIE+ 行业和云服务产品线发展，依托自主遥感数据源、PIE-Engine 和行业应用形成空天信息服务能力。",
+      "current_view": "航天宏图适合用来讲商业航天的应用服务层：遥感数据、行业平台、数据要素和政府/行业客户。它也适合反面教学：项目型业务回款、暂停军队采购资格、减值和亏损会显著影响财务质量。",
+      "evidence_status": "weakly_supported",
+      "next_checks": [
+        "确认女娲星座在轨和数据服务收入",
+        "跟踪数据产品成交和客户复购",
+        "观察军队采购资格影响",
+        "检查回款、减值和现金流"
+      ],
+      "why_watch": "商业航天最终要从天上的卫星转成地上的数据服务，遥感是最典型应用之一。",
+      "evidence_basis": [
+        "2025 半年报披露遥感应用、卫星互联网工程、民用空间基础设施和 PIE-Engine 云平台",
+        "公开资料提示公司存在亏损、暂停军队采购资格和减值压力"
+      ],
+      "verification_focus": [
+        "遥感数据服务",
+        "PIE-Engine",
+        "行业应用",
+        "回款和减值"
+      ],
+      "risks": [
+        "政府和特种客户回款周期长",
+        "暂停军队采购资格影响",
+        "亏损和资产减值压力"
+      ],
+      "evidence_refs": [
+        {
+          "title": "航天宏图信息技术股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-29",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-29/1224606230.PDF",
+          "evidence_grade": "A",
+          "usage": "验证遥感应用、卫星互联网工程、民用空间基础设施和 PIE-Engine 云服务"
+        },
+        {
+          "title": "商业遥感政策密集，航天宏图等公司聚焦新赛道",
+          "publisher": "公开媒体",
+          "date": "2026-02-10",
+          "url": "https://static.weeklyonstock.com/26/0210/qdy172424.html",
+          "evidence_grade": "C",
+          "usage": "补充遥感数据闭环和财务风险线索，不能单独作为强结论"
+        }
+      ]
+    },
+    {
+      "name": "航天环宇",
+      "ts_code": "688523.SH",
+      "nodes": [
+        "ground-station-ttc",
+        "terminal-direct-to-device",
+        "satellite-payload-antenna",
+        "order-cashflow-application-validation"
+      ],
+      "role": "卫星通信天线和测控测试设备候选",
+      "tier": "部件候选",
+      "attention_level": "watch",
+      "attention_label": "天伺馈和测控",
+      "leader_reason": "2025 半年报披露公司以天伺馈分系统级产品为主线，形成卫星通信天线、航天测运控天线和特种测试设备三类产品，并完成商业低轨卫星互联网测控与馈电天线、车载卫通天线等产品。",
+      "current_view": "航天环宇适合补充地面天线、测控、馈电和卫星通信终端天线环节。它不是最核心主线公司，但链条定位清晰，适合做部件和地面段候选。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "确认低轨卫星测控与馈电天线订单",
+        "跟踪卫星通信天线收入占比",
+        "验证主要客户和交付节奏",
+        "观察毛利和应收"
+      ],
+      "why_watch": "星座建设需要测控、馈电和终端天线，地面段不应该被忽略。",
+      "evidence_basis": [
+        "2025 半年报披露卫星通信天线、航天测运控天线和特种测试设备",
+        "报告披露商业低轨卫星互联网测控与馈电天线和车载卫通天线交付"
+      ],
+      "verification_focus": [
+        "卫星通信天线",
+        "测控天线",
+        "馈电天线",
+        "车载卫通天线"
+      ],
+      "risks": [
+        "订单项目制和客户集中",
+        "规模较小",
+        "商业低轨收入持续性需验证"
+      ],
+      "evidence_refs": [
+        {
+          "title": "湖南航天环宇通信科技股份有限公司 2025 年半年度报告",
+          "publisher": "腾讯财经公告镜像",
+          "date": "2025-08-15",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/15/1224487074.PDF",
+          "evidence_grade": "A",
+          "usage": "验证卫星通信天线、测控天线、特种测试设备和商业低轨馈电天线"
+        }
+      ]
+    }
+  ],
+  "catalysts": [
+    {
+      "type": "policy",
+      "title": "国家商业航天高质量安全发展行动计划",
+      "description": "明确支持商业运载火箭、低轨通信、导航增强、高分遥感、商业测控、应用系统和国家商业航天发展基金。",
+      "watch_nodes": [
+        "orbit-spectrum-policy",
+        "launch-capacity-cost",
+        "constellation-buildout-demand"
+      ]
+    },
+    {
+      "type": "buildout",
+      "title": "低轨星座批量发射和组网",
+      "description": "发射批次、在轨数量和组网测试会直接影响卫星平台、载荷、T/R、地面站和终端需求。",
+      "watch_nodes": [
+        "constellation-buildout-demand",
+        "satellite-platform-manufacturing",
+        "tr-rf-chip-components",
+        "ground-station-ttc"
+      ]
+    },
+    {
+      "type": "application",
+      "title": "手机直连、车载、航空、海洋和应急通信",
+      "description": "终端和运营服务能否打开场景，是卫星互联网从建设期转向运营期的关键。",
+      "watch_nodes": [
+        "terminal-direct-to-device",
+        "satellite-communication-operation",
+        "beidou-navigation-augmentation"
+      ]
+    },
+    {
+      "type": "financial",
+      "title": "订单、收入占比和回款验证",
+      "description": "商业航天概念公司很多，最终要用订单、收入、毛利、应收和现金流筛选真实受益。",
+      "watch_nodes": [
+        "order-cashflow-application-validation"
+      ]
+    }
+  ],
+  "financial_translations": [
+    {
+      "question": "星座建设怎么变成公司收入？",
+      "answer": "建设期通常先表现为发射、卫星平台、载荷、天线、地面站、测控系统和终端订单，再随交付验收确认收入。"
+    },
+    {
+      "question": "为什么发射成功不等于财务兑现？",
+      "answer": "发射只是项目节点。对制造和部件公司，要看是否批量交付和收入确认；对运营和应用公司，要看客户付费、服务收入和回款。"
+    },
+    {
+      "question": "商业航天公司最该看哪些财务科目？",
+      "answer": "看商业航天收入占比、合同负债、存货、应收账款、毛利率、经营现金流、减值计提和重大合同履行情况。"
+    },
+    {
+      "question": "为什么部件公司可能比整星公司更有弹性？",
+      "answer": "低轨星座批量化后，T/R、射频芯片、天线和微系统如果形成重复订单，可能比低毛利总装更有利润弹性，但也更依赖客户和产品验证。"
+    }
+  ],
+  "common_misreads": [
+    {
+      "title": "把商业航天等同于火箭",
+      "explanation": "火箭很重要，但卫星平台、载荷、地面站、终端、运营和应用服务同样关键。"
+    },
+    {
+      "title": "把规划颗数等同于订单",
+      "explanation": "星座规划要经过频轨、资金、发射、在轨测试和采购合同，不能直接映射到公司收入。"
+    },
+    {
+      "title": "把所有航天央企都当商业航天弹性",
+      "explanation": "很多公司传统业务占比高，商业航天收入占比、订单和毛利必须拆开看。"
+    },
+    {
+      "title": "忽略地面段和终端",
+      "explanation": "卫星能力要商业化，必须通过地面站、信关站、测运控、终端和运营服务触达用户。"
+    },
+    {
+      "title": "只看题材不看现金流",
+      "explanation": "商业航天投入大、周期长、客户集中，项目延期、应收、存货和减值会明显影响投资质量。"
+    }
+  ],
+  "tracking_metrics": [
+    {
+      "name": "低轨星座发射批次和在轨数量",
+      "why": "验证星座建设是否从规划进入真实组网。",
+      "sources": [
+        "发射公告",
+        "国家航天局",
+        "星座运营主体公告",
+        "权威媒体"
+      ]
+    },
+    {
+      "name": "商业火箭发射成功率和排期",
+      "why": "影响卫星批量入轨和发射成本。",
+      "sources": [
+        "发射任务公告",
+        "商业发射场信息",
+        "火箭公司披露"
+      ]
+    },
+    {
+      "name": "卫星平台、载荷、T/R、射频芯片订单",
+      "why": "直接验证制造和部件公司是否受益。",
+      "sources": [
+        "公司公告",
+        "年报",
+        "半年报",
+        "投资者关系记录"
+      ]
+    },
+    {
+      "name": "地面站、信关站、终端建设进度",
+      "why": "验证卫星能力能否变成网络服务。",
+      "sources": [
+        "项目中标",
+        "公司公告",
+        "运营商资料"
+      ]
+    },
+    {
+      "name": "卫星通信和遥感应用收入",
+      "why": "判断产业是否从建设期进入运营和应用兑现期。",
+      "sources": [
+        "年报",
+        "半年报",
+        "分部收入",
+        "客户合同"
+      ]
+    },
+    {
+      "name": "应收、存货、减值和经营现金流",
+      "why": "商业航天项目周期长，财务质量是反证项。",
+      "sources": [
+        "财报",
+        "审计报告",
+        "业绩预告",
+        "投资者问答"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "国家航天局推进商业航天高质量安全发展行动计划（2025-2027年）",
+      "publisher": "国家航天局",
+      "date": "2025-11-10",
+      "url": "https://www.cnsa.gov.cn/n6758823/n6758839/c10719382/content.html",
+      "usage": "政策框架：商业火箭、低轨通信、导航增强、高分遥感、测控和应用系统"
+    },
+    {
+      "title": "北京市加快商业航天创新发展行动方案（2024-2028年）",
+      "publisher": "北京市人民政府",
+      "date": "2024-01-24",
+      "url": "https://www.beijing.gov.cn/zhengce/gfxwj/202401/t20240124_3544601.html",
+      "usage": "补充火箭试验、卫星生产、终端、导航增强和大规模星座运营政策线索"
+    },
+    {
+      "title": "上海市促进商业航天发展打造空间信息产业高地行动计划",
+      "publisher": "上海市人民政府",
+      "date": "2023-11-24",
+      "url": "https://www.shanghai.gov.cn/202322bgtwj/20231124/1630b182a5b441e9b6cb29b317965e6d.html",
+      "usage": "补充低成本卫星批产、地面站、终端、相控阵天线、星间激光和手机直连等节点"
+    },
+    {
+      "title": "太空新基建：中国商业航天提速",
+      "publisher": "国家航天局",
+      "date": "2024-11-28",
+      "url": "https://www.cnsa.gov.cn/n6758823/n6758844/n10663475/n10663416/c10666420/content.html",
+      "usage": "解释商业航天作为太空新基建的产业背景"
+    },
+    {
+      "title": "卫星互联网产业链政策和环节介绍",
+      "publisher": "深圳市政务公开平台",
+      "date": "2025-09-04",
+      "url": "https://www.szzg.gov.cn/2025/xwzx/qwfb/202509/t20250904_5073443.htm",
+      "usage": "辅助说明卫星制造、发射、地面设备和运营等环节"
+    }
+  ]
+}

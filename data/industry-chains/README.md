@@ -39,6 +39,16 @@ data/industry-chains/
     low-altitude-economy.json
     innovative-drugs.md
     innovative-drugs.json
+    ai-optical-interconnect.md
+    ai-optical-interconnect.json
+    new-power-system-grid.md
+    new-power-system-grid.json
+    domestic-ai-chip-semiconductor.md
+    domestic-ai-chip-semiconductor.json
+    commercial-space-satellite-internet.md
+    commercial-space-satellite-internet.json
+    controlled-fusion-nuclear-equipment.md
+    controlled-fusion-nuclear-equipment.json
   templates/
     chain-page-template.md
 ```

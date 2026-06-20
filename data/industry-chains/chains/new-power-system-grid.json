@@ -1,0 +1,1568 @@
+{
+  "version": 1,
+  "chain_id": "new-power-system-grid",
+  "title": "新型电力系统 / 特高压 / AIDC 供配电",
+  "category": "电力设备 / 智能电网与数据中心电源",
+  "status": "draft",
+  "updated_at": "2026-06-20",
+  "summary": "新型电力系统产业链解决的是电从哪里来、怎么远距离送、如何稳定接入新能源、怎样让数据中心不断电的问题。学习重点不是把所有电力设备公司混在一起，而是理解用电增长、新能源消纳、主网特高压、配网智能化、储能调节和 AIDC 供配电如何逐层传导到设备订单、交付、毛利和现金流。",
+  "quick_read": {
+    "headline": "AI 最后会落到电，电力设备是算力和新能源共同指向的基础设施",
+    "summary": "算力中心、新能源大基地、电动车和工业电气化都会提高电力系统压力。电网要解决三件事：把远方的电送过来，保证城市和数据中心不断电，把风光这类波动电源稳定接进系统。对应到产业链，就是特高压、变压器、GIS/开关、换流阀与控保、调度自动化、配网、储能、UPS/HVDC/SST 和数据中心供配电设备。",
+    "logic_chain": [
+      "AI 数据中心和终端电气化提高用电负荷，对供电连续性要求更高",
+      "风光新能源大基地远离负荷中心，需要更强跨区输电能力",
+      "主网侧用特高压、变压器、开关、换流阀和控保系统解决远距离大容量输电",
+      "配网侧用调度自动化、配网智能化、微电网和新型储能解决末端可靠性",
+      "数据中心侧用 UPS、HVDC、SST、电源模块和干式变压器提升供电效率和可靠性",
+      "最终要看两网投资、招标中标、海外订单、交付周期、毛利率、应收和现金流"
+    ],
+    "takeaways": [
+      "特高压解决大范围送电，配网智能化解决最后一公里可靠性，AIDC 供配电解决高密度算力不断电。",
+      "电力设备公司不能只看概念，要看它具体是一次设备、二次设备、配网、储能还是数据中心电源。",
+      "这一链条的财务验证通常先看招标/订单，再看交付确认收入，最后看回款和毛利。"
+    ]
+  },
+  "learning_steps": [
+    {
+      "id": "why-now",
+      "title": "先看负荷",
+      "subtitle": "为什么电网突然被重新定价",
+      "question": "AI 数据中心为什么会带动电力设备？",
+      "answer": "AI 数据中心不是只买 GPU，还要有稳定、连续、高功率密度的供电系统。算力越密集，对电网容量、变电设备、备用电源、UPS/HVDC 和配电可靠性的要求越高。",
+      "node_ids": [
+        "ai-and-electrification-load",
+        "grid-capacity-security"
+      ]
+    },
+    {
+      "id": "main-grid",
+      "title": "再看主网",
+      "subtitle": "特高压把远方的电送到负荷中心",
+      "question": "特高压为什么是主线之一？",
+      "answer": "风光大基地和水电基地通常离用电中心很远，普通线路送不动或损耗太高。特高压就是电网的主动脉，配套会带动换流变压器、GIS、高压开关、换流阀和直流控制保护。",
+      "node_ids": [
+        "renewable-base-grid-demand",
+        "uhv-transmission",
+        "transformer-reactor",
+        "switchgear-gis",
+        "converter-valve-control-protection"
+      ]
+    },
+    {
+      "id": "smart-grid",
+      "title": "进入系统",
+      "subtitle": "电网不是只靠硬设备，还要靠调度和控制",
+      "question": "为什么二次设备和电网自动化重要？",
+      "answer": "新能源并网后，电网波动更大，单纯铺设备不够。调度自动化、继电保护、稳定控制、配网自动化和电力市场系统相当于电网的大脑和神经系统。",
+      "node_ids": [
+        "grid-automation-dispatch",
+        "distribution-grid-microgrid",
+        "energy-storage-grid-forming"
+      ]
+    },
+    {
+      "id": "aidc-power",
+      "title": "拆开数据中心供电",
+      "subtitle": "UPS、HVDC、SST 解决的是不断电和效率",
+      "question": "AIDC 供配电和普通机房电源有什么区别？",
+      "answer": "AI 机柜功率密度更高，供电链路要减少损耗、提升可靠性和模块化交付能力。UPS、HVDC、SST、电源模块、干式变压器和电能质量治理，都是围绕高密度算力的供电效率和稳定性展开。",
+      "node_ids": [
+        "data-center-power-chain",
+        "hvdc-sst-power-architecture",
+        "power-quality-ups"
+      ]
+    },
+    {
+      "id": "financial-check",
+      "title": "最后看兑现",
+      "subtitle": "订单不等于利润，交付和回款才是验证",
+      "question": "怎么判断公司是真受益还是只蹭电力概念？",
+      "answer": "先看公司处在哪个环节，再看是否有招标中标、海外订单、数据中心客户、交付进度和收入占比。电力设备通常有交付周期，订单高增后还要看毛利率、应收账款、存货和经营现金流。",
+      "node_ids": [
+        "equipment-export-cycle",
+        "tender-order-cashflow-validation",
+        "commodity-delivery-risk"
+      ]
+    }
+  ],
+  "flow_columns": [
+    {
+      "key": "demand",
+      "label": "需求牵引",
+      "description": "AI、工业和新能源提高电力系统压力",
+      "node_ids": [
+        "ai-and-electrification-load",
+        "renewable-base-grid-demand"
+      ]
+    },
+    {
+      "key": "constraint",
+      "label": "系统约束",
+      "description": "容量、可靠性和稳定性成为约束",
+      "node_ids": [
+        "grid-capacity-security"
+      ]
+    },
+    {
+      "key": "main_grid",
+      "label": "主网设备",
+      "description": "特高压和核心一次设备",
+      "node_ids": [
+        "uhv-transmission",
+        "transformer-reactor",
+        "switchgear-gis",
+        "converter-valve-control-protection"
+      ]
+    },
+    {
+      "key": "digital_grid",
+      "label": "智能电网",
+      "description": "调度、继保、配网和微电网",
+      "node_ids": [
+        "grid-automation-dispatch",
+        "distribution-grid-microgrid"
+      ]
+    },
+    {
+      "key": "flexibility",
+      "label": "调节能力",
+      "description": "储能和构网型设备提升稳定性",
+      "node_ids": [
+        "energy-storage-grid-forming"
+      ]
+    },
+    {
+      "key": "aidc_power",
+      "label": "AIDC 供配电",
+      "description": "高密度算力需要更高效供电",
+      "node_ids": [
+        "data-center-power-chain",
+        "hvdc-sst-power-architecture",
+        "power-quality-ups"
+      ]
+    },
+    {
+      "key": "validation",
+      "label": "财务验证",
+      "description": "订单、出海、交付和现金流",
+      "node_ids": [
+        "equipment-export-cycle",
+        "tender-order-cashflow-validation",
+        "commodity-delivery-risk"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "default_status": "candidate",
+    "status_values": [
+      "supported",
+      "weakly_supported",
+      "candidate",
+      "unsupported"
+    ],
+    "upgrade_rule": "电力设备公司升级前，必须能落到国家电网/南方电网投资规划、公司年报、半年报、公告、招标中标、投资者关系、数据中心客户、收入占比、订单或交付证据。仅出现在电力设备概念、AI 电力焦虑、社媒名单或研报推荐中，不足以升级为强支持。",
+    "labels": [
+      {
+        "status": "supported",
+        "label": "强支持",
+        "meaning": "已有较明确的一手或高可信证据支持节点或公司角色。",
+        "evidence_needed": "官方规划、年报、半年报、公告、IR、招标中标、客户和收入披露。"
+      },
+      {
+        "status": "weakly_supported",
+        "label": "弱支持",
+        "meaning": "产业逻辑和公开资料支持方向，但还缺收入占比、订单拆分或客户验证。",
+        "evidence_needed": "继续补具体产品、客户、订单、收入占比、交付和毛利数据。"
+      },
+      {
+        "status": "candidate",
+        "label": "待验证",
+        "meaning": "逻辑上相关，暂时不能当成确认受益。",
+        "evidence_needed": "先确认产品是否进入电网/AIDC 供配电链条，是否有量产和财务贡献。"
+      },
+      {
+        "status": "unsupported",
+        "label": "证据不足",
+        "meaning": "目前只有概念联想，不能作为产业链映射结论。",
+        "evidence_needed": "需要找到可追溯披露，否则降级或移除。"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "ai-and-electrification-load",
+      "label": "AI / 工业电气化负荷",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "数据中心、工业用电、电动车和空调负荷都会推高电力需求。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是电力设备需求的需求端起点。",
+        "why_matters": "没有新增负荷，电网扩容和数据中心供配电升级就缺少根因。",
+        "benefit_logic": "负荷增加会带动变电、配电、备用电源和供电可靠性投资。",
+        "watch": [
+          "AI 数据中心建设",
+          "全社会用电量",
+          "数据中心机柜功率",
+          "工业和电动车用电"
+        ],
+        "common_misread": "把电力设备只理解成传统基建，忽略 AI 数据中心对连续供电的要求。"
+      }
+    },
+    {
+      "id": "renewable-base-grid-demand",
+      "label": "新能源大基地外送",
+      "layer": "downstream",
+      "group": "demand",
+      "beginner_explanation": "风光基地常在西部、沙漠或水电基地，电要送到东中部负荷中心。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是特高压和主网建设的重要需求。",
+        "why_matters": "新能源发出来但送不出去，就会出现消纳压力。",
+        "benefit_logic": "跨区输电能力提升会拉动特高压直流、换流站和主网设备。",
+        "watch": [
+          "沙戈荒基地",
+          "西电东送",
+          "新能源装机",
+          "特高压核准和开工"
+        ],
+        "common_misread": "只看新能源装机，不看电网送出能力。"
+      }
+    },
+    {
+      "id": "grid-capacity-security",
+      "label": "电网容量和安全稳定",
+      "layer": "midstream",
+      "group": "constraint",
+      "beginner_explanation": "电网要同时保证容量够、波动可控、故障不扩散。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "这是电力设备和智能电网共同解决的系统约束。",
+        "why_matters": "电力系统不是简单多发电，频率、电压、潮流和保护都要稳定。",
+        "benefit_logic": "稳定性要求提高，会推动一次设备、二次控制、储能和配网升级。",
+        "watch": [
+          "电网事故和保供要求",
+          "新能源并网比例",
+          "调峰调频需求",
+          "电网投资结构"
+        ],
+        "common_misread": "把电网扩容理解成只买电缆和变压器。"
+      }
+    },
+    {
+      "id": "uhv-transmission",
+      "label": "特高压输电通道",
+      "layer": "midstream",
+      "group": "main_grid",
+      "beginner_explanation": "特高压是远距离、大容量输电的主干通道。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "电网主动脉，连接能源基地和负荷中心。",
+        "why_matters": "特高压项目会集中拉动换流站、变压器、开关、换流阀和控保系统。",
+        "benefit_logic": "核准、招标、开工和交付节奏会直接影响设备公司订单和收入。",
+        "watch": [
+          "国家电网特高压规划",
+          "项目核准",
+          "国网招标",
+          "设备交付"
+        ],
+        "common_misread": "只看特高压概念，不区分交流、直流和具体设备。"
+      }
+    },
+    {
+      "id": "transformer-reactor",
+      "label": "变压器 / 电抗器",
+      "layer": "upstream",
+      "group": "equipment",
+      "beginner_explanation": "变压器负责升降电压，电抗器帮助稳定系统，是主网和数据中心都需要的核心设备。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "电力设备里的高价值核心品类。",
+        "why_matters": "特高压、海外电网更新、数据中心供配电都会用到不同类型的变压器。",
+        "benefit_logic": "高电压等级、换流变、干式变压器和海外订单会改善产品结构。",
+        "watch": [
+          "换流变压器订单",
+          "干式变压器数据中心订单",
+          "海外变压器需求",
+          "铜铝硅钢价格"
+        ],
+        "common_misread": "把所有变压器公司都等同，高压换流变和普通配变价值量不同。"
+      }
+    },
+    {
+      "id": "switchgear-gis",
+      "label": "GIS / 高压开关",
+      "layer": "upstream",
+      "group": "equipment",
+      "beginner_explanation": "开关设备负责电力系统的接通、断开和保护，GIS 是高压和特高压变电站的重要设备。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "变电站和换流站里的关键一次设备。",
+        "why_matters": "可靠性直接影响主网安全，特高压项目会带来集中招标。",
+        "benefit_logic": "项目核准和国网集招会带动高压开关和 GIS 订单。",
+        "watch": [
+          "特高压 GIS 招标",
+          "高压开关订单",
+          "交付周期",
+          "海外市场"
+        ],
+        "common_misread": "只看开关二字，不看电压等级和应用场景。"
+      }
+    },
+    {
+      "id": "converter-valve-control-protection",
+      "label": "换流阀 / 直流控保",
+      "layer": "midstream",
+      "group": "main_grid",
+      "beginner_explanation": "特高压直流工程需要换流阀完成交直流转换，控保系统保证运行安全。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "直流特高压里的高壁垒设备和控制系统。",
+        "why_matters": "它决定直流输电能否稳定运行，参与者集中。",
+        "benefit_logic": "直流项目加速会让换流阀、直流控保和柔直设备受益。",
+        "watch": [
+          "直流特高压项目",
+          "换流阀中标",
+          "柔直工程",
+          "控保系统市占率"
+        ],
+        "common_misread": "把交流设备和直流换流设备混成一类。"
+      }
+    },
+    {
+      "id": "grid-automation-dispatch",
+      "label": "调度自动化 / 继电保护",
+      "layer": "midstream",
+      "group": "digital_grid",
+      "beginner_explanation": "电网需要调度系统、继电保护和稳定控制来管理潮流、故障和新能源波动。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "电网的大脑和保护系统。",
+        "why_matters": "新能源、电力市场和跨区输电越复杂，调度和保护越重要。",
+        "benefit_logic": "电网智能化投资提升，会带动自动化、继保、稳控和电力市场系统。",
+        "watch": [
+          "新一代调度系统",
+          "电力市场建设",
+          "继电保护招标",
+          "AI for EMS"
+        ],
+        "common_misread": "只看硬件设备，忽略二次系统的壁垒和粘性。"
+      }
+    },
+    {
+      "id": "distribution-grid-microgrid",
+      "label": "配网智能化 / 微电网",
+      "layer": "midstream",
+      "group": "digital_grid",
+      "beginner_explanation": "配网是电网最后一公里，微电网可以在园区、边远地区或数据中心形成局部供电体系。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "主网之外的末端可靠性升级。",
+        "why_matters": "电动车、分布式光伏、园区负荷和数据中心都会加大配网压力。",
+        "benefit_logic": "配网投资会带动配网自动化、一次二次融合、智能终端和微电网方案。",
+        "watch": [
+          "配网投资",
+          "城市和农村配网改造",
+          "微电网项目",
+          "电力物联网"
+        ],
+        "common_misread": "只盯特高压，忽略配网才是负荷接入的最后一层。"
+      }
+    },
+    {
+      "id": "energy-storage-grid-forming",
+      "label": "新型储能 / 构网型设备",
+      "layer": "midstream",
+      "group": "flexibility",
+      "beginner_explanation": "储能和构网型设备可以提供调峰、调频、无功支撑和新能源并网稳定性。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "提高电力系统调节能力的支撑环节。",
+        "why_matters": "风光比例提升后，系统需要更多灵活调节资源。",
+        "benefit_logic": "储能、SVG、构网型控制和电能质量设备需求会增加。",
+        "watch": [
+          "储能招标",
+          "构网型储能示范",
+          "SVG 需求",
+          "新能源消纳指标"
+        ],
+        "common_misread": "把储能只看成电池制造，忽略 PCS、SVG、调度和并网控制。"
+      }
+    },
+    {
+      "id": "data-center-power-chain",
+      "label": "数据中心供配电链",
+      "layer": "downstream",
+      "group": "aidc_power",
+      "beginner_explanation": "数据中心供配电包括中低压开关、变压器、UPS/HVDC、电源模块、配电柜和监控系统。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "AIDC 机房从电网到机柜的电力链路。",
+        "why_matters": "AI 机柜功率密度高，一旦供电不稳就会影响算力运行。",
+        "benefit_logic": "AIDC 建设会带动高效供配电设备、模块化电源和数据中心级变压器。",
+        "watch": [
+          "AIDC 建设",
+          "机柜功率密度",
+          "供配电系统订单",
+          "头部云厂商客户"
+        ],
+        "common_misread": "把数据中心只看成服务器和液冷，忽略电源链路。"
+      }
+    },
+    {
+      "id": "hvdc-sst-power-architecture",
+      "label": "HVDC / SST 供电架构",
+      "layer": "midstream",
+      "group": "aidc_power",
+      "beginner_explanation": "HVDC 和固态变压器是为了减少变换环节、提高效率和功率密度的新供电路线。",
+      "bottleneck_strength": 4,
+      "evidence_status": "weakly_supported",
+      "teach": {
+        "what": "AIDC 供电架构升级的中长期方向。",
+        "why_matters": "高功率机柜对供电效率、空间和可靠性提出更高要求。",
+        "benefit_logic": "如果 HVDC/SST 商业化，会带动电力电子、固态变压器和模块化电源公司。",
+        "watch": [
+          "HVDC 订单",
+          "SST 样机和首台套",
+          "云厂商供电架构",
+          "北美和国内数据中心验证"
+        ],
+        "common_misread": "把技术路线讨论直接当成当期收入。"
+      }
+    },
+    {
+      "id": "power-quality-ups",
+      "label": "UPS / 电能质量",
+      "layer": "midstream",
+      "group": "aidc_power",
+      "beginner_explanation": "UPS 保证断电时仍能供电，电能质量设备解决谐波、电压暂降、三相不平衡等问题。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "数据中心和高端制造的用电安全设备。",
+        "why_matters": "高可靠负荷不能频繁掉电或电压异常。",
+        "benefit_logic": "AIDC、半导体、轨交和工业场景会推动 UPS、电能质量和储能微网设备需求。",
+        "watch": [
+          "UPS 订单",
+          "电能质量业务收入",
+          "数据中心客户",
+          "毛利率"
+        ],
+        "common_misread": "只看有没有 UPS 产品，不看是否进入 AI 数据中心或高可靠场景。"
+      }
+    },
+    {
+      "id": "equipment-export-cycle",
+      "label": "海外电网更新 / 出海",
+      "layer": "downstream",
+      "group": "validation",
+      "beginner_explanation": "欧美和新兴市场电网老化、新能源并网和数据中心建设会拉动中国电力设备出口。",
+      "bottleneck_strength": 4,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "国内电网之外的第二增长曲线。",
+        "why_matters": "海外订单通常受当地电网升级、能源转型和数据中心建设影响。",
+        "benefit_logic": "具备海外渠道、认证和交付能力的设备公司可能获得更高弹性。",
+        "watch": [
+          "海外订单",
+          "出口金额",
+          "认证和客户",
+          "汇率和关税"
+        ],
+        "common_misread": "把出海当口号，要看订单、收入占比和交付地。"
+      }
+    },
+    {
+      "id": "tender-order-cashflow-validation",
+      "label": "招标 / 订单 / 现金流验证",
+      "layer": "validation",
+      "group": "validation",
+      "beginner_explanation": "电力设备从中标到收入确认有周期，最后还要看回款。",
+      "bottleneck_strength": 5,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "把产业逻辑落到财务报表的关键。",
+        "why_matters": "订单高增不等于利润高增，设备交付和回款会影响业绩质量。",
+        "benefit_logic": "中标、合同负债、收入、毛利和经营现金流同步改善，才算兑现。",
+        "watch": [
+          "国网/南网招标",
+          "新签合同",
+          "合同负债",
+          "经营现金流"
+        ],
+        "common_misread": "看到中标就直接推利润，忽略交付周期和毛利。"
+      }
+    },
+    {
+      "id": "commodity-delivery-risk",
+      "label": "原材料 / 交付 / 回款风险",
+      "layer": "validation",
+      "group": "risk",
+      "beginner_explanation": "铜、铝、钢材、硅钢等原材料，以及交付节奏、应收账款都会影响利润质量。",
+      "bottleneck_strength": 3,
+      "evidence_status": "supported",
+      "teach": {
+        "what": "电力设备景气里的主要反证项。",
+        "why_matters": "原材料涨价、交付延期和回款慢，会削弱订单景气对利润的传导。",
+        "benefit_logic": "真正强的公司要能把订单转成收入、毛利和现金流。",
+        "watch": [
+          "铜铝钢价格",
+          "存货",
+          "应收账款",
+          "经营现金流"
+        ],
+        "common_misread": "只看收入增速，不看应收和现金流。"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "ai-and-electrification-load",
+      "target": "grid-capacity-security",
+      "relation_type": "drives",
+      "label": "负荷提高系统压力",
+      "description": "AI 数据中心和电气化提高负荷，使容量和供电可靠性成为约束。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "renewable-base-grid-demand",
+      "target": "uhv-transmission",
+      "relation_type": "requires",
+      "label": "新能源外送需要特高压",
+      "description": "远距离新能源基地需要跨区输电通道。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "grid-capacity-security",
+      "target": "uhv-transmission",
+      "relation_type": "requires",
+      "label": "主网扩容",
+      "description": "电网容量和安全稳定要求提升，推动主网建设。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "uhv-transmission",
+      "target": "transformer-reactor",
+      "relation_type": "requires",
+      "label": "通道配套变压器",
+      "description": "特高压工程需要换流变压器、电力变压器和电抗器。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "uhv-transmission",
+      "target": "switchgear-gis",
+      "relation_type": "requires",
+      "label": "变电站开关设备",
+      "description": "特高压变电站和换流站需要 GIS、高压开关等一次设备。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "uhv-transmission",
+      "target": "converter-valve-control-protection",
+      "relation_type": "requires",
+      "label": "直流换流和控保",
+      "description": "直流特高压需要换流阀和直流控制保护系统。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "grid-capacity-security",
+      "target": "grid-automation-dispatch",
+      "relation_type": "requires",
+      "label": "电网大脑升级",
+      "description": "系统更复杂后，需要调度自动化、继电保护和稳定控制。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "grid-automation-dispatch",
+      "target": "distribution-grid-microgrid",
+      "relation_type": "extends_to",
+      "label": "从主网走向配网",
+      "description": "配网自动化和微电网承接末端接入和可靠性需求。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "renewable-base-grid-demand",
+      "target": "energy-storage-grid-forming",
+      "relation_type": "requires",
+      "label": "波动电源需要调节",
+      "description": "新能源并网增加调峰、调频、无功支撑和构网型设备需求。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "ai-and-electrification-load",
+      "target": "data-center-power-chain",
+      "relation_type": "drives",
+      "label": "AIDC 拉动机房供配电",
+      "description": "AI 机柜功率密度提高，要求数据中心供配电链路升级。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "data-center-power-chain",
+      "target": "hvdc-sst-power-architecture",
+      "relation_type": "upgrades_to",
+      "label": "供电架构升级",
+      "description": "HVDC 和 SST 试图减少变换环节，提高效率和功率密度。",
+      "evidence_status": "weakly_supported"
+    },
+    {
+      "source": "data-center-power-chain",
+      "target": "power-quality-ups",
+      "relation_type": "requires",
+      "label": "不断电和电能质量",
+      "description": "高可靠负荷需要 UPS、电能质量治理和备用电源。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "grid-capacity-security",
+      "target": "equipment-export-cycle",
+      "relation_type": "expands_to",
+      "label": "海外电网更新",
+      "description": "海外老旧电网、能源转型和数据中心建设带动电力设备出口。",
+      "evidence_status": "supported"
+    },
+    {
+      "source": "tender-order-cashflow-validation",
+      "target": "commodity-delivery-risk",
+      "relation_type": "checked_by",
+      "label": "财务质量校验",
+      "description": "订单兑现要通过原材料、交付、应收和现金流验证。",
+      "evidence_status": "supported"
+    }
+  ],
+  "concept_diagrams": [
+    {
+      "id": "grid-as-body",
+      "title": "电网像一个身体",
+      "subtitle": "主网、配网和控制系统分工不同",
+      "icon": "system",
+      "node_ids": [
+        "uhv-transmission",
+        "distribution-grid-microgrid",
+        "grid-automation-dispatch"
+      ],
+      "takeaway": "主网是主动脉，配网是毛细血管，调度和继保是大脑和神经。",
+      "parts": [
+        {
+          "label": "主网",
+          "role": "远距离送电",
+          "description": "特高压、变压器、开关和换流设备负责大容量输电。"
+        },
+        {
+          "label": "配网",
+          "role": "最后一公里",
+          "description": "把电可靠送到城市、园区、工厂和数据中心。"
+        },
+        {
+          "label": "控制系统",
+          "role": "稳定运行",
+          "description": "调度、继保、稳控和电力市场系统决定系统安全。"
+        }
+      ]
+    },
+    {
+      "id": "uhv-equipment-stack",
+      "title": "特高压项目拆成哪些设备",
+      "subtitle": "看懂项目招标怎么传导到公司",
+      "icon": "tower",
+      "node_ids": [
+        "transformer-reactor",
+        "switchgear-gis",
+        "converter-valve-control-protection"
+      ],
+      "takeaway": "特高压不是一个设备，而是一组换流、变压、开关、保护和控制系统。",
+      "parts": [
+        {
+          "label": "换流",
+          "role": "交直流转换",
+          "description": "换流阀和直流控保是直流工程关键。"
+        },
+        {
+          "label": "变压",
+          "role": "升压降压",
+          "description": "换流变、电抗器和电力变压器决定输电能力。"
+        },
+        {
+          "label": "开关",
+          "role": "接通和保护",
+          "description": "GIS 和高压开关用于变电站和换流站。"
+        }
+      ]
+    },
+    {
+      "id": "aidc-power-path",
+      "title": "AIDC 从电网到机柜",
+      "subtitle": "供电链路越短、越稳、越高效越好",
+      "icon": "zap",
+      "node_ids": [
+        "data-center-power-chain",
+        "hvdc-sst-power-architecture",
+        "power-quality-ups"
+      ],
+      "takeaway": "数据中心供配电不是单个 UPS，而是从变压、配电、转换、备电到监控的一整套链路。",
+      "parts": [
+        {
+          "label": "进线和变压",
+          "role": "接入电网",
+          "description": "中高压变压器、开关柜和配电系统接入外部电力。"
+        },
+        {
+          "label": "转换和备电",
+          "role": "不中断",
+          "description": "UPS、HVDC、电源模块和储能保证稳定供电。"
+        },
+        {
+          "label": "机柜侧",
+          "role": "高功率密度",
+          "description": "AI 机柜功率越高，对供电效率和可靠性要求越高。"
+        }
+      ]
+    },
+    {
+      "id": "order-to-cash",
+      "title": "订单怎么变成利润",
+      "subtitle": "中标只是第一步",
+      "icon": "receipt",
+      "node_ids": [
+        "tender-order-cashflow-validation",
+        "commodity-delivery-risk",
+        "equipment-export-cycle"
+      ],
+      "takeaway": "电力设备研究要沿着招标、中标、合同、交付、收入、毛利和现金流看。",
+      "parts": [
+        {
+          "label": "招标中标",
+          "role": "需求确认",
+          "description": "国网、南网和海外客户订单提供需求线索。"
+        },
+        {
+          "label": "交付确认",
+          "role": "收入兑现",
+          "description": "设备交付和验收后才会逐步确认收入。"
+        },
+        {
+          "label": "回款和毛利",
+          "role": "质量验证",
+          "description": "原材料、应收和现金流决定利润质量。"
+        }
+      ]
+    }
+  ],
+  "companies": [
+    {
+      "name": "国电南瑞",
+      "ts_code": "600406.SH",
+      "nodes": [
+        "grid-automation-dispatch",
+        "converter-valve-control-protection",
+        "distribution-grid-microgrid",
+        "uhv-transmission"
+      ],
+      "role": "电网自动化 / 继保控保龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "电网大脑龙头",
+      "leader_reason": "公司年报披露其为智能电网技术、产品及一体化整体解决方案供应商，产品覆盖调度自动化、电力市场、继电保护、柔性直流换流阀、智能配网等。",
+      "current_view": "国电南瑞是新型电力系统里最清晰的二次设备和电网自动化验证节点。它更像电网大脑和神经系统，能验证电网智能化、特高压控保、柔直和电力市场建设。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪新签合同和在手订单",
+        "拆分电网内/电网外收入",
+        "观察调度自动化和柔直换流阀项目",
+        "检查经营现金流和应收"
+      ],
+      "why_watch": "电网越复杂，调度、继保、控保和自动化系统越关键。",
+      "evidence_basis": [
+        "2024 年报披露智能电网整体解决方案和主要产品",
+        "2025 半年报披露新一代调度、配电自动化、柔直换流阀等项目进展"
+      ],
+      "verification_focus": [
+        "新签合同",
+        "电网自动化",
+        "柔直换流阀",
+        "现金流"
+      ],
+      "risks": [
+        "电网投资节奏变化",
+        "项目交付周期",
+        "估值预期较充分"
+      ],
+      "evidence_refs": [
+        {
+          "title": "国电南瑞科技股份有限公司 2024 年年度报告",
+          "publisher": "上海证券交易所",
+          "date": "2025-04-29",
+          "url": "https://static.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-04-29/600406_20250429_7MZS.pdf",
+          "evidence_grade": "A",
+          "usage": "验证智能电网整体解决方案、调度自动化、继保和柔直产品"
+        },
+        {
+          "title": "国电南瑞科技股份有限公司 2025 年半年度报告",
+          "publisher": "公开报告镜像",
+          "date": "2025-08-28",
+          "url": "http://qxb-pdf-osscache.qixin.com/AnBaseinfo/bc4cca0252dcaff60f45f8a9da27e06c.pdf",
+          "evidence_grade": "A",
+          "usage": "验证新一代调度、配电自动化、柔直换流阀和新签合同线索"
+        }
+      ]
+    },
+    {
+      "name": "许继电气",
+      "ts_code": "000400.SZ",
+      "nodes": [
+        "converter-valve-control-protection",
+        "grid-automation-dispatch",
+        "uhv-transmission"
+      ],
+      "role": "直流输电 / 换流阀 / 控保验证节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "直流控保龙头",
+      "leader_reason": "公司报告披露聚焦特高压、智能电网、新能源等核心业务，产品包括直流输电系统、智能变配电系统、智能中压供用电设备等。",
+      "current_view": "许继电气适合观察特高压直流、柔直、换流阀和直流控保的订单弹性。它不是泛电力设备公司，要重点盯直流输电系统和相关产品中标。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪换流阀和直流控保中标",
+        "确认特高压项目交付节奏",
+        "拆分直流输电系统收入",
+        "观察国网集招和海外订单"
+      ],
+      "why_watch": "直流特高压进入建设期时，换流阀和控保是高壁垒节点。",
+      "evidence_basis": [
+        "2025 半年报披露直流输电项目、换流阀和特高压相关业务",
+        "2024 年报披露换流阀、直流控保和国网直流输电项目中标"
+      ],
+      "verification_focus": [
+        "直流输电系统",
+        "换流阀",
+        "直流控保",
+        "订单交付"
+      ],
+      "risks": [
+        "特高压项目节奏不及预期",
+        "订单确认周期长",
+        "竞争格局变化"
+      ],
+      "evidence_refs": [
+        {
+          "title": "许继电气股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-21",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-21/1224525622.PDF",
+          "evidence_grade": "A",
+          "usage": "验证直流输电、换流阀、智能变配电和特高压业务"
+        },
+        {
+          "title": "许继电气股份有限公司 2024 年年度报告",
+          "publisher": "东方财富公告镜像",
+          "date": "2025-04-11",
+          "url": "https://pdf.dfcfw.com/pdf/H2_AN202504101654234185_1.pdf",
+          "evidence_grade": "A",
+          "usage": "验证国网直流输电项目、换流阀、直流控保和集招份额"
+        }
+      ]
+    },
+    {
+      "name": "中国西电",
+      "ts_code": "601179.SH",
+      "nodes": [
+        "transformer-reactor",
+        "switchgear-gis",
+        "converter-valve-control-protection",
+        "uhv-transmission"
+      ],
+      "role": "特高压成套输配电设备龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "成套设备龙头",
+      "leader_reason": "公司年报披露产品覆盖开关、变压器、电抗器、换流阀等，服务特高压、换流站和主网建设。",
+      "current_view": "中国西电是主网一次设备和成套能力验证节点，尤其适合观察换流变压器、高压开关、GIS、换流阀和特高压设备交付。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪特高压设备订单",
+        "拆分变压器和开关收入",
+        "观察产能扩建和交付节奏",
+        "检查毛利率和应收"
+      ],
+      "why_watch": "主网和特高压投资放量时，成套设备龙头能直接验证设备需求。",
+      "evidence_basis": [
+        "2024 年报披露变压器、GIS、换流阀等高端产品",
+        "2025 半年报披露超特高压变压器、电抗器、GIL、GIS 产能提升和海外市场需求"
+      ],
+      "verification_focus": [
+        "换流变压器",
+        "GIS",
+        "换流阀",
+        "产能提升"
+      ],
+      "risks": [
+        "项目交付周期",
+        "集团整合影响",
+        "原材料价格"
+      ],
+      "evidence_refs": [
+        {
+          "title": "中国西电电气股份有限公司 2024 年年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-04-15",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-04-15/1223094946.PDF",
+          "evidence_grade": "A",
+          "usage": "验证换流变压器、直流 GIS、换流阀、变压器和开关产品"
+        },
+        {
+          "title": "中国西电电气股份有限公司 2025 年半年度报告",
+          "publisher": "公开报告镜像",
+          "date": "2025-08-20",
+          "url": "https://stockmc.xueqiu.com/202508/601179_20250821_2KGX.pdf",
+          "evidence_grade": "A",
+          "usage": "验证超特高压变压器、电抗器、GIL/GIS 产能提升和海外需求"
+        }
+      ]
+    },
+    {
+      "name": "平高电气",
+      "ts_code": "600312.SH",
+      "nodes": [
+        "switchgear-gis",
+        "uhv-transmission"
+      ],
+      "role": "高压开关 / GIS 龙头",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "GIS 龙头",
+      "leader_reason": "公司报告披露核心业务为高压、超高压、特高压交直流开关设备，电网集招和特高压中标金额增长。",
+      "current_view": "平高电气是特高压开关和 GIS 设备验证节点。研究重点不是泛电网概念，而是特高压项目对高压板块订单、交付和毛利的拉动。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪特高压 GIS 和高压开关中标",
+        "观察高压板块毛利率",
+        "确认订单储备和交付节奏",
+        "关注海外开关设备订单"
+      ],
+      "why_watch": "GIS 和高压开关是特高压变电站、换流站核心一次设备。",
+      "evidence_basis": [
+        "2025 半年报披露高压、超高压、特高压交直流开关设备和特高压中标增长",
+        "2024 年报披露超特高压组合电器和高压开关技术突破"
+      ],
+      "verification_focus": [
+        "GIS",
+        "高压开关",
+        "国网集招",
+        "高压板块盈利"
+      ],
+      "risks": [
+        "特高压交流项目节奏",
+        "竞争加剧",
+        "交付和原材料波动"
+      ],
+      "evidence_refs": [
+        {
+          "title": "河南平高电气股份有限公司 2025 年半年度报告",
+          "publisher": "公开报告镜像",
+          "date": "2025-08-21",
+          "url": "https://stockmc.xueqiu.com/202508/600312_20250821_H6TT.pdf",
+          "evidence_grade": "A",
+          "usage": "验证特高压交直流开关设备和特高压中标增长"
+        },
+        {
+          "title": "河南平高电气股份有限公司 2024 年年度报告",
+          "publisher": "公开报告镜像",
+          "date": "2025-04-10",
+          "url": "https://stockn.xueqiu.com/SH600312/20250410002921.pdf",
+          "evidence_grade": "A",
+          "usage": "验证超特高压组合电器、高压开关和智能制造能力"
+        }
+      ]
+    },
+    {
+      "name": "特变电工",
+      "ts_code": "600089.SH",
+      "nodes": [
+        "transformer-reactor",
+        "equipment-export-cycle",
+        "uhv-transmission"
+      ],
+      "role": "变压器 / 输变电出海验证节点",
+      "tier": "龙头公司",
+      "attention_level": "leader",
+      "attention_label": "变压器龙头",
+      "leader_reason": "公司报告披露输变电业务包括变压器、电抗器、电容器、开关、互感器、套管、电线电缆等，并提供输变电国际成套系统集成服务。",
+      "current_view": "特变电工适合观察变压器、特高压输变电装备和海外输变电订单。它业务较多，研究时必须把输变电业务和新能源、多晶硅等其他业务拆开。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分输变电业务收入和利润",
+        "跟踪特高压变压器订单",
+        "观察海外输变电签约",
+        "关注原材料和多晶硅周期影响"
+      ],
+      "why_watch": "变压器是主网、海外电网更新和数据中心供配电共同指向的设备。",
+      "evidence_basis": [
+        "2025 年报披露输变电产品矩阵和国际成套系统集成",
+        "2025 半年报披露变压器、电抗器、换流阀、套管、开关等集成服务能力"
+      ],
+      "verification_focus": [
+        "变压器",
+        "国际成套",
+        "特高压设备",
+        "业务拆分"
+      ],
+      "risks": [
+        "多晶硅等非电网业务扰动",
+        "原材料价格",
+        "海外项目回款和汇率"
+      ],
+      "evidence_refs": [
+        {
+          "title": "特变电工股份有限公司 2025 年年度报告",
+          "publisher": "公开报告镜像",
+          "date": "2026-04-16",
+          "url": "https://stockmc.xueqiu.com/202604/600089_20260416_7C7T.pdf",
+          "evidence_grade": "A",
+          "usage": "验证输变电产品矩阵和国际成套系统集成服务"
+        },
+        {
+          "title": "特变电工股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-30",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-30/1224627755.PDF",
+          "evidence_grade": "A",
+          "usage": "验证变压器、电抗器、换流阀、套管和开关等集成服务能力"
+        }
+      ]
+    },
+    {
+      "name": "思源电气",
+      "ts_code": "002028.SZ",
+      "nodes": [
+        "switchgear-gis",
+        "energy-storage-grid-forming",
+        "equipment-export-cycle",
+        "grid-automation-dispatch"
+      ],
+      "role": "一次设备 + 储能电能质量综合平台",
+      "tier": "核心验证节点",
+      "attention_level": "leader",
+      "attention_label": "综合设备平台",
+      "leader_reason": "公司年报披露具备一次设备、二次设备、储能及电能质量治理相关设备研发制造和解决方案能力，业务覆盖全球多个国家和地区。",
+      "current_view": "思源电气不是单一特高压公司，更像综合电力设备平台。它的看点在一次设备、储能电能质量、构网型设备和海外市场的共同验证。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分一次设备和储能电能质量收入",
+        "跟踪海外收入占比",
+        "观察构网型 SVG/储能项目",
+        "检查订单和现金流"
+      ],
+      "why_watch": "它能同时观察主网、储能调节和海外电网更新三条线。",
+      "evidence_basis": [
+        "2025 年报披露一次设备、二次设备、储能及电能质量设备能力和海外收入占比",
+        "2025 IR 披露构网型 SVG、构网型储能系统示范项目线索"
+      ],
+      "verification_focus": [
+        "海外收入",
+        "储能电能质量",
+        "一次设备",
+        "构网型产品"
+      ],
+      "risks": [
+        "多产品线管理复杂",
+        "海外交付风险",
+        "储能竞争加剧"
+      ],
+      "evidence_refs": [
+        {
+          "title": "思源电气股份有限公司 2025 年年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2026-04-18",
+          "url": "http://static.cninfo.com.cn/finalpage/2026-04-18/1225117829.PDF",
+          "evidence_grade": "A",
+          "usage": "验证一次设备、二次设备、储能及电能质量设备和海外业务"
+        },
+        {
+          "title": "思源电气股份有限公司投资者关系活动记录表",
+          "publisher": "公开报告镜像",
+          "date": "2025-08-22",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/22/1224558771.PDF",
+          "evidence_grade": "A",
+          "usage": "验证构网型 SVG、构网型储能系统示范项目线索"
+        }
+      ]
+    },
+    {
+      "name": "金盘科技",
+      "ts_code": "688676.SH",
+      "nodes": [
+        "data-center-power-chain",
+        "hvdc-sst-power-architecture",
+        "transformer-reactor"
+      ],
+      "role": "干式变压器 / AIDC 供配电验证节点",
+      "tier": "核心验证节点",
+      "attention_level": "leader",
+      "attention_label": "AIDC 供配电",
+      "leader_reason": "公司半年度报告和问询回复披露数据中心供配电设备、干式变压器、电源模块，以及 AIDC 供配电解决方案和 SST 迭代产品线索。",
+      "current_view": "金盘科技是 AIDC 供配电里较清晰的 A 股映射。它不是传统特高压主网龙头，而是更靠近数据中心变压器、电源模块、HVDC/SST 和干式变压器。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪 AIDC/IDC 收入占比",
+        "确认电源模块和 SST 产品订单",
+        "观察头部数据中心客户",
+        "检查产能和毛利率"
+      ],
+      "why_watch": "AI 数据中心如果继续提高功率密度，供配电设备和干式变压器会成为显性配套。",
+      "evidence_basis": [
+        "2025 半年报披露数据中心变压器增长来源和 AIDC 供配电优势",
+        "2025 可转债问询回复披露数据中心收入增长、AIDC 全栈供配电和 HVDC/SST 产品线索"
+      ],
+      "verification_focus": [
+        "AIDC 收入",
+        "干式变压器",
+        "电源模块",
+        "SST/HVDC"
+      ],
+      "risks": [
+        "AIDC 订单持续性",
+        "SST 商业化节奏",
+        "扩产和竞争"
+      ],
+      "evidence_refs": [
+        {
+          "title": "海南金盘智能科技股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-29",
+          "url": "http://dataclouds.cninfo.com.cn/shgonggao/2025/2025-08-29/a9d9415e840011f0beb4fa163e957f7a.pdf",
+          "evidence_grade": "A",
+          "usage": "验证数据中心供配电设备、干式变压器和 AIDC 线索"
+        },
+        {
+          "title": "金盘科技可转债审核问询函回复报告",
+          "publisher": "公开公告镜像",
+          "date": "2025-10-14",
+          "url": "https://cniis.aastocks.com/CNSESH_STOCK/2025/2025-10/2025-10-14/11507898.pdf",
+          "evidence_grade": "A",
+          "usage": "验证数据中心收入、AIDC 全栈供配电、HVDC 800V 和 SST 迭代产品"
+        }
+      ]
+    },
+    {
+      "name": "四方股份",
+      "ts_code": "601126.SH",
+      "nodes": [
+        "grid-automation-dispatch",
+        "energy-storage-grid-forming",
+        "power-quality-ups"
+      ],
+      "role": "继电保护 / 电网自动化 / 储能并网验证节点",
+      "tier": "核心验证节点",
+      "attention_level": "core_candidate",
+      "attention_label": "继保自动化",
+      "leader_reason": "公司半年度报告披露长期深耕能源电力领域，为发、输、配、用、储提供继电保护、自动化与控制系统、电力电子、一二次融合、新型储能等产品与解决方案。",
+      "current_view": "四方股份更偏二次设备、继保自动化和新能源并网控制，不应简单归为一次设备。它适合观察配网智能化、继电保护、SVG、储能和构网型控制。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "跟踪继电保护和自动化订单",
+        "拆分发电侧/电网侧业务",
+        "观察 SVG 和储能项目",
+        "确认海外项目交付"
+      ],
+      "why_watch": "新能源和电网智能化提升后，继保、调控和储能并网解决方案会更重要。",
+      "evidence_basis": [
+        "2025 半年报披露继电保护、自动化、储能和一二次融合产品",
+        "2025 年报披露海外储能、SVG 和稳控系统项目线索"
+      ],
+      "verification_focus": [
+        "继电保护",
+        "电网自动化",
+        "储能/SVG",
+        "海外项目"
+      ],
+      "risks": [
+        "储能竞争",
+        "配网投资节奏",
+        "项目交付确认"
+      ],
+      "evidence_refs": [
+        {
+          "title": "北京四方继保自动化股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-30",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-08-30/1224620492.PDF",
+          "evidence_grade": "A",
+          "usage": "验证继电保护、自动化、电力电子、一二次融合和新型储能产品"
+        },
+        {
+          "title": "北京四方继保自动化股份有限公司 2025 年年度报告",
+          "publisher": "公开报告镜像",
+          "date": "2026-03-24",
+          "url": "https://stockmc.xueqiu.com/202603/601126_20260324_2K9N.pdf",
+          "evidence_grade": "A",
+          "usage": "验证海外稳控、储能项目和 SVG 订单线索"
+        }
+      ]
+    },
+    {
+      "name": "科华数据",
+      "ts_code": "002335.SZ",
+      "nodes": [
+        "data-center-power-chain",
+        "power-quality-ups",
+        "energy-storage-grid-forming"
+      ],
+      "role": "UPS / 数据中心 / 储能综合节点",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "数据中心电源",
+      "leader_reason": "公司半年度报告披露经营项目包括 UPS 电源系统、数据中心、新能源、电力自动化系统等，并披露 AI 技术迭代下的数据中心和液冷智算中心解决方案线索。",
+      "current_view": "科华数据可作为数据中心电源和储能综合候选。它的优势在 UPS、数据中心建设运营和储能，但需要拆清 AIDC 相关收入与传统数据中心/新能源业务的关系。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分数据中心产品和 IDC 服务收入",
+        "确认 UPS/HVDC 与 AIDC 项目",
+        "跟踪储能 PCS 和系统出货",
+        "观察毛利率和现金流"
+      ],
+      "why_watch": "AIDC 供配电需要 UPS、电源系统、储能和数据中心工程经验。",
+      "evidence_basis": [
+        "2025 半年度财务报告披露 UPS、电源系统、数据中心和新能源业务",
+        "2025 半年报披露 AI 技术迭代、数据中心建设运营和液冷智算中心项目线索"
+      ],
+      "verification_focus": [
+        "UPS",
+        "数据中心项目",
+        "储能 PCS",
+        "AIDC 收入"
+      ],
+      "risks": [
+        "传统 IDC 与 AIDC 暴露混淆",
+        "新能源业务竞争",
+        "资本开支和回款"
+      ],
+      "evidence_refs": [
+        {
+          "title": "科华数据股份有限公司 2025 年半年度财务报告",
+          "publisher": "公开报告镜像",
+          "date": "2025-08-30",
+          "url": "https://file.finance.qq.com/finance/hs/pdf/2025/08/30/1224622985.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 UPS、电源系统、数据中心和新能源业务"
+        },
+        {
+          "title": "科华数据股份有限公司 2025 年半年度报告",
+          "publisher": "巨潮资讯",
+          "date": "2025-08-30",
+          "url": "https://static.cninfo.com.cn/finalpage/2025-08-30/1224622984.PDF",
+          "evidence_grade": "A",
+          "usage": "验证 AI 技术迭代、液冷智算中心和数据中心解决方案线索"
+        }
+      ]
+    },
+    {
+      "name": "科士达",
+      "ts_code": "002518.SZ",
+      "nodes": [
+        "power-quality-ups",
+        "data-center-power-chain",
+        "energy-storage-grid-forming"
+      ],
+      "role": "UPS / 数据中心关键基础设施候选",
+      "tier": "核心候选",
+      "attention_level": "core_candidate",
+      "attention_label": "UPS 龙头候选",
+      "leader_reason": "公司年度报告摘要披露其持续深耕数据中心关键基础设施产业，是中国 UPS 行业领军企业，并布局新能源和储能业务。",
+      "current_view": "科士达适合作为 UPS 和数据中心供配电候选。它要重点验证 AIDC 客户、UPS/电源模块收入、储能协同和海外订单，避免只把传统 UPS 当作 AI 受益。",
+      "evidence_status": "supported",
+      "next_checks": [
+        "拆分数据中心业务收入",
+        "确认 AIDC 客户和订单",
+        "跟踪 UPS/电源模块产品结构",
+        "观察储能业务和海外渠道"
+      ],
+      "why_watch": "AI 数据中心对高功率、高可靠 UPS 和供配电设备提出更高要求。",
+      "evidence_basis": [
+        "2025 年报摘要披露数据中心关键基础设施和 UPS 龙头地位",
+        "2024 年报摘要披露数据中心、新能源和储能业务基础"
+      ],
+      "verification_focus": [
+        "UPS",
+        "数据中心业务",
+        "AIDC 客户",
+        "储能"
+      ],
+      "risks": [
+        "AIDC 收入占比不清",
+        "UPS 行业竞争",
+        "新能源业务周期波动"
+      ],
+      "evidence_refs": [
+        {
+          "title": "深圳科士达科技股份有限公司 2025 年年度报告摘要",
+          "publisher": "深圳证券交易所",
+          "date": "2026-04-27",
+          "url": "https://disc.static.szse.cn/download/disc/disk03/finalpage/2026-04-27/bb5cb5ea-d6aa-4c2f-99f5-3145401917e0.PDF",
+          "evidence_grade": "A",
+          "usage": "验证数据中心关键基础设施、UPS 龙头和储能业务"
+        },
+        {
+          "title": "深圳科士达科技股份有限公司 2024 年年度报告摘要",
+          "publisher": "巨潮资讯",
+          "date": "2025-04-25",
+          "url": "http://static.cninfo.com.cn/finalpage/2025-04-25/1223277060.PDF",
+          "evidence_grade": "A",
+          "usage": "验证数据中心、新能源和储能业务基础"
+        }
+      ]
+    }
+  ],
+  "common_misreads": [
+    {
+      "title": "把电力设备都叫特高压",
+      "correction": "特高压只是主网通道，产业链还包括变压器、GIS、换流阀、控保、调度、配网、储能和数据中心电源。"
+    },
+    {
+      "title": "看到 AI 电力焦虑就直接买 UPS",
+      "correction": "AIDC 供配电要确认客户、产品、收入占比和订单，传统 UPS 业务不等于 AI 受益。"
+    },
+    {
+      "title": "只看中标金额",
+      "correction": "电力设备需要经历生产、交付、验收、收入确认和回款，最后要看毛利和现金流。"
+    },
+    {
+      "title": "把新能源装机等同于设备公司利润",
+      "correction": "新能源装机要通过消纳压力、电网投资、招标和并网控制设备传导，中间有项目节奏。"
+    },
+    {
+      "title": "忽略原材料和应收风险",
+      "correction": "铜、铝、钢材、硅钢涨价，以及应收账款增长，都会削弱订单景气对利润的传导。"
+    }
+  ],
+  "financial_translations": [
+    {
+      "node_id": "uhv-transmission",
+      "title": "特高压：先看核准和招标，再看设备交付",
+      "watch": "项目核准、国网招标、中标金额、交付进度、合同负债。",
+      "source_hint": "国家电网、国家能源局、公司公告、年报和中标公告。",
+      "risk": "项目开工或交付延后会影响收入确认。"
+    },
+    {
+      "node_id": "transformer-reactor",
+      "title": "变压器：看高端产品结构和海外订单",
+      "watch": "换流变、特高压变压器、干式变压器、海外订单、毛利率。",
+      "source_hint": "年报、半年报、IR、出口数据。",
+      "risk": "普通配变竞争激烈，不能与高压换流变混同。"
+    },
+    {
+      "node_id": "grid-automation-dispatch",
+      "title": "二次设备：看调度、继保、控保和电力市场系统",
+      "watch": "新一代调度、电力市场、继电保护、柔直控保、配网自动化。",
+      "source_hint": "年报、半年报、国网招标、IR。",
+      "risk": "项目粘性强但增速可能受电网投资节奏约束。"
+    },
+    {
+      "node_id": "data-center-power-chain",
+      "title": "AIDC 供配电：看收入占比和头部客户",
+      "watch": "数据中心供配电收入、UPS/HVDC/SST 订单、干式变压器、电源模块、客户名单。",
+      "source_hint": "年报、问询回复、IR、项目公告。",
+      "risk": "只披露产品能力但没有订单和收入，占比可能很低。"
+    },
+    {
+      "node_id": "tender-order-cashflow-validation",
+      "title": "财务兑现：订单、毛利、应收和现金流要一起看",
+      "watch": "新签合同、合同负债、营业收入、毛利率、应收账款、经营现金流。",
+      "source_hint": "季度报告、年报、现金流量表。",
+      "risk": "收入增长但应收大增、现金流恶化，要降级。"
+    }
+  ],
+  "catalysts": [
+    {
+      "horizon": "短期",
+      "title": "国家电网和南方电网投资规划",
+      "why": "决定电网设备总需求和投资结构。",
+      "watch": "十五五投资、年度投资、主配微协同、特高压和配网计划。",
+      "risk": "投资结构如果偏配网或信息化，不同公司受益差异很大。"
+    },
+    {
+      "horizon": "短期",
+      "title": "特高压项目核准和国网集招",
+      "why": "直接影响变压器、GIS、换流阀和控保订单。",
+      "watch": "项目核准、招标批次、中标金额、交付周期。",
+      "risk": "核准和开工节奏低于预期。"
+    },
+    {
+      "horizon": "中期",
+      "title": "AIDC 高功率供配电升级",
+      "why": "AI 机柜功率密度提高，会推动 UPS、HVDC、SST、干式变压器和电源模块升级。",
+      "watch": "数据中心客户、AIDC 收入、HVDC/SST 样机和订单。",
+      "risk": "技术路线仍在演进，样机不等于规模订单。"
+    },
+    {
+      "horizon": "中期",
+      "title": "海外电网更新和设备出海",
+      "why": "海外电网老化、新能源并网和数据中心建设拉动中国设备出口。",
+      "watch": "海外订单、出口收入、认证、汇率和关税。",
+      "risk": "海外项目回款和贸易政策不确定。"
+    },
+    {
+      "horizon": "兑现",
+      "title": "订单转收入并改善现金流",
+      "why": "最终要从主题行情走向财务兑现。",
+      "watch": "合同负债、营业收入、毛利率、应收账款、经营现金流。",
+      "risk": "订单高但毛利下降或回款差。"
+    }
+  ],
+  "tracking_metrics": [
+    {
+      "name": "两网年度投资和招标批次",
+      "why": "决定电网设备需求总量和节奏。",
+      "source_hint": "国家电网、南方电网、国家能源局、公司公告。"
+    },
+    {
+      "name": "特高压项目核准、开工和中标",
+      "why": "验证主网设备是否进入交付周期。",
+      "source_hint": "发改委、能源局、国网招标平台、上市公司公告。"
+    },
+    {
+      "name": "AIDC 供配电订单和收入占比",
+      "why": "判断数据中心电源公司是不是 AI 真受益。",
+      "source_hint": "年报、半年报、问询回复、IR。"
+    },
+    {
+      "name": "海外订单和出口收入",
+      "why": "验证电力设备出海是否成为第二增长曲线。",
+      "source_hint": "年报、IR、海关数据、公司公告。"
+    },
+    {
+      "name": "毛利率、应收账款和经营现金流",
+      "why": "判断订单质量和交付回款。",
+      "source_hint": "季度报告、年报、现金流量表。"
+    },
+    {
+      "name": "铜、铝、钢材、硅钢价格",
+      "why": "原材料价格会影响变压器、开关、电缆等设备毛利。",
+      "source_hint": "商品价格、公司成本披露、行业数据。"
+    }
+  ],
+  "sources": [
+    {
+      "title": "4万亿元投资发力！国家电网“十五五”锚定新型电力系统建设",
+      "publisher": "国家能源局",
+      "date": "2026-01-30",
+      "url": "https://www.nea.gov.cn/20260130/f5870f4fe28744139406827434f3859c/c.html",
+      "source_type": "policy",
+      "usage": "验证国家电网十五五投资、主配微协同、特高压和配网建设方向"
+    },
+    {
+      "title": "国家电网“十五五”计划投资4万亿元建设新型电力系统",
+      "publisher": "国务院国资委",
+      "date": "2026-01-19",
+      "url": "http://www.sasac.gov.cn/n2588025/n2588124/c35325777/content.html",
+      "source_type": "policy",
+      "usage": "验证固定资产投资、跨区输电能力提升和人工智能+电网数字赋能"
+    },
+    {
+      "title": "国电南瑞科技股份有限公司 2024 年年度报告",
+      "publisher": "上海证券交易所",
+      "date": "2025-04-29",
+      "url": "https://static.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-04-29/600406_20250429_7MZS.pdf",
+      "source_type": "company_report",
+      "usage": "验证国电南瑞智能电网、调度自动化、继保和柔直产品"
+    },
+    {
+      "title": "许继电气股份有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-21",
+      "url": "http://static.cninfo.com.cn/finalpage/2025-08-21/1224525622.PDF",
+      "source_type": "company_report",
+      "usage": "验证许继电气直流输电、换流阀和智能变配电业务"
+    },
+    {
+      "title": "中国西电电气股份有限公司 2024 年年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-04-15",
+      "url": "https://static.cninfo.com.cn/finalpage/2025-04-15/1223094946.PDF",
+      "source_type": "company_report",
+      "usage": "验证中国西电换流变压器、GIS、换流阀、变压器和开关产品"
+    },
+    {
+      "title": "河南平高电气股份有限公司 2025 年半年度报告",
+      "publisher": "公开报告镜像",
+      "date": "2025-08-21",
+      "url": "https://stockmc.xueqiu.com/202508/600312_20250821_H6TT.pdf",
+      "source_type": "company_report",
+      "usage": "验证平高电气高压、超高压、特高压开关设备和特高压中标增长"
+    },
+    {
+      "title": "特变电工股份有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-30",
+      "url": "http://static.cninfo.com.cn/finalpage/2025-08-30/1224627755.PDF",
+      "source_type": "company_report",
+      "usage": "验证特变电工变压器、电抗器、换流阀和输变电集成服务能力"
+    },
+    {
+      "title": "思源电气股份有限公司 2025 年年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2026-04-18",
+      "url": "http://static.cninfo.com.cn/finalpage/2026-04-18/1225117829.PDF",
+      "source_type": "company_report",
+      "usage": "验证思源电气一次设备、二次设备、储能及电能质量和海外业务"
+    },
+    {
+      "title": "海南金盘智能科技股份有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-29",
+      "url": "http://dataclouds.cninfo.com.cn/shgonggao/2025/2025-08-29/a9d9415e840011f0beb4fa163e957f7a.pdf",
+      "source_type": "company_report",
+      "usage": "验证金盘科技数据中心供配电、干式变压器和 AIDC 线索"
+    },
+    {
+      "title": "北京四方继保自动化股份有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-30",
+      "url": "http://static.cninfo.com.cn/finalpage/2025-08-30/1224620492.PDF",
+      "source_type": "company_report",
+      "usage": "验证四方股份继电保护、自动化、一二次融合和新型储能"
+    },
+    {
+      "title": "科华数据股份有限公司 2025 年半年度报告",
+      "publisher": "巨潮资讯",
+      "date": "2025-08-30",
+      "url": "https://static.cninfo.com.cn/finalpage/2025-08-30/1224622984.PDF",
+      "source_type": "company_report",
+      "usage": "验证科华数据 AI 技术迭代、液冷智算中心和数据中心解决方案"
+    },
+    {
+      "title": "深圳科士达科技股份有限公司 2025 年年度报告摘要",
+      "publisher": "深圳证券交易所",
+      "date": "2026-04-27",
+      "url": "https://disc.static.szse.cn/download/disc/disk03/finalpage/2026-04-27/bb5cb5ea-d6aa-4c2f-99f5-3145401917e0.PDF",
+      "source_type": "company_report",
+      "usage": "验证科士达 UPS、数据中心关键基础设施和储能业务"
+    },
+    {
+      "title": "AI数据中心电力需求催热A股电力设备板块",
+      "publisher": "证券时报",
+      "date": "2026-05-25",
+      "url": "https://www.stcn.com/article/detail/3924583.html",
+      "source_type": "market_media",
+      "usage": "辅助观察 AIDC 电力需求、机构调研和板块热度，不能单独作为公司强结论"
+    },
+    {
+      "title": "AI持续引爆电力焦虑，A股电网板块开年累涨21%",
+      "publisher": "第一财经",
+      "date": "2026-01-22",
+      "url": "https://www.yicai.com/news/103045631.html",
+      "source_type": "market_media",
+      "usage": "辅助理解 AI 用电约束和电力设备关注度，不作为个股强证据"
+    }
+  ]
+}
