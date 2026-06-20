@@ -90,30 +90,96 @@ export function IndustryChainGraph({
         </div>
         <span className="industry-chain-status-pill">{activeStep ? "当前分镜" : statusLabel(data.status)}</span>
       </div>
-      <div className="industry-chain-flow-canvas">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          fitView
-          fitViewOptions={{ padding: 0.12 }}
-          minZoom={0.42}
-          maxZoom={1.45}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable
-          proOptions={{ hideAttribution: true }}
-          onNodeClick={(_, node) => {
-            if (!node.id.startsWith("column-")) {
-              onSelectNode(node.id);
-            }
-          }}
-        >
-          <Background color="rgba(138, 143, 152, 0.16)" gap={20} />
-          <Controls showInteractive={false} position="bottom-right" />
-        </ReactFlow>
+      <MobileChainRail data={data} selectedNodeId={selectedNode?.id} onSelectNode={onSelectNode} />
+      <div className="industry-chain-flow-desktop">
+        <FlowCanvas edges={edges} nodes={nodes} onSelectNode={onSelectNode} />
       </div>
+      <details className="industry-chain-flow-mobile-details">
+        <summary>展开完整图谱</summary>
+        <FlowCanvas edges={edges} nodes={nodes} onSelectNode={onSelectNode} />
+      </details>
       <CausalRelationStrip edges={relatedEdges} nodesById={nodesById} onSelectNode={onSelectNode} />
     </section>
+  );
+}
+
+function FlowCanvas({
+  edges,
+  nodes,
+  onSelectNode,
+}: {
+  edges: FlowEdge[];
+  nodes: FlowNode[];
+  onSelectNode: (nodeId: string) => void;
+}) {
+  return (
+    <div className="industry-chain-flow-canvas">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        fitView
+        fitViewOptions={{ padding: 0.12 }}
+        minZoom={0.42}
+        maxZoom={1.45}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable
+        proOptions={{ hideAttribution: true }}
+        onNodeClick={(_, node) => {
+          if (!node.id.startsWith("column-")) {
+            onSelectNode(node.id);
+          }
+        }}
+      >
+        <Background color="rgba(138, 143, 152, 0.16)" gap={20} />
+        <Controls showInteractive={false} position="bottom-right" />
+      </ReactFlow>
+    </div>
+  );
+}
+
+function MobileChainRail({
+  data,
+  selectedNodeId,
+  onSelectNode,
+}: {
+  data: IndustryChainData;
+  selectedNodeId?: string;
+  onSelectNode: (nodeId: string) => void;
+}) {
+  const nodesById = new Map(data.nodes.map((node) => [node.id, node]));
+  return (
+    <div className="industry-chain-mobile-rail" aria-label="移动端简化产业链">
+      {GRAPH_COLUMNS.map((column, index) => {
+        const columnNodes = column.nodeIds
+          .map((nodeId) => nodesById.get(nodeId))
+          .filter((node): node is IndustryChainNode => Boolean(node));
+        if (!columnNodes.length) {
+          return null;
+        }
+        return (
+          <article className="industry-chain-mobile-rail-group" key={column.key}>
+            <div className="industry-chain-mobile-rail-head">
+              <b>{index + 1}</b>
+              <span>{column.label}</span>
+              <em>{column.description}</em>
+            </div>
+            <div className="industry-chain-mobile-rail-nodes">
+              {columnNodes.map((node) => (
+                <button
+                  className={node.id === selectedNodeId ? "active" : ""}
+                  type="button"
+                  key={node.id}
+                  onClick={() => onSelectNode(node.id)}
+                >
+                  {node.label}
+                </button>
+              ))}
+            </div>
+          </article>
+        );
+      })}
+    </div>
   );
 }
 

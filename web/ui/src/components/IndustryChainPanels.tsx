@@ -444,26 +444,42 @@ export function CompanyRolePanel({
       </div>
       <div className="industry-chain-company-workspace">
         <div className="industry-chain-company-list" aria-label="公司列表" role="listbox">
-          {companies.map((company) => (
-            <CompanyListItem
-              active={selectedCompany?.ts_code === company.ts_code}
-              company={company}
-              key={company.ts_code}
-              related={Boolean(selectedNode && company.nodes.includes(selectedNode.id))}
-              onSelect={() => setSelectedCompanyCode(company.ts_code)}
-            />
-          ))}
+          {companies.map((company) => {
+            const active = selectedCompany?.ts_code === company.ts_code;
+            return (
+              <Fragment key={company.ts_code}>
+                <CompanyListItem
+                  active={active}
+                  company={company}
+                  related={Boolean(selectedNode && company.nodes.includes(selectedNode.id))}
+                  onSelect={() => setSelectedCompanyCode(company.ts_code)}
+                />
+                {active && selectedCompany && (
+                  <div className="industry-chain-company-mobile-detail">
+                    <CompanyDetailCard
+                      company={selectedCompany}
+                      financialByNode={financialByNode}
+                      nodesById={nodesById}
+                      onSelectNode={onSelectNode}
+                    />
+                  </div>
+                )}
+              </Fragment>
+            );
+          })}
         </div>
-        {selectedCompany ? (
-          <CompanyDetailCard
-            company={selectedCompany}
-            financialByNode={financialByNode}
-            nodesById={nodesById}
-            onSelectNode={onSelectNode}
-          />
-        ) : (
-          <p className="industry-chain-company-empty">当前筛选下暂无公司。</p>
-        )}
+        <div className="industry-chain-company-detail-slot">
+          {selectedCompany ? (
+            <CompanyDetailCard
+              company={selectedCompany}
+              financialByNode={financialByNode}
+              nodesById={nodesById}
+              onSelectNode={onSelectNode}
+            />
+          ) : (
+            <p className="industry-chain-company-empty">当前筛选下暂无公司。</p>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -765,6 +781,29 @@ export function TrackingPanel({ data }: { data: IndustryChainData }) {
             </div>
           ))}
         </div>
+        <div className="industry-chain-mobile-fold-list">
+          {data.tracking_metrics.slice(0, 3).map((metric) => (
+            <div className="industry-chain-tracking-item" key={metric.name}>
+              <strong>{metric.name}</strong>
+              <p>{metric.why}</p>
+              <span>{metric.source_hint}</span>
+            </div>
+          ))}
+          {data.tracking_metrics.length > 3 && (
+            <details>
+              <summary>展开全部跟踪指标</summary>
+              <div>
+                {data.tracking_metrics.slice(3).map((metric) => (
+                  <div className="industry-chain-tracking-item" key={metric.name}>
+                    <strong>{metric.name}</strong>
+                    <p>{metric.why}</p>
+                    <span>{metric.source_hint}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
       </div>
       <div className="industry-chain-source-panel">
         <div className="industry-chain-section-head">
@@ -782,6 +821,29 @@ export function TrackingPanel({ data }: { data: IndustryChainData }) {
               <span>{source.usage}</span>
             </div>
           ))}
+        </div>
+        <div className="industry-chain-mobile-fold-list">
+          {data.sources.slice(0, 3).map((source) => (
+            <div className="industry-chain-source-item" key={`${source.publisher}-${source.title}`}>
+              <strong>{source.publisher}</strong>
+              <p>{source.title}</p>
+              <span>{source.usage}</span>
+            </div>
+          ))}
+          {data.sources.length > 3 && (
+            <details>
+              <summary>展开全部证据来源</summary>
+              <div>
+                {data.sources.slice(3).map((source) => (
+                  <div className="industry-chain-source-item" key={`${source.publisher}-${source.title}`}>
+                    <strong>{source.publisher}</strong>
+                    <p>{source.title}</p>
+                    <span>{source.usage}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
         </div>
       </div>
     </section>

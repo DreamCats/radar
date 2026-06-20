@@ -7,6 +7,14 @@
   min-height: 0;
 }
 
+.industry-chain-company-detail-slot {
+  min-height: 0;
+}
+
+.industry-chain-company-mobile-detail {
+  display: none;
+}
+
 .industry-chain-company-list {
   display: grid;
   align-content: start;
@@ -654,6 +662,10 @@
   gap: 8px;
 }
 
+.industry-chain-mobile-fold-list {
+  display: none;
+}
+
 .industry-chain-tracking-panel,
 .industry-chain-source-panel {
   display: flex;
@@ -820,6 +832,71 @@
 
   .industry-chain-picker select {
     width: 100%;
+  }
+
+  .industry-chain-company-detail-slot {
+    display: none;
+  }
+
+  .industry-chain-company-mobile-detail {
+    display: block;
+  }
+
+  .industry-chain-company-mobile-detail .industry-chain-company-detail-card {
+    margin-bottom: 8px;
+  }
+
+  .industry-chain-tracking-panel > .industry-chain-metric-list,
+  .industry-chain-source-panel > .industry-chain-source-list {
+    display: none;
+  }
+
+  .industry-chain-mobile-fold-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .industry-chain-mobile-fold-list details {
+    display: grid;
+    gap: 8px;
+  }
+
+  .industry-chain-mobile-fold-list summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--color-surface-2) 70%, transparent);
+    color: var(--color-ink-muted);
+    cursor: pointer;
+    font-size: 12px;
+    list-style: none;
+  }
+
+  .industry-chain-mobile-fold-list summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .industry-chain-mobile-fold-list details > div {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .industry-chain-segmented {
+    overflow-x: auto;
+    width: 100%;
+    scrollbar-width: none;
+  }
+
+  .industry-chain-segmented::-webkit-scrollbar {
+    display: none;
+  }
+
+  .industry-chain-segmented button {
+    flex: 0 0 auto;
   }
 
   .industry-chain-markdown-panel summary {
