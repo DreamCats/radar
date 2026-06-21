@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { fetchIndustryChainDetail, fetchIndustryChains } from "../api/radarApi";
 import { IndustryChainGraph } from "../components/IndustryChainFlowGraph";
+import { IndustryChainMobileArticle } from "../components/IndustryChainMobileArticle";
 import {
   CatalystPanel,
   CompanyRolePanel,
@@ -132,75 +133,60 @@ export function IndustryChainPage() {
         ) : detail ? (
           <>
             <IndustryChainHeader detail={detail} />
-            <MobileIndustryChainNav />
-            <div className="industry-chain-anchor" id="industry-chain-overview">
-              <QuickReadPanel data={detail.data} />
-              <EvidenceGuidePanel data={detail.data} />
+            <IndustryChainMobileArticle detail={detail} />
+            <div className="industry-chain-desktop-workspace">
+              <div className="industry-chain-anchor" id="industry-chain-overview">
+                <QuickReadPanel data={detail.data} />
+                <EvidenceGuidePanel data={detail.data} />
+              </div>
+              <div className="industry-chain-anchor" id="industry-chain-path">
+                <LearningPathPanel activeStepId={activeStepId} data={detail.data} onSelectStep={selectStep} />
+              </div>
+              <section className="industry-chain-focus-grid industry-chain-anchor" id="industry-chain-graph">
+                <IndustryChainGraph
+                  activeStep={activeStep}
+                  data={detail.data}
+                  relatedEdges={relatedEdges}
+                  selectedNode={selectedNode}
+                  onSelectNode={selectNode}
+                />
+                <NodeDetailPanel
+                  activeStep={activeStep}
+                  companies={relatedCompanies}
+                  edges={relatedEdges}
+                  node={selectedNode}
+                />
+              </section>
+              <ConceptDiagramPanel data={detail.data} onSelectNode={selectNode} />
+              <div className="industry-chain-anchor" id="industry-chain-companies">
+                <CompanyRolePanel
+                  companies={filteredCompanies}
+                  data={detail.data}
+                  selectedNode={selectedNode}
+                  tier={companyTier}
+                  onSelectNode={selectNode}
+                  onSetTier={setCompanyTier}
+                />
+              </div>
+              <CatalystPanel data={detail.data} />
+              <InvestorChecklistPanel data={detail.data} />
+              <div className="industry-chain-anchor" id="industry-chain-tracking">
+                <TrackingPanel data={detail.data} />
+              </div>
+              <details className="industry-chain-markdown-panel industry-chain-anchor" id="industry-chain-manuscript">
+                <summary>
+                  <span>展开完整学习稿</span>
+                  <em>原稿信息量较大，默认收起</em>
+                </summary>
+                <MarkdownContent content={detail.content_markdown} />
+              </details>
             </div>
-            <div className="industry-chain-anchor" id="industry-chain-path">
-              <LearningPathPanel
-                activeStepId={activeStepId}
-                data={detail.data}
-                onSelectStep={selectStep}
-              />
-            </div>
-            <section className="industry-chain-focus-grid industry-chain-anchor" id="industry-chain-graph">
-              <IndustryChainGraph
-                activeStep={activeStep}
-                data={detail.data}
-                relatedEdges={relatedEdges}
-                selectedNode={selectedNode}
-                onSelectNode={selectNode}
-              />
-              <NodeDetailPanel
-                activeStep={activeStep}
-                companies={relatedCompanies}
-                edges={relatedEdges}
-                node={selectedNode}
-              />
-            </section>
-            <ConceptDiagramPanel data={detail.data} onSelectNode={selectNode} />
-            <div className="industry-chain-anchor" id="industry-chain-companies">
-              <CompanyRolePanel
-                companies={filteredCompanies}
-                data={detail.data}
-                selectedNode={selectedNode}
-                tier={companyTier}
-                onSelectNode={selectNode}
-                onSetTier={setCompanyTier}
-              />
-            </div>
-            <CatalystPanel data={detail.data} />
-            <InvestorChecklistPanel data={detail.data} />
-            <div className="industry-chain-anchor" id="industry-chain-tracking">
-              <TrackingPanel data={detail.data} />
-            </div>
-            <details className="industry-chain-markdown-panel industry-chain-anchor" id="industry-chain-manuscript">
-              <summary>
-                <span>展开完整学习稿</span>
-                <em>原稿信息量较大，默认收起</em>
-              </summary>
-              <MarkdownContent content={detail.content_markdown} />
-            </details>
           </>
         ) : (
           <p className="industry-chain-error">暂无产业链内容</p>
         )}
       </main>
     </section>
-  );
-}
-
-function MobileIndustryChainNav() {
-  return (
-    <nav className="industry-chain-mobile-nav" aria-label="产业链章节">
-      <a href="#industry-chain-overview">速读</a>
-      <a href="#industry-chain-path">路径</a>
-      <a href="#industry-chain-graph">图谱</a>
-      <a href="#industry-chain-companies">个股</a>
-      <a href="#industry-chain-tracking">跟踪</a>
-      <a href="#industry-chain-manuscript">原稿</a>
-    </nav>
   );
 }
 

@@ -60,7 +60,9 @@
 }
 
 .industry-chain-mobile-rail,
-.industry-chain-flow-mobile-details {
+.industry-chain-flow-mobile-details,
+.industry-chain-flow-mobile-controls,
+.industry-chain-mobile-node-summary {
   display: none;
 }
 
@@ -343,6 +345,10 @@
     display: none;
   }
 
+  .industry-chain-graph-desktop-actions {
+    display: none;
+  }
+
   .industry-chain-mobile-rail {
     display: grid;
     gap: 8px;
@@ -414,6 +420,39 @@
     color: var(--color-ink);
   }
 
+  .industry-chain-mobile-node-summary {
+    display: grid;
+    gap: 6px;
+    border: 1px solid color-mix(in srgb, var(--color-primary-hover) 34%, var(--color-hairline));
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-surface-2));
+    margin-top: 8px;
+    padding: 10px;
+  }
+
+  .industry-chain-mobile-node-summary span {
+    color: var(--color-ink-tertiary);
+    font-size: 11px;
+  }
+
+  .industry-chain-mobile-node-summary strong {
+    color: var(--color-ink);
+    font-size: 15px;
+    line-height: 1.35;
+  }
+
+  .industry-chain-mobile-node-summary p {
+    color: var(--color-ink-muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .industry-chain-mobile-node-summary em {
+    color: var(--color-ink-subtle);
+    font-size: 12px;
+    font-style: normal;
+  }
+
   .industry-chain-flow-mobile-details {
     display: block;
   }
@@ -439,6 +478,15 @@
 
   .industry-chain-flow-mobile-details[open] summary {
     margin-bottom: 10px;
+  }
+
+  .industry-chain-flow-mobile-controls {
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .industry-chain-flow-mobile-controls .industry-chain-segmented {
+    width: 100%;
   }
 
   .industry-chain-flow-canvas {

@@ -89,40 +89,56 @@ export function IndustryChainGraph({
           <span className="eyebrow">全局知识图谱</span>
           <h2>{graphTitle(viewMode, data.title, activeStep)}</h2>
         </div>
-        <div className="industry-chain-graph-actions">
-          <div className="industry-chain-segmented" role="tablist" aria-label="图谱视图">
-            <button
-              className={viewMode === "map" ? "active" : ""}
-              type="button"
-              role="tab"
-              aria-selected={viewMode === "map"}
-              onClick={() => setViewMode("map")}
-            >
-              全量图谱
-            </button>
-            <button
-              className={viewMode === "path" ? "active" : ""}
-              type="button"
-              role="tab"
-              aria-selected={viewMode === "path"}
-              onClick={() => setViewMode("path")}
-            >
-              学习路径
-            </button>
-          </div>
+        <div className="industry-chain-graph-actions industry-chain-graph-desktop-actions">
+          <GraphModeSwitch viewMode={viewMode} onSetViewMode={setViewMode} />
           <span className="industry-chain-status-pill">{viewMode === "map" ? "知识图谱" : "路径分镜"}</span>
         </div>
       </div>
       <MobileChainRail columns={columns} data={data} selectedNodeId={selectedNode?.id} onSelectNode={onSelectNode} />
+      <MobileSelectedNodeSummary node={selectedNode} relatedEdges={relatedEdges} />
       <div className="industry-chain-flow-desktop">
         <FlowCanvas edges={edges} graphKey={data.chain_id} mode={viewMode} nodes={nodes} onSelectNode={onSelectNode} />
       </div>
       <details className="industry-chain-flow-mobile-details">
         <summary>展开完整图谱</summary>
+        <div className="industry-chain-flow-mobile-controls">
+          <GraphModeSwitch viewMode={viewMode} onSetViewMode={setViewMode} />
+        </div>
         <FlowCanvas edges={edges} graphKey={data.chain_id} mode={viewMode} nodes={nodes} onSelectNode={onSelectNode} />
       </details>
       <CausalRelationStrip edges={relatedEdges} nodesById={nodesById} onSelectNode={onSelectNode} />
     </section>
+  );
+}
+
+function GraphModeSwitch({
+  viewMode,
+  onSetViewMode,
+}: {
+  viewMode: GraphViewMode;
+  onSetViewMode: (mode: GraphViewMode) => void;
+}) {
+  return (
+    <div className="industry-chain-segmented" role="tablist" aria-label="图谱视图">
+      <button
+        className={viewMode === "map" ? "active" : ""}
+        type="button"
+        role="tab"
+        aria-selected={viewMode === "map"}
+        onClick={() => onSetViewMode("map")}
+      >
+        全量图谱
+      </button>
+      <button
+        className={viewMode === "path" ? "active" : ""}
+        type="button"
+        role="tab"
+        aria-selected={viewMode === "path"}
+        onClick={() => onSetViewMode("path")}
+      >
+        学习路径
+      </button>
+    </div>
   );
 }
 
@@ -227,6 +243,30 @@ function MobileChainRail({
           </article>
         );
       })}
+    </div>
+  );
+}
+
+function MobileSelectedNodeSummary({
+  node,
+  relatedEdges,
+}: {
+  node: IndustryChainNode | null;
+  relatedEdges: IndustryChainEdge[];
+}) {
+  if (!node) {
+    return null;
+  }
+
+  return (
+    <div className="industry-chain-mobile-node-summary">
+      <span>当前节点</span>
+      <strong>{node.label}</strong>
+      <p>{node.beginner_explanation}</p>
+      <em>
+        关键度 {node.bottleneck_strength}/5
+        {relatedEdges.length ? ` · ${relatedEdges.length} 条相关关系` : ""}
+      </em>
     </div>
   );
 }

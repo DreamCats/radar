@@ -575,28 +575,61 @@ function CompanyDetailCard({
       <CompanyCardSection title="当前证据">
         <em>{company.current_view}</em>
       </CompanyCardSection>
-      <CompanyListSection title="证据依据" items={company.evidence_basis} />
-      <CompanyEvidenceRefSection refs={company.evidence_refs} />
-      <CompanyListSection title="验证重点" items={company.verification_focus} />
-      <CompanyCardSection title="待补证据">
-        <ul>
-          {company.next_checks.slice(0, 3).map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </CompanyCardSection>
-      <CompanyCardSection title="财务验证">
-        {financialChecks.length ? (
+      <div className="industry-chain-company-desktop-sections">
+        <CompanyListSection title="证据依据" items={company.evidence_basis} />
+        <CompanyEvidenceRefSection refs={company.evidence_refs} />
+        <CompanyListSection title="验证重点" items={company.verification_focus} />
+        <CompanyCardSection title="待补证据">
           <ul>
-            {financialChecks.map((item) => (
-              <li key={item.node_id}>{item.watch}</li>
+            {company.next_checks.slice(0, 3).map((item) => (
+              <li key={item}>{item}</li>
             ))}
           </ul>
-        ) : (
-          <p>先确认收入占比、订单和毛利变化。</p>
-        )}
-      </CompanyCardSection>
-      <CompanyListSection title="主要风险" items={company.risks} />
+        </CompanyCardSection>
+        <CompanyCardSection title="财务验证">
+          {financialChecks.length ? (
+            <ul>
+              {financialChecks.map((item) => (
+                <li key={item.node_id}>{item.watch}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>先确认收入占比、订单和毛利变化。</p>
+          )}
+        </CompanyCardSection>
+        <CompanyListSection title="主要风险" items={company.risks} />
+      </div>
+      <div className="industry-chain-company-mobile-sections">
+        <CompanyFoldSection count={foldCount(company.evidence_basis, company.evidence_refs)} title="证据依据和来源">
+          <CompanyListSection title="证据依据" items={company.evidence_basis} />
+          <CompanyEvidenceRefSection refs={company.evidence_refs} />
+        </CompanyFoldSection>
+        <CompanyFoldSection
+          count={foldCount(company.verification_focus, company.next_checks, company.risks) + financialChecks.length}
+          title="验证重点和风险"
+        >
+          <CompanyListSection title="验证重点" items={company.verification_focus} />
+          <CompanyCardSection title="待补证据">
+            <ul>
+              {company.next_checks.slice(0, 3).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </CompanyCardSection>
+          <CompanyCardSection title="财务验证">
+            {financialChecks.length ? (
+              <ul>
+                {financialChecks.map((item) => (
+                  <li key={item.node_id}>{item.watch}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>先确认收入占比、订单和毛利变化。</p>
+            )}
+          </CompanyCardSection>
+          <CompanyListSection title="主要风险" items={company.risks} />
+        </CompanyFoldSection>
+      </div>
     </article>
   );
 }
@@ -667,6 +700,26 @@ function CompanyListSection({ items, title }: { items?: string[]; title: string 
       </ul>
     </CompanyCardSection>
   );
+}
+
+function CompanyFoldSection({ children, count, title }: { children: ReactNode; count: number; title: string }) {
+  if (!count) {
+    return null;
+  }
+
+  return (
+    <details className="industry-chain-company-fold-section">
+      <summary>
+        <span>{title}</span>
+        <em>{count} 项</em>
+      </summary>
+      <div>{children}</div>
+    </details>
+  );
+}
+
+function foldCount(...groups: Array<unknown[] | undefined>): number {
+  return groups.reduce((count, group) => count + (group?.length ?? 0), 0);
 }
 
 export function CatalystPanel({ data }: { data: IndustryChainData }) {

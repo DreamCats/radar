@@ -15,6 +15,7 @@ import "./job-center.css";
 import "./industry-chain.css";
 import "./industry-chain-flow.css";
 import "./industry-chain-detail.css";
+import "./industry-chain-mobile-article.css";
 import "./leaderboard.css";
 import "./leaderboard-motion.css";
 import "./leaderboard-responsive.css";
