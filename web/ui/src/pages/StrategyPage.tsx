@@ -138,7 +138,6 @@ export function StrategyPage() {
         />
       )}
       <StrategyStockDrawer
-        key={selectedStock ? `${selectedStock.ts_code}-${drawerMode}` : "closed"}
         stock={selectedStock}
         initialMode={drawerMode}
         onClose={() => setSelectedStock(null)}

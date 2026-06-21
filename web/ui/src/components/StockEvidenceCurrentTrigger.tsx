@@ -1,4 +1,5 @@
 import { Check, Clock3, Copy, FileText, MessageSquareText, ShieldAlert, Users, X } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -59,7 +60,7 @@ export function StockEvidenceCurrentTrigger({ item }: { item: StockEvidenceChain
       ) : (
         <p className="stock-evidence-empty">这版没有恢复到窗口内触发消息，先只按历史证据链观察。</p>
       )}
-      {originalMessage ? <OriginalMessageDrawer trigger={originalMessage} onClose={() => setOriginalMessage(null)} /> : null}
+      <OriginalMessageDrawer trigger={originalMessage} onClose={() => setOriginalMessage(null)} />
     </section>
   );
 }
@@ -93,11 +94,14 @@ function TriggerRow({ trigger, onOpenOriginal }: { trigger: StockEvidenceMessage
   );
 }
 
-export function OriginalMessageDrawer({ trigger, onClose }: { trigger: StockEvidenceMessage; onClose: () => void }) {
+export function OriginalMessageDrawer({ trigger, onClose }: { trigger: StockEvidenceMessage | null; onClose: () => void }) {
+  const shouldReduceMotion = useReducedMotion();
   const [copied, setCopied] = useState(false);
-  const content = originalContent(trigger) ?? "暂无原文";
 
   useEffect(() => {
+    if (!trigger) {
+      return;
+    }
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         onClose();
@@ -105,7 +109,15 @@ export function OriginalMessageDrawer({ trigger, onClose }: { trigger: StockEvid
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [onClose, trigger]);
+
+  if (!trigger) {
+    return createPortal(<AnimatePresence>{null}</AnimatePresence>, document.body);
+  }
+
+  const content = originalContent(trigger) ?? "暂无原文";
+  const shellMotion = originalShellMotion(shouldReduceMotion);
+  const drawerMotion = originalDrawerMotion(shouldReduceMotion);
 
   async function copyOriginal() {
     try {
@@ -118,48 +130,100 @@ export function OriginalMessageDrawer({ trigger, onClose }: { trigger: StockEvid
   }
 
   return createPortal(
-    <div className="stock-evidence-original-shell" role="dialog" aria-modal="true" aria-label="查看原文">
-      <button className="stock-evidence-original-scrim" type="button" aria-label="关闭原文" onClick={onClose} />
-      <aside className="stock-evidence-original-drawer">
-        <header>
-          <div>
-            <span>{trigger.type ?? "原始消息"}</span>
-            <strong>查看原文</strong>
+    <AnimatePresence>
+      <motion.div
+        className="stock-evidence-original-shell"
+        role="dialog"
+        aria-modal="true"
+        aria-label="查看原文"
+        key="stock-evidence-original"
+        {...shellMotion}
+      >
+        <motion.button
+          className="stock-evidence-original-scrim"
+          type="button"
+          aria-label="关闭原文"
+          onClick={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={shouldReduceMotion ? { duration: 0.08 } : { duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+        />
+        <motion.aside className="stock-evidence-original-drawer" {...drawerMotion}>
+          <header>
+            <div>
+              <span>{trigger.type ?? "原始消息"}</span>
+              <strong>查看原文</strong>
+            </div>
+            <div>
+              <button
+                className={copied ? "icon-btn is-copied" : "icon-btn"}
+                type="button"
+                aria-label={copied ? "已复制原文" : "复制原文"}
+                title={copied ? "已复制" : "复制原文"}
+                onClick={() => void copyOriginal()}
+              >
+                {copied ? <Check size={15} /> : <Copy size={15} />}
+              </button>
+              <button className="icon-btn" type="button" aria-label="关闭原文" onClick={onClose}>
+                <X size={16} />
+              </button>
+            </div>
+          </header>
+          <div className="stock-evidence-original-meta">
+            <article>
+              <span>时间</span>
+              <strong>{trigger.time ?? "-"}</strong>
+            </article>
+            <article>
+              <span>发送人</span>
+              <strong>{trigger.sender ?? "-"}</strong>
+            </article>
+            <article>
+              <span>来源</span>
+              <strong>{trigger.group_name ?? "个人消息"}</strong>
+            </article>
           </div>
-          <div>
-            <button
-              className={copied ? "icon-btn is-copied" : "icon-btn"}
-              type="button"
-              aria-label={copied ? "已复制原文" : "复制原文"}
-              title={copied ? "已复制" : "复制原文"}
-              onClick={() => void copyOriginal()}
-            >
-              {copied ? <Check size={15} /> : <Copy size={15} />}
-            </button>
-            <button className="icon-btn" type="button" aria-label="关闭原文" onClick={onClose}>
-              <X size={16} />
-            </button>
-          </div>
-        </header>
-        <div className="stock-evidence-original-meta">
-          <article>
-            <span>时间</span>
-            <strong>{trigger.time ?? "-"}</strong>
-          </article>
-          <article>
-            <span>发送人</span>
-            <strong>{trigger.sender ?? "-"}</strong>
-          </article>
-          <article>
-            <span>来源</span>
-            <strong>{trigger.group_name ?? "个人消息"}</strong>
-          </article>
-        </div>
-        <pre>{content}</pre>
-      </aside>
-    </div>,
+          <pre>{content}</pre>
+        </motion.aside>
+      </motion.div>
+    </AnimatePresence>,
     document.body,
   );
+}
+
+function originalShellMotion(shouldReduceMotion: boolean | null) {
+  if (shouldReduceMotion) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.12 },
+    };
+  }
+  return {
+    initial: { opacity: 1 },
+    animate: { opacity: 1 },
+    exit: { opacity: 1 },
+    transition: { duration: 0.16 },
+  };
+}
+
+function originalDrawerMotion(shouldReduceMotion: boolean | null) {
+  if (shouldReduceMotion) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.12 },
+    };
+  }
+  return {
+    initial: { opacity: 0.92, x: 28 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 24 },
+    transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const },
+  };
 }
 
 export function originalContent(trigger: StockEvidenceMessage): string | null {

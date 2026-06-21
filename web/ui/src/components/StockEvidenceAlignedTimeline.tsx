@@ -85,7 +85,7 @@ export function StockEvidenceAlignedTimeline({ item }: { item: StockEvidenceChai
         ))}
         {!rows.length && <p className="stock-evidence-empty">暂无可对照的消息或市场证据。</p>}
       </div>
-      {originalMessage ? <OriginalMessageDrawer trigger={originalMessage} onClose={() => setOriginalMessage(null)} /> : null}
+      <OriginalMessageDrawer trigger={originalMessage} onClose={() => setOriginalMessage(null)} />
       <section className="stock-evidence-judgement-panel">
         <h4>
           <Gauge size={14} />

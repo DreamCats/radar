@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { BarChart3, ListChecks, RefreshCw, X } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
 
 import { fetchStockEvidenceFinancials, fetchStockEvidenceStockChart } from "../api/radarApi";
@@ -67,6 +68,7 @@ type Props = {
 };
 
 export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: Props) {
+  const shouldReduceMotion = useReducedMotion();
   const [activeMode, setActiveMode] = useState<StrategyStockDrawerMode>(initialMode);
   const [chart, setChart] = useState<StockEvidenceStockChart | null>(null);
   const [loading, setLoading] = useState(false);
@@ -212,18 +214,36 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
   }, [closeDrawer, stock]);
 
   if (!stock) {
-    return null;
+    return createPortal(<AnimatePresence>{null}</AnimatePresence>, document.body);
   }
 
   const candles = chart?.candles ?? [];
   const evidenceLines = stockEvidenceLines(stock);
   const checklist = stock.checklist ? checklistWithFinancials(stock.checklist, financials, financialLoading, financialError) : null;
   const activePanel = checklist ? activeMode : "chart";
+  const shellMotion = drawerShellMotion(shouldReduceMotion);
+  const drawerMotion = stockDrawerMotion(shouldReduceMotion);
 
   const drawer = (
-    <div className="strategy-stock-drawer-shell" role="dialog" aria-modal="true" aria-label={`${stock.stock_name} 个股深挖`}>
-      <button className="strategy-stock-drawer-scrim" type="button" aria-label="关闭K线抽屉" onClick={closeDrawer} />
-      <aside className="strategy-stock-drawer">
+    <motion.div
+      className="strategy-stock-drawer-shell"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${stock.stock_name} 个股深挖`}
+      key="strategy-stock-drawer"
+      {...shellMotion}
+    >
+      <motion.button
+        className="strategy-stock-drawer-scrim"
+        type="button"
+        aria-label="关闭K线抽屉"
+        onClick={closeDrawer}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={shouldReduceMotion ? { duration: 0.08 } : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+      />
+      <motion.aside className="strategy-stock-drawer" {...drawerMotion}>
         <header className="strategy-stock-drawer-head">
           <div className="strategy-stock-drawer-title">
             <strong>{stock.stock_name}</strong>
@@ -348,11 +368,45 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
             </>
           )}
         </div>
-      </aside>
-    </div>
+      </motion.aside>
+    </motion.div>
   );
 
-  return createPortal(drawer, document.body);
+  return createPortal(<AnimatePresence>{drawer}</AnimatePresence>, document.body);
+}
+
+function drawerShellMotion(shouldReduceMotion: boolean | null) {
+  if (shouldReduceMotion) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.12 },
+    };
+  }
+  return {
+    initial: { opacity: 1 },
+    animate: { opacity: 1 },
+    exit: { opacity: 1 },
+    transition: { duration: 0.18 },
+  };
+}
+
+function stockDrawerMotion(shouldReduceMotion: boolean | null) {
+  if (shouldReduceMotion) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.12 },
+    };
+  }
+  return {
+    initial: { opacity: 0.94, y: 14, scale: 0.985 },
+    animate: { opacity: 1, y: 0, scale: 1 },
+    exit: { opacity: 0, y: 8, scale: 0.99 },
+    transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const },
+  };
 }
 
 function DecisionMetric({ label, value, tone }: StrategyStockDrawerMetric) {

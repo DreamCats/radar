@@ -91,6 +91,7 @@
   box-shadow:
     0 18px 42px rgb(0 0 0 / 0.48),
     inset 0 1px 0 rgb(255 255 255 / 0.035);
+  animation: strategy-snapshot-menu-enter 160ms var(--motion-ease) both;
 }
 
 .strategy-snapshot-option {
@@ -151,5 +152,17 @@
     right: auto;
     left: 0;
     width: 100%;
+  }
+}
+
+@keyframes strategy-snapshot-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

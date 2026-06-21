@@ -13,7 +13,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 
 import { fetchAuthStatus, login, logout } from "./api/radarApi";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -145,16 +145,24 @@ export function App() {
         onLogout={handleLogout}
         onSelectTab={handleSelectTab}
       />
-      {mobileNavOpen && (
-        <>
-          <button
+      <AnimatePresence initial={false}>
+        {mobileNavOpen && (
+          <motion.button
             className="mobile-nav-scrim"
+            key="mobile-nav-scrim"
             type="button"
             aria-label="关闭导航"
             onClick={() => setMobileNavOpen(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={shouldReduceMotion ? { duration: 0.08 } : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           />
+        )}
+        {mobileNavOpen && (
           <WorkspaceSidebar
             authRequired={auth.auth_required}
+            key="mobile-nav-sidebar"
             layoutId="workspace-mobile-nav"
             shouldReduceMotion={shouldReduceMotion}
             tab={tab}
@@ -162,8 +170,8 @@ export function App() {
             onLogout={handleLogout}
             onSelectTab={handleSelectTab}
           />
-        </>
-      )}
+        )}
+      </AnimatePresence>
       <section className="main workspace-main">
         <div className="content">
           <div className="page-motion">
@@ -216,8 +224,9 @@ function WorkspaceSidebar(props: {
 }) {
   const sidebarClass = props.variant === "mobile" ? "sidebar mobile-sidebar" : "sidebar desktop-sidebar";
   const navLabel = props.variant === "mobile" ? "移动端导航" : "workspace sections";
+  const sidebarMotion = props.variant === "mobile" ? mobileSidebarMotion(props.shouldReduceMotion) : {};
   return (
-    <aside className={sidebarClass}>
+    <motion.aside className={sidebarClass} {...sidebarMotion}>
       <div className="brand brand-block">
         <motion.span
           className="dot brand-dot"
@@ -275,7 +284,7 @@ function WorkspaceSidebar(props: {
           退出
         </button>
       )}
-    </aside>
+    </motion.aside>
   );
 }
 
@@ -307,6 +316,23 @@ function AmbientBackground({ shouldReduceMotion }: { shouldReduceMotion: boolean
       />
     </div>
   );
+}
+
+function mobileSidebarMotion(shouldReduceMotion: boolean | null) {
+  if (shouldReduceMotion) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.12 },
+    };
+  }
+  return {
+    initial: { opacity: 0.88, x: "-102%" },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0.88, x: "-102%" },
+    transition: { type: "spring", stiffness: 430, damping: 38, mass: 0.9 },
+  };
 }
 
 function useMobileNavSwipe(enabled: boolean, mobileNavOpen: boolean, setMobileNavOpen: (open: boolean) => void) {

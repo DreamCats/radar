@@ -592,6 +592,10 @@
     display: block;
   }
 
+  .wechat-workspace:not(.thread-open) .wechat-conversation-panel {
+    animation: wechat-mobile-panel-return 180ms var(--motion-ease) both;
+  }
+
   .wechat-thread-panel {
     display: none;
   }
@@ -602,6 +606,7 @@
 
   .wechat-workspace.thread-open .wechat-thread-panel {
     display: grid;
+    animation: wechat-mobile-panel-forward 200ms var(--motion-ease) both;
   }
 
   .wechat-conversation-panel,
@@ -684,5 +689,29 @@
     padding: 8px 10px;
     font-size: 12.5px;
     line-height: 1.55;
+  }
+}
+
+@keyframes wechat-mobile-panel-forward {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes wechat-mobile-panel-return {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
