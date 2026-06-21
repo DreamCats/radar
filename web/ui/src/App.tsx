@@ -40,6 +40,10 @@ const NAV_ITEMS = [
 
 const TAB_STORAGE_KEY = "radar.activeTab";
 const TAB_KEYS = new Set<TabKey>(NAV_ITEMS.map((item) => item.key));
+const MOBILE_NAV_QUERY = "(max-width: 720px)";
+const MOBILE_NAV_EDGE_WIDTH = 32;
+const MOBILE_NAV_SWIPE_DISTANCE = 56;
+const MOBILE_NAV_VERTICAL_TOLERANCE = 1.25;
 
 export function App() {
   const [tab, setTab] = useState<TabKey>(() => readInitialTab());
@@ -48,6 +52,9 @@ export function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const shouldReduceMotion = useReducedMotion();
   const activeItem = NAV_ITEMS.find((item) => item.key === tab) ?? NAV_ITEMS[0];
+  const navGesturesEnabled = auth !== null && (!auth.auth_required || auth.authenticated);
+
+  useMobileNavSwipe(navGesturesEnabled, mobileNavOpen, setMobileNavOpen);
 
   useEffect(() => {
     fetchAuthStatus()
@@ -300,6 +307,88 @@ function AmbientBackground({ shouldReduceMotion }: { shouldReduceMotion: boolean
       />
     </div>
   );
+}
+
+function useMobileNavSwipe(enabled: boolean, mobileNavOpen: boolean, setMobileNavOpen: (open: boolean) => void) {
+  useEffect(() => {
+    if (!enabled || typeof window === "undefined") {
+      return;
+    }
+
+    let gesture: { startX: number; startY: number } | null = null;
+
+    const isMobileNavLayout = () => window.matchMedia(MOBILE_NAV_QUERY).matches;
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (!isMobileNavLayout() || event.touches.length !== 1) {
+        gesture = null;
+        return;
+      }
+
+      const touch = event.touches[0];
+      if (!mobileNavOpen && touch.clientX > MOBILE_NAV_EDGE_WIDTH) {
+        gesture = null;
+        return;
+      }
+
+      gesture = { startX: touch.clientX, startY: touch.clientY };
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!gesture || event.touches.length !== 1) {
+        return;
+      }
+
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - gesture.startX;
+      const deltaY = touch.clientY - gesture.startY;
+      if (Math.abs(deltaY) > 12 && Math.abs(deltaY) > Math.abs(deltaX)) {
+        gesture = null;
+      }
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (!gesture) {
+        return;
+      }
+
+      const touch = event.changedTouches[0];
+      const start = gesture;
+      gesture = null;
+      if (!touch) {
+        return;
+      }
+
+      const deltaX = touch.clientX - start.startX;
+      const deltaY = touch.clientY - start.startY;
+      const isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY) * MOBILE_NAV_VERTICAL_TOLERANCE;
+      if (!isHorizontalSwipe) {
+        return;
+      }
+
+      if (!mobileNavOpen && deltaX >= MOBILE_NAV_SWIPE_DISTANCE) {
+        setMobileNavOpen(true);
+      }
+      if (mobileNavOpen && deltaX <= -MOBILE_NAV_SWIPE_DISTANCE) {
+        setMobileNavOpen(false);
+      }
+    };
+
+    const onTouchCancel = () => {
+      gesture = null;
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", onTouchCancel, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchCancel);
+    };
+  }, [enabled, mobileNavOpen, setMobileNavOpen]);
 }
 
 function readInitialTab(): TabKey {
