@@ -1,5 +1,6 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { BarChart3, ListChecks, RefreshCw, X } from "lucide-react";
+import { createPortal } from "react-dom";
 
 import { fetchStockEvidenceFinancials, fetchStockEvidenceStockChart } from "../api/radarApi";
 import { ChatLauncher } from "./ChatLauncher";
@@ -46,6 +47,19 @@ const StrategyStockCandlestickChart = lazy(() =>
   import("./StrategyStockCandlestickChart").then((module) => ({ default: module.StrategyStockCandlestickChart })),
 );
 
+function isMobileStockDrawerLayout() {
+  return window.matchMedia("(max-width: 720px)").matches;
+}
+
+function nextDrawerHistoryState(tsCode: string) {
+  const currentState = window.history.state;
+  const baseState = currentState && typeof currentState === "object" ? currentState : {};
+  return {
+    ...baseState,
+    radarStrategyStockDrawer: tsCode,
+  };
+}
+
 type Props = {
   stock: StrategyStock | null;
   initialMode?: StrategyStockDrawerMode;
@@ -61,10 +75,44 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
   const [financials, setFinancials] = useState<StockEvidenceFinancials | null>(null);
   const [financialLoading, setFinancialLoading] = useState(false);
   const [financialError, setFinancialError] = useState<string | null>(null);
+  const openRef = useRef(false);
+  const drawerHistoryRef = useRef(false);
+
+  const closeDrawer = useCallback(() => {
+    if (drawerHistoryRef.current) {
+      drawerHistoryRef.current = false;
+      window.history.back();
+      return;
+    }
+    onClose();
+  }, [onClose]);
 
   useEffect(() => {
     setActiveMode(initialMode);
   }, [initialMode, stock?.ts_code]);
+
+  useEffect(() => {
+    openRef.current = stock !== null;
+  }, [stock]);
+
+  useEffect(() => {
+    if (!stock || !isMobileStockDrawerLayout() || drawerHistoryRef.current) {
+      return;
+    }
+    window.history.pushState(nextDrawerHistoryState(stock.ts_code), "", window.location.href);
+    drawerHistoryRef.current = true;
+  }, [stock]);
+
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      if (openRef.current && !event.state?.radarStrategyStockDrawer) {
+        drawerHistoryRef.current = false;
+        onClose();
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [onClose]);
 
   useEffect(() => {
     if (!stock) {
@@ -156,12 +204,12 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
     }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onClose();
+        closeDrawer();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [stock, onClose]);
+  }, [closeDrawer, stock]);
 
   if (!stock) {
     return null;
@@ -172,9 +220,9 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
   const checklist = stock.checklist ? checklistWithFinancials(stock.checklist, financials, financialLoading, financialError) : null;
   const activePanel = checklist ? activeMode : "chart";
 
-  return (
+  const drawer = (
     <div className="strategy-stock-drawer-shell" role="dialog" aria-modal="true" aria-label={`${stock.stock_name} 个股深挖`}>
-      <button className="strategy-stock-drawer-scrim" type="button" aria-label="关闭K线抽屉" onClick={onClose} />
+      <button className="strategy-stock-drawer-scrim" type="button" aria-label="关闭K线抽屉" onClick={closeDrawer} />
       <aside className="strategy-stock-drawer">
         <header className="strategy-stock-drawer-head">
           <div className="strategy-stock-drawer-title">
@@ -246,7 +294,7 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
                 "后续应该盯哪些均线、成交量和回撤位置？",
               ]}
             />
-            <button className="icon-btn" type="button" aria-label="关闭" onClick={onClose}>
+            <button className="icon-btn" type="button" aria-label="关闭" onClick={closeDrawer}>
               <X size={16} />
             </button>
           </div>
@@ -303,6 +351,8 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
       </aside>
     </div>
   );
+
+  return createPortal(drawer, document.body);
 }
 
 function DecisionMetric({ label, value, tone }: StrategyStockDrawerMetric) {

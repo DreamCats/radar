@@ -6,10 +6,12 @@ import {
   Layers3,
   ListOrdered,
   LogOut,
+  Menu,
   MessageCircle,
   Network,
   RadioTower,
   Search,
+  X,
 } from "lucide-react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 
@@ -43,7 +45,9 @@ export function App() {
   const [tab, setTab] = useState<TabKey>(() => readInitialTab());
   const [auth, setAuth] = useState<AuthStatus | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const shouldReduceMotion = useReducedMotion();
+  const activeItem = NAV_ITEMS.find((item) => item.key === tab) ?? NAV_ITEMS[0];
 
   useEffect(() => {
     fetchAuthStatus()
@@ -70,6 +74,19 @@ export function App() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
+  useEffect(() => {
+    if (!mobileNavOpen) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileNavOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileNavOpen]);
+
   async function handleLogin(username: string, password: string) {
     const next = await login(username, password);
     setAuth(next);
@@ -80,6 +97,11 @@ export function App() {
     const next = await logout();
     setAuth(next);
     setTab("dashboard");
+  }
+
+  function handleSelectTab(nextTab: TabKey) {
+    setTab(nextTab);
+    setMobileNavOpen(false);
   }
 
   if (auth === null) {
@@ -102,65 +124,39 @@ export function App() {
   return (
     <main className={`app workspace-shell active-tab-${tab}`}>
       <AmbientBackground shouldReduceMotion={shouldReduceMotion} />
-      <aside className="sidebar">
-        <div className="brand brand-block">
-          <motion.span
-            className="dot brand-dot"
-            animate={shouldReduceMotion ? { opacity: 0.9 } : { opacity: [0.72, 1, 0.72], scale: [1, 1.16, 1] }}
-            transition={shouldReduceMotion ? { duration: 0.12 } : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <span>radar</span>
-        </div>
-        <LayoutGroup id="workspace-nav">
-          <nav className="nav-group side-nav" aria-label="workspace sections">
-            <div className="eyebrow">看板</div>
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              return (
-                <motion.button
-                  className={tab === item.key ? "nav-item active" : "nav-item"}
-                  key={item.key}
-                  type="button"
-                  onClick={() => setTab(item.key)}
-                  whileHover={shouldReduceMotion ? undefined : { x: 2 }}
-                  whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
-                >
-                  {tab === item.key && (
-                    <motion.span className="nav-active-pill" layoutId="nav-active-pill" />
-                  )}
-                  <span className="nav-item-content">
-                    <Icon size={16} />
-                    <span>{item.label}</span>
-                  </span>
-                </motion.button>
-              );
-            })}
-          </nav>
-        </LayoutGroup>
-        <div className="nav-group module-stack">
-          <div className="eyebrow">下一阶段</div>
-          <button className="nav-item disabled" type="button" disabled>
-            <RadioTower size={16} />
-            信号雷达
-            <span className="tag">阶段二</span>
-          </button>
-          <button className="nav-item disabled" type="button" disabled>
-            <BarChart3 size={16} />
-            行情
-            <span className="tag">预留</span>
-          </button>
-        </div>
-        {auth.auth_required && (
+      <MobileTopbar
+        activeLabel={activeItem.label}
+        menuOpen={mobileNavOpen}
+        onToggleMenu={() => setMobileNavOpen((open) => !open)}
+      />
+      <WorkspaceSidebar
+        authRequired={auth.auth_required}
+        layoutId="workspace-nav"
+        shouldReduceMotion={shouldReduceMotion}
+        tab={tab}
+        variant="desktop"
+        onLogout={handleLogout}
+        onSelectTab={handleSelectTab}
+      />
+      {mobileNavOpen && (
+        <>
           <button
-            className="nav-item logout-item"
+            className="mobile-nav-scrim"
             type="button"
-            onClick={() => void handleLogout()}
-          >
-            <LogOut size={16} />
-            退出
-          </button>
-        )}
-      </aside>
+            aria-label="关闭导航"
+            onClick={() => setMobileNavOpen(false)}
+          />
+          <WorkspaceSidebar
+            authRequired={auth.auth_required}
+            layoutId="workspace-mobile-nav"
+            shouldReduceMotion={shouldReduceMotion}
+            tab={tab}
+            variant="mobile"
+            onLogout={handleLogout}
+            onSelectTab={handleSelectTab}
+          />
+        </>
+      )}
       <section className="main workspace-main">
         <div className="content">
           <div className="page-motion">
@@ -175,6 +171,104 @@ export function App() {
         </div>
       </section>
     </main>
+  );
+}
+
+function MobileTopbar(props: {
+  activeLabel: string;
+  menuOpen: boolean;
+  onToggleMenu: () => void;
+}) {
+  return (
+    <header className="mobile-topbar">
+      <button
+        className="mobile-menu-button"
+        type="button"
+        aria-label={props.menuOpen ? "关闭导航" : "打开导航"}
+        aria-expanded={props.menuOpen}
+        onClick={props.onToggleMenu}
+      >
+        {props.menuOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+      <div className="mobile-topbar-title">
+        <span>radar</span>
+        <strong>{props.activeLabel}</strong>
+      </div>
+    </header>
+  );
+}
+
+function WorkspaceSidebar(props: {
+  authRequired: boolean;
+  layoutId: string;
+  shouldReduceMotion: boolean | null;
+  tab: TabKey;
+  variant: "desktop" | "mobile";
+  onLogout: () => Promise<void>;
+  onSelectTab: (tab: TabKey) => void;
+}) {
+  const sidebarClass = props.variant === "mobile" ? "sidebar mobile-sidebar" : "sidebar desktop-sidebar";
+  const navLabel = props.variant === "mobile" ? "移动端导航" : "workspace sections";
+  return (
+    <aside className={sidebarClass}>
+      <div className="brand brand-block">
+        <motion.span
+          className="dot brand-dot"
+          animate={props.shouldReduceMotion ? { opacity: 0.9 } : { opacity: [0.72, 1, 0.72], scale: [1, 1.16, 1] }}
+          transition={props.shouldReduceMotion ? { duration: 0.12 } : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <span>radar</span>
+      </div>
+      <LayoutGroup id={props.layoutId}>
+        <nav className="nav-group side-nav" aria-label={navLabel}>
+          <div className="eyebrow">看板</div>
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <motion.button
+                className={props.tab === item.key ? "nav-item active" : "nav-item"}
+                key={item.key}
+                type="button"
+                onClick={() => props.onSelectTab(item.key)}
+                whileHover={props.shouldReduceMotion ? undefined : { x: 2 }}
+                whileTap={props.shouldReduceMotion ? undefined : { scale: 0.985 }}
+              >
+                {props.tab === item.key && (
+                  <motion.span className="nav-active-pill" layoutId={`${props.layoutId}-active-pill`} />
+                )}
+                <span className="nav-item-content">
+                  <Icon size={16} />
+                  <span>{item.label}</span>
+                </span>
+              </motion.button>
+            );
+          })}
+        </nav>
+      </LayoutGroup>
+      <div className="nav-group module-stack">
+        <div className="eyebrow">下一阶段</div>
+        <button className="nav-item disabled" type="button" disabled>
+          <RadioTower size={16} />
+          信号雷达
+          <span className="tag">阶段二</span>
+        </button>
+        <button className="nav-item disabled" type="button" disabled>
+          <BarChart3 size={16} />
+          行情
+          <span className="tag">预留</span>
+        </button>
+      </div>
+      {props.authRequired && (
+        <button
+          className="nav-item logout-item"
+          type="button"
+          onClick={() => void props.onLogout()}
+        >
+          <LogOut size={16} />
+          退出
+        </button>
+      )}
+    </aside>
   );
 }
 

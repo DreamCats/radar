@@ -12,6 +12,19 @@
   z-index: 1;
 }
 
+.workspace-shell > .mobile-topbar {
+  z-index: 70;
+}
+
+.workspace-shell > .mobile-nav-scrim {
+  z-index: 80;
+}
+
+.workspace-shell > .mobile-sidebar {
+  position: fixed;
+  z-index: 90;
+}
+
 .ambient-background {
   position: fixed;
   inset: 0;

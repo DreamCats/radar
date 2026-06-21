@@ -1,7 +1,7 @@
 .strategy-stock-drawer-shell {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 76;
   display: grid;
   align-items: center;
   justify-items: center;
