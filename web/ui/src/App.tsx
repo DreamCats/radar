@@ -36,8 +36,11 @@ const NAV_ITEMS = [
   { key: "ingest", label: "作业", icon: Database },
 ] satisfies Array<{ key: TabKey; label: string; icon: typeof Activity }>;
 
+const TAB_STORAGE_KEY = "radar.activeTab";
+const TAB_KEYS = new Set<TabKey>(NAV_ITEMS.map((item) => item.key));
+
 export function App() {
-  const [tab, setTab] = useState<TabKey>("dashboard");
+  const [tab, setTab] = useState<TabKey>(() => readInitialTab());
   const [auth, setAuth] = useState<AuthStatus | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -52,6 +55,19 @@ export function App() {
         setAuthError(err instanceof Error ? err.message : "无法读取登录状态");
         setAuth({ auth_required: true, authenticated: false });
       });
+  }, []);
+
+  useEffect(() => {
+    persistActiveTab(tab);
+  }, [tab]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const nextTab = readInitialTab();
+      setTab((current) => (current === nextTab ? current : nextTab));
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   async function handleLogin(username: string, password: string) {
@@ -190,4 +206,41 @@ function AmbientBackground({ shouldReduceMotion }: { shouldReduceMotion: boolean
       />
     </div>
   );
+}
+
+function readInitialTab(): TabKey {
+  if (typeof window === "undefined") {
+    return "dashboard";
+  }
+  const urlTab = new URLSearchParams(window.location.search).get("tab");
+  if (isTabKey(urlTab)) {
+    return urlTab;
+  }
+  try {
+    const storedTab = window.localStorage.getItem(TAB_STORAGE_KEY);
+    if (isTabKey(storedTab)) {
+      return storedTab;
+    }
+  } catch {
+    // Safari 隐私模式或存储异常时退回默认页，不影响看板可用性。
+  }
+  return "dashboard";
+}
+
+function persistActiveTab(tab: TabKey) {
+  try {
+    window.localStorage.setItem(TAB_STORAGE_KEY, tab);
+  } catch {
+    // localStorage 不可用时仍保持 URL 可恢复。
+  }
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("tab") === tab) {
+    return;
+  }
+  url.searchParams.set("tab", tab);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function isTabKey(value: string | null): value is TabKey {
+  return value !== null && TAB_KEYS.has(value as TabKey);
 }

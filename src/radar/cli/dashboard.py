@@ -25,6 +25,13 @@ class ChildProcess:
 @click.option("--port", default=8000, show_default=True, type=int, help="后端监听端口。")
 @click.option("--ui-host", default="127.0.0.1", show_default=True, help="前端监听地址。")
 @click.option("--ui-port", default=5173, show_default=True, type=int, help="前端监听端口。")
+@click.option(
+    "--ui-mode",
+    default="dev",
+    show_default=True,
+    type=click.Choice(["dev", "preview"]),
+    help="前端运行模式；手机访问建议 preview，避免 Vite HMR 断线刷新。",
+)
 @click.option("--reload", is_flag=True, help="开发时自动重载后端代码。")
 @click.pass_context
 def dashboard(
@@ -33,6 +40,7 @@ def dashboard(
     port: int,
     ui_host: str,
     ui_port: int,
+    ui_mode: str,
     reload: bool,
 ) -> None:
     """一站式启动本地 Web dashboard。"""
@@ -57,16 +65,10 @@ def dashboard(
     if reload:
         backend_args.append("--reload")
 
-    frontend_args = [
-        "npm",
-        "run",
-        "dev",
-        "--",
-        "--host",
-        ui_host,
-        "--port",
-        str(ui_port),
-    ]
+    if ui_mode == "preview":
+        _build_ui(env)
+
+    frontend_args = _frontend_args(ui_mode, ui_host, ui_port)
 
     children: list[ChildProcess] = []
     try:
@@ -99,6 +101,26 @@ def _start_child(
     except FileNotFoundError as exc:
         raise click.ClickException(f"{name} 启动失败，命令不存在: {args[0]}") from exc
     return ChildProcess(name=name, process=process)
+
+
+def _frontend_args(ui_mode: str, ui_host: str, ui_port: int) -> list[str]:
+    script = "preview" if ui_mode == "preview" else "dev"
+    return [
+        "npm",
+        "run",
+        script,
+        "--",
+        "--host",
+        ui_host,
+        "--port",
+        str(ui_port),
+    ]
+
+
+def _build_ui(env: dict[str, str]) -> None:
+    completed = subprocess.run(["npm", "run", "build"], cwd=UI_DIR, env=env, check=False)
+    if completed.returncode != 0:
+        raise click.ClickException(f"ui 构建失败，exit_code={completed.returncode}")
 
 
 def _wait_children(children: list[ChildProcess]) -> None:

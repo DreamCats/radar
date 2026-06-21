@@ -665,6 +665,77 @@ def test_dashboard_command_starts_uvicorn(monkeypatch, tmp_path):
     ]
 
 
+def test_dashboard_command_preview_builds_ui(monkeypatch, tmp_path):
+    config_dir = _config_dir(tmp_path)
+    calls: list[dict] = []
+    build_calls: list[str | None] = []
+
+    class FakeProcess:
+        def __init__(self, args, cwd, env, start_new_session):
+            self.args = args
+            self.cwd = cwd
+            self.env = env
+            self.start_new_session = start_new_session
+            self.pid = 123
+            self.poll_count = 0
+            calls.append(
+                {
+                    "args": args,
+                    "cwd": cwd,
+                    "env_api_base": env.get("VITE_RADAR_API_BASE"),
+                    "start_new_session": start_new_session,
+                }
+            )
+
+        def poll(self):
+            self.poll_count += 1
+            return 0 if self.poll_count > 1 and "uvicorn" in self.args else None
+
+        def wait(self, timeout):
+            return 0
+
+    monkeypatch.setattr("radar.cli.dashboard.subprocess.Popen", FakeProcess)
+    monkeypatch.setattr("radar.cli.dashboard.time.sleep", lambda _: None)
+    monkeypatch.setattr("radar.cli.dashboard._stop_children", lambda children: None)
+    monkeypatch.setattr(
+        "radar.cli.dashboard._build_ui",
+        lambda env: build_calls.append(env.get("VITE_RADAR_API_BASE")),
+    )
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "--config-dir",
+            str(config_dir),
+            "dashboard",
+            "--port",
+            "9100",
+            "--ui-port",
+            "5175",
+            "--ui-mode",
+            "preview",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert build_calls == ["http://127.0.0.1:9100"]
+    assert calls[1] == {
+        "args": [
+            "npm",
+            "run",
+            "preview",
+            "--",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "5175",
+        ],
+        "cwd": Path(__file__).resolve().parents[2] / "web" / "ui",
+        "env_api_base": "http://127.0.0.1:9100",
+        "start_new_session": True,
+    }
+
+
 def _config_dir(tmp_path):
     config_dir = tmp_path / "config"
     config_dir.mkdir()
