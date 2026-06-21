@@ -8,9 +8,17 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from radar.core.chat import ChatAgent, ChatEvent, ChatMessage, ChatSession, ChatSessionStore, build_chat_system_prompt
+from radar.core.chat import (
+    ChatAgent,
+    ChatEvent,
+    ChatMessage,
+    ChatSession,
+    ChatSessionStore,
+    build_chat_system_prompt,
+)
 from radar.core.chat.resume import can_continue_chat_session, stream_continue_turn
 from radar.core.config import RadarConfig
+from radar.web.server.chat_display import build_chat_display_messages
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     ChatContinueRequest,
@@ -51,7 +59,8 @@ def chat_sessions(config: RadarConfig = Depends(get_config), limit: int = 50) ->
     for session in store.list_sessions():
         messages = store.load_messages(session.session_id)
         events = store.load_events(session.session_id)
-        items.append(_session_response(session, messages, events=events))
+        display_messages = build_chat_display_messages(messages, events)
+        items.append(_session_response(session, display_messages, events=events))
     items.sort(key=lambda item: item.updated_at, reverse=True)
     return ChatSessionListResponse(items=items[: max(1, min(limit, 100))])
 
@@ -68,11 +77,12 @@ def chat_session_detail(session_id: str, config: RadarConfig = Depends(get_confi
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     assistant_durations = _assistant_turn_durations(events)
+    display_messages = build_chat_display_messages(messages, events)
     return ChatSessionDetailResponse(
-        session=_session_response(session, messages, events=events),
+        session=_session_response(session, display_messages, events=events),
         messages=[
             _message_response(message, duration_ms=assistant_durations.get(message.message_id))
-            for message in messages
+            for message in display_messages
             if _visible_message(message)
         ],
     )

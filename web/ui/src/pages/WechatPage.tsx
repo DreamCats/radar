@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { fetchConversations, fetchMessageGroups, fetchMessages } from "../api/radarApi";
-import { ChatLauncher } from "../components/ChatLauncher";
+import { WechatListChatLauncher, WechatThreadHeader } from "../components/WechatChatEntrypoints";
 import { Avatar, WechatFilters } from "../components/WechatControls";
 import { formatTime } from "../lib/datetime";
 import { panelMotionState } from "../lib/motion";
@@ -243,6 +243,7 @@ export function WechatPage() {
               <h2>微信</h2>
               <span>{conversations.length} 个会话</span>
             </div>
+            <WechatListChatLauncher conversations={conversations} query={query} canNext={canNext} />
           </div>
           {error && <p className="error-line">{error}</p>}
           <div
@@ -325,7 +326,7 @@ export function WechatPage() {
         <section className="wechat-thread-panel content-panel panel">
           {selectedConversation ? (
             <>
-              <ThreadHeader
+              <WechatThreadHeader
                 conversation={selectedConversation}
                 filteredCount={filteredThreadItems.length}
                 matchedSenderStats={matchedSenderStats}
@@ -399,106 +400,4 @@ function ConversationSkeleton() {
 
 function isMobileThreadLayout(): boolean {
   return window.matchMedia("(max-width: 760px)").matches;
-}
-
-function ThreadHeader(props: {
-  conversation: MessageConversationItem;
-  filteredCount: number;
-  matchedSenderStats: { sender: string; count: number }[];
-  selectedSender: string | null;
-  senderQuery: string;
-  threadEvidence: string[];
-  threadKeyword: string;
-  totalCount: number;
-  onSenderChange: (sender: string | null) => void;
-  onSenderQueryChange: (value: string) => void;
-  onThreadKeywordChange: (value: string) => void;
-  onBack: () => void;
-}) {
-  return (
-    <div className="wechat-thread-head">
-      <button className="mini-button wechat-thread-back" type="button" onClick={props.onBack} aria-label="返回会话列表">
-        <ChevronLeft size={15} />
-      </button>
-      <Avatar name={props.conversation.title} />
-      <div className="wechat-thread-head-main">
-        <div className="wechat-thread-title-row">
-          <div className="wechat-thread-title-main">
-            <h2>{props.conversation.title}</h2>
-            <span>
-              {props.conversation.source} · {props.filteredCount}/{props.totalCount} 条
-            </span>
-          </div>
-          <ChatLauncher
-            title={props.conversation.title}
-            subtitle={`${props.conversation.source} · 当前可见 ${props.filteredCount}/${props.totalCount} 条`}
-            surface="微信会话"
-            entityId={props.conversation.key}
-            buttonLabel="AI"
-            buttonClassName="btn btn-primary btn-sm wechat-thread-ai-action"
-            context={[
-              { label: "会话", value: props.conversation.title },
-              { label: "来源", value: props.conversation.source },
-              { label: "最新发送人", value: props.conversation.latest_sender },
-              { label: "最新时间", value: formatTime(props.conversation.latest_time) },
-              { label: "当前筛选发送人", value: props.selectedSender ?? "全部" },
-              { label: "当前关键词", value: props.threadKeyword || "无" },
-              { label: "当前可见", value: `${props.filteredCount}/${props.totalCount} 条` },
-            ]}
-            evidence={props.threadEvidence}
-            quickPrompts={[
-              { label: "总结群聊", prompt: "站在投资研究视角总结这个会话：最近主要在聊什么，涉及哪些股票、行业或主题；哪些是原文明确证据，哪些只是推断；最后列出 3 条值得继续验证的线索。" },
-              { label: "投资线索", prompt: "从这个会话里筛出值得继续研究的股票或主题线索：按证据强度排序，说明催化、来源、需要补的行情或公开资料验证。" },
-              { label: "反证风险", prompt: "帮我排除噪音：哪些内容只是旧题材、情绪转发、利好兑现或证据不足；分别给出反证和暂缓跟踪理由。" },
-            ]}
-            suggestedQuestions={[
-              "帮我解释这个会话最近在聊什么，哪些内容和投资有关？",
-              "这里面涉及哪些股票、行业或主题？请按原文证据和你的推断分开。",
-              "这段聊天有没有值得继续深挖的线索、风险或反证？",
-            ]}
-          />
-        </div>
-        <div className="wechat-thread-filters" aria-label="群内筛选">
-          <div className="wechat-filter-input">
-            <Search size={13} />
-            <input
-              value={props.senderQuery}
-              placeholder="搜人"
-              onChange={(event) => props.onSenderQueryChange(event.target.value)}
-            />
-          </div>
-          <div className="wechat-filter-input wide">
-            <Search size={13} />
-            <input
-              value={props.threadKeyword}
-              placeholder="搜信息"
-              onChange={(event) => props.onThreadKeywordChange(event.target.value)}
-            />
-          </div>
-        </div>
-        <div className="wechat-sender-chips" aria-label="发送人">
-          <button
-            className={props.selectedSender === null ? "wechat-sender-chip active" : "wechat-sender-chip"}
-            type="button"
-            onClick={() => props.onSenderChange(null)}
-          >
-            全部
-            <span>{props.totalCount}</span>
-          </button>
-          {props.matchedSenderStats.map((item) => (
-            <button
-              className={props.selectedSender === item.sender ? "wechat-sender-chip active" : "wechat-sender-chip"}
-              key={item.sender}
-              type="button"
-              onClick={() => props.onSenderChange(item.sender)}
-              title={item.sender}
-            >
-              {item.sender}
-              <span>{item.count}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 }

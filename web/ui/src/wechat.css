@@ -360,6 +360,7 @@
   flex: 0 0 auto;
 }
 
+.wechat-list-ai-action,
 .wechat-thread-ai-action {
   flex: 0 0 auto;
   min-width: 58px;
@@ -368,6 +369,8 @@
   color: var(--color-ink-muted);
 }
 
+.wechat-list-ai-action:hover:not(:disabled),
+.wechat-list-ai-action:focus-visible,
 .wechat-thread-ai-action:hover:not(:disabled),
 .wechat-thread-ai-action:focus-visible {
   border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-hairline-strong));
