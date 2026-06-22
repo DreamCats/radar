@@ -10,6 +10,7 @@ _PROCESS_SUMMARY_TOOL_RESULT = "工具结果开始返回，我会把新增数据
 _TOOL_LABELS = {
     "radar_backtest_summary": "回测摘要",
     "radar_get_message_context": "消息上下文",
+    "radar_get_realtime_quote": "实时行情",
     "radar_get_stock_price_history": "行情数据",
     "radar_list_conversations": "会话列表",
     "radar_message_overview": "消息总览",

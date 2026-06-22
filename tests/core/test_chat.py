@@ -436,6 +436,7 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     assert "radar_search_messages" in tool_names
     assert "radar_search_web" in tool_names
     assert "radar_get_conversation_window" in tool_names
+    assert "radar_get_realtime_quote" in tool_names
     assert "radar_get_stock_price_history" in tool_names
     assert "radar_get_realtime_daily_quote" not in tool_names
     assert "radar_get_stock_moneyflow" in tool_names

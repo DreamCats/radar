@@ -5,6 +5,7 @@ from typing import Any
 
 from radar.core.chat.brave_search_tools import RadarBraveSearchTools
 from radar.core.chat.extensions import ExtensionContext
+from radar.core.chat.market_quote_tools import RadarMarketQuoteTools
 from radar.core.chat.shell_tool import build_shell_tool
 from radar.core.chat.stock_evidence_tools import RadarStockEvidenceTools
 from radar.core.chat.tushare_tools import RadarTushareTools
@@ -39,6 +40,7 @@ class RadarBuiltinExtension:
             self._get_message_context_tool(),
             self._message_overview_tool(),
             *RadarBraveSearchTools(self.config).tools(),
+            *RadarMarketQuoteTools(self.config).tools(),
             *RadarTushareTools(self.config).tools(),
             *RadarStockEvidenceTools(self.config).tools(),
             self._backtest_summary_tool(),
