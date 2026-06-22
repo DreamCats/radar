@@ -237,12 +237,8 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       );
       setCanContinue(false);
     } catch (err) {
-      const errorMessage = err instanceof DOMException && err.name === "AbortError" ? null : err instanceof Error ? err.message : "发送失败";
-      if (err instanceof DOMException && err.name === "AbortError") {
-        setError(null);
-      } else {
-        setError(errorMessage);
-      }
+      const errorMessage = chatTurnErrorMessage(err, "发送失败");
+      setError(null);
       stopAssistantDraft(assistantDraftId, errorMessage);
       setCanContinue(Boolean(currentSessionId));
     } finally {
@@ -305,12 +301,8 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       await continueChatTurn(sessionId, { provider_name: selectedProviderName }, handleStreamEvent, { signal: controller.signal });
       setCanContinue(false);
     } catch (err) {
-      const errorMessage = err instanceof DOMException && err.name === "AbortError" ? null : err instanceof Error ? err.message : "继续生成失败";
-      if (err instanceof DOMException && err.name === "AbortError") {
-        setError(null);
-      } else {
-        setError(errorMessage);
-      }
+      const errorMessage = chatTurnErrorMessage(err, "继续生成失败");
+      setError(null);
       stopAssistantDraft(assistantDraftId, errorMessage);
       setCanContinue(true);
     } finally {
@@ -539,4 +531,23 @@ function readFollowUpSuggestion(value: unknown): string | null {
   }
   const suggestion = value.trim();
   return suggestion ? suggestion : null;
+}
+
+function chatTurnErrorMessage(err: unknown, fallback: string): string | null {
+  if (err instanceof DOMException && err.name === "AbortError") {
+    return null;
+  }
+  const message = err instanceof Error ? err.message : fallback;
+  return normalizeChatErrorMessage(message, fallback);
+}
+
+function normalizeChatErrorMessage(message: string, fallback: string): string {
+  const text = message.trim();
+  if (!text) {
+    return fallback;
+  }
+  if (/load failed|failed to fetch|networkerror/i.test(text)) {
+    return "连接中断，可以点右下角继续生成。";
+  }
+  return text;
 }
