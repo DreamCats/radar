@@ -94,6 +94,7 @@
 }
 
 .chat-launcher-body {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
@@ -802,7 +803,7 @@
   }
 
   .chat-launcher-body.with-history {
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     grid-template-columns: 1fr;
   }
 

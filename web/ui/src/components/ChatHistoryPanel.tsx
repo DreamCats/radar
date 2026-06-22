@@ -1,4 +1,4 @@
-import { Copy, FileText, Plus, Trash2 } from "lucide-react";
+import { Copy, FileText, MoreHorizontal, Plus, Trash2, X } from "lucide-react";
 import type { MouseEvent } from "react";
 import { useEffect, useState } from "react";
 
@@ -21,6 +21,7 @@ type ChatHistoryPanelProps = {
   onCopySessionTitle: (session: ChatSessionItem) => void;
   onDeleteSession: (sessionId: string) => void;
   onNewSession: () => void;
+  onClose?: () => void;
   onRefresh: () => void;
   onRestore: (sessionId: string) => void;
 };
@@ -41,14 +42,14 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [menu]);
 
-  function openMenu(event: MouseEvent<HTMLButtonElement>, session: ChatSessionItem) {
+  function openMenu(event: MouseEvent<HTMLElement>, session: ChatSessionItem) {
     event.preventDefault();
     event.stopPropagation();
     setMenu({
       confirmDelete: false,
       session,
-      x: Math.min(event.clientX, window.innerWidth - 220),
-      y: Math.min(event.clientY, window.innerHeight - 210),
+      x: Math.max(8, Math.min(event.clientX, window.innerWidth - 220)),
+      y: Math.max(8, Math.min(event.clientY, window.innerHeight - 210)),
     });
   }
 
@@ -61,9 +62,16 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
     <aside className="chat-history-panel" aria-label="历史对话">
       <div className="chat-history-head">
         <strong>历史对话</strong>
-        <button className="chat-history-refresh" type="button" onClick={props.onRefresh} disabled={props.loading}>
-          {props.loading ? "刷新中" : "刷新"}
-        </button>
+        <div className="chat-history-head-actions">
+          <button className="chat-history-refresh" type="button" onClick={props.onRefresh} disabled={props.loading}>
+            {props.loading ? "刷新中" : "刷新"}
+          </button>
+          {props.onClose ? (
+            <button className="chat-history-close" type="button" aria-label="关闭历史对话" onClick={props.onClose}>
+              <X size={15} />
+            </button>
+          ) : null}
+        </div>
       </div>
       <button className="chat-history-new" type="button" onClick={props.onNewSession}>
         <Plus size={14} />
@@ -74,21 +82,42 @@ export function ChatHistoryPanel(props: ChatHistoryPanelProps) {
         {!props.loading && props.sessions.length === 0 ? <p className="empty-line">暂无历史</p> : null}
         {props.sessions.map((session) => {
           const actionLabel = props.sessionAction?.sessionId === session.session_id ? props.sessionAction.label : null;
+          const className = [
+            "chat-history-item",
+            session.session_id === props.activeSessionId ? "active" : "",
+            actionLabel ? "disabled" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
           return (
-            <button
-              className={session.session_id === props.activeSessionId ? "chat-history-item active" : "chat-history-item"}
-              disabled={Boolean(actionLabel)}
+            <div
+              className={className}
               key={session.session_id}
-              type="button"
-              onClick={() => props.onRestore(session.session_id)}
               onContextMenu={(event) => openMenu(event, session)}
             >
-              <strong>{session.title || "未命名对话"}</strong>
-              <span>{actionLabel ?? session.preview ?? "暂无内容"}</span>
-              <em>
-                {formatSessionTime(session.updated_at)} · {session.message_count} 条
-              </em>
-            </button>
+              <button
+                className="chat-history-item-main"
+                disabled={Boolean(actionLabel)}
+                type="button"
+                onClick={() => props.onRestore(session.session_id)}
+              >
+                <strong>{session.title || "未命名对话"}</strong>
+                <span>{actionLabel ?? session.preview ?? "暂无内容"}</span>
+                <em>
+                  {formatSessionTime(session.updated_at)} · {session.message_count} 条
+                </em>
+              </button>
+              <button
+                className="chat-history-item-more"
+                disabled={Boolean(actionLabel)}
+                type="button"
+                aria-label="更多会话操作"
+                title="更多操作"
+                onClick={(event) => openMenu(event, session)}
+              >
+                <MoreHorizontal size={16} />
+              </button>
+            </div>
           );
         })}
       </div>

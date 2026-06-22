@@ -256,6 +256,7 @@
 }
 
 .overview-chat-body {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
@@ -745,6 +746,7 @@
   .overview-chat-body.with-context-rail,
   .overview-chat-body.with-history.with-context-rail {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
     padding: 12px;
   }
 

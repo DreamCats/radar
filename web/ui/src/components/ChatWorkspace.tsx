@@ -85,19 +85,28 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
       </header>
       <div className={bodyClassName}>
         {controller.historyOpen ? (
-          <ChatHistoryPanel
-            activeSessionId={controller.activeSessionId}
-            loading={controller.loadingSessions}
-            sessionAction={controller.sessionAction}
-            sessions={controller.sessions}
-            onNewSession={controller.startNewSession}
-            onCopySessionContent={(nextSessionId) => void controller.copySessionContent(nextSessionId)}
-            onCopySessionId={(nextSessionId) => void controller.copySessionId(nextSessionId)}
-            onCopySessionTitle={(session) => void controller.copySessionTitle(session)}
-            onDeleteSession={(nextSessionId) => void controller.removeSession(nextSessionId)}
-            onRefresh={() => void controller.refreshSessions()}
-            onRestore={(nextSessionId) => void controller.restoreSession(nextSessionId)}
-          />
+          <div className="chat-history-layer">
+            <button
+              className="chat-history-mobile-scrim"
+              type="button"
+              aria-label="关闭历史对话"
+              onClick={() => controller.setHistoryOpen(false)}
+            />
+            <ChatHistoryPanel
+              activeSessionId={controller.activeSessionId}
+              loading={controller.loadingSessions}
+              sessionAction={controller.sessionAction}
+              sessions={controller.sessions}
+              onClose={() => controller.setHistoryOpen(false)}
+              onNewSession={controller.startNewSession}
+              onCopySessionContent={(nextSessionId) => void controller.copySessionContent(nextSessionId)}
+              onCopySessionId={(nextSessionId) => void controller.copySessionId(nextSessionId)}
+              onCopySessionTitle={(session) => void controller.copySessionTitle(session)}
+              onDeleteSession={(nextSessionId) => void controller.removeSession(nextSessionId)}
+              onRefresh={() => void controller.refreshSessions()}
+              onRestore={(nextSessionId) => void controller.restoreSession(nextSessionId)}
+            />
+          </div>
         ) : null}
         <div className="chat-main-panel">
           <ChatMessageList
