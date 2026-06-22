@@ -1,6 +1,7 @@
-import { ArrowDown, Check, ChevronDown, CircleAlert, Copy, SquareTerminal } from "lucide-react";
+import { ArrowDown, Check, ChevronDown, CircleAlert, Copy, Maximize2, SquareTerminal, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState, type ComponentType, type RefObject, type UIEvent } from "react";
+import { createPortal } from "react-dom";
 
 import type { ChatMessageItem } from "../types";
 import { copyText } from "../lib/clipboard";
@@ -22,6 +23,7 @@ type ChatMessageListProps = {
 export function ChatMessageList(props: ChatMessageListProps) {
   const Content = props.markdownSurface === "drawer" ? DrawerMarkdownContent : MarkdownContent;
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [readingMessage, setReadingMessage] = useState<ChatMessageItem | null>(null);
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     props.onScrollStateChange(isNearBottom(event.currentTarget));
@@ -58,7 +60,8 @@ export function ChatMessageList(props: ChatMessageListProps) {
             const activities = toolActivities(message.metadata.tool_activities);
             const traceItems = normalizeTraceItems(chatTraceItems(message.metadata.trace_items));
             const hasAssistantTrace = traceItems.some((item) => item.type === "assistant");
-            const canCopy = message.role === "assistant" && Boolean(message.content) && !message.metadata.streaming;
+            const hasCompletedAssistantContent =
+              message.role === "assistant" && Boolean(message.content.trim()) && !message.metadata.streaming;
             const isCopied = copiedMessageId === message.message_id;
             return (
               <motion.article
@@ -91,10 +94,10 @@ export function ChatMessageList(props: ChatMessageListProps) {
                     <em />
                   </div>
                 ) : null}
-                {canCopy ? (
+                {hasCompletedAssistantContent ? (
                   <div className="chat-message-actions">
                     <button
-                      className={isCopied ? "chat-message-copy is-copied" : "chat-message-copy"}
+                      className={isCopied ? "chat-message-action chat-message-copy is-copied" : "chat-message-action chat-message-copy"}
                       type="button"
                       aria-label={isCopied ? "已复制回复" : "复制回复"}
                       title={isCopied ? "已复制" : "复制"}
@@ -104,6 +107,18 @@ export function ChatMessageList(props: ChatMessageListProps) {
                       }}
                     >
                       {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                    <button
+                      className="chat-message-action"
+                      type="button"
+                      aria-label="打开阅读视图"
+                      title="阅读视图"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setReadingMessage(message);
+                      }}
+                    >
+                      <Maximize2 size={14} />
                     </button>
                   </div>
                 ) : null}
@@ -119,7 +134,47 @@ export function ChatMessageList(props: ChatMessageListProps) {
           <span>新内容</span>
         </button>
       ) : null}
+      {readingMessage ? <ChatReadingModal content={readingMessage.content} onClose={() => setReadingMessage(null)} /> : null}
     </div>
+  );
+}
+
+function ChatReadingModal({ content, onClose }: { content: string; onClose: () => void }) {
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="chat-reading-modal-shell"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section className="chat-reading-modal" role="dialog" aria-modal="true" aria-label="阅读视图">
+        <header className="chat-reading-modal-head">
+          <div>
+            <span>阅读视图</span>
+            <strong>助手回复</strong>
+          </div>
+          <button className="icon-btn" type="button" aria-label="关闭阅读视图" title="关闭" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </header>
+        <div className="chat-reading-modal-body">
+          <DrawerMarkdownContent content={content} />
+        </div>
+      </section>
+    </div>,
+    document.body,
   );
 }
 
