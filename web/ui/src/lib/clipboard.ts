@@ -21,8 +21,20 @@ export async function copyText(text: string): Promise<void> {
 }
 
 export async function copyElementAsPng(element: HTMLElement): Promise<void> {
-  if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
-    throw new Error("当前浏览器不支持复制图片");
+  if (!window.isSecureContext) {
+    throw new Error("copy-image:insecure-context");
+  }
+  if (!navigator.clipboard) {
+    throw new Error("copy-image:missing-navigator-clipboard");
+  }
+  if (!navigator.clipboard.write) {
+    throw new Error("copy-image:missing-clipboard-write");
+  }
+  if (typeof ClipboardItem === "undefined") {
+    throw new Error("copy-image:missing-clipboard-item");
+  }
+  if (typeof ClipboardItem.supports === "function" && !ClipboardItem.supports("image/png")) {
+    throw new Error("copy-image:unsupported-image-png");
   }
 
   const rootStyle = getComputedStyle(document.documentElement);

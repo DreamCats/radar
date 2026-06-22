@@ -67,7 +67,24 @@ export function ChatMessageList(props: ChatMessageListProps) {
       }, 1400);
     } catch (error) {
       const reason = describeCopyImageError(error);
-      console.warn("复制图片失败", error);
+      console.warn("复制图片失败", {
+        clipboard: {
+          hasClipboard: Boolean(navigator.clipboard),
+          hasWrite: Boolean(navigator.clipboard?.write),
+          hasWriteText: Boolean(navigator.clipboard?.writeText),
+        },
+        clipboardItem: {
+          hasClipboardItem: typeof ClipboardItem !== "undefined",
+          hasSupports: typeof ClipboardItem !== "undefined" && typeof ClipboardItem.supports === "function",
+          supportsPng:
+            typeof ClipboardItem !== "undefined" && typeof ClipboardItem.supports === "function"
+              ? ClipboardItem.supports("image/png")
+              : "unknown",
+        },
+        error,
+        isSecureContext: window.isSecureContext,
+        locationProtocol: window.location.protocol,
+      });
       setCopiedImageMessageId(null);
       setCopyImageError({ messageId: message.message_id, reason });
       window.setTimeout(() => {
@@ -249,6 +266,21 @@ function describeCopyImageError(error: unknown): string {
   const name = error instanceof Error ? error.name : "";
   const message = error instanceof Error ? error.message : String(error);
   const detail = `${name} ${message}`.toLowerCase();
+  if (detail.includes("copy-image:insecure-context")) {
+    return "当前页面不是 HTTPS/localhost，浏览器禁止写入图片剪贴板。";
+  }
+  if (detail.includes("copy-image:missing-navigator-clipboard")) {
+    return "缺 navigator.clipboard：当前浏览器没有开放异步剪贴板。";
+  }
+  if (detail.includes("copy-image:missing-clipboard-write")) {
+    return "缺 navigator.clipboard.write：当前浏览器不能写入图片剪贴板。";
+  }
+  if (detail.includes("copy-image:missing-clipboard-item")) {
+    return "缺 ClipboardItem：当前浏览器不能写入图片剪贴板。";
+  }
+  if (detail.includes("copy-image:unsupported-image-png")) {
+    return "ClipboardItem 不支持 image/png，当前浏览器不能复制 PNG 图片。";
+  }
   if (detail.includes("notallowed")) {
     return "图片复制被浏览器拒绝：检查 HTTPS、页面聚焦和 Safari 手势限制。";
   }
