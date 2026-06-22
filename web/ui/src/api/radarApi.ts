@@ -42,6 +42,7 @@ import type {
 } from "../types";
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
+export const AUTH_EXPIRED_EVENT = "radar:auth-expired";
 
 export async function fetchAuthStatus(): Promise<AuthStatus> {
   return getJson("/api/auth/status");
@@ -385,8 +386,12 @@ async function getJson<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(`${apiBase}${path}`, { ...init, credentials: "include" });
+async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const response = await fetch(`${apiBase}${path}`, { ...init, credentials: "include" });
+  if (response.status === 401 && !path.startsWith("/api/auth/")) {
+    window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, { detail: { path } }));
+  }
+  return response;
 }
 
 function params(query: Record<string, unknown>): string {

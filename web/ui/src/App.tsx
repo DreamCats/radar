@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 
-import { fetchAuthStatus, login, logout } from "./api/radarApi";
+import { AUTH_EXPIRED_EVENT, fetchAuthStatus, login, logout } from "./api/radarApi";
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
 import { IndustryChainPage } from "./pages/IndustryChainPage";
@@ -66,6 +66,16 @@ export function App() {
         setAuthError(err instanceof Error ? err.message : "无法读取登录状态");
         setAuth({ auth_required: true, authenticated: false });
       });
+  }, []);
+
+  useEffect(() => {
+    function handleAuthExpired() {
+      setAuth({ auth_required: true, authenticated: false, username: null });
+      setAuthError("登录已过期，请重新登录。");
+      setMobileNavOpen(false);
+    }
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
   }, []);
 
   useEffect(() => {
