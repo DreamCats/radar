@@ -37,13 +37,18 @@ export async function copyElementAsPng(element: HTMLElement): Promise<void> {
     throw new Error("copy-image:unsupported-image-png");
   }
 
+  const blobPromise = renderElementAsPngBlob(element);
+  await navigator.clipboard.write([new ClipboardItem({ "image/png": blobPromise })]);
+}
+
+export async function renderElementAsPngBlob(element: HTMLElement): Promise<Blob> {
   const rootStyle = getComputedStyle(document.documentElement);
   const background = rootStyle.getPropertyValue("--color-surface-1").trim() || "#0f1011";
   const paddingX = 16;
   const paddingY = 14;
   const contentWidth = Math.ceil(element.scrollWidth || element.getBoundingClientRect().width);
   const contentHeight = Math.ceil(element.scrollHeight || element.getBoundingClientRect().height);
-  const blobPromise = toBlob(element, {
+  const blob = await toBlob(element, {
     backgroundColor: background,
     cacheBust: true,
     height: contentHeight + paddingY * 2,
@@ -56,12 +61,10 @@ export async function copyElementAsPng(element: HTMLElement): Promise<void> {
       width: `${contentWidth + paddingX * 2}px`,
     },
     width: contentWidth + paddingX * 2,
-  }).then((blob) => {
-    if (!blob) {
-      throw new Error("生成图片失败");
-    }
-    return blob;
   });
 
-  await navigator.clipboard.write([new ClipboardItem({ "image/png": blobPromise })]);
+  if (!blob) {
+    throw new Error("生成图片失败");
+  }
+  return blob;
 }

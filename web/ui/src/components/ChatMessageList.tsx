@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 
 import type { ChatMessageItem } from "../types";
 import { fetchChatToolMessage } from "../api/radarApi";
-import { copyElementAsPng, copyText } from "../lib/clipboard";
+import { copyElementAsPng, copyText, renderElementAsPngBlob } from "../lib/clipboard";
 import { chatTraceItems, statusForChatMessage, toolActivities, type ChatTraceItem, type ToolActivityItem } from "./chatHelpers";
 import { DrawerMarkdownContent } from "./DrawerMarkdownContent";
 import { MarkdownContent } from "./MarkdownContent";
@@ -28,6 +28,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
   const [copiedImageMessageId, setCopiedImageMessageId] = useState<string | null>(null);
   const [copyImageError, setCopyImageError] = useState<CopyImageErrorState | null>(null);
   const [copyingImageMessageId, setCopyingImageMessageId] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<ImagePreviewState | null>(null);
   const [readingMessage, setReadingMessage] = useState<ChatMessageItem | null>(null);
   const [toolResult, setToolResult] = useState<ToolResultState | null>(null);
   const copySurfaceRefs = useRef(new Map<string, HTMLDivElement>());
@@ -35,6 +36,14 @@ export function ChatMessageList(props: ChatMessageListProps) {
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     props.onScrollStateChange(isNearBottom(event.currentTarget));
   }
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview?.url) {
+        URL.revokeObjectURL(imagePreview.url);
+      }
+    };
+  }, [imagePreview]);
 
   async function handleCopyMessage(message: ChatMessageItem) {
     try {
@@ -59,12 +68,17 @@ export function ChatMessageList(props: ChatMessageListProps) {
     setCopyingImageMessageId(message.message_id);
     setCopyImageError(null);
     try {
-      await copyElementAsPng(surface);
-      setCopiedImageMessageId(message.message_id);
-      setCopiedMessageId(null);
-      window.setTimeout(() => {
-        setCopiedImageMessageId((current) => (current === message.message_id ? null : current));
-      }, 1400);
+      if (window.isSecureContext) {
+        await copyElementAsPng(surface);
+        setCopiedImageMessageId(message.message_id);
+        setCopiedMessageId(null);
+        window.setTimeout(() => {
+          setCopiedImageMessageId((current) => (current === message.message_id ? null : current));
+        }, 1400);
+      } else {
+        const blob = await renderElementAsPngBlob(surface);
+        setImagePreview({ url: URL.createObjectURL(blob) });
+      }
     } catch (error) {
       const reason = describeCopyImageError(error);
       console.warn("复制图片失败", {
@@ -95,6 +109,15 @@ export function ChatMessageList(props: ChatMessageListProps) {
     } finally {
       setCopyingImageMessageId((current) => (current === message.message_id ? null : current));
     }
+  }
+
+  function closeImagePreview() {
+    setImagePreview((current) => {
+      if (current?.url) {
+        URL.revokeObjectURL(current.url);
+      }
+      return null;
+    });
   }
 
   function setCopySurfaceRef(messageId: string, node: HTMLDivElement | null) {
@@ -246,6 +269,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
       ) : null}
       {readingMessage ? <ChatReadingModal content={readingMessage.content} onClose={() => setReadingMessage(null)} /> : null}
       {toolResult ? <ToolResultModal result={toolResult} onClose={() => setToolResult(null)} /> : null}
+      {imagePreview ? <ImagePreviewModal preview={imagePreview} onClose={closeImagePreview} /> : null}
     </div>
   );
 }
@@ -260,6 +284,10 @@ type ToolResultState = {
 type CopyImageErrorState = {
   messageId: string;
   reason: string;
+};
+
+type ImagePreviewState = {
+  url: string;
 };
 
 function describeCopyImageError(error: unknown): string {
@@ -325,6 +353,45 @@ function ChatReadingModal({ content, onClose, title = "助手回复" }: { conten
         </header>
         <div className="chat-reading-modal-body">
           <DrawerMarkdownContent content={content} />
+        </div>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
+function ImagePreviewModal({ preview, onClose }: { preview: ImagePreviewState; onClose: () => void }) {
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="chat-reading-modal-shell"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section className="chat-image-preview-modal" role="dialog" aria-modal="true" aria-label="图片预览">
+        <header className="chat-reading-modal-head">
+          <div>
+            <span>图片预览</span>
+            <strong>长按图片保存或分享</strong>
+          </div>
+          <button className="icon-btn" type="button" aria-label="关闭图片预览" title="关闭" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </header>
+        <div className="chat-image-preview-body">
+          <img alt="助手回复截图" src={preview.url} />
         </div>
       </section>
     </div>,
