@@ -26,6 +26,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
   const Content = props.markdownSurface === "drawer" ? DrawerMarkdownContent : MarkdownContent;
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [copiedImageMessageId, setCopiedImageMessageId] = useState<string | null>(null);
+  const [copyImageFailedMessageId, setCopyImageFailedMessageId] = useState<string | null>(null);
   const [copyingImageMessageId, setCopyingImageMessageId] = useState<string | null>(null);
   const [readingMessage, setReadingMessage] = useState<ChatMessageItem | null>(null);
   const [toolResult, setToolResult] = useState<ToolResultState | null>(null);
@@ -40,6 +41,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
       await copyText(message.content);
       setCopiedMessageId(message.message_id);
       setCopiedImageMessageId(null);
+      setCopyImageFailedMessageId(null);
       window.setTimeout(() => {
         setCopiedMessageId((current) => (current === message.message_id ? null : current));
       }, 1400);
@@ -55,6 +57,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
     }
 
     setCopyingImageMessageId(message.message_id);
+    setCopyImageFailedMessageId(null);
     try {
       await copyElementAsPng(surface);
       setCopiedImageMessageId(message.message_id);
@@ -64,7 +67,10 @@ export function ChatMessageList(props: ChatMessageListProps) {
       }, 1400);
     } catch {
       setCopiedImageMessageId(null);
-      await handleCopyMessage(message);
+      setCopyImageFailedMessageId(message.message_id);
+      window.setTimeout(() => {
+        setCopyImageFailedMessageId((current) => (current === message.message_id ? null : current));
+      }, 1400);
     } finally {
       setCopyingImageMessageId((current) => (current === message.message_id ? null : current));
     }
@@ -120,6 +126,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
               message.role === "assistant" && Boolean(message.content.trim()) && !message.metadata.streaming;
             const isCopied = copiedMessageId === message.message_id;
             const isImageCopied = copiedImageMessageId === message.message_id;
+            const isImageCopyFailed = copyImageFailedMessageId === message.message_id;
             const isCopyingImage = copyingImageMessageId === message.message_id;
             return (
               <motion.article
@@ -170,17 +177,23 @@ export function ChatMessageList(props: ChatMessageListProps) {
                       {isCopied ? <Check size={14} /> : <Copy size={14} />}
                     </button>
                     <button
-                      className={isImageCopied ? "chat-message-action is-copied" : "chat-message-action"}
+                      className={
+                        isImageCopied
+                          ? "chat-message-action is-copied"
+                          : isImageCopyFailed
+                            ? "chat-message-action is-error"
+                            : "chat-message-action"
+                      }
                       type="button"
-                      aria-label={isImageCopied ? "已复制图片" : "复制为图片"}
-                      title={isImageCopied ? "已复制图片" : "复制图片"}
+                      aria-label={isImageCopied ? "已复制图片" : isImageCopyFailed ? "复制图片失败" : "复制为图片"}
+                      title={isImageCopied ? "已复制图片" : isImageCopyFailed ? "复制图片失败" : "复制图片"}
                       disabled={isCopyingImage}
                       onClick={(event) => {
                         event.stopPropagation();
                         void handleCopyMessageImage(message);
                       }}
                     >
-                      {isImageCopied ? <Check size={14} /> : <ImageIcon size={14} />}
+                      {isImageCopied ? <Check size={14} /> : isImageCopyFailed ? <CircleAlert size={14} /> : <ImageIcon size={14} />}
                     </button>
                     <button
                       className="chat-message-action"

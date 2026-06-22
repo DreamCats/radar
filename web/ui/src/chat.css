@@ -395,6 +395,12 @@
   color: var(--color-primary);
 }
 
+.chat-message-action.is-error {
+  border-color: color-mix(in srgb, var(--color-price-up) 42%, var(--color-hairline-strong));
+  color: var(--color-price-up);
+  opacity: 1;
+}
+
 .chat-reading-modal-shell {
   position: fixed;
   z-index: 90;

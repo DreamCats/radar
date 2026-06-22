@@ -31,7 +31,7 @@ export async function copyElementAsPng(element: HTMLElement): Promise<void> {
   const paddingY = 14;
   const contentWidth = Math.ceil(element.scrollWidth || element.getBoundingClientRect().width);
   const contentHeight = Math.ceil(element.scrollHeight || element.getBoundingClientRect().height);
-  const blob = await toBlob(element, {
+  const blobPromise = toBlob(element, {
     backgroundColor: background,
     cacheBust: true,
     height: contentHeight + paddingY * 2,
@@ -44,11 +44,12 @@ export async function copyElementAsPng(element: HTMLElement): Promise<void> {
       width: `${contentWidth + paddingX * 2}px`,
     },
     width: contentWidth + paddingX * 2,
+  }).then((blob) => {
+    if (!blob) {
+      throw new Error("生成图片失败");
+    }
+    return blob;
   });
 
-  if (!blob) {
-    throw new Error("生成图片失败");
-  }
-
-  await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+  await navigator.clipboard.write([new ClipboardItem({ "image/png": blobPromise })]);
 }
