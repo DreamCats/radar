@@ -348,6 +348,10 @@
   gap: 6px;
 }
 
+.chat-message-copy-surface {
+  max-width: 100%;
+}
+
 .chat-message-action {
   display: inline-grid;
   width: 28px;
@@ -364,6 +368,11 @@
     background 140ms ease,
     color 140ms ease,
     opacity 140ms ease;
+}
+
+.chat-message-action:disabled {
+  cursor: default;
+  opacity: 0.58;
 }
 
 .chat-message-assistant:hover .chat-message-action,

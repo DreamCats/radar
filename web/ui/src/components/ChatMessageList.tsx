@@ -1,11 +1,11 @@
-import { ArrowDown, Check, ChevronDown, CircleAlert, Copy, Maximize2, SquareTerminal, X } from "lucide-react";
+import { ArrowDown, Check, ChevronDown, CircleAlert, Copy, Image as ImageIcon, Maximize2, SquareTerminal, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState, type ComponentType, type RefObject, type UIEvent } from "react";
+import { useEffect, useRef, useState, type ComponentType, type RefObject, type UIEvent } from "react";
 import { createPortal } from "react-dom";
 
 import type { ChatMessageItem } from "../types";
 import { fetchChatToolMessage } from "../api/radarApi";
-import { copyText } from "../lib/clipboard";
+import { copyElementAsPng, copyText } from "../lib/clipboard";
 import { chatTraceItems, statusForChatMessage, toolActivities, type ChatTraceItem, type ToolActivityItem } from "./chatHelpers";
 import { DrawerMarkdownContent } from "./DrawerMarkdownContent";
 import { MarkdownContent } from "./MarkdownContent";
@@ -25,8 +25,11 @@ type ChatMessageListProps = {
 export function ChatMessageList(props: ChatMessageListProps) {
   const Content = props.markdownSurface === "drawer" ? DrawerMarkdownContent : MarkdownContent;
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [copiedImageMessageId, setCopiedImageMessageId] = useState<string | null>(null);
+  const [copyingImageMessageId, setCopyingImageMessageId] = useState<string | null>(null);
   const [readingMessage, setReadingMessage] = useState<ChatMessageItem | null>(null);
   const [toolResult, setToolResult] = useState<ToolResultState | null>(null);
+  const copySurfaceRefs = useRef(new Map<string, HTMLDivElement>());
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     props.onScrollStateChange(isNearBottom(event.currentTarget));
@@ -36,12 +39,43 @@ export function ChatMessageList(props: ChatMessageListProps) {
     try {
       await copyText(message.content);
       setCopiedMessageId(message.message_id);
+      setCopiedImageMessageId(null);
       window.setTimeout(() => {
         setCopiedMessageId((current) => (current === message.message_id ? null : current));
       }, 1400);
     } catch {
       setCopiedMessageId(null);
     }
+  }
+
+  async function handleCopyMessageImage(message: ChatMessageItem) {
+    const surface = copySurfaceRefs.current.get(message.message_id);
+    if (!surface) {
+      return;
+    }
+
+    setCopyingImageMessageId(message.message_id);
+    try {
+      await copyElementAsPng(surface);
+      setCopiedImageMessageId(message.message_id);
+      setCopiedMessageId(null);
+      window.setTimeout(() => {
+        setCopiedImageMessageId((current) => (current === message.message_id ? null : current));
+      }, 1400);
+    } catch {
+      setCopiedImageMessageId(null);
+      await handleCopyMessage(message);
+    } finally {
+      setCopyingImageMessageId((current) => (current === message.message_id ? null : current));
+    }
+  }
+
+  function setCopySurfaceRef(messageId: string, node: HTMLDivElement | null) {
+    if (node) {
+      copySurfaceRefs.current.set(messageId, node);
+      return;
+    }
+    copySurfaceRefs.current.delete(messageId);
   }
 
   async function handleOpenToolResult(toolMessageId: string, label: string) {
@@ -85,6 +119,8 @@ export function ChatMessageList(props: ChatMessageListProps) {
             const hasCompletedAssistantContent =
               message.role === "assistant" && Boolean(message.content.trim()) && !message.metadata.streaming;
             const isCopied = copiedMessageId === message.message_id;
+            const isImageCopied = copiedImageMessageId === message.message_id;
+            const isCopyingImage = copyingImageMessageId === message.message_id;
             return (
               <motion.article
                 className={`chat-message chat-message-${message.role}`}
@@ -94,29 +130,31 @@ export function ChatMessageList(props: ChatMessageListProps) {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.16 }}
               >
-                {message.role === "assistant" && (status || activities.length > 0 || traceItems.length > 0) ? (
-                  <AssistantTrace
-                    activities={activities}
-                    Content={Content}
-                    onOpenToolResult={handleOpenToolResult}
-                    status={status || "正在处理"}
-                    streaming={Boolean(message.metadata.streaming)}
-                    traceItems={traceItems}
-                  />
-                ) : null}
-                {message.content && !hasAssistantTrace ? (
-                  <>
-                    <Content content={message.content} />
-                    {message.metadata.streaming ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
-                  </>
-                ) : !hasAssistantTrace && message.metadata.streaming ? (
-                  <div className="chat-typing" aria-label="生成中">
-                    <span>正在整理</span>
-                    <em />
-                    <em />
-                    <em />
-                  </div>
-                ) : null}
+                <div className="chat-message-copy-surface" ref={(node) => setCopySurfaceRef(message.message_id, node)}>
+                  {message.role === "assistant" && (status || activities.length > 0 || traceItems.length > 0) ? (
+                    <AssistantTrace
+                      activities={activities}
+                      Content={Content}
+                      onOpenToolResult={handleOpenToolResult}
+                      status={status || "正在处理"}
+                      streaming={Boolean(message.metadata.streaming)}
+                      traceItems={traceItems}
+                    />
+                  ) : null}
+                  {message.content && !hasAssistantTrace ? (
+                    <>
+                      <Content content={message.content} />
+                      {message.metadata.streaming ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
+                    </>
+                  ) : !hasAssistantTrace && message.metadata.streaming ? (
+                    <div className="chat-typing" aria-label="生成中">
+                      <span>正在整理</span>
+                      <em />
+                      <em />
+                      <em />
+                    </div>
+                  ) : null}
+                </div>
                 {hasCompletedAssistantContent ? (
                   <div className="chat-message-actions">
                     <button
@@ -130,6 +168,19 @@ export function ChatMessageList(props: ChatMessageListProps) {
                       }}
                     >
                       {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                    <button
+                      className={isImageCopied ? "chat-message-action is-copied" : "chat-message-action"}
+                      type="button"
+                      aria-label={isImageCopied ? "已复制图片" : "复制为图片"}
+                      title={isImageCopied ? "已复制图片" : "复制图片"}
+                      disabled={isCopyingImage}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleCopyMessageImage(message);
+                      }}
+                    >
+                      {isImageCopied ? <Check size={14} /> : <ImageIcon size={14} />}
                     </button>
                     <button
                       className="chat-message-action"
