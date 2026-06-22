@@ -4,12 +4,14 @@ import { useEffect, useState, type ComponentType, type RefObject, type UIEvent }
 import { createPortal } from "react-dom";
 
 import type { ChatMessageItem } from "../types";
+import { fetchChatToolMessage } from "../api/radarApi";
 import { copyText } from "../lib/clipboard";
 import { chatTraceItems, statusForChatMessage, toolActivities, type ChatTraceItem, type ToolActivityItem } from "./chatHelpers";
 import { DrawerMarkdownContent } from "./DrawerMarkdownContent";
 import { MarkdownContent } from "./MarkdownContent";
 
 type ChatMessageListProps = {
+  activeSessionId?: string | null;
   endRef: RefObject<HTMLDivElement | null>;
   listRef: RefObject<HTMLDivElement | null>;
   messages: ChatMessageItem[];
@@ -24,6 +26,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
   const Content = props.markdownSurface === "drawer" ? DrawerMarkdownContent : MarkdownContent;
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [readingMessage, setReadingMessage] = useState<ChatMessageItem | null>(null);
+  const [toolResult, setToolResult] = useState<ToolResultState | null>(null);
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     props.onScrollStateChange(isNearBottom(event.currentTarget));
@@ -38,6 +41,25 @@ export function ChatMessageList(props: ChatMessageListProps) {
       }, 1400);
     } catch {
       setCopiedMessageId(null);
+    }
+  }
+
+  async function handleOpenToolResult(toolMessageId: string, label: string) {
+    if (!props.activeSessionId) {
+      setToolResult({ title: `工具结果 · ${label}`, content: "", loading: false, error: "当前会话还没有落盘。" });
+      return;
+    }
+    setToolResult({ title: `工具结果 · ${label}`, content: "", loading: true });
+    try {
+      const message = await fetchChatToolMessage(props.activeSessionId, toolMessageId);
+      setToolResult({ title: `工具结果 · ${label}`, content: formatToolResultContent(message.content), loading: false });
+    } catch (error) {
+      setToolResult({
+        title: `工具结果 · ${label}`,
+        content: "",
+        loading: false,
+        error: error instanceof Error ? error.message : "读取工具结果失败",
+      });
     }
   }
 
@@ -76,6 +98,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
                   <AssistantTrace
                     activities={activities}
                     Content={Content}
+                    onOpenToolResult={handleOpenToolResult}
                     status={status || "正在处理"}
                     streaming={Boolean(message.metadata.streaming)}
                     traceItems={traceItems}
@@ -86,7 +109,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
                     <Content content={message.content} />
                     {message.metadata.streaming ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
                   </>
-                ) : !hasAssistantTrace ? (
+                ) : !hasAssistantTrace && message.metadata.streaming ? (
                   <div className="chat-typing" aria-label="生成中">
                     <span>正在整理</span>
                     <em />
@@ -135,11 +158,19 @@ export function ChatMessageList(props: ChatMessageListProps) {
         </button>
       ) : null}
       {readingMessage ? <ChatReadingModal content={readingMessage.content} onClose={() => setReadingMessage(null)} /> : null}
+      {toolResult ? <ToolResultModal result={toolResult} onClose={() => setToolResult(null)} /> : null}
     </div>
   );
 }
 
-function ChatReadingModal({ content, onClose }: { content: string; onClose: () => void }) {
+type ToolResultState = {
+  title: string;
+  content: string;
+  loading: boolean;
+  error?: string;
+};
+
+function ChatReadingModal({ content, onClose, title = "助手回复" }: { content: string; onClose: () => void; title?: string }) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -163,7 +194,7 @@ function ChatReadingModal({ content, onClose }: { content: string; onClose: () =
         <header className="chat-reading-modal-head">
           <div>
             <span>阅读视图</span>
-            <strong>助手回复</strong>
+            <strong>{title}</strong>
           </div>
           <button className="icon-btn" type="button" aria-label="关闭阅读视图" title="关闭" onClick={onClose}>
             <X size={16} />
@@ -171,6 +202,51 @@ function ChatReadingModal({ content, onClose }: { content: string; onClose: () =
         </header>
         <div className="chat-reading-modal-body">
           <DrawerMarkdownContent content={content} />
+        </div>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
+function ToolResultModal({ result, onClose }: { result: ToolResultState; onClose: () => void }) {
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="chat-reading-modal-shell"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section className="chat-reading-modal" role="dialog" aria-modal="true" aria-label="工具结果">
+        <header className="chat-reading-modal-head">
+          <div>
+            <span>按需加载</span>
+            <strong>{result.title}</strong>
+          </div>
+          <button className="icon-btn" type="button" aria-label="关闭工具结果" title="关闭" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </header>
+        <div className="chat-reading-modal-body">
+          {result.loading ? <p className="chat-tool-result-state">正在读取工具结果...</p> : null}
+          {result.error ? <p className="chat-tool-result-state is-error">{result.error}</p> : null}
+          {!result.loading && !result.error ? (
+            <pre className="chat-tool-result-raw">
+              <code>{result.content}</code>
+            </pre>
+          ) : null}
         </div>
       </section>
     </div>,
@@ -199,7 +275,7 @@ type ToolActivityDisplayItem = ToolActivityItem & {
 };
 
 type TraceDisplayItem =
-  | Exclude<ChatTraceItem, { type: "tool" }>
+  | ChatTraceItem
   | {
       key: string;
       type: "tool_group";
@@ -226,12 +302,14 @@ function normalizeTraceItems(items: ChatTraceItem[]): ChatTraceItem[] {
 function AssistantTrace({
   activities,
   Content,
+  onOpenToolResult,
   status,
   streaming,
   traceItems,
 }: {
   activities: ToolActivityItem[];
   Content: ComponentType<{ content: string }>;
+  onOpenToolResult: (toolMessageId: string, label: string) => void;
   status: string;
   streaming: boolean;
   traceItems: ChatTraceItem[];
@@ -271,7 +349,13 @@ function AssistantTrace({
           <ChevronDown size={14} aria-hidden="true" />
         </button>
         <div className="chat-agent-process">
-          <ChatTraceTimeline Content={Content} items={traceItems} showProcess={expanded} streaming={streaming} />
+          <ChatTraceTimeline
+            Content={Content}
+            items={traceItems}
+            onOpenToolResult={onOpenToolResult}
+            showProcess={expanded}
+            streaming={streaming}
+          />
         </div>
       </div>
     );
@@ -285,16 +369,24 @@ function AssistantTrace({
       </summary>
       <div className="chat-agent-process">
         {traceItems.length > 0 ? (
-          <ChatProcessTimeline items={traceItems} streaming={streaming} />
+          <ChatProcessTimeline items={traceItems} onOpenToolResult={onOpenToolResult} streaming={streaming} />
         ) : (
-          <ChatToolActivityList activities={activities} />
+          <ChatToolActivityList activities={activities} onOpenToolResult={onOpenToolResult} />
         )}
       </div>
     </details>
   );
 }
 
-function ChatProcessTimeline({ items, streaming }: { items: ChatTraceItem[]; streaming: boolean }) {
+function ChatProcessTimeline({
+  items,
+  onOpenToolResult,
+  streaming,
+}: {
+  items: ChatTraceItem[];
+  onOpenToolResult: (toolMessageId: string, label: string) => void;
+  streaming: boolean;
+}) {
   const visibleItems = groupTraceItems(items.filter((item) => item.type !== "assistant"));
   const activeStatusKey = streaming ? latestItemKey(visibleItems, "status") : undefined;
   const activeSummaryKey = streaming && !activeStatusKey ? visibleItems[visibleItems.length - 1]?.key : undefined;
@@ -302,7 +394,22 @@ function ChatProcessTimeline({ items, streaming }: { items: ChatTraceItem[]; str
     <div className="chat-trace-timeline">
       {visibleItems.map((item) =>
         item.type === "tool_group" ? (
-          <ChatTraceToolRow count={item.count} key={item.key} label={item.label} status={item.status} />
+          <ChatTraceToolRow
+            count={item.count}
+            key={item.key}
+            label={item.label}
+            onOpenToolResult={onOpenToolResult}
+            status={item.status}
+          />
+        ) : item.type === "tool" ? (
+          <ChatTraceToolRow
+            count={1}
+            key={item.key}
+            label={item.label}
+            onOpenToolResult={onOpenToolResult}
+            status={item.status}
+            toolMessageId={item.toolMessageId}
+          />
         ) : item.type === "status" ? (
           <ChatTraceStatusRow key={item.key} active={item.key === activeStatusKey} label={item.label} />
         ) : item.type === "summary" ? (
@@ -318,11 +425,13 @@ function ChatProcessTimeline({ items, streaming }: { items: ChatTraceItem[]; str
 function ChatTraceTimeline({
   Content,
   items,
+  onOpenToolResult,
   showProcess,
   streaming,
 }: {
   Content: ComponentType<{ content: string }>;
   items: ChatTraceItem[];
+  onOpenToolResult: (toolMessageId: string, label: string) => void;
   showProcess: boolean;
   streaming: boolean;
 }) {
@@ -348,7 +457,27 @@ function ChatTraceTimeline({
           return null;
         }
         if (item.type === "tool_group") {
-          return <ChatTraceToolRow count={item.count} key={item.key} label={item.label} status={item.status} />;
+          return (
+            <ChatTraceToolRow
+              count={item.count}
+              key={item.key}
+              label={item.label}
+              onOpenToolResult={onOpenToolResult}
+              status={item.status}
+            />
+          );
+        }
+        if (item.type === "tool") {
+          return (
+            <ChatTraceToolRow
+              count={1}
+              key={item.key}
+              label={item.label}
+              onOpenToolResult={onOpenToolResult}
+              status={item.status}
+              toolMessageId={item.toolMessageId}
+            />
+          );
         }
         if (item.type === "status") {
           return <ChatTraceStatusRow key={item.key} active={item.key === activeStatusKey} label={item.label} />;
@@ -372,6 +501,10 @@ function latestItemKey(items: TraceDisplayItem[], type: TraceDisplayItem["type"]
 function groupTraceItems(items: ChatTraceItem[]): TraceDisplayItem[] {
   return items.reduce<TraceDisplayItem[]>((groups, item) => {
     if (item.type !== "tool") {
+      groups.push(item);
+      return groups;
+    }
+    if (item.toolMessageId) {
       groups.push(item);
       return groups;
     }
@@ -420,7 +553,19 @@ function ChatTraceErrorRow({ message }: { message: string }) {
   );
 }
 
-function ChatTraceToolRow({ count, label, status }: { count: number; label: string; status: ToolActivityItem["status"] }) {
+function ChatTraceToolRow({
+  count,
+  label,
+  onOpenToolResult,
+  status,
+  toolMessageId,
+}: {
+  count: number;
+  label: string;
+  onOpenToolResult: (toolMessageId: string, label: string) => void;
+  status: ToolActivityItem["status"];
+  toolMessageId?: string;
+}) {
   return (
     <div className={`chat-trace-entry chat-trace-entry-tool chat-trace-entry-tool-${status}`}>
       <span className="chat-trace-node" aria-hidden="true">
@@ -429,12 +574,23 @@ function ChatTraceToolRow({ count, label, status }: { count: number; label: stri
       <span className="chat-trace-body">
         <span>{toolActivitySummary(status, count)}</span>
         <em>{label}</em>
+        {status === "completed" && toolMessageId ? (
+          <button className="chat-tool-result-button" type="button" onClick={() => onOpenToolResult(toolMessageId, label)}>
+            结果
+          </button>
+        ) : null}
       </span>
     </div>
   );
 }
 
-function ChatToolActivityList({ activities }: { activities: ToolActivityItem[] }) {
+function ChatToolActivityList({
+  activities,
+  onOpenToolResult,
+}: {
+  activities: ToolActivityItem[];
+  onOpenToolResult: (toolMessageId: string, label: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const groupedActivities = groupConsecutiveToolActivities(activities);
   const hasHiddenGroups = groupedActivities.length > TOOL_ACTIVITY_COLLAPSE_LIMIT;
@@ -450,7 +606,14 @@ function ChatToolActivityList({ activities }: { activities: ToolActivityItem[] }
     <div className="chat-tool-activity-block">
       <ul className="chat-tool-activity-list">
         {displayActivities.map((activity) => (
-          <ChatToolActivityRow count={activity.count} key={activity.key} label={activity.label} status={activity.status} />
+          <ChatToolActivityRow
+            count={activity.count}
+            key={activity.key}
+            label={activity.label}
+            onOpenToolResult={onOpenToolResult}
+            status={activity.status}
+            toolMessageId={activity.toolMessageId}
+          />
         ))}
       </ul>
       {canExpand ? (
@@ -462,12 +625,29 @@ function ChatToolActivityList({ activities }: { activities: ToolActivityItem[] }
   );
 }
 
-function ChatToolActivityRow({ count, label, status }: { count: number; label: string; status: ToolActivityItem["status"] }) {
+function ChatToolActivityRow({
+  count,
+  label,
+  onOpenToolResult,
+  status,
+  toolMessageId,
+}: {
+  count: number;
+  label: string;
+  onOpenToolResult: (toolMessageId: string, label: string) => void;
+  status: ToolActivityItem["status"];
+  toolMessageId?: string;
+}) {
   return (
     <li className={`chat-tool-activity-${status}`}>
       <SquareTerminal size={14} aria-hidden="true" />
       <span>{toolActivitySummary(status, count)}</span>
       <em>{label}</em>
+      {status === "completed" && toolMessageId ? (
+        <button className="chat-tool-result-button" type="button" onClick={() => onOpenToolResult(toolMessageId, label)}>
+          结果
+        </button>
+      ) : null}
     </li>
   );
 }
@@ -479,6 +659,10 @@ function toolActivitySummary(status: ToolActivityItem["status"], count: number):
 
 function groupConsecutiveToolActivities(activities: ToolActivityItem[]): ToolActivityDisplayItem[] {
   return activities.reduce<ToolActivityDisplayItem[]>((groups, activity) => {
+    if (activity.toolMessageId) {
+      groups.push({ ...activity, count: 1 });
+      return groups;
+    }
     const last = groups[groups.length - 1];
     if (last && last.label === activity.label && last.status === activity.status) {
       last.count += 1;
@@ -487,6 +671,14 @@ function groupConsecutiveToolActivities(activities: ToolActivityItem[]): ToolAct
     groups.push({ ...activity, count: 1 });
     return groups;
   }, []);
+}
+
+function formatToolResultContent(content: string): string {
+  try {
+    return JSON.stringify(JSON.parse(content), null, 2);
+  } catch {
+    return content;
+  }
 }
 
 function isNearBottom(element: HTMLDivElement): boolean {

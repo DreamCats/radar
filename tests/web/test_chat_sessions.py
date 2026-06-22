@@ -137,7 +137,7 @@ def test_chat_session_detail_folds_intermediate_assistant_messages_into_trace(tm
     assistant_metadata = messages[1]["metadata"]
     assert assistant_metadata["duration_ms"] == 3000
     assert assistant_metadata["tool_activities"] == [
-        {"key": "call_price", "label": "行情数据", "status": "completed"}
+        {"key": "call_price", "label": "行情数据", "status": "completed", "toolMessageId": tool_message.message_id}
     ]
     trace_items = assistant_metadata["trace_items"]
     assert {
@@ -149,8 +149,14 @@ def test_chat_session_detail_folds_intermediate_assistant_messages_into_trace(tm
         "key": "tool-call_price",
         "type": "tool",
         "toolCallId": "call_price",
+        "toolMessageId": tool_message.message_id,
         "label": "行情数据",
         "status": "completed",
     } in trace_items
     assert trace_items[-1]["type"] == "assistant"
     assert trace_items[-1]["content"] == "最终结论：半导体设备反复出现。"
+
+    tool_response = client.get(f"/api/chat/sessions/{session.session_id}/tool-messages/{tool_message.message_id}")
+
+    assert tool_response.status_code == 200
+    assert tool_response.json()["content"] == '{"items":[{"ts_code":"002371.SZ"}]}'

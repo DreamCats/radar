@@ -8,6 +8,7 @@ import type {
   ChatSessionDetail,
   ChatSessionList,
   ChatStreamEvent,
+  ChatToolMessageDetail,
   ChatTurnRequest,
   ChatTurnResponse,
   AuthStatus,
@@ -117,6 +118,10 @@ export async function fetchChatSessions(limit = 50): Promise<ChatSessionList> {
 
 export async function fetchChatSession(sessionId: string): Promise<ChatSessionDetail> {
   return getJson(`/api/chat/sessions/${encodeURIComponent(sessionId)}`);
+}
+
+export async function fetchChatToolMessage(sessionId: string, messageId: string): Promise<ChatToolMessageDetail> {
+  return getJson(`/api/chat/sessions/${encodeURIComponent(sessionId)}/tool-messages/${encodeURIComponent(messageId)}`);
 }
 
 export async function deleteChatSession(sessionId: string): Promise<void> {

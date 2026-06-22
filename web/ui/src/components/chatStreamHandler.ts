@@ -164,6 +164,7 @@ export function createChatStreamHandler({
     }
     const toolName = "tool_name" in payload && typeof payload.tool_name === "string" ? payload.tool_name : "";
     const toolCallId = "tool_call_id" in payload && typeof payload.tool_call_id === "string" ? payload.tool_call_id : toolName;
+    const toolMessageId = "tool_message_id" in payload && typeof payload.tool_message_id === "string" ? payload.tool_message_id : "";
     if (eventType === "turn_completed") {
       const durationMs = durationMsValue(payload.duration_ms) ?? elapsedDurationMs(turnStartedAtMs, eventCreatedAtMs ?? Date.now());
       clearIdleTimer();
@@ -198,8 +199,8 @@ export function createChatStreamHandler({
                 ...message.metadata,
                 streaming: true,
                 status,
-                tool_activities: updateToolActivities(message.metadata.tool_activities, eventType, toolCallId, toolName),
-                trace_items: traceForAgentEvent(message.metadata.trace_items, eventType, toolCallId, toolName, status),
+                tool_activities: updateToolActivities(message.metadata.tool_activities, eventType, toolCallId, toolName, toolMessageId),
+                trace_items: traceForAgentEvent(message.metadata.trace_items, eventType, toolCallId, toolName, toolMessageId, status),
               },
             }
           : message,
@@ -227,7 +228,14 @@ function appendAssistantDelta(message: ChatMessageItem, content: string, assista
   };
 }
 
-function traceForAgentEvent(raw: unknown, eventType: string, toolCallId: string, toolName: string, status: string) {
+function traceForAgentEvent(
+  raw: unknown,
+  eventType: string,
+  toolCallId: string,
+  toolName: string,
+  toolMessageId: string,
+  status: string,
+) {
   if (eventType === "turn_started") {
     return appendSummaryTrace(appendStatusTrace(raw, status), "我会先拆解你的问题，确定需要查哪些证据。");
   }
@@ -238,9 +246,10 @@ function traceForAgentEvent(raw: unknown, eventType: string, toolCallId: string,
       eventType,
       toolCallId,
       toolName,
+      toolMessageId,
     );
   }
-  return updateToolTrace(raw, eventType, toolCallId, toolName);
+  return updateToolTrace(raw, eventType, toolCallId, toolName, toolMessageId);
 }
 
 function summaryForToolPhase(toolName: string): string {

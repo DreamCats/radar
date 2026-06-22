@@ -9,6 +9,7 @@ import {
   chatTraceItems,
   clearActiveSessionId,
   clearSelectedProviderName,
+  completedStatus,
   readActiveSessionId,
   readSelectedProviderName,
   writeActiveSessionId,
@@ -238,6 +239,9 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       setCanContinue(false);
     } catch (err) {
       const errorMessage = chatTurnErrorMessage(err, "发送失败");
+      if (isChatStreamNetworkError(err) && currentSessionId && (await recoverCompletedTurn(currentSessionId, assistantDraftId))) {
+        return;
+      }
       setError(null);
       stopAssistantDraft(assistantDraftId, errorMessage);
       setCanContinue(Boolean(currentSessionId));
@@ -302,6 +306,9 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       setCanContinue(false);
     } catch (err) {
       const errorMessage = chatTurnErrorMessage(err, "继续生成失败");
+      if (isChatStreamNetworkError(err) && (await recoverCompletedTurn(sessionId, assistantDraftId))) {
+        return;
+      }
       setError(null);
       stopAssistantDraft(assistantDraftId, errorMessage);
       setCanContinue(true);
@@ -373,6 +380,41 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       setError(err instanceof Error ? err.message : "恢复对话失败");
     } finally {
       setSessionAction((current) => (current?.sessionId === nextSessionId ? null : current));
+    }
+  }
+
+  async function recoverCompletedTurn(nextSessionId: string, assistantDraftId: string): Promise<boolean> {
+    try {
+      const data = await fetchChatSession(nextSessionId);
+      if (data.session.can_continue) {
+        return false;
+      }
+      setSessionId(data.session.session_id);
+      writeActiveSessionId(data.session.session_id);
+      setCanContinue(false);
+      setFollowUpSuggestion(followUpSuggestionFromMessages(data.messages));
+      setError(null);
+      if (hasVisibleAssistantAnswer(data.messages)) {
+        setMessages(data.messages);
+        return true;
+      }
+      setMessages((current) =>
+        current.map((message) =>
+          message.message_id === assistantDraftId
+            ? {
+                ...message,
+                metadata: {
+                  ...message.metadata,
+                  status: completedStatus(message.metadata.duration_ms),
+                  streaming: false,
+                },
+              }
+            : message,
+        ),
+      );
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -541,6 +583,14 @@ function chatTurnErrorMessage(err: unknown, fallback: string): string | null {
   return normalizeChatErrorMessage(message, fallback);
 }
 
+function isChatStreamNetworkError(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === "AbortError") {
+    return false;
+  }
+  const message = err instanceof Error ? err.message : `${err}`;
+  return /load failed|failed to fetch|networkerror/i.test(message.trim());
+}
+
 function normalizeChatErrorMessage(message: string, fallback: string): string {
   const text = message.trim();
   if (!text) {
@@ -550,4 +600,8 @@ function normalizeChatErrorMessage(message: string, fallback: string): string {
     return "连接中断，可以点右下角继续生成。";
   }
   return text;
+}
+
+function hasVisibleAssistantAnswer(messages: ChatMessageItem[]): boolean {
+  return messages.some((message) => message.role === "assistant" && Boolean(message.content.trim()));
 }

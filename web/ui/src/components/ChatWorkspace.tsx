@@ -101,6 +101,7 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
         ) : null}
         <div className="chat-main-panel">
           <ChatMessageList
+            activeSessionId={controller.activeSessionId}
             messages={controller.messages}
             endRef={controller.messagesEndRef}
             listRef={controller.messageListRef}

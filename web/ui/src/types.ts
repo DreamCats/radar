@@ -344,6 +344,8 @@ export type ChatSessionDetail = {
   messages: ChatMessageItem[];
 };
 
+export type ChatToolMessageDetail = ChatMessageItem;
+
 export type ChatModelOption = {
   provider_name: string;
   label: string;

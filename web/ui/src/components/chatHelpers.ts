@@ -7,6 +7,7 @@ export type ToolActivityItem = {
   key: string;
   label: string;
   status: "running" | "completed";
+  toolMessageId?: string;
 };
 
 export type ChatTraceItem =
@@ -19,6 +20,7 @@ export type ChatTraceItem =
       key: string;
       type: "tool";
       toolCallId: string;
+      toolMessageId?: string;
       label: string;
       status: "running" | "completed";
     }
@@ -208,7 +210,13 @@ export function ensureAssistantTrace(raw: unknown, content: string): ChatTraceIt
   return current;
 }
 
-export function updateToolTrace(raw: unknown, eventType: string, toolCallId: string, toolName: string): ChatTraceItem[] {
+export function updateToolTrace(
+  raw: unknown,
+  eventType: string,
+  toolCallId: string,
+  toolName: string,
+  toolMessageId = "",
+): ChatTraceItem[] {
   const current = chatTraceItems(raw);
   if (!toolCallId || !toolName) {
     return current;
@@ -225,17 +233,26 @@ export function updateToolTrace(raw: unknown, eventType: string, toolCallId: str
         key: `tool-${toolCallId}`,
         type: "tool",
         toolCallId,
+        ...(toolMessageId ? { toolMessageId } : {}),
         label: formatToolName(toolName),
         status,
       },
     ];
   }
   return current.map((item, itemIndex) =>
-    itemIndex === index && item.type === "tool" ? { ...item, label: formatToolName(toolName), status } : item,
+    itemIndex === index && item.type === "tool"
+      ? { ...item, ...(toolMessageId ? { toolMessageId } : {}), label: formatToolName(toolName), status }
+      : item,
   );
 }
 
-export function updateToolActivities(raw: unknown, eventType: string, toolCallId: string, toolName: string): ToolActivityItem[] {
+export function updateToolActivities(
+  raw: unknown,
+  eventType: string,
+  toolCallId: string,
+  toolName: string,
+  toolMessageId = "",
+): ToolActivityItem[] {
   const current = toolActivities(raw);
   if (!toolCallId || !toolName) {
     return current;
@@ -247,6 +264,7 @@ export function updateToolActivities(raw: unknown, eventType: string, toolCallId
     key: toolCallId,
     label: formatToolName(toolName),
     status: eventType === "tool_execution_started" ? "running" : "completed",
+    ...(toolMessageId ? { toolMessageId } : {}),
   } as ToolActivityItem;
   const index = current.findIndex((item) => item.key === toolCallId);
   if (index < 0) {
@@ -301,7 +319,8 @@ function isToolActivityItem(value: unknown): value is ToolActivityItem {
   return (
     typeof item.key === "string" &&
     typeof item.label === "string" &&
-    (item.status === "running" || item.status === "completed")
+    (item.status === "running" || item.status === "completed") &&
+    (item.toolMessageId === undefined || typeof item.toolMessageId === "string")
   );
 }
 
@@ -330,6 +349,7 @@ function isChatTraceItem(value: unknown): value is ChatTraceItem {
     typeof item.key === "string" &&
     typeof item.toolCallId === "string" &&
     typeof item.label === "string" &&
-    (item.status === "running" || item.status === "completed")
+    (item.status === "running" || item.status === "completed") &&
+    (item.toolMessageId === undefined || typeof item.toolMessageId === "string")
   );
 }

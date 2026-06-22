@@ -70,6 +70,7 @@ export function OverviewChatWorkspace(props: OverviewChatWorkspaceProps) {
         <div className={props.intro ? "overview-chat-main" : "overview-chat-main without-intro"}>
           {props.intro}
           <ChatMessageList
+            activeSessionId={controller.activeSessionId}
             messages={controller.messages}
             emptyState="overview"
             endRef={controller.messagesEndRef}

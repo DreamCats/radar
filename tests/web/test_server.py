@@ -266,6 +266,18 @@ def test_chat_turn_stream_endpoint_returns_sse(tmp_path, monkeypatch):
             )
             yield SimpleNamespace(type="assistant_delta", message=None, content="先看", event=None)
             yield SimpleNamespace(
+                type="tool_message",
+                message=ChatMessage(
+                    message_id="tool-1",
+                    role="tool",
+                    content="x" * 2000,
+                    created_at="2026-06-08T10:00:01",
+                    metadata={"tool_name": "radar_search_messages"},
+                ),
+                content=None,
+                event=None,
+            )
+            yield SimpleNamespace(
                 type="assistant_message",
                 message=ChatMessage(
                     message_id="assistant-1",
@@ -294,6 +306,8 @@ def test_chat_turn_stream_endpoint_returns_sse(tmp_path, monkeypatch):
     assert "event: session" in response.text
     assert "event: assistant_delta" in response.text
     assert '"content":"先看"' in response.text
+    assert "x" * 2000 not in response.text
+    assert '"stream_content_omitted":true' in response.text
     assert captured["session_id"] == "session-stream-1"
     assert captured["content"] == "这个信号怎么看？"
     assert captured["provider_name"] == "deep"

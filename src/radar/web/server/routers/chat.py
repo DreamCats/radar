@@ -88,6 +88,24 @@ def chat_session_detail(session_id: str, config: RadarConfig = Depends(get_confi
     )
 
 
+@router.get("/chat/sessions/{session_id}/tool-messages/{message_id}", response_model=ChatMessageResponse)
+def chat_tool_message_detail(
+    session_id: str,
+    message_id: str,
+    config: RadarConfig = Depends(get_config),
+) -> ChatMessageResponse:
+    store = ChatSessionStore.from_config(config)
+    try:
+        for message in store.load_messages(session_id):
+            if message.message_id == message_id and message.role == "tool":
+                return ChatMessageResponse(**message.model_dump())
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    raise HTTPException(status_code=404, detail="工具结果不存在")
+
+
 @router.delete("/chat/sessions/{session_id}", status_code=204)
 def delete_chat_session(session_id: str, config: RadarConfig = Depends(get_config)) -> None:
     store = ChatSessionStore.from_config(config)
@@ -209,13 +227,24 @@ def _stream_chat_continue(session_id: str, request: ChatContinueRequest, config:
 
 def _stream_item_sse(item: Any) -> str:
     if item.message is not None:
-        message = ChatMessageResponse(**item.message.model_dump()).model_dump(mode="json")
+        message = _stream_message_response(item.message).model_dump(mode="json")
         return _sse(item.type, {"message": message})
     if item.content:
         return _sse(item.type, {"content": item.content})
     if item.event is not None:
         return _sse("agent_event", {"event": item.event.model_dump(mode="json")})
     return _sse("agent_event", {"event": {"type": item.type}})
+
+
+def _stream_message_response(message: ChatMessage) -> ChatMessageResponse:
+    if message.role == "tool":
+        message = message.model_copy(
+            update={
+                "content": "",
+                "metadata": {**message.metadata, "stream_content_omitted": True},
+            }
+        )
+    return ChatMessageResponse(**message.model_dump())
 
 
 def _sse(event: str, data: dict[str, Any]) -> str:

@@ -60,6 +60,7 @@ def build_chat_display_messages(
                     "event_type": event.type,
                     "tool_call_id": _optional_str(event.payload.get("tool_call_id")),
                     "tool_name": _optional_str(event.payload.get("tool_name")),
+                    "tool_message_id": _optional_str(event.payload.get("tool_message_id")),
                 }
             )
             continue
@@ -126,14 +127,16 @@ def _display_metadata_for_turn(
         event_type = _optional_str(item.get("event_type"))
         tool_call_id = _optional_str(item.get("tool_call_id"))
         tool_name = _optional_str(item.get("tool_name"))
+        tool_message_id = _optional_str(item.get("tool_message_id"))
         if event_type == "tool_execution_started":
             trace_items = _append_summary_trace(trace_items, _summary_for_tool_phase(tool_name))
-        trace_items = _update_tool_trace(trace_items, event_type, tool_call_id, tool_name)
+        trace_items = _update_tool_trace(trace_items, event_type, tool_call_id, tool_name, tool_message_id)
         tool_activities = _update_tool_activities(
             tool_activities,
             event_type,
             tool_call_id,
             tool_name,
+            tool_message_id,
         )
 
     final_content = final_message.content.strip()
@@ -185,6 +188,7 @@ def _update_tool_trace(
     event_type: str,
     tool_call_id: str,
     tool_name: str,
+    tool_message_id: str = "",
 ) -> list[dict[str, Any]]:
     if (
         not tool_call_id
@@ -200,6 +204,7 @@ def _update_tool_trace(
                 **item,
                 "label": _format_tool_name(tool_name),
                 "status": status,
+                **({"toolMessageId": tool_message_id} if tool_message_id else {}),
             }
             return next_items
     return [
@@ -210,6 +215,7 @@ def _update_tool_trace(
             "toolCallId": tool_call_id,
             "label": _format_tool_name(tool_name),
             "status": status,
+            **({"toolMessageId": tool_message_id} if tool_message_id else {}),
         },
     ]
 
@@ -219,6 +225,7 @@ def _update_tool_activities(
     event_type: str,
     tool_call_id: str,
     tool_name: str,
+    tool_message_id: str = "",
 ) -> list[dict[str, Any]]:
     if (
         not tool_call_id
@@ -230,6 +237,7 @@ def _update_tool_activities(
         "key": tool_call_id,
         "label": _format_tool_name(tool_name),
         "status": "running" if event_type == "tool_execution_started" else "completed",
+        **({"toolMessageId": tool_message_id} if tool_message_id else {}),
     }
     for index, item in enumerate(items):
         if item.get("key") == tool_call_id:
