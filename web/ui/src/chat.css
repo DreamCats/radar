@@ -345,6 +345,7 @@
   display: flex;
   min-height: 28px;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -399,6 +400,13 @@
   border-color: color-mix(in srgb, var(--color-price-up) 42%, var(--color-hairline-strong));
   color: var(--color-price-up);
   opacity: 1;
+}
+
+.chat-message-copy-error {
+  max-width: min(100%, 420px);
+  color: var(--color-price-up);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .chat-reading-modal-shell {

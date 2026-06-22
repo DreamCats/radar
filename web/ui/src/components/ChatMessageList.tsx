@@ -26,7 +26,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
   const Content = props.markdownSurface === "drawer" ? DrawerMarkdownContent : MarkdownContent;
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [copiedImageMessageId, setCopiedImageMessageId] = useState<string | null>(null);
-  const [copyImageFailedMessageId, setCopyImageFailedMessageId] = useState<string | null>(null);
+  const [copyImageError, setCopyImageError] = useState<CopyImageErrorState | null>(null);
   const [copyingImageMessageId, setCopyingImageMessageId] = useState<string | null>(null);
   const [readingMessage, setReadingMessage] = useState<ChatMessageItem | null>(null);
   const [toolResult, setToolResult] = useState<ToolResultState | null>(null);
@@ -41,7 +41,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
       await copyText(message.content);
       setCopiedMessageId(message.message_id);
       setCopiedImageMessageId(null);
-      setCopyImageFailedMessageId(null);
+      setCopyImageError(null);
       window.setTimeout(() => {
         setCopiedMessageId((current) => (current === message.message_id ? null : current));
       }, 1400);
@@ -57,7 +57,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
     }
 
     setCopyingImageMessageId(message.message_id);
-    setCopyImageFailedMessageId(null);
+    setCopyImageError(null);
     try {
       await copyElementAsPng(surface);
       setCopiedImageMessageId(message.message_id);
@@ -65,12 +65,16 @@ export function ChatMessageList(props: ChatMessageListProps) {
       window.setTimeout(() => {
         setCopiedImageMessageId((current) => (current === message.message_id ? null : current));
       }, 1400);
-    } catch {
+    } catch (error) {
+      const reason = describeCopyImageError(error);
+      console.warn("复制图片失败", error);
       setCopiedImageMessageId(null);
-      setCopyImageFailedMessageId(message.message_id);
+      setCopyImageError({ messageId: message.message_id, reason });
       window.setTimeout(() => {
-        setCopyImageFailedMessageId((current) => (current === message.message_id ? null : current));
-      }, 1400);
+        setCopyImageError((current) =>
+          current?.messageId === message.message_id && current.reason === reason ? null : current,
+        );
+      }, 2600);
     } finally {
       setCopyingImageMessageId((current) => (current === message.message_id ? null : current));
     }
@@ -126,7 +130,8 @@ export function ChatMessageList(props: ChatMessageListProps) {
               message.role === "assistant" && Boolean(message.content.trim()) && !message.metadata.streaming;
             const isCopied = copiedMessageId === message.message_id;
             const isImageCopied = copiedImageMessageId === message.message_id;
-            const isImageCopyFailed = copyImageFailedMessageId === message.message_id;
+            const imageCopyError = copyImageError?.messageId === message.message_id ? copyImageError : null;
+            const isImageCopyFailed = Boolean(imageCopyError);
             const isCopyingImage = copyingImageMessageId === message.message_id;
             return (
               <motion.article
@@ -195,6 +200,7 @@ export function ChatMessageList(props: ChatMessageListProps) {
                     >
                       {isImageCopied ? <Check size={14} /> : isImageCopyFailed ? <CircleAlert size={14} /> : <ImageIcon size={14} />}
                     </button>
+                    {imageCopyError ? <span className="chat-message-copy-error">{imageCopyError.reason}</span> : null}
                     <button
                       className="chat-message-action"
                       type="button"
@@ -233,6 +239,27 @@ type ToolResultState = {
   loading: boolean;
   error?: string;
 };
+
+type CopyImageErrorState = {
+  messageId: string;
+  reason: string;
+};
+
+function describeCopyImageError(error: unknown): string {
+  const name = error instanceof Error ? error.name : "";
+  const message = error instanceof Error ? error.message : String(error);
+  const detail = `${name} ${message}`.toLowerCase();
+  if (detail.includes("notallowed")) {
+    return "图片复制被浏览器拒绝：检查 HTTPS、页面聚焦和 Safari 手势限制。";
+  }
+  if (detail.includes("clipboard") || detail.includes("not support") || detail.includes("不支持")) {
+    return "当前浏览器不支持写入图片剪贴板。";
+  }
+  if (detail.includes("tainted") || detail.includes("security") || detail.includes("canvas") || detail.includes("生成图片失败")) {
+    return "生成 PNG 失败：可能是 Safari 的 DOM 转图限制。";
+  }
+  return message ? `图片复制失败：${message}` : "图片复制失败，详情见控制台。";
+}
 
 function ChatReadingModal({ content, onClose, title = "助手回复" }: { content: string; onClose: () => void; title?: string }) {
   useEffect(() => {
