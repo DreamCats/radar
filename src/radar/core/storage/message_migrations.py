@@ -473,10 +473,61 @@ ANALYST_MENTION_MIGRATIONS: list[Migration] = [
 ]
 
 
+SCHEDULER_MIGRATIONS: list[Migration] = [
+    (
+        "027_job_schedules",
+        """
+        CREATE TABLE IF NOT EXISTS job_schedules (
+            schedule_id TEXT PRIMARY KEY,
+            job_key TEXT NOT NULL,
+            title TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 0,
+            timezone TEXT NOT NULL DEFAULT 'Asia/Shanghai',
+            cadence_kind TEXT NOT NULL,
+            cadence_json TEXT NOT NULL DEFAULT '{}',
+            window_preset TEXT,
+            request_json TEXT NOT NULL DEFAULT '{}',
+            catch_up_policy TEXT NOT NULL DEFAULT 'latest_only',
+            max_lag_minutes INTEGER NOT NULL DEFAULT 60,
+            last_tick_at TEXT,
+            next_tick_at TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_job_schedules_enabled_next
+            ON job_schedules(enabled, next_tick_at);
+
+        CREATE TABLE IF NOT EXISTS job_schedule_ticks (
+            tick_id TEXT PRIMARY KEY,
+            schedule_id TEXT NOT NULL,
+            planned_at TEXT NOT NULL,
+            fired_at TEXT,
+            status TEXT NOT NULL,
+            run_ids_json TEXT NOT NULL DEFAULT '[]',
+            request_json TEXT NOT NULL DEFAULT '{}',
+            skipped_reason TEXT,
+            error_message TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (schedule_id) REFERENCES job_schedules(schedule_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_job_schedule_ticks_schedule_created
+            ON job_schedule_ticks(schedule_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_job_schedule_ticks_status_created
+            ON job_schedule_ticks(status, created_at DESC);
+        """,
+    ),
+]
+
+
 MESSAGE_MIGRATIONS = (
     BASE_MESSAGE_MIGRATIONS
     + EVIDENCE_CHAIN_MIGRATIONS
     + MESSAGE_CLEANUP_MIGRATIONS
     + LIFECYCLE_DIGEST_MIGRATIONS
     + ANALYST_MENTION_MIGRATIONS
+    + SCHEDULER_MIGRATIONS
 )

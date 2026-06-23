@@ -36,6 +36,8 @@ import type {
   OrganizeEvidencePage,
   OrganizeEvidenceQuery,
   RunItem,
+  ScheduleItem,
+  ScheduleTickItem,
   StockEvidenceChainDashboard,
   StockEvidenceChainSnapshotList,
   StockEvidenceFinancials,
@@ -261,6 +263,45 @@ export async function cancelRun(runId: string): Promise<RunItem> {
     throw new Error(await errorText(response));
   }
   return (await response.json()) as RunItem;
+}
+
+export async function fetchSchedules(): Promise<ScheduleItem[]> {
+  const data = await getJson<{ items: ScheduleItem[] }>("/api/schedules");
+  return data.items;
+}
+
+export async function enableSchedule(scheduleId: string): Promise<ScheduleItem[]> {
+  const response = await apiFetch(`/api/schedules/${encodeURIComponent(scheduleId)}/enable`, { method: "POST" });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: ScheduleItem[] };
+  return data.items;
+}
+
+export async function disableSchedule(scheduleId: string): Promise<ScheduleItem[]> {
+  const response = await apiFetch(`/api/schedules/${encodeURIComponent(scheduleId)}/disable`, { method: "POST" });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: ScheduleItem[] };
+  return data.items;
+}
+
+export async function runScheduleNow(scheduleId: string): Promise<ScheduleTickItem> {
+  const response = await apiFetch(`/api/schedules/${encodeURIComponent(scheduleId)}/run-now`, { method: "POST" });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { item: ScheduleTickItem };
+  return data.item;
+}
+
+export async function fetchScheduleTicks(scheduleId: string, limit = 20): Promise<ScheduleTickItem[]> {
+  const data = await getJson<{ items: ScheduleTickItem[] }>(
+    `/api/schedules/${encodeURIComponent(scheduleId)}/ticks?${params({ limit })}`,
+  );
+  return data.items;
 }
 
 export async function fetchAnalystBacktestSummary(query: {

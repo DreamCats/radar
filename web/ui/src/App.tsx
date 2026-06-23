@@ -10,6 +10,7 @@ import {
   Network,
   RadioTower,
   Search,
+  Timer,
   UserRoundCheck,
   X,
 } from "lucide-react";
@@ -22,11 +23,12 @@ import { IngestPage } from "./pages/IngestPage";
 import { IndustryChainPage } from "./pages/IndustryChainPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OrganizePage } from "./pages/OrganizePage";
+import { SchedulePage } from "./pages/SchedulePage";
 import { StrategyPage } from "./pages/StrategyPage";
 import { WechatPage } from "./pages/WechatPage";
 import type { AuthStatus } from "./types";
 
-type TabKey = "dashboard" | "wechat" | "organize" | "industry-chain" | "analyst" | "strategy" | "ingest";
+type TabKey = "dashboard" | "wechat" | "organize" | "industry-chain" | "analyst" | "strategy" | "schedule" | "ingest";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "洞察", icon: Activity },
@@ -35,6 +37,7 @@ const NAV_ITEMS = [
   { key: "industry-chain", label: "产业链", icon: Network },
   { key: "analyst", label: "分析师", icon: UserRoundCheck },
   { key: "strategy", label: "策略", icon: Search },
+  { key: "schedule", label: "定时", icon: Timer },
   { key: "ingest", label: "作业", icon: Database },
 ] satisfies Array<{ key: TabKey; label: string; icon: typeof Activity }>;
 
@@ -191,6 +194,7 @@ export function App() {
             {tab === "industry-chain" && <IndustryChainPage />}
             {tab === "analyst" && <AnalystPage />}
             {tab === "strategy" && <StrategyPage />}
+            {tab === "schedule" && <SchedulePage />}
             {tab === "ingest" && <IngestPage />}
           </div>
         </div>

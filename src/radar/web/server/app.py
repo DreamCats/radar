@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,15 +22,18 @@ from radar.web.server.routers import (
     messages,
     organize,
     runs,
+    schedules,
     strategy,
 )
+from radar.web.server.scheduler import SchedulerLoop
 
 
 def create_app(config: RadarConfig | None = None) -> FastAPI:
     """创建 Web API；业务逻辑仍由 core/usecases 承担。"""
 
-    app = FastAPI(title="radar dashboard", version="0.1.0")
+    app = FastAPI(title="radar dashboard", version="0.1.0", lifespan=_lifespan)
     app.state.radar_config = config or load_config()
+    app.state.scheduler_loop = SchedulerLoop(app.state.radar_config)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -46,6 +52,7 @@ def create_app(config: RadarConfig | None = None) -> FastAPI:
     app.include_router(dashboard.router)
     app.include_router(messages.router)
     app.include_router(runs.router)
+    app.include_router(schedules.router)
     app.include_router(ingest.router)
     app.include_router(classify.router)
     app.include_router(industry_chains.router)
@@ -64,6 +71,15 @@ def create_app(config: RadarConfig | None = None) -> FastAPI:
         }
 
     return app
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    app.state.scheduler_loop.start()
+    try:
+        yield
+    finally:
+        app.state.scheduler_loop.stop()
 
 
 def _install_auth_middleware(app: FastAPI) -> None:

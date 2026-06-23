@@ -477,6 +477,8 @@ export type {
   IngestRequest,
   IngestResultItem,
   LifecycleDigestJobRequest,
+  ScheduleItem,
+  ScheduleTickItem,
   StockEvidenceChainJobRequest,
 } from "./types/jobs";
 

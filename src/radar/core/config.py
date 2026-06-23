@@ -106,6 +106,11 @@ class WebConfig(BaseModel):
     auth: WebAuthConfig = Field(default_factory=WebAuthConfig)
 
 
+class SchedulerConfig(BaseModel):
+    enabled: bool = True
+    poll_interval_seconds: int = Field(default=30, ge=5, le=3600)
+
+
 class LlmProviderSecret(BaseModel):
     base_url: str
     api_key: str
@@ -197,6 +202,7 @@ class RadarConfig(BaseModel):
     web: WebConfig = Field(default_factory=WebConfig)
     market: MarketConfig = Field(default_factory=MarketConfig)
     brave_search: BraveSearchConfig = Field(default_factory=BraveSearchConfig)
+    scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
     features: FeatureFlags = Field(default_factory=FeatureFlags)
     filters: FiltersConfig = Field(default_factory=FiltersConfig)
     secrets: RadarSecrets = Field(default_factory=RadarSecrets)

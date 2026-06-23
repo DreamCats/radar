@@ -28,6 +28,8 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "stock_lifecycle_judgements",
             "stock_mention_status",
             "opportunity_lifecycle_digests",
+            "job_schedules",
+            "job_schedule_ticks",
         } <= tables
         assert "strategy_snapshots" not in tables
         assert "strategy_snapshot_stocks" not in tables
@@ -65,6 +67,7 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "024_analyst_stock_mentions",
             "025_analyst_stock_mention_quality_flags",
             "026_drop_recommendation_backtest",
+            "027_job_schedules",
         }
     finally:
         conn.close()
@@ -106,7 +109,7 @@ def test_migrations_are_idempotent(tmp_path):
         migrate_message_db(conn)
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 25
+        assert count == 26
     finally:
         conn.close()
 

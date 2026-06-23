@@ -6,12 +6,13 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from radar.core.dashboard import DashboardSummaryPayload
-from radar.core.models import ClassificationRetryMode, MessageCategory, MessageSource, RawMessage
+from radar.core.models import ClassificationRetryMode, MessageSource, RawMessage
 from radar.core.organize import (
     OrganizeClassificationCluster,
     OrganizeClassificationSummary,
     OrganizeEvidenceMessage,
 )
+from radar.core.scheduler import ScheduleRecord, ScheduleTickRecord
 from radar.core.storage import RunRecord
 from radar.core.usecases.analyst_mentions import (
     DEFAULT_BENCHMARK_TS_CODE,
@@ -152,6 +153,18 @@ class MessageOverviewResponse(BaseModel):
 
 class RunListResponse(BaseModel):
     items: list[RunRecord]
+
+
+class ScheduleListResponse(BaseModel):
+    items: list[ScheduleRecord]
+
+
+class ScheduleTickListResponse(BaseModel):
+    items: list[ScheduleTickRecord]
+
+
+class ScheduleRunNowResponse(BaseModel):
+    item: ScheduleTickRecord
 
 
 class DashboardSummaryResponse(DashboardSummaryPayload):

@@ -21,6 +21,7 @@ import "./login.css";
 import "./loading.css";
 import "./organize.css";
 import "./organize-responsive.css";
+import "./schedule.css";
 import "./strategy-evidence-chain.css";
 import "./strategy-evidence-detail.css";
 import "./strategy-evidence-beginner.css";

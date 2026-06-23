@@ -97,3 +97,36 @@ export type DerivedJobItem = {
   reused_existing: boolean;
   status: "running";
 };
+
+export type ScheduleItem = {
+  schedule_id: string;
+  job_key: string;
+  title: string;
+  enabled: boolean;
+  timezone: string;
+  cadence_kind: string;
+  cadence: Record<string, unknown>;
+  window_preset?: string | null;
+  request: Record<string, unknown>;
+  catch_up_policy: string;
+  max_lag_minutes: number;
+  last_tick_at?: string | null;
+  next_tick_at?: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ScheduleTickItem = {
+  tick_id: string;
+  schedule_id: string;
+  planned_at: string;
+  fired_at?: string | null;
+  status: "planned" | "running" | "submitted" | "skipped" | "failed";
+  run_ids: string[];
+  request: Record<string, unknown>;
+  skipped_reason?: string | null;
+  error_message?: string | null;
+  created_at: string;
+  updated_at: string;
+};
