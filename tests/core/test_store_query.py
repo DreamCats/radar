@@ -3,7 +3,17 @@ from __future__ import annotations
 from datetime import datetime
 
 from radar.core.models import RawMessage
-from radar.core.messages import MessageFilters, get_message_context, get_message_overview, list_message_groups, list_messages
+from radar.core.messages import (
+    CatalystCategory,
+    CatalystFeedFilters,
+    CatalystTermLibrary,
+    MessageFilters,
+    get_message_context,
+    get_message_overview,
+    list_catalyst_feed,
+    list_message_groups,
+    list_messages,
+)
 from radar.core.storage import (
     fetch_window_covered,
     fetch_window_exists,
@@ -125,6 +135,78 @@ def test_message_overview_aggregates_without_loading_messages(sqlite_conn):
     assert [(item.source, item.count) for item in overview.source_breakdown] == [("个人群", 3), ("个人消息", 1)]
     assert [(item.group_name, item.count) for item in overview.top_groups] == [("东财策略", 2), ("最强科技", 1)]
     assert overview.hourly_buckets[8].count == 2
+
+
+def test_catalyst_feed_matches_terms_and_dedupes_sources(sqlite_conn):
+    init_db(sqlite_conn)
+    upsert_messages(
+        sqlite_conn,
+        [
+            _message("m1", "2026-06-23T09:20:00", "东财策略", "AI 液冷 新签订单 300503"),
+            _message("m2", "2026-06-23T09:30:00", "最强科技", "AI液冷，新签订单 300503"),
+            _message("m3", "2026-06-23T10:00:00", "东财策略", "普通聊天"),
+            _message("m4", "2026-06-23T10:30:00", "风险群", "客户砍单，需求不足"),
+        ],
+    )
+    library = CatalystTermLibrary(
+        categories=[
+            CatalystCategory(id="order", name="订单", color="#0ecb81", terms=["新签订单"]),
+            CatalystCategory(id="risk", name="风险", color="#8a8f98", terms=["砍单", "需求不足"]),
+        ]
+    )
+
+    page = list_catalyst_feed(
+        sqlite_conn,
+        library,
+        CatalystFeedFilters(
+            start_time=datetime.fromisoformat("2026-06-23T09:00:00"),
+            end_time=datetime.fromisoformat("2026-06-23T11:00:00"),
+            limit=10,
+        ),
+    )
+
+    assert page.summary.total_items == 2
+    assert page.summary.total_messages == 3
+    order_item = next(item for item in page.items if item.matched_terms[0].term == "新签订单")
+    assert order_item.message_id == "m1"
+    assert order_item.duplicate_count == 2
+    assert [source.message_id for source in order_item.duplicate_sources] == ["m1", "m2"]
+    assert [hit.term for hit in order_item.matched_terms] == ["新签订单"]
+    assert order_item.stock_mentions[0].ts_code == "300503.SZ"
+
+
+def test_catalyst_feed_category_filter_keeps_global_counts_and_all_hits(sqlite_conn):
+    init_db(sqlite_conn)
+    upsert_messages(
+        sqlite_conn,
+        [
+            _message("m1", "2026-06-23T09:20:00", "东财策略", "AI 液冷 新签订单 涨价"),
+            _message("m2", "2026-06-23T10:30:00", "风险群", "客户砍单，需求不足"),
+        ],
+    )
+    library = CatalystTermLibrary(
+        categories=[
+            CatalystCategory(id="order", name="订单", color="#0ecb81", terms=["新签订单"]),
+            CatalystCategory(id="price", name="价格", color="#f5d547", terms=["涨价"]),
+            CatalystCategory(id="risk", name="风险", color="#8a8f98", terms=["砍单", "需求不足"]),
+        ]
+    )
+
+    page = list_catalyst_feed(
+        sqlite_conn,
+        library,
+        CatalystFeedFilters(
+            start_time=datetime.fromisoformat("2026-06-23T09:00:00"),
+            end_time=datetime.fromisoformat("2026-06-23T11:00:00"),
+            category_ids=["order"],
+            limit=10,
+        ),
+    )
+
+    assert page.summary.total_items == 1
+    assert page.summary.available_total_items == 2
+    assert page.summary.category_counts == {"order": 1, "price": 1, "risk": 1}
+    assert [hit.term for hit in page.items[0].matched_terms] == ["新签订单", "涨价"]
 
 
 def test_fetch_window_record(sqlite_conn):

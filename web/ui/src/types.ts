@@ -85,6 +85,82 @@ export type MessageOverview = {
   hourly_buckets: MessageOverviewHour[];
 };
 
+export type CatalystCategory = {
+  id: string;
+  name: string;
+  color: string;
+  terms: string[];
+};
+
+export type CatalystTermLibrary = {
+  version: number;
+  categories: CatalystCategory[];
+};
+
+export type CatalystTermHit = {
+  category_id: string;
+  category_name: string;
+  color: string;
+  term: string;
+};
+
+export type CatalystStockMention = {
+  ts_code?: string | null;
+  stock_name: string;
+};
+
+export type CatalystDuplicateSource = {
+  message_id: string;
+  source: MessageSource;
+  sender: string;
+  group_name?: string | null;
+  message_time: string;
+};
+
+export type CatalystFeedItem = {
+  key: string;
+  message_id: string;
+  source: MessageSource;
+  sender: string;
+  group_name?: string | null;
+  first_message_time: string;
+  latest_message_time: string;
+  raw_content: string;
+  normalized_content_hash: string;
+  matched_terms: CatalystTermHit[];
+  stock_mentions: CatalystStockMention[];
+  duplicate_count: number;
+  duplicate_sources: CatalystDuplicateSource[];
+};
+
+export type CatalystFeedSummary = {
+  total_items: number;
+  total_messages: number;
+  duplicate_messages: number;
+  available_total_items: number;
+  category_counts: Record<string, number>;
+};
+
+export type CatalystFeedPage = {
+  items: CatalystFeedItem[];
+  summary: CatalystFeedSummary;
+  next_cursor_time?: string | null;
+  next_cursor_key?: string | null;
+};
+
+export type CatalystFeedQuery = {
+  start_time: string;
+  end_time: string;
+  source?: string;
+  group_name?: string;
+  category_ids?: string[];
+  keyword?: string;
+  dedupe?: boolean;
+  cursor_time?: string | null;
+  cursor_key?: string | null;
+  limit?: number;
+};
+
 export type DashboardSummary = {
   overview: MessageOverview;
   classifications: OrganizeClassificationPage;

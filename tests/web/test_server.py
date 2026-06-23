@@ -70,6 +70,73 @@ def test_message_groups_endpoint_reads_distinct_groups(tmp_path):
     assert response.json()["items"][0]["group_name"] == "东财策略"
 
 
+def test_catalyst_terms_endpoint_reads_and_updates_personal_terms(tmp_path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    client = TestClient(create_app(config))
+
+    response = client.get("/api/catalyst/terms")
+
+    assert response.status_code == 200
+    assert response.json()["categories"][0]["name"] == "机构传播"
+
+    updated = {
+        "version": 1,
+        "categories": [
+            {
+                "id": "test",
+                "name": "测试标签",
+                "color": "#5e6ad2",
+                "terms": ["AI液冷", "AI液冷", ""],
+            }
+        ],
+    }
+    update_response = client.put("/api/catalyst/terms", json=updated)
+
+    assert update_response.status_code == 200
+    assert update_response.json()["categories"][0]["terms"] == ["AI液冷"]
+    assert (config.config_dir / "catalyst_terms.yaml").exists()
+
+
+def test_catalyst_feed_endpoint_returns_deduped_matches(tmp_path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(
+            conn,
+            [
+                _message("m1", "2026-06-23T09:00:00", raw_content="AI液冷 新签订单 300503"),
+                _message(
+                    "m2",
+                    "2026-06-23T09:05:00",
+                    group_name="最强科技",
+                    raw_content="AI液冷，新签订单 300503",
+                ),
+                _message("m3", "2026-06-23T10:00:00", raw_content="普通聊天"),
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/catalyst/feed",
+        params={
+            "start_time": "2026-06-23T08:00:00",
+            "end_time": "2026-06-23T11:00:00",
+            "category_ids": "order_customer",
+            "limit": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["summary"]["total_items"] == 1
+    assert data["items"][0]["duplicate_count"] == 2
+    assert data["items"][0]["matched_terms"][0]["term"] == "新签订单"
+    assert data["items"][0]["stock_mentions"][0]["ts_code"] == "300503.SZ"
+
+
 def test_messages_overview_endpoint_returns_aggregates(tmp_path):
     config = _config(tmp_path)
     conn = connect(config.database_path)
@@ -1553,13 +1620,14 @@ def _message(
     group_name: str | None = "东财策略",
     *,
     sender: str = "tester",
+    raw_content: str = "固态电池观点",
 ) -> RawMessage:
     return RawMessage(
         message_id=message_id,
         source=source,
         sender=sender,
         message_time=datetime.fromisoformat(message_time),
-        raw_content="固态电池观点",
+        raw_content=raw_content,
         group_name=group_name,
         fetch_time=datetime.fromisoformat("2026-06-04T10:01:00"),
         fetch_window="20260604090000-20260604110000",

@@ -10,6 +10,7 @@ import {
   Network,
   RadioTower,
   Search,
+  Tags,
   Timer,
   UserRoundCheck,
   X,
@@ -18,6 +19,7 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/r
 
 import { AUTH_EXPIRED_EVENT, fetchAuthStatus, login, logout } from "./api/radarApi";
 import { AnalystPage } from "./pages/AnalystPage";
+import { CatalystPage } from "./pages/CatalystPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
 import { IndustryChainPage } from "./pages/IndustryChainPage";
@@ -28,11 +30,21 @@ import { StrategyPage } from "./pages/StrategyPage";
 import { WechatPage } from "./pages/WechatPage";
 import type { AuthStatus } from "./types";
 
-type TabKey = "dashboard" | "wechat" | "organize" | "industry-chain" | "analyst" | "strategy" | "schedule" | "ingest";
+type TabKey =
+  | "dashboard"
+  | "wechat"
+  | "catalyst"
+  | "organize"
+  | "industry-chain"
+  | "analyst"
+  | "strategy"
+  | "schedule"
+  | "ingest";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "洞察", icon: Activity },
   { key: "wechat", label: "微信", icon: MessageCircle },
+  { key: "catalyst", label: "催化词", icon: Tags },
   { key: "organize", label: "整理", icon: Layers3 },
   { key: "industry-chain", label: "产业链", icon: Network },
   { key: "analyst", label: "分析师", icon: UserRoundCheck },
@@ -43,6 +55,7 @@ const NAV_ITEMS = [
 
 const TAB_STORAGE_KEY = "radar.activeTab";
 const TAB_KEYS = new Set<TabKey>(NAV_ITEMS.map((item) => item.key));
+const VISIBLE_NAV_ITEMS = NAV_ITEMS.filter((item) => item.key !== "organize");
 const MOBILE_NAV_QUERY = "(max-width: 720px)";
 const MOBILE_NAV_EDGE_WIDTH = 32;
 const MOBILE_NAV_SWIPE_DISTANCE = 56;
@@ -190,6 +203,7 @@ export function App() {
           <div className="page-motion">
             {tab === "dashboard" && <DashboardPage />}
             {tab === "wechat" && <WechatPage />}
+            {tab === "catalyst" && <CatalystPage />}
             {tab === "organize" && <OrganizePage />}
             {tab === "industry-chain" && <IndustryChainPage />}
             {tab === "analyst" && <AnalystPage />}
@@ -252,7 +266,7 @@ function WorkspaceSidebar(props: {
       <LayoutGroup id={props.layoutId}>
         <nav className="nav-group side-nav" aria-label={navLabel}>
           <div className="eyebrow">看板</div>
-          {NAV_ITEMS.map((item) => {
+          {VISIBLE_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
               <motion.button

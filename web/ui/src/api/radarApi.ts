@@ -16,6 +16,9 @@ import type {
   ChatTurnRequest,
   ChatTurnResponse,
   AuthStatus,
+  CatalystFeedPage,
+  CatalystFeedQuery,
+  CatalystTermLibrary,
   DashboardSummary,
   DerivedJobItem,
   IngestJobItem,
@@ -94,6 +97,34 @@ export async function fetchMessageOverview(
   query: { days?: number; top_limit?: number } = {},
 ): Promise<MessageOverview> {
   return getJson(`/api/messages/overview?${params(query)}`);
+}
+
+export async function fetchCatalystTerms(): Promise<CatalystTermLibrary> {
+  return getJson("/api/catalyst/terms");
+}
+
+export async function saveCatalystTerms(library: CatalystTermLibrary): Promise<CatalystTermLibrary> {
+  const response = await apiFetch("/api/catalyst/terms", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(library),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  return (await response.json()) as CatalystTermLibrary;
+}
+
+export async function resetCatalystTerms(): Promise<CatalystTermLibrary> {
+  const response = await apiFetch("/api/catalyst/terms", { method: "DELETE" });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  return (await response.json()) as CatalystTermLibrary;
+}
+
+export async function fetchCatalystFeed(query: CatalystFeedQuery): Promise<CatalystFeedPage> {
+  return getJson(`/api/catalyst/feed?${params(query)}`);
 }
 
 export async function fetchIndustryChains(): Promise<IndustryChainList> {

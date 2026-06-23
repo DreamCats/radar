@@ -7,11 +7,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from radar.core.config import RadarConfig
 from radar.core.messages import (
     ConversationFilters,
+    CatalystFeedFilters,
+    CatalystFeedPage,
+    CatalystTermLibrary,
     MessageFilters,
     list_conversations,
+    list_catalyst_feed,
     list_message_groups,
     list_messages,
     get_message_overview,
+    load_catalyst_terms,
+    reset_catalyst_terms,
+    save_catalyst_terms,
 )
 from radar.core.models import MessageSource
 from radar.core.storage import connect, init_db
@@ -136,9 +143,72 @@ def message_groups(
     return MessageGroupListResponse(items=[group.model_dump() for group in groups])
 
 
+@router.get("/catalyst/terms", response_model=CatalystTermLibrary)
+def catalyst_terms(config: RadarConfig = Depends(get_config)) -> CatalystTermLibrary:
+    return load_catalyst_terms(config)
+
+
+@router.put("/catalyst/terms", response_model=CatalystTermLibrary)
+def update_catalyst_terms(
+    library: CatalystTermLibrary,
+    config: RadarConfig = Depends(get_config),
+) -> CatalystTermLibrary:
+    return save_catalyst_terms(config, library)
+
+
+@router.delete("/catalyst/terms", response_model=CatalystTermLibrary)
+def delete_catalyst_terms(config: RadarConfig = Depends(get_config)) -> CatalystTermLibrary:
+    return reset_catalyst_terms(config)
+
+
+@router.get("/catalyst/feed", response_model=CatalystFeedPage)
+def catalyst_feed(
+    start_time: datetime = Query(...),
+    end_time: datetime = Query(...),
+    source: str | None = Query(default=None),
+    group_name: str | None = Query(default=None),
+    category_ids: str | None = Query(default=None),
+    keyword: str | None = Query(default=None),
+    dedupe: bool = Query(default=True),
+    cursor_time: datetime | None = Query(default=None),
+    cursor_key: str | None = Query(default=None),
+    limit: int = Query(default=60, ge=1, le=200),
+    config: RadarConfig = Depends(get_config),
+) -> CatalystFeedPage:
+    if bool(cursor_time) != bool(cursor_key):
+        raise HTTPException(status_code=400, detail="cursor_time 和 cursor_key 必须一起传")
+
+    filters = CatalystFeedFilters(
+        source=_source_value(source),
+        group_name=group_name,
+        start_time=start_time,
+        end_time=end_time,
+        category_ids=_split_csv(category_ids),
+        keyword=keyword,
+        dedupe=dedupe,
+        cursor_time=cursor_time,
+        cursor_key=cursor_key,
+        limit=limit,
+    )
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        return list_catalyst_feed(conn, load_catalyst_terms(config), filters)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    finally:
+        conn.close()
+
+
 def _source_value(source: str | None) -> MessageSource | None:
     if not source:
         return None
     if source not in SOURCE_ALIASES:
         raise HTTPException(status_code=400, detail="source 必须是个人消息或个人群")
     return SOURCE_ALIASES[source]
+
+
+def _split_csv(value: str | None) -> list[str]:
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]

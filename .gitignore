@@ -26,6 +26,8 @@ build/
 data/*
 !data/industry-chains/
 !data/industry-chains/**
+!data/catalyst_terms/
+!data/catalyst_terms/**
 tmp/
 .runtime/
 *.sqlite

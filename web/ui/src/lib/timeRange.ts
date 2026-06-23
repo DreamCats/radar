@@ -1,4 +1,12 @@
-export type RangePreset = "yesterdayClose" | "today" | "yesterday" | "last24h" | "last7d" | "last30d" | "custom";
+export type RangePreset =
+  | "yesterdayClose"
+  | "twoDaysClose"
+  | "today"
+  | "yesterday"
+  | "last24h"
+  | "last7d"
+  | "last30d"
+  | "custom";
 
 export type LocalRange = {
   startDate: string;
@@ -23,6 +31,9 @@ export function buildPresetRange(preset: RangePreset): LocalRange {
   const now = new Date();
   if (preset === "yesterdayClose") {
     return buildYesterdayCloseRange(now);
+  }
+  if (preset === "twoDaysClose") {
+    return buildRange(daysAgoClose(now, 2), now);
   }
   if (preset === "yesterday") {
     const day = addDays(startOfDay(now), -1);
@@ -76,8 +87,12 @@ function addHours(date: Date, hours: number): Date {
 }
 
 function yesterdayClose(now: Date): Date {
+  return daysAgoClose(now, 1);
+}
+
+function daysAgoClose(now: Date, days: number): Date {
   const close = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 0);
-  close.setDate(close.getDate() - 1);
+  close.setDate(close.getDate() - days);
   return close;
 }
 
