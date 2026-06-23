@@ -22,6 +22,7 @@ from radar.core.messages import (
 )
 from radar.core.models import MessageSource
 from radar.core.storage import connect, init_db
+from radar.core.usecases.catalyst_stocks import load_catalyst_stock_detector
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     ConversationPageResponse,
@@ -193,7 +194,12 @@ def catalyst_feed(
     conn = connect(config.database_path)
     try:
         init_db(conn)
-        return list_catalyst_feed(conn, load_catalyst_terms(config), filters)
+        return list_catalyst_feed(
+            conn,
+            load_catalyst_terms(config),
+            filters,
+            stock_detector=load_catalyst_stock_detector(config),
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     finally:

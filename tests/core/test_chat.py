@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime
 
-import pytest
-
 from radar.core.chat import (
     COMMON_CHAT_SYSTEM_PROMPT,
     DEFAULT_CHAT_SYSTEM_PROMPT,
@@ -229,6 +227,7 @@ def test_chat_agent_uses_default_system_prompt(tmp_path, monkeypatch):
 def test_chat_system_prompt_layers_surface_rules():
     common_prompt = build_chat_system_prompt()
     wechat_prompt = build_chat_system_prompt("微信会话")
+    catalyst_prompt = build_chat_system_prompt("催化词")
     stock_prompt = build_chat_system_prompt("个股深挖")
 
     assert common_prompt == COMMON_CHAT_SYSTEM_PROMPT
@@ -246,10 +245,14 @@ def test_chat_system_prompt_layers_surface_rules():
     assert "radar_strategy_candidates" in stock_prompt
     assert "radar_stock_evidence_detail" in stock_prompt
     assert "radar_theme_candidates" in stock_prompt
-    assert "radar_get_conversation_window" not in common_prompt
     assert "radar_get_conversation_window" in wechat_prompt
-    assert "页面传入的最近 evidence" in wechat_prompt
+    assert "页面传入的 evidence" in wechat_prompt
     assert "暂缓跟踪条件" in wechat_prompt
+    assert "已注入的页面上下文和原文证据" in catalyst_prompt
+    assert "不要为了当前证据再调用工具" in catalyst_prompt
+    assert "才调用 radar_scan_catalysts 扩展证据半径" in catalyst_prompt
+    assert "才调用 radar_get_conversation_window" in catalyst_prompt
+    assert "才调用 radar_list_catalyst_terms" in catalyst_prompt
     assert "radar_stock_evidence_chart" in stock_prompt
     assert "当前入口：个股深挖" in stock_prompt
 
@@ -446,6 +449,8 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     assert "radar_stock_evidence_detail" in tool_names
     assert "radar_theme_candidates" in tool_names
     assert "radar_stock_evidence_chart" in tool_names
+    assert "radar_scan_catalysts" in tool_names
+    assert "radar_list_catalyst_terms" in tool_names
     assert "radar_stock_evidence_chain" not in tool_names
     assert "radar_backtest_summary" not in tool_names
     assert "radar_analyst_backtest_summary" in tool_names

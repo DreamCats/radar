@@ -157,12 +157,19 @@
   cursor: pointer;
 }
 
+.chat-launcher-reference summary span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .chat-launcher-reference summary::marker,
 .chat-launcher-reference summary::-webkit-details-marker {
   display: none;
 }
 
 .chat-launcher-reference summary em {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   color: var(--color-ink-subtle);
   font-size: 12px;

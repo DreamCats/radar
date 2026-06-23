@@ -6,6 +6,7 @@ from radar.core.models import RawMessage
 from radar.core.messages import (
     CatalystCategory,
     CatalystFeedFilters,
+    CatalystStockMention,
     CatalystTermLibrary,
     MessageFilters,
     get_message_context,
@@ -207,6 +208,32 @@ def test_catalyst_feed_category_filter_keeps_global_counts_and_all_hits(sqlite_c
     assert page.summary.available_total_items == 2
     assert page.summary.category_counts == {"order": 1, "price": 1, "risk": 1}
     assert [hit.term for hit in page.items[0].matched_terms] == ["新签订单", "涨价"]
+
+
+def test_catalyst_feed_uses_stock_detector_for_named_mentions(sqlite_conn):
+    init_db(sqlite_conn)
+    upsert_messages(
+        sqlite_conn,
+        [_message("m1", "2026-06-23T09:20:00", "东财策略", "胜宏科技 300476 在手订单充足")],
+    )
+    library = CatalystTermLibrary(
+        categories=[CatalystCategory(id="order", name="订单", color="#0ecb81", terms=["在手订单"])]
+    )
+
+    page = list_catalyst_feed(
+        sqlite_conn,
+        library,
+        CatalystFeedFilters(
+            start_time=datetime.fromisoformat("2026-06-23T09:00:00"),
+            end_time=datetime.fromisoformat("2026-06-23T11:00:00"),
+            limit=10,
+        ),
+        stock_detector=lambda _content: [CatalystStockMention(ts_code="300476.SZ", stock_name="胜宏科技")],
+    )
+
+    assert [mention.model_dump() for mention in page.items[0].stock_mentions] == [
+        {"ts_code": "300476.SZ", "stock_name": "胜宏科技"}
+    ]
 
 
 def test_fetch_window_record(sqlite_conn):

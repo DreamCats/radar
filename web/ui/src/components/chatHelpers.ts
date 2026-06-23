@@ -112,9 +112,11 @@ export function formatToolName(toolName: string): string {
     radar_get_limit_pool: "涨跌停池",
     radar_get_billboard_trading: "龙虎榜",
     radar_get_sector_moneyflow: "板块资金流",
+    radar_list_catalyst_terms: "催化词词库",
     radar_list_conversations: "会话列表",
     radar_message_overview: "消息总览",
     radar_resolve_stock: "股票代码解析",
+    radar_scan_catalysts: "催化词扫描",
     radar_search_messages: "消息搜索",
     radar_strategy_dashboard: "策略看板",
   };

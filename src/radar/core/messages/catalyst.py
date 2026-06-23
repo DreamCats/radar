@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 import sqlite3
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -102,6 +103,9 @@ class CatalystFeedFilters(BaseModel):
     limit: int = Field(default=60, ge=1, le=200)
 
 
+CatalystStockDetector = Callable[[str], list[CatalystStockMention]]
+
+
 class _CatalystAccumulator:
     def __init__(self, *, key: str, content_hash: str, row: sqlite3.Row) -> None:
         self.key = key
@@ -192,6 +196,8 @@ def list_catalyst_feed(
     conn: sqlite3.Connection,
     library: CatalystTermLibrary,
     filters: CatalystFeedFilters,
+    *,
+    stock_detector: CatalystStockDetector | None = None,
 ) -> CatalystFeedPage:
     if filters.start_time > filters.end_time:
         raise ValueError("start_time 不能晚于 end_time")
@@ -214,7 +220,7 @@ def list_catalyst_feed(
         if accumulator is None:
             accumulator = _CatalystAccumulator(key=key, content_hash=content_hash, row=row)
             accumulators[key] = accumulator
-        accumulator.add(row, hits, _stock_mentions_for_row(row, stock_mentions))
+        accumulator.add(row, hits, _stock_mentions_for_row(row, stock_mentions, stock_detector))
 
     items = [item.to_item() for item in accumulators.values()]
     items.sort(key=lambda item: (item.latest_message_time, item.key), reverse=True)
@@ -351,14 +357,27 @@ def _stock_mentions_by_message_id(
 def _stock_mentions_for_row(
     row: sqlite3.Row,
     mentions_by_message_id: dict[str, list[CatalystStockMention]],
+    stock_detector: CatalystStockDetector | None = None,
 ) -> list[CatalystStockMention]:
     mentions = list(mentions_by_message_id.get(row["message_id"], []))
     seen = {(mention.ts_code, mention.stock_name) for mention in mentions}
+    seen_codes = {mention.ts_code for mention in mentions if mention.ts_code}
+    if stock_detector is not None:
+        for mention in stock_detector(row["raw_content"]):
+            key = (mention.ts_code, mention.stock_name)
+            if key not in seen:
+                seen.add(key)
+                if mention.ts_code:
+                    seen_codes.add(mention.ts_code)
+                mentions.append(mention)
     for code in _stock_codes(row["raw_content"]):
+        if code in seen_codes:
+            continue
         mention = CatalystStockMention(ts_code=code, stock_name=code)
         key = (mention.ts_code, mention.stock_name)
         if key not in seen:
             seen.add(key)
+            seen_codes.add(code)
             mentions.append(mention)
     return mentions
 

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from radar.core.chat.brave_search_tools import RadarBraveSearchTools
+from radar.core.chat.catalyst_tools import RadarCatalystTools
 from radar.core.chat.extensions import ExtensionContext
 from radar.core.chat.market_quote_tools import RadarMarketQuoteTools
 from radar.core.chat.shell_tool import build_shell_tool
@@ -50,6 +51,7 @@ class RadarBuiltinExtension:
             *RadarMarketQuoteTools(self.config).tools(),
             *RadarTushareTools(self.config).tools(),
             *RadarStockEvidenceTools(self.config).tools(),
+            *RadarCatalystTools(self.config).tools(),
             self._analyst_backtest_summary_tool(),
         ):
             context.register_tool(tool)

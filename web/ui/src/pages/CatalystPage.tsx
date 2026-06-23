@@ -1,6 +1,5 @@
-import { Copy, ListFilter, RefreshCw, Search, Settings2, Tags, X } from "lucide-react";
+import { ListFilter, RefreshCw, Search, Settings2, Tags, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 
 import {
   fetchCatalystFeed,
@@ -8,15 +7,14 @@ import {
   resetCatalystTerms,
   saveCatalystTerms,
 } from "../api/radarApi";
+import { CatalystDetailDrawer, CatalystTermChip, highlightCatalystText } from "../components/CatalystEvidenceDrawer";
 import { CatalystTermManager } from "../components/CatalystTermManager";
-import { copyText } from "../lib/clipboard";
 import { formatTime } from "../lib/datetime";
 import { buildPresetRange, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
 import type {
   CatalystCategory,
   CatalystFeedItem,
   CatalystFeedPage,
-  CatalystTermHit,
   CatalystTermLibrary,
 } from "../types";
 
@@ -47,12 +45,12 @@ export function CatalystPage() {
   const [preset, setPreset] = useState<RangePreset>("yesterdayClose");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [keyword, setKeyword] = useState("");
-  const [dedupe, setDedupe] = useState(true);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [managerOpen, setManagerOpen] = useState(false);
   const [mobileCategorySheetOpen, setMobileCategorySheetOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [feedVersion, setFeedVersion] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const selectedItem = useMemo(
@@ -89,7 +87,7 @@ export function CatalystPage() {
         end_time: end,
         category_ids: categoryId ? [categoryId] : undefined,
         keyword: keyword.trim() || undefined,
-        dedupe,
+        dedupe: true,
         cursor_time: append ? page.next_cursor_time : undefined,
         cursor_key: append ? page.next_cursor_key : undefined,
         limit: 60,
@@ -102,7 +100,10 @@ export function CatalystPage() {
             }
           : data,
       );
-      setSelectedKey((current) => (append ? current : null));
+      if (!append) {
+        setFeedVersion((current) => current + 1);
+        setSelectedKey(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "查询失败");
     } finally {
@@ -195,11 +196,17 @@ export function CatalystPage() {
         </label>
         <label className="field">
           <span>临时关键词</span>
-          <input value={keyword} placeholder="AI液冷" onChange={(event) => setKeyword(event.target.value)} />
-        </label>
-        <label className="catalyst-dedupe-toggle">
-          <input type="checkbox" checked={dedupe} onChange={(event) => setDedupe(event.target.checked)} />
-          <span>去重</span>
+          <input
+            value={keyword}
+            placeholder="AI液冷"
+            onChange={(event) => setKeyword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                void loadFeed(false);
+              }
+            }}
+          />
         </label>
         <button
           className="btn btn-sm catalyst-query-button"
@@ -211,7 +218,7 @@ export function CatalystPage() {
           查询
         </button>
         <button
-          className="btn btn-sm catalyst-icon-button"
+          className={loading ? "btn btn-sm catalyst-icon-button is-spinning" : "btn btn-sm catalyst-icon-button"}
           type="button"
           title="刷新"
           disabled={loading}
@@ -245,7 +252,13 @@ export function CatalystPage() {
           onSelect={selectCategory}
         />
 
-        <section className="catalyst-feed-panel content-panel panel">
+        <section
+          className={
+            loading && page.items.length > 0
+              ? "catalyst-feed-panel content-panel panel is-refreshing"
+              : "catalyst-feed-panel content-panel panel"
+          }
+        >
           <header className="catalyst-feed-head">
             <div>
               <h2>催化词线索</h2>
@@ -254,8 +267,9 @@ export function CatalystPage() {
                 {page.summary.duplicate_messages > 0 ? ` · 去重 ${page.summary.duplicate_messages} 条` : ""}
               </span>
             </div>
+            {loading && page.items.length > 0 && <span className="catalyst-refresh-state">更新中</span>}
           </header>
-          <div className="catalyst-feed-list" aria-busy={loading}>
+          <div className="catalyst-feed-list" aria-busy={loading} key={feedVersion}>
             {loading && page.items.length === 0 && <p className="empty-line">正在扫描消息。</p>}
             {page.items.map((item) => (
               <CatalystCard
@@ -275,7 +289,7 @@ export function CatalystPage() {
         </section>
       </div>
 
-      {selectedItem && <CatalystDetail item={selectedItem} onClose={() => setSelectedKey(null)} />}
+      {selectedItem && <CatalystDetailDrawer item={selectedItem} onClose={() => setSelectedKey(null)} />}
 
       {mobileCategorySheetOpen && (
         <MobileCategorySheet
@@ -468,7 +482,7 @@ function CatalystCard(props: { item: CatalystFeedItem; active: boolean; onSelect
       </span>
       <span className="catalyst-chip-row">
         {props.item.matched_terms.slice(0, 6).map((hit) => (
-          <Chip hit={hit} key={`${hit.category_id}-${hit.term}`} />
+          <CatalystTermChip hit={hit} key={`${hit.category_id}-${hit.term}`} />
         ))}
         {props.item.stock_mentions.map((stock) => (
           <span className="catalyst-stock-chip" key={`${stock.ts_code ?? ""}-${stock.stock_name}`}>
@@ -476,105 +490,7 @@ function CatalystCard(props: { item: CatalystFeedItem; active: boolean; onSelect
           </span>
         ))}
       </span>
-      <span className="catalyst-card-content">{highlightText(props.item.raw_content, props.item.matched_terms)}</span>
+      <span className="catalyst-card-content">{highlightCatalystText(props.item.raw_content, props.item.matched_terms)}</span>
     </button>
   );
-}
-
-function CatalystDetail({ item, onClose }: { item: CatalystFeedItem; onClose: () => void }) {
-  const [copied, setCopied] = useState(false);
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.isComposing) {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
-  return (
-    <div
-      className="catalyst-detail-drawer-backdrop"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <aside className="catalyst-detail-panel catalyst-detail-drawer content-panel panel" role="dialog" aria-modal="true">
-        <header className="catalyst-detail-head">
-          <div>
-            <h2>原文证据</h2>
-            <span>最早 {formatTime(item.first_message_time)} · 最新 {formatTime(item.latest_message_time)}</span>
-          </div>
-          <div className="catalyst-detail-actions">
-            <button
-              className="mini-button"
-              type="button"
-              title="复制原文"
-              onClick={() => {
-                void copyText(item.raw_content).then(() => {
-                  setCopied(true);
-                  window.setTimeout(() => setCopied(false), 1200);
-                });
-              }}
-            >
-              <Copy size={14} />
-            </button>
-            <button className="mini-button" type="button" title="关闭详情" onClick={onClose}>
-              <X size={14} />
-            </button>
-          </div>
-        </header>
-        {copied && <p className="catalyst-copy-state">已复制</p>}
-        <div className="catalyst-chip-row detail">
-          {item.matched_terms.map((hit) => (
-            <Chip hit={hit} key={`${hit.category_id}-${hit.term}`} />
-          ))}
-          {item.stock_mentions.map((stock) => (
-            <span className="catalyst-stock-chip" key={`${stock.ts_code ?? ""}-${stock.stock_name}`}>
-              {stock.stock_name}
-            </span>
-          ))}
-        </div>
-        <p className="catalyst-full-content">{highlightText(item.raw_content, item.matched_terms)}</p>
-        <div className="catalyst-duplicates">
-          <strong>重复来源</strong>
-          {item.duplicate_sources.map((source) => (
-            <span key={source.message_id}>
-              <em>{formatTime(source.message_time)}</em>
-              {source.source === "个人群" ? source.group_name : source.sender}
-              <small>{source.sender}</small>
-            </span>
-          ))}
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-function Chip({ hit }: { hit: CatalystTermHit }) {
-  return (
-    <span className="catalyst-term-chip" style={{ "--chip-color": hit.color } as CSSProperties}>
-      {hit.category_name} · {hit.term}
-    </span>
-  );
-}
-
-function highlightText(text: string, hits: CatalystTermHit[]) {
-  const terms = Array.from(new Set(hits.map((hit) => hit.term).filter(Boolean))).sort((a, b) => b.length - a.length);
-  if (terms.length === 0) {
-    return text;
-  }
-  const pattern = new RegExp(`(${terms.map(escapeRegex).join("|")})`, "gi");
-  return text.split(pattern).map((part, index) => {
-    const matched = terms.some((term) => term.toLowerCase() === part.toLowerCase());
-    return matched ? <mark key={`${part}-${index}`}>{part}</mark> : <span key={`${part}-${index}`}>{part}</span>;
-  });
-}
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
