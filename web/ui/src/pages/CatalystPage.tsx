@@ -208,28 +208,30 @@ export function CatalystPage() {
             }}
           />
         </label>
-        <button
-          className="btn btn-sm catalyst-query-button"
-          type="button"
-          disabled={loading}
-          onClick={() => void loadFeed(false)}
-        >
-          <Search size={14} />
-          查询
-        </button>
-        <button
-          className={loading ? "btn btn-sm catalyst-icon-button is-spinning" : "btn btn-sm catalyst-icon-button"}
-          type="button"
-          title="刷新"
-          disabled={loading}
-          onClick={() => void loadFeed(false)}
-        >
-          <RefreshCw size={14} />
-        </button>
-        <button className="btn btn-sm" type="button" onClick={() => setManagerOpen(true)}>
-          <Settings2 size={14} />
-          词库
-        </button>
+        <div className="catalyst-action-row" role="group" aria-label="催化词操作">
+          <button
+            className="btn btn-sm catalyst-query-button"
+            type="button"
+            disabled={loading}
+            onClick={() => void loadFeed(false)}
+          >
+            <Search size={14} />
+            查询
+          </button>
+          <button
+            className={loading ? "btn btn-sm catalyst-icon-button is-spinning" : "btn btn-sm catalyst-icon-button"}
+            type="button"
+            title="刷新"
+            disabled={loading}
+            onClick={() => void loadFeed(false)}
+          >
+            <RefreshCw size={14} />
+          </button>
+          <button className="btn btn-sm catalyst-library-button" type="button" onClick={() => setManagerOpen(true)}>
+            <Settings2 size={14} />
+            词库
+          </button>
+        </div>
       </div>
 
       {error && <p className="error-line">{error}</p>}

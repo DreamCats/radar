@@ -380,6 +380,10 @@
   line-height: 1;
 }
 
+.catalyst-action-row {
+  display: contents;
+}
+
 .catalyst-control-bar .btn svg {
   flex: 0 0 auto;
   width: 14px;
@@ -1277,6 +1281,21 @@
   .catalyst-control-bar .btn {
     height: 32px;
     min-height: 32px;
+  }
+
+  .catalyst-action-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .catalyst-action-row .btn {
+    width: 100%;
+  }
+
+  .catalyst-action-row .catalyst-icon-button {
+    width: 40px;
   }
 
   .catalyst-category-panel,
