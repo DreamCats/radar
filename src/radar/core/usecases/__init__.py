@@ -13,29 +13,29 @@ from radar.core.usecases.ingest_wechat import (
     ingest_wechat_range,
     ingest_wechat_window,
 )
-from radar.core.usecases.recommendation_backtest import (
-    RecommendationBacktestRefreshResult,
-    RecommendationBacktestSummaryResult,
-    refresh_recommendation_backtests,
-    summarize_recommendation_backtests,
+from radar.core.usecases.analyst_mentions import (
+    AnalystMentionRefreshResult,
+    AnalystMentionSummaryResult,
+    refresh_analyst_stock_mentions,
+    summarize_analyst_stock_mentions,
 )
 from radar.core.usecases.smoke import SmokeResult, test_llm, test_market
 
 __all__ = [
+    "AnalystMentionRefreshResult",
+    "AnalystMentionSummaryResult",
     "ClassifyMessagesResult",
     "ClassifyRangeResult",
     "IngestRangeResult",
     "IngestWindowResult",
-    "RecommendationBacktestRefreshResult",
-    "RecommendationBacktestSummaryResult",
     "SmokeResult",
     "classify_batch_with_llm",
     "classify_messages",
     "classify_messages_range",
     "ingest_wechat_range",
     "ingest_wechat_window",
-    "refresh_recommendation_backtests",
-    "summarize_recommendation_backtests",
+    "refresh_analyst_stock_mentions",
+    "summarize_analyst_stock_mentions",
     "test_llm",
     "test_market",
 ]

@@ -135,8 +135,8 @@ def _message_dependency(database: Path) -> dict[str, tuple[int, str]]:
         return {
             "messages": _table_signature(conn, "messages", "message_time"),
             "message_classifications": _table_signature(conn, "message_classifications", "updated_at"),
-            "recommendation_events": _table_signature(conn, "recommendation_events", "message_time"),
-            "recommendation_backtest_windows": _table_signature(conn, "recommendation_backtest_windows", "updated_at"),
+            "analyst_stock_mentions": _table_signature(conn, "analyst_stock_mentions", "message_time"),
+            "analyst_stock_mention_windows": _table_signature(conn, "analyst_stock_mention_windows", "updated_at"),
         }
 
 

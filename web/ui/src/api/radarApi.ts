@@ -2,6 +2,10 @@ import type {
   ClassifyJobItem,
   ClassifyRequest,
   AnchorRequest,
+  AnalystBacktestRequest,
+  AnalystBacktestEvidence,
+  AnalystBacktestMessageEvidence,
+  AnalystBacktestSummary,
   ChatContinueRequest,
   ChatMessageItem,
   ChatModelOptions,
@@ -31,8 +35,6 @@ import type {
   OrganizeClassificationQuery,
   OrganizeEvidencePage,
   OrganizeEvidenceQuery,
-  RecommendationBacktestRequest,
-  RecommendationBacktestSummary,
   RunItem,
   StockEvidenceChainDashboard,
   StockEvidenceChainSnapshotList,
@@ -261,15 +263,41 @@ export async function cancelRun(runId: string): Promise<RunItem> {
   return (await response.json()) as RunItem;
 }
 
-export async function fetchRecommendationBacktestSummary(query: {
+export async function fetchAnalystBacktestSummary(query: {
   start_time: string;
   end_time: string;
   source?: string;
-  group_by?: string;
+  window?: number[];
   min_count?: number;
   limit?: number;
-}): Promise<RecommendationBacktestSummary> {
-  return getJson(`/api/recommendation/backtest/summary?${params(query)}`);
+  include_broad_list?: boolean;
+}): Promise<AnalystBacktestSummary> {
+  return getJson(`/api/analyst/backtest/summary?${params(query)}`);
+}
+
+export async function fetchAnalystBacktestEvidence(query: {
+  start_time: string;
+  end_time: string;
+  window?: number;
+  analyst?: string;
+  ts_code?: string;
+  source?: string;
+  limit?: number;
+  include_broad_list?: boolean;
+}): Promise<AnalystBacktestEvidence> {
+  return getJson(`/api/analyst/backtest/evidence?${params(query)}`);
+}
+
+export async function fetchAnalystBacktestMessageEvidence(query: {
+  start_time: string;
+  end_time: string;
+  window?: number;
+  analyst?: string;
+  source?: string;
+  limit?: number;
+  include_broad_list?: boolean;
+}): Promise<AnalystBacktestMessageEvidence> {
+  return getJson(`/api/analyst/backtest/message-evidence?${params(query)}`);
 }
 
 export async function fetchStockEvidenceChainLatest(query: { limit?: number; as_of_time?: string } = {}): Promise<StockEvidenceChainDashboard> {
@@ -344,8 +372,8 @@ export async function startMarketAnchorUpdateJob(request: AnchorRequest): Promis
   return data.items;
 }
 
-export async function startRecommendationBacktestJob(request: RecommendationBacktestRequest): Promise<DerivedJobItem[]> {
-  const response = await apiFetch("/api/recommendation/backtest/jobs", {
+export async function startAnalystBacktestJob(request: AnalystBacktestRequest): Promise<DerivedJobItem[]> {
+  const response = await apiFetch("/api/analyst/backtest/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

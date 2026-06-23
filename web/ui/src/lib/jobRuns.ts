@@ -4,7 +4,7 @@ export type JobTemplateKey =
   | "ingest"
   | "classify"
   | "anchor"
-  | "backtest"
+  | "analystBacktest"
   | "stockEvidenceChain"
   | "lifecycleDigest";
 
@@ -19,7 +19,7 @@ const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   wechat_ingest_range: "ingest",
   message_classify_range: "classify",
   market_anchor_update: "anchor",
-  recommendation_backtest_refresh: "backtest",
+  analyst_stock_mention_backtest_refresh: "analystBacktest",
   stock_evidence_chain: "stockEvidenceChain",
   opportunity_lifecycle_digest: "lifecycleDigest",
 };
@@ -84,6 +84,9 @@ function sourceFromRun(run: RunItem): string {
   }
   if (run.kind === "market_anchor_update") {
     return "市场词库";
+  }
+  if (run.kind === "analyst_stock_mention_backtest_refresh") {
+    return "分析师提及";
   }
   const source = textValue(run.metadata.source);
   if (source && !isSourceKey(source)) {

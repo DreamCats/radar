@@ -6,7 +6,7 @@ from radar.core.config import RadarConfig
 from radar.core.dashboard import DashboardSummaryPayload, build_dashboard_summary_payload
 from radar.core.storage import list_runs
 from radar.core.storage import cached_model, cache_key, cleanup_cache, dashboard_dependency_key
-from radar.web.server.backtest_jobs import mark_stale_backtest_runs
+from radar.web.server.backtest_jobs import mark_stale_analyst_backtest_runs
 from radar.web.server.classify_jobs import mark_stale_classify_runs
 from radar.web.server.deps import get_config
 from radar.web.server.ingest_jobs import mark_stale_ingest_runs
@@ -35,6 +35,6 @@ def _recent_runs(config: RadarConfig):
     mark_stale_ingest_runs(config)
     mark_stale_classify_runs(config)
     mark_stale_market_anchor_runs(config)
-    mark_stale_backtest_runs(config)
+    mark_stale_analyst_backtest_runs(config)
     mark_stale_stock_evidence_chain_runs(config)
     return list_runs(config.database_path, limit=20)

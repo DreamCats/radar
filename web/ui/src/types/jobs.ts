@@ -58,16 +58,17 @@ export type AnchorRequest = {
   min_anchor_count: number;
 };
 
-export type RecommendationBacktestRequest = {
+export type AnalystBacktestRequest = {
   as_of: string;
-  window_days: number;
+  lookback_days: number;
   start_time: string;
   end_time: string;
   windows: number[];
   source: IngestSource;
+  cooldown_trade_days: number;
   min_classification_confidence: number;
   benchmark_ts_code: string;
-  force: boolean;
+  remote_price_fetch: boolean;
 };
 
 export type StockEvidenceChainJobRequest = {
@@ -87,7 +88,11 @@ export type LifecycleDigestJobRequest = {
 };
 
 export type DerivedJobItem = {
-  job_type: "anchor" | "recommendation_backtest" | "stock_evidence_chain" | "lifecycle_digest";
+  job_type:
+    | "anchor"
+    | "analyst_backtest"
+    | "stock_evidence_chain"
+    | "lifecycle_digest";
   run_id: string;
   reused_existing: boolean;
   status: "running";

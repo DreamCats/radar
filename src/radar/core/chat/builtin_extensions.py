@@ -19,9 +19,16 @@ from radar.core.messages import (
     list_conversations,
     list_messages,
 )
+from radar.core.models import MessageSource
 from radar.core.models import RawMessage
 from radar.core.storage import connect, init_db
-from radar.core.usecases.recommendation_backtest import DEFAULT_BACKTEST_WINDOWS, summarize_recommendation_backtests
+from radar.core.usecases.analyst_mentions import DEFAULT_ANALYST_MENTION_WINDOWS, summarize_analyst_stock_mentions
+
+_SOURCE_MAP: dict[str, MessageSource | None] = {
+    "all": None,
+    "个人消息": "个人消息",
+    "个人群": "个人群",
+}
 
 
 class RadarBuiltinExtension:
@@ -43,7 +50,7 @@ class RadarBuiltinExtension:
             *RadarMarketQuoteTools(self.config).tools(),
             *RadarTushareTools(self.config).tools(),
             *RadarStockEvidenceTools(self.config).tools(),
-            self._backtest_summary_tool(),
+            self._analyst_backtest_summary_tool(),
         ):
             context.register_tool(tool)
         if self.config.chat.shell.enabled:
@@ -132,24 +139,22 @@ class RadarBuiltinExtension:
             handler=self._message_overview,
         )
 
-    def _backtest_summary_tool(self) -> ChatTool:
+    def _analyst_backtest_summary_tool(self) -> ChatTool:
         return ChatTool(
-            name="radar_backtest_summary",
-            description="读取高质量证据事件回测汇总，按来源、分析师、股票或行业聚合。",
+            name="radar_analyst_backtest_summary",
+            description="读取分析师股票提及后的近期回测汇总，默认排除 broad_list 样本。",
             input_schema=_object_schema(
                 {
                     "start_time": {"type": "string"},
                     "end_time": {"type": "string"},
-                    "group_by": {
-                        "type": "string",
-                        "enum": ["source", "source_stock", "analyst", "analyst_stock", "sector", "analyst_sector", "stock"],
-                    },
+                    "source": {"type": "string", "enum": ["all", "个人消息", "个人群"]},
                     "windows": {"type": "array", "items": {"type": "integer"}},
                     "min_count": {"type": "integer", "minimum": 1, "maximum": 20},
                     "limit": {"type": "integer", "minimum": 1, "maximum": 50},
+                    "include_broad_list": {"type": "boolean"},
                 }
             ),
-            handler=self._backtest_summary,
+            handler=self._analyst_backtest_summary,
         )
 
     def _search_messages(self, args: dict[str, Any]) -> dict[str, Any]:
@@ -271,18 +276,20 @@ class RadarBuiltinExtension:
             conn.close()
         return overview.model_dump(mode="json")
 
-    def _backtest_summary(self, args: dict[str, Any]) -> dict[str, Any]:
+    def _analyst_backtest_summary(self, args: dict[str, Any]) -> dict[str, Any]:
         end_time = _optional_datetime(args.get("end_time")) or datetime.now()
-        start_time = _optional_datetime(args.get("start_time")) or (end_time - timedelta(days=30))
+        start_time = _optional_datetime(args.get("start_time")) or (end_time - timedelta(days=40))
         windows = _windows(args.get("windows"))
-        result = summarize_recommendation_backtests(
+        source = _SOURCE_MAP[str(args.get("source") or "all")]
+        result = summarize_analyst_stock_mentions(
             self.config,
             start_time=start_time,
             end_time=end_time,
-            group_by=str(args.get("group_by") or "analyst_sector"),  # type: ignore[arg-type]
             windows=windows,
+            source=source,
             min_count=_bounded_int(args.get("min_count"), default=3, maximum=20),
             limit=_bounded_int(args.get("limit"), default=20, maximum=50),
+            include_broad_list=bool(args.get("include_broad_list", False)),
         )
         return result.model_dump(mode="json")
 
@@ -321,10 +328,10 @@ def _optional_datetime(value: object) -> datetime | None:
 
 def _windows(value: object) -> list[int]:
     if not isinstance(value, list):
-        return list(DEFAULT_BACKTEST_WINDOWS)
-    allowed = set(DEFAULT_BACKTEST_WINDOWS)
+        return list(DEFAULT_ANALYST_MENTION_WINDOWS)
+    allowed = set(DEFAULT_ANALYST_MENTION_WINDOWS)
     parsed = sorted({int(item) for item in value if int(item) in allowed})
-    return parsed or list(DEFAULT_BACKTEST_WINDOWS)
+    return parsed or list(DEFAULT_ANALYST_MENTION_WINDOWS)
 
 
 def _message_summary(message: RawMessage) -> dict[str, Any]:

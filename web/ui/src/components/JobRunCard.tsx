@@ -2,7 +2,13 @@ import { AlertCircle, CheckCircle2, Clock3, LoaderCircle } from "lucide-react";
 
 import type { RunItem } from "../types";
 
-type JobRunKind = "ingest" | "classify" | "anchor" | "backtest" | "stockEvidenceChain" | "lifecycleDigest";
+type JobRunKind =
+  | "ingest"
+  | "classify"
+  | "anchor"
+  | "analystBacktest"
+  | "stockEvidenceChain"
+  | "lifecycleDigest";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -77,8 +83,8 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "anchor") {
       return run?.stored_count || numberValue(run?.metadata.dictionary_anchor_count) ? 70 : 12;
     }
-    if (kind === "backtest") {
-      return backtestProgress(run);
+    if (kind === "analystBacktest") {
+      return analystBacktestProgress(run);
     }
     if (kind === "stockEvidenceChain") {
       return evidenceChainProgress(run);
@@ -111,16 +117,6 @@ function chunkProgress(run?: RunItem): number {
   return boundedPercent(done, total);
 }
 
-function backtestProgress(run?: RunItem): number {
-  const metadata = run?.metadata ?? {};
-  const total = numberValue(metadata.event_count);
-  const done = numberValue(metadata.completed_event_count) || run?.raw_count || 0;
-  if (!total) {
-    return run?.raw_count ? 25 : 8;
-  }
-  return boundedPercent(done, total);
-}
-
 function evidenceChainProgress(run?: RunItem): number {
   const metadata = run?.metadata ?? {};
   if (numberValue(metadata.candidate_count) > 0 || run?.stored_count) {
@@ -147,8 +143,8 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   if (kind === "anchor") {
     return anchorMetrics(run);
   }
-  if (kind === "backtest") {
-    return backtestMetrics(run);
+  if (kind === "analystBacktest") {
+    return analystBacktestMetrics(run);
   }
   if (kind === "stockEvidenceChain") {
     return evidenceChainMetrics(run);
@@ -222,23 +218,39 @@ function anchorMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
-function backtestMetrics(run?: RunItem): string[] {
+function analystBacktestProgress(run?: RunItem): number {
   const metadata = run?.metadata ?? {};
-  const events = numberValue(metadata.event_count) || run?.raw_count || 0;
-  const inserted = numberValue(metadata.inserted_event_count);
-  const refreshed = numberValue(metadata.refreshed_count) || run?.stored_count || 0;
-  const skipped = numberValue(metadata.skipped_complete_count);
+  const total = numberValue(metadata.effective_mention_count);
+  const done = run?.raw_count || 0;
+  if (!total) {
+    return numberValue(metadata.prewarm_daily_row_count) > 0 ? 30 : 8;
+  }
+  return boundedPercent(done, total);
+}
+
+function analystBacktestMetrics(run?: RunItem): string[] {
+  const metadata = run?.metadata ?? {};
+  const scanned = numberValue(metadata.scanned_message_count) || run?.raw_count || 0;
+  const rawMentions = numberValue(metadata.raw_mention_count);
+  const effective = numberValue(metadata.effective_mention_count) || run?.stored_count || 0;
+  const repeated = numberValue(metadata.repeated_mention_count) || run?.filtered_count || 0;
+  const broadList = numberValue(metadata.broad_list_mention_count);
+  const brokerFiltered = numberValue(metadata.source_broker_filtered_count);
+  const prewarmRows = numberValue(metadata.prewarm_daily_row_count);
+  const refreshed = numberValue(metadata.refreshed_count);
   const pending = numberValue(metadata.pending_count);
   const missing = numberValue(metadata.missing_price_count);
-  const failed = numberValue(metadata.failed_count);
   return [
-    `证据事件 ${events} 条`,
-    `新增事件 ${inserted} 条`,
+    `扫描消息 ${scanned} 条`,
+    `股票提及 ${rawMentions} 条`,
+    `有效样本 ${effective}`,
+    `重复 ${repeated}`,
+    `broad_list ${broadList}`,
+    `券商源过滤 ${brokerFiltered}`,
+    prewarmRows ? `补行情 ${prewarmRows} 行` : "",
     `已补齐窗口 ${refreshed}`,
-    `已完成跳过 ${skipped}`,
     `待成熟 ${pending}`,
     `缺行情 ${missing}`,
-    `失败 ${failed}`,
     durationText(run),
   ].filter(Boolean);
 }
@@ -328,8 +340,8 @@ function kindTitle(kind: JobRunKind): string {
   if (kind === "anchor") {
     return "Anchor 更新";
   }
-  if (kind === "backtest") {
-    return "证据回测补齐";
+  if (kind === "analystBacktest") {
+    return "分析师回测";
   }
   if (kind === "stockEvidenceChain") {
     return "个股证据链";

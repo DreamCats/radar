@@ -13,9 +13,13 @@ from radar.core.models import MessageClassification, RawMessage
 from radar.core.storage import finish_run, get_run, start_run
 from radar.core.storage import connect, init_db, upsert_message_classifications, upsert_messages
 from radar.core.usecases import IngestRangeResult
-from radar.core.usecases.recommendation_backtest import (
-    RecommendationBacktestSummaryResult,
-    RecommendationBacktestSummaryRow,
+from radar.core.usecases.analyst_mentions import (
+    AnalystMentionEvidenceItem,
+    AnalystMentionEvidenceResult,
+    AnalystMentionMessageEvidenceItem,
+    AnalystMentionMessageEvidenceResult,
+    AnalystMentionSummaryResult,
+    AnalystMentionSummaryRow,
 )
 from radar.web.server.app import create_app
 
@@ -1047,69 +1051,327 @@ def test_aggregate_refine_endpoints_are_removed(tmp_path):
 
     assert client.post("/api/aggregate/refine/jobs", json={}).status_code == 404
     assert client.get("/api/aggregate/refine/results").status_code == 404
+    assert client.post("/api/recommendation/backtest/jobs", json={}).status_code == 404
+    assert client.get("/api/recommendation/backtest/summary").status_code == 404
 
 
-def test_recommendation_backtest_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path):
+def test_analyst_backtest_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_path):
     config = _config(tmp_path)
     calls: list[dict] = []
     started = Event()
     release = Event()
 
-    def fake_backtest(config, *, as_of, window_days, start_time, end_time, windows, source, min_classification_confidence,
-                      extractor_version, benchmark_ts_code, force, run_id):
+    def fake_backtest(
+        config,
+        *,
+        as_of,
+        lookback_days,
+        start_time,
+        end_time,
+        windows,
+        source,
+        cooldown_trade_days,
+        min_classification_confidence,
+        remote_price_fetch,
+        benchmark_ts_code,
+        run_id,
+    ):
         calls.append(
             {
                 "as_of": as_of,
-                "window_days": window_days,
+                "lookback_days": lookback_days,
                 "start_time": start_time,
                 "end_time": end_time,
                 "windows": windows,
                 "source": source,
+                "cooldown_trade_days": cooldown_trade_days,
                 "min_classification_confidence": min_classification_confidence,
+                "remote_price_fetch": remote_price_fetch,
                 "benchmark_ts_code": benchmark_ts_code,
-                "force": force,
                 "run_id": run_id,
             }
         )
         started.set()
         release.wait(timeout=2)
 
-    monkeypatch.setattr("radar.web.server.backtest_jobs.refresh_recommendation_backtests", fake_backtest)
+    monkeypatch.setattr("radar.web.server.backtest_jobs.refresh_analyst_stock_mentions", fake_backtest)
 
     client = TestClient(create_app(config))
     payload = {
         "as_of": "2026-06-05",
-        "window_days": 30,
-        "start_time": "2026-05-07T00:00:00",
+        "lookback_days": 40,
+        "start_time": "2026-04-27T00:00:00",
         "end_time": "2026-06-05T15:30:00",
-        "windows": [1, 2, 3, 5],
+        "windows": [1, 3, 5],
         "source": "group_message",
+        "cooldown_trade_days": 5,
         "min_classification_confidence": 0.7,
         "benchmark_ts_code": "000300.SH",
-        "force": False,
+        "remote_price_fetch": True,
     }
-    response = client.post("/api/recommendation/backtest/jobs", json=payload)
+    response = client.post("/api/analyst/backtest/jobs", json=payload)
 
     assert response.status_code == 200
     first = response.json()["items"][0]
     assert started.wait(timeout=1)
-    assert first["job_type"] == "recommendation_backtest"
+    assert first["job_type"] == "analyst_backtest"
     assert first["status"] == "running"
     assert first["reused_existing"] is False
-    assert get_run(config.database_path, first["run_id"]) is not None
+    run = get_run(config.database_path, first["run_id"])
+    assert run is not None
+    assert run.metadata["extractor_version"] == "analyst-stock-mention-v1"
 
-    response = client.post("/api/recommendation/backtest/jobs", json=payload)
+    response = client.post("/api/analyst/backtest/jobs", json=payload)
     second = response.json()["items"][0]
 
     assert second["run_id"] == first["run_id"]
     assert second["reused_existing"] is True
     release.set()
     assert calls[0]["source"] == "个人群"
-    assert calls[0]["start_time"] == datetime.fromisoformat("2026-05-07T00:00:00")
+    assert calls[0]["start_time"] == datetime.fromisoformat("2026-04-27T00:00:00")
     assert calls[0]["end_time"] == datetime.fromisoformat("2026-06-05T15:30:00")
-    assert calls[0]["windows"] == [1, 2, 3, 5]
+    assert calls[0]["windows"] == [1, 3, 5]
+    assert calls[0]["cooldown_trade_days"] == 5
+    assert calls[0]["remote_price_fetch"] is True
     assert calls[0]["benchmark_ts_code"] == "000300.SH"
     assert calls[0]["run_id"] == first["run_id"]
+
+
+def test_analyst_backtest_summary_endpoint_returns_rows(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    calls: list[dict] = []
+
+    def fake_summary(config, *, start_time, end_time, windows, source, min_count, limit, include_broad_list):
+        calls.append(
+            {
+                "start_time": start_time,
+                "end_time": end_time,
+                "windows": windows,
+                "source": source,
+                "min_count": min_count,
+                "limit": limit,
+                "include_broad_list": include_broad_list,
+            }
+        )
+        return AnalystMentionSummaryResult(
+            start_time=start_time,
+            end_time=end_time,
+            windows=windows,
+            row_count=1,
+            rows=[
+                AnalystMentionSummaryRow(
+                    analyst_id="analyst-1",
+                    analyst_display_name="张三-分析师",
+                    event_count=4,
+                    latest_event_time=datetime.fromisoformat("2026-06-05T10:00:00"),
+                    metrics={"sample_count_t5": 3, "positive_rate_t5": 1.0},
+                )
+            ],
+        )
+
+    monkeypatch.setattr("radar.web.server.routers.backtest.summarize_analyst_stock_mentions", fake_summary)
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/analyst/backtest/summary",
+        params={
+            "start_time": "2026-05-01T00:00:00",
+            "end_time": "2026-06-06T00:00:00",
+            "source": "group_message",
+            "window": 5,
+            "min_count": 3,
+            "limit": 10,
+            "include_broad_list": "false",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["row_count"] == 1
+    assert data["rows"][0]["analyst_display_name"] == "张三-分析师"
+    assert calls[0]["source"] == "个人群"
+    assert calls[0]["windows"] == [5]
+    assert calls[0]["min_count"] == 3
+    assert calls[0]["limit"] == 10
+    assert calls[0]["include_broad_list"] is False
+
+
+def test_analyst_backtest_evidence_endpoint_returns_rows(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    calls: list[dict] = []
+
+    def fake_evidence(
+        config,
+        *,
+        start_time,
+        end_time,
+        window,
+        analyst,
+        ts_code,
+        source,
+        limit,
+        include_broad_list,
+    ):
+        calls.append(
+            {
+                "start_time": start_time,
+                "end_time": end_time,
+                "window": window,
+                "analyst": analyst,
+                "ts_code": ts_code,
+                "source": source,
+                "limit": limit,
+                "include_broad_list": include_broad_list,
+            }
+        )
+        return AnalystMentionEvidenceResult(
+            start_time=start_time,
+            end_time=end_time,
+            window_days=window,
+            row_count=1,
+            rows=[
+                AnalystMentionEvidenceItem(
+                    mention_id="mention-1",
+                    message_id="m1",
+                    analyst_id="analyst-1",
+                    analyst_display_name="张三-分析师",
+                    ts_code="600900.SH",
+                    stock_name="长江电力",
+                    message_time=datetime.fromisoformat("2026-06-05T10:00:00"),
+                    category="research",
+                    evidence_snippet="继续关注长江电力",
+                    stock_count_in_message=1,
+                    quality_flags=(),
+                    window_days=5,
+                    status="succeeded",
+                    return_rate=0.08,
+                    excess_return_rate=0.03,
+                )
+            ],
+        )
+
+    monkeypatch.setattr("radar.web.server.routers.backtest.list_analyst_stock_mention_evidence", fake_evidence)
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/analyst/backtest/evidence",
+        params={
+            "start_time": "2026-05-01T00:00:00",
+            "end_time": "2026-06-06T00:00:00",
+            "window": 5,
+            "analyst": "analyst-1",
+            "ts_code": "600900.SH",
+            "source": "group_message",
+            "limit": 10,
+            "include_broad_list": "false",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["row_count"] == 1
+    assert data["rows"][0]["evidence_snippet"] == "继续关注长江电力"
+    assert calls[0]["window"] == 5
+    assert calls[0]["analyst"] == "analyst-1"
+    assert calls[0]["ts_code"] == "600900.SH"
+    assert calls[0]["source"] == "个人群"
+    assert calls[0]["include_broad_list"] is False
+
+
+def test_analyst_backtest_message_evidence_endpoint_returns_grouped_rows(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    calls: list[dict] = []
+
+    def fake_message_evidence(
+        config,
+        *,
+        start_time,
+        end_time,
+        window,
+        analyst,
+        source,
+        limit,
+        include_broad_list,
+    ):
+        calls.append(
+            {
+                "start_time": start_time,
+                "end_time": end_time,
+                "window": window,
+                "analyst": analyst,
+                "source": source,
+                "limit": limit,
+                "include_broad_list": include_broad_list,
+            }
+        )
+        item = AnalystMentionEvidenceItem(
+            mention_id="mention-1",
+            message_id="m1",
+            analyst_id="analyst-1",
+            analyst_display_name="张三-分析师",
+            ts_code="600900.SH",
+            stock_name="长江电力",
+            message_time=datetime.fromisoformat("2026-06-05T10:00:00"),
+            category="research",
+            evidence_snippet="继续关注长江电力",
+            stock_count_in_message=1,
+            quality_flags=(),
+            window_days=5,
+            status="succeeded",
+            return_rate=0.08,
+            excess_return_rate=0.03,
+        )
+        return AnalystMentionMessageEvidenceResult(
+            start_time=start_time,
+            end_time=end_time,
+            window_days=window,
+            row_count=1,
+            rows=[
+                AnalystMentionMessageEvidenceItem(
+                    message_id="m1",
+                    analyst_id="analyst-1",
+                    analyst_display_name="张三-分析师",
+                    message_time=datetime.fromisoformat("2026-06-05T10:00:00"),
+                    category="research",
+                    raw_content="继续关注长江电力和国投电力",
+                    stock_count=1,
+                    mentioned_stock_count=2,
+                    quality_flags=(),
+                    window_days=5,
+                    metrics={"avg_return": 0.08, "succeeded_count": 1},
+                    items=[item],
+                )
+            ],
+        )
+
+    monkeypatch.setattr(
+        "radar.web.server.routers.backtest.list_analyst_stock_mention_message_evidence",
+        fake_message_evidence,
+    )
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/analyst/backtest/message-evidence",
+        params={
+            "start_time": "2026-05-01T00:00:00",
+            "end_time": "2026-06-06T00:00:00",
+            "window": 5,
+            "analyst": "analyst-1",
+            "source": "group_message",
+            "limit": 10,
+            "include_broad_list": "false",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["row_count"] == 1
+    assert data["rows"][0]["raw_content"] == "继续关注长江电力和国投电力"
+    assert data["rows"][0]["items"][0]["stock_name"] == "长江电力"
+    assert calls[0]["window"] == 5
+    assert calls[0]["analyst"] == "analyst-1"
+    assert calls[0]["source"] == "个人群"
+    assert calls[0]["include_broad_list"] is False
 
 
 def test_stock_evidence_chain_job_uses_configured_provider_pool(monkeypatch, tmp_path):
@@ -1272,68 +1534,6 @@ def test_lifecycle_digest_job_uses_configured_provider_pool(monkeypatch, tmp_pat
     wait_for_run_status(config.database_path, first["run_id"], "succeeded")
     assert calls[0]["provider_names"] == ["provider-a", "provider-b"]
     assert calls[0]["llm_workers"] == 16
-
-
-def test_recommendation_backtest_summary_endpoint_returns_rows(monkeypatch, tmp_path):
-    config = _config(tmp_path)
-    calls: list[dict] = []
-
-    def fake_summary(config, *, start_time, end_time, group_by, windows, source, min_count, limit):
-        calls.append(
-            {
-                "start_time": start_time,
-                "end_time": end_time,
-                "group_by": group_by,
-                "windows": windows,
-                "source": source,
-                "min_count": min_count,
-                "limit": limit,
-            }
-        )
-        return RecommendationBacktestSummaryResult(
-            start_time=start_time,
-            end_time=end_time,
-            group_by=group_by,
-            windows=windows,
-            row_count=1,
-            rows=[
-                RecommendationBacktestSummaryRow(
-                    key="analyst-1|industry|白酒",
-                    analyst_id="analyst-1",
-                    analyst_display_name="张三-分析师",
-                    sector_anchor_type="industry",
-                    sector_name="白酒",
-                    event_count=4,
-                    metrics={"sample_count_t5": 3, "win_rate_t5": 1.0},
-                )
-            ],
-        )
-
-    monkeypatch.setattr("radar.web.server.routers.backtest.summarize_recommendation_backtests", fake_summary)
-
-    client = TestClient(create_app(config))
-    response = client.get(
-        "/api/recommendation/backtest/summary",
-        params={
-            "start_time": "2026-05-01T00:00:00",
-            "end_time": "2026-06-06T00:00:00",
-            "source": "group_message",
-            "group_by": "analyst_sector",
-            "min_count": 3,
-            "limit": 10,
-        },
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["row_count"] == 1
-    assert data["rows"][0]["analyst_display_name"] == "张三-分析师"
-    assert data["rows"][0]["sector_name"] == "白酒"
-    assert calls[0]["group_by"] == "analyst_sector"
-    assert calls[0]["source"] == "个人群"
-    assert calls[0]["windows"] == [1, 2, 3, 5]
-    assert calls[0]["min_count"] == 3
-    assert calls[0]["limit"] == 10
 
 
 def _config(tmp_path, **overrides) -> RadarConfig:

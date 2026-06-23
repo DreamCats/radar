@@ -102,7 +102,7 @@ export function statusForAgentEvent(eventType: string, toolName: string): string
 
 export function formatToolName(toolName: string): string {
   const labels: Record<string, string> = {
-    radar_backtest_summary: "回测摘要",
+    radar_analyst_backtest_summary: "分析师回测摘要",
     radar_get_message_context: "消息上下文",
     radar_get_realtime_quote: "实时行情",
     radar_get_stock_limit_context: "涨跌停数据",

@@ -379,10 +379,104 @@ MESSAGE_CLEANUP_MIGRATIONS: list[Migration] = [
     ),
 ]
 
+ANALYST_MENTION_MIGRATIONS: list[Migration] = [
+    (
+        "024_analyst_stock_mentions",
+        """
+        CREATE TABLE IF NOT EXISTS analyst_stock_mentions (
+            mention_id                TEXT PRIMARY KEY,
+            message_id                TEXT NOT NULL,
+            source                    TEXT NOT NULL,
+            sender                    TEXT NOT NULL,
+            analyst_id                TEXT NOT NULL,
+            analyst_display_name      TEXT NOT NULL,
+            analyst_alias_key         TEXT NOT NULL,
+            group_name                TEXT,
+            category                  TEXT NOT NULL,
+            classification_confidence REAL NOT NULL,
+            ts_code                   TEXT NOT NULL,
+            stock_name                TEXT NOT NULL,
+            symbol                    TEXT NOT NULL,
+            message_time              TEXT NOT NULL,
+            event_date                TEXT NOT NULL,
+            evidence_snippet          TEXT NOT NULL,
+            content_fingerprint       TEXT NOT NULL,
+            extractor_version         TEXT NOT NULL,
+            is_effective              INTEGER NOT NULL DEFAULT 1,
+            dedupe_key                TEXT NOT NULL,
+            dedupe_reason             TEXT,
+            created_at                TEXT NOT NULL,
+            updated_at                TEXT NOT NULL,
+            FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_analyst_stock_mentions_unique
+            ON analyst_stock_mentions(message_id, ts_code, extractor_version);
+        CREATE INDEX IF NOT EXISTS idx_analyst_stock_mentions_time
+            ON analyst_stock_mentions(message_time DESC, mention_id);
+        CREATE INDEX IF NOT EXISTS idx_analyst_stock_mentions_analyst
+            ON analyst_stock_mentions(analyst_id, is_effective, message_time DESC);
+        CREATE INDEX IF NOT EXISTS idx_analyst_stock_mentions_stock
+            ON analyst_stock_mentions(ts_code, message_time DESC);
+
+        CREATE TABLE IF NOT EXISTS analyst_stock_mention_windows (
+            mention_id                  TEXT NOT NULL,
+            window_days                 INTEGER NOT NULL,
+            benchmark_ts_code           TEXT NOT NULL,
+            base_trade_date             TEXT,
+            target_trade_date           TEXT,
+            base_close                  REAL,
+            target_close                REAL,
+            return_rate                 REAL,
+            positive                    INTEGER,
+            benchmark_base_close        REAL,
+            benchmark_target_close      REAL,
+            benchmark_return_rate       REAL,
+            excess_return_rate          REAL,
+            status                      TEXT NOT NULL,
+            error_message               TEXT,
+            updated_at                  TEXT NOT NULL,
+            PRIMARY KEY (mention_id, window_days, benchmark_ts_code),
+            FOREIGN KEY (mention_id) REFERENCES analyst_stock_mentions(mention_id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_analyst_stock_mention_windows_status
+            ON analyst_stock_mention_windows(status, updated_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_analyst_stock_mention_windows_window
+            ON analyst_stock_mention_windows(window_days, benchmark_ts_code, status);
+        """,
+    ),
+    (
+        "025_analyst_stock_mention_quality_flags",
+        """
+        ALTER TABLE analyst_stock_mentions
+            ADD COLUMN stock_count_in_message INTEGER NOT NULL DEFAULT 1;
+
+        ALTER TABLE analyst_stock_mentions
+            ADD COLUMN quality_flags TEXT NOT NULL DEFAULT '[]';
+        """,
+    ),
+    (
+        "026_drop_recommendation_backtest",
+        """
+        DROP TABLE IF EXISTS recommendation_backtest_windows;
+        DROP TABLE IF EXISTS recommendation_events;
+
+        DELETE FROM view_cache
+        WHERE dependency_key LIKE '%recommendation_events%'
+           OR dependency_key LIKE '%recommendation_backtest_windows%';
+
+        DELETE FROM runs
+        WHERE kind = 'recommendation_backtest_refresh';
+        """,
+    ),
+]
+
 
 MESSAGE_MIGRATIONS = (
     BASE_MESSAGE_MIGRATIONS
     + EVIDENCE_CHAIN_MIGRATIONS
     + MESSAGE_CLEANUP_MIGRATIONS
     + LIFECYCLE_DIGEST_MIGRATIONS
+    + ANALYST_MENTION_MIGRATIONS
 )

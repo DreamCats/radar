@@ -1,9 +1,9 @@
 import {
+  startAnalystBacktestJob,
   startClassifyMessagesJob,
   startIngestWechatJob,
   startLifecycleDigestJob,
   startMarketAnchorUpdateJob,
-  startRecommendationBacktestJob,
   startStockEvidenceChainJob,
 } from "../api/radarApi";
 import type { IngestSource } from "../types";
@@ -57,17 +57,18 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
     });
     return derivedJobs(kind, "市场词库", items);
   }
-  if (kind === "backtest") {
-    const items = await startRecommendationBacktestJob({
+  if (kind === "analystBacktest") {
+    const items = await startAnalystBacktestJob({
       as_of: range.endDate,
-      window_days: backtestWindowDays(range.startDate, range.endDate),
+      lookback_days: Math.min(120, Math.max(1, backtestWindowDays(range.startDate, range.endDate))),
       start_time: window.start_time,
       end_time: window.end_time,
-      windows: [1, 2, 3, 5],
+      windows: [1, 3, 5],
       source,
+      cooldown_trade_days: 5,
       min_classification_confidence: 0.7,
       benchmark_ts_code: "000300.SH",
-      force,
+      remote_price_fetch: true,
     });
     return derivedJobs(kind, sourceLabel(source), items);
   }

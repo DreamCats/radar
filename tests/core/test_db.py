@@ -18,8 +18,8 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "fetch_windows",
             "runs",
             "message_classifications",
-            "recommendation_events",
-            "recommendation_backtest_windows",
+            "analyst_stock_mentions",
+            "analyst_stock_mention_windows",
             "analysts",
             "analyst_aliases",
             "view_cache",
@@ -37,6 +37,8 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
         assert "aggregate_refine_results" not in tables
         assert "source_structures" not in tables
         assert "source_signal_snapshots" not in tables
+        assert "recommendation_events" not in tables
+        assert "recommendation_backtest_windows" not in tables
         assert applied_migrations(conn) == {
             "001_init_messages",
             "002_init_runs",
@@ -60,6 +62,9 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "021_drop_deprecated_aggregate_and_anchor_backtests",
             "022_opportunity_lifecycle_digests",
             "023_opportunity_lifecycle_digest_hash_parts",
+            "024_analyst_stock_mentions",
+            "025_analyst_stock_mention_quality_flags",
+            "026_drop_recommendation_backtest",
         }
     finally:
         conn.close()
@@ -101,7 +106,7 @@ def test_migrations_are_idempotent(tmp_path):
         migrate_message_db(conn)
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 22
+        assert count == 25
     finally:
         conn.close()
 

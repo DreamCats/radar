@@ -447,7 +447,8 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     assert "radar_theme_candidates" in tool_names
     assert "radar_stock_evidence_chart" in tool_names
     assert "radar_stock_evidence_chain" not in tool_names
-    assert "radar_backtest_summary" in tool_names
+    assert "radar_backtest_summary" not in tool_names
+    assert "radar_analyst_backtest_summary" in tool_names
     assert "radar_source_signals" not in tool_names
 
 

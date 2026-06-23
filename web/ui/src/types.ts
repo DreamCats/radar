@@ -88,7 +88,6 @@ export type MessageOverview = {
 export type DashboardSummary = {
   overview: MessageOverview;
   classifications: OrganizeClassificationPage;
-  backtest: RecommendationBacktestSummary;
   runs: RunItem[];
 };
 
@@ -401,8 +400,76 @@ export type RunItem = {
   metadata: Record<string, unknown>;
 };
 
+export type AnalystBacktestSummaryRow = {
+  analyst_id: string;
+  analyst_display_name: string;
+  event_count: number;
+  latest_event_time?: string | null;
+  metrics: Record<string, number>;
+};
+
+export type AnalystBacktestSummary = {
+  start_time: string;
+  end_time: string;
+  windows: number[];
+  row_count: number;
+  rows: AnalystBacktestSummaryRow[];
+};
+
+export type AnalystBacktestEvidenceItem = {
+  mention_id: string;
+  message_id: string;
+  analyst_id: string;
+  analyst_display_name: string;
+  ts_code: string;
+  stock_name: string;
+  message_time: string;
+  category: string;
+  evidence_snippet: string;
+  stock_count_in_message: number;
+  quality_flags: string[];
+  window_days: number;
+  status?: "pending" | "succeeded" | "missing_price" | "failed" | null;
+  target_trade_date?: string | null;
+  return_rate?: number | null;
+  positive?: boolean | null;
+  excess_return_rate?: number | null;
+};
+
+export type AnalystBacktestEvidence = {
+  start_time: string;
+  end_time: string;
+  window_days: number;
+  row_count: number;
+  rows: AnalystBacktestEvidenceItem[];
+};
+
+export type AnalystBacktestMessageEvidenceItem = {
+  message_id: string;
+  analyst_id: string;
+  analyst_display_name: string;
+  message_time: string;
+  category: string;
+  raw_content: string;
+  stock_count: number;
+  mentioned_stock_count: number;
+  quality_flags: string[];
+  window_days: number;
+  metrics: Record<string, number>;
+  items: AnalystBacktestEvidenceItem[];
+};
+
+export type AnalystBacktestMessageEvidence = {
+  start_time: string;
+  end_time: string;
+  window_days: number;
+  row_count: number;
+  rows: AnalystBacktestMessageEvidenceItem[];
+};
+
 export type {
   AnchorRequest,
+  AnalystBacktestRequest,
   ClassifyJobItem,
   ClassifyRequest,
   DerivedJobItem,
@@ -410,40 +477,8 @@ export type {
   IngestRequest,
   IngestResultItem,
   LifecycleDigestJobRequest,
-  RecommendationBacktestRequest,
   StockEvidenceChainJobRequest,
 } from "./types/jobs";
-
-export type BacktestGroupBy =
-  | "source"
-  | "source_stock"
-  | "stock"
-  | "analyst"
-  | "analyst_stock"
-  | "sector"
-  | "analyst_sector";
-
-export type RecommendationBacktestSummaryRow = {
-  key: string;
-  source_candidate?: string | null;
-  analyst_id?: string | null;
-  analyst_display_name?: string | null;
-  ts_code?: string | null;
-  stock_name?: string | null;
-  sector_anchor_type?: string | null;
-  sector_name?: string | null;
-  event_count: number;
-  metrics: Record<string, number>;
-};
-
-export type RecommendationBacktestSummary = {
-  start_time: string;
-  end_time: string;
-  group_by: BacktestGroupBy;
-  windows: number[];
-  row_count: number;
-  rows: RecommendationBacktestSummaryRow[];
-};
 
 export type OrganizeEvidenceMessage = {
   message_id: string;

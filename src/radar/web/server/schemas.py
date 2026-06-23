@@ -13,10 +13,11 @@ from radar.core.organize import (
     OrganizeEvidenceMessage,
 )
 from radar.core.storage import RunRecord
-from radar.core.usecases.recommendation_backtest import (
+from radar.core.usecases.analyst_mentions import (
     DEFAULT_BENCHMARK_TS_CODE,
-    DEFAULT_BACKTEST_WINDOWS,
-    RecommendationBacktestSummaryResult,
+    AnalystMentionEvidenceResult,
+    AnalystMentionMessageEvidenceResult,
+    AnalystMentionSummaryResult,
 )
 from radar.core.usecases.stock_evidence_chain import (
     LifecycleDigestPreview,
@@ -226,16 +227,17 @@ class MarketAnchorUpdateRequest(BaseModel):
     min_anchor_count: int = Field(default=100, ge=1, le=100000)
 
 
-class RecommendationBacktestRequest(BaseModel):
+class AnalystBacktestRequest(BaseModel):
     as_of: date
-    window_days: int = Field(default=30, ge=1, le=365)
+    lookback_days: int = Field(default=40, ge=1, le=120)
     start_time: datetime | None = None
     end_time: datetime | None = None
-    windows: list[int] = Field(default_factory=lambda: list(DEFAULT_BACKTEST_WINDOWS))
+    windows: list[int] = Field(default_factory=lambda: [1, 3, 5])
     source: JobSourceKey = "all"
+    cooldown_trade_days: int = Field(default=5, ge=0, le=30)
     min_classification_confidence: float = Field(default=0.7, ge=0, le=1)
     benchmark_ts_code: str = DEFAULT_BENCHMARK_TS_CODE
-    force: bool = False
+    remote_price_fetch: bool = True
 
 
 class StockEvidenceChainJobRequest(BaseModel):
@@ -259,7 +261,12 @@ class LifecycleDigestJobRequest(BaseModel):
 
 
 class DerivedJobItem(BaseModel):
-    job_type: Literal["anchor", "recommendation_backtest", "stock_evidence_chain", "lifecycle_digest"]
+    job_type: Literal[
+        "anchor",
+        "analyst_backtest",
+        "stock_evidence_chain",
+        "lifecycle_digest",
+    ]
     run_id: str
     reused_existing: bool = False
     status: Literal["running"]
@@ -269,7 +276,15 @@ class DerivedJobResponse(BaseModel):
     items: list[DerivedJobItem]
 
 
-class RecommendationBacktestSummaryResponse(RecommendationBacktestSummaryResult):
+class AnalystMentionSummaryResponse(AnalystMentionSummaryResult):
+    pass
+
+
+class AnalystMentionEvidenceResponse(AnalystMentionEvidenceResult):
+    pass
+
+
+class AnalystMentionMessageEvidenceResponse(AnalystMentionMessageEvidenceResult):
     pass
 
 

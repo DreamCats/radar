@@ -233,7 +233,7 @@ export function IngestPage() {
 
   function selectJob(kind: JobTemplateKey) {
     setSelectedJob(kind);
-    const needsHistoryWindow = kind === "backtest";
+    const needsHistoryWindow = kind === "analystBacktest";
     if (!needsHistoryWindow && preset === "last30d") {
       const nextRange = buildYesterdayCloseRange();
       setPreset("yesterdayClose");

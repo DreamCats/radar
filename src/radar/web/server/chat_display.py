@@ -8,7 +8,7 @@ _PROCESS_SUMMARY_START = "我会先拆解你的问题，确定需要查哪些证
 _PROCESS_SUMMARY_TOOL_RESULT = "工具结果开始返回，我会把新增数据并入判断。"
 
 _TOOL_LABELS = {
-    "radar_backtest_summary": "回测摘要",
+    "radar_analyst_backtest_summary": "分析师回测摘要",
     "radar_get_message_context": "消息上下文",
     "radar_get_realtime_quote": "实时行情",
     "radar_get_stock_price_history": "行情数据",
