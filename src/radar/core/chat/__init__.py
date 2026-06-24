@@ -5,6 +5,7 @@ from radar.core.chat.builtin_extensions import RadarBuiltinExtension
 from radar.core.chat.events import ChatEvent, ChatEventType, ChatMessage, ChatRole, ChatSession
 from radar.core.chat.extensions import ChatExtension, ExtensionContext, build_tool_registry
 from radar.core.chat.prompts import COMMON_CHAT_SYSTEM_PROMPT, DEFAULT_CHAT_SYSTEM_PROMPT, SURFACE_PROMPTS, build_chat_system_prompt
+from radar.core.chat.runs import ChatRun, ChatRunEvent, ChatRunLeaseLost, ChatRunStore
 from radar.core.chat.skills import ChatSkill, ChatSkillLibrary, ChatSkillSelection, load_chat_skills, parse_chat_skill
 from radar.core.chat.store import ChatSessionStore
 from radar.core.chat.tools import ChatTool, ToolRegistry
@@ -15,6 +16,10 @@ __all__ = [
     "ChatEventType",
     "ChatMessage",
     "ChatRole",
+    "ChatRun",
+    "ChatRunEvent",
+    "ChatRunLeaseLost",
+    "ChatRunStore",
     "ChatSession",
     "ChatExtension",
     "ChatSkill",

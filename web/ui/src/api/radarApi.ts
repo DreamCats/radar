@@ -7,8 +7,10 @@ import type {
   AnalystBacktestMessageEvidence,
   AnalystBacktestSummary,
   ChatContinueRequest,
+  ChatActiveRunResponse,
   ChatMessageItem,
   ChatModelOptions,
+  ChatRunResponse,
   ChatSessionDetail,
   ChatSessionList,
   ChatStreamEvent,
@@ -172,6 +174,52 @@ export async function fetchChatModelOptions(): Promise<ChatModelOptions> {
   return getJson("/api/chat/model-options");
 }
 
+export async function createChatRun(request: ChatTurnRequest): Promise<ChatRunResponse> {
+  const response = await apiFetch("/api/chat/runs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  return (await response.json()) as ChatRunResponse;
+}
+
+export async function fetchActiveChatRun(query: {
+  sessionId?: string | null;
+  surface?: string | null;
+  entityId?: string | null;
+} = {}): Promise<ChatActiveRunResponse> {
+  return getJson(
+    `/api/chat/runs/active?${params({
+      session_id: query.sessionId,
+      surface: query.surface,
+      entity_id: query.entityId,
+    })}`,
+  );
+}
+
+export async function cancelChatRun(runId: string): Promise<ChatRunResponse> {
+  const response = await apiFetch(`/api/chat/runs/${encodeURIComponent(runId)}/cancel`, { method: "POST" });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  return (await response.json()) as ChatRunResponse;
+}
+
+export async function streamChatRun(
+  runId: string,
+  onEvent: (event: ChatStreamEvent) => void,
+  options: { signal?: AbortSignal; afterSeq?: number } = {},
+): Promise<void> {
+  const response = await apiFetch(
+    `/api/chat/runs/${encodeURIComponent(runId)}/stream?${params({ after_seq: options.afterSeq ?? 0 })}`,
+    { signal: options.signal },
+  );
+  await readChatEventStream(response, onEvent);
+}
+
 export async function streamChatTurn(
   request: ChatTurnRequest,
   onEvent: (event: ChatStreamEvent) => void,
@@ -251,23 +299,28 @@ function parseChatStreamEvent(rawEvent: string): ChatStreamEvent {
     .map((line) => line.slice("data:".length).trimStart())
     .join("\n");
   const data = dataText ? (JSON.parse(dataText) as Record<string, unknown>) : {};
+  const sequenceNumber = Number(data.sequence_number);
+  const streamMeta = {
+    ...(Number.isFinite(sequenceNumber) && sequenceNumber > 0 ? { sequence_number: sequenceNumber } : {}),
+    ...(typeof data.run_id === "string" ? { run_id: data.run_id } : {}),
+  };
   switch (eventName) {
     case "session":
-      return { type: "session", session_id: String(data.session_id ?? "") };
+      return { type: "session", session_id: String(data.session_id ?? ""), ...streamMeta };
     case "user_message":
     case "assistant_message":
     case "tool_message":
-      return { type: eventName, message: data.message as ChatMessageItem };
+      return { type: eventName, message: data.message as ChatMessageItem, ...streamMeta };
     case "assistant_delta":
-      return { type: "assistant_delta", content: String(data.content ?? "") };
+      return { type: "assistant_delta", content: String(data.content ?? ""), ...streamMeta };
     case "assistant_reasoning_delta":
-      return { type: "assistant_reasoning_delta", content: String(data.content ?? "") };
+      return { type: "assistant_reasoning_delta", content: String(data.content ?? ""), ...streamMeta };
     case "agent_event":
-      return { type: "agent_event", event: (data.event as Record<string, unknown>) ?? {} };
+      return { type: "agent_event", event: (data.event as Record<string, unknown>) ?? {}, ...streamMeta };
     case "error":
-      return { type: "error", message: String(data.message ?? "发送失败"), status_code: Number(data.status_code) || undefined };
+      return { type: "error", message: String(data.message ?? "发送失败"), status_code: Number(data.status_code) || undefined, ...streamMeta };
     default:
-      return { type: "agent_event", event: data };
+      return { type: "agent_event", event: data, ...streamMeta };
   }
 }
 
@@ -502,7 +555,7 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
 function params(query: Record<string, unknown>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
-    if (value !== undefined && value !== "") {
+    if (value !== undefined && value !== null && value !== "") {
       search.set(key, Array.isArray(value) ? value.join(",") : String(value));
     }
   }

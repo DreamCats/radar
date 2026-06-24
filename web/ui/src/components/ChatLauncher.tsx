@@ -34,9 +34,8 @@ export function ChatLauncher(props: ChatLauncherProps) {
 
   const closeWithoutHistory = useCallback(() => {
     openRef.current = false;
-    controller.stopStreaming();
     setOpen(false);
-  }, [controller]);
+  }, []);
 
   const closeLauncher = useCallback(() => {
     if (chatHistoryRef.current) {

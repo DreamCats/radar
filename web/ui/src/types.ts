@@ -399,6 +399,25 @@ export type ChatTurnResponse = {
   tool_messages: ChatMessageItem[];
 };
 
+export type ChatRunItem = {
+  run_id: string;
+  session_id: string;
+  status: "running" | "completed" | "failed" | "cancelled";
+  created_at: string;
+  updated_at: string;
+  last_seq: number;
+  cancel_requested: boolean;
+  error?: string | null;
+};
+
+export type ChatRunResponse = {
+  run: ChatRunItem;
+};
+
+export type ChatActiveRunResponse = {
+  run?: ChatRunItem | null;
+};
+
 export type ChatSessionItem = {
   session_id: string;
   created_at: string;
@@ -437,14 +456,14 @@ export type ChatModelOptions = {
 };
 
 export type ChatStreamEvent =
-  | { type: "session"; session_id: string }
-  | { type: "user_message"; message: ChatMessageItem }
-  | { type: "assistant_reasoning_delta"; content: string }
-  | { type: "assistant_delta"; content: string }
-  | { type: "assistant_message"; message: ChatMessageItem }
-  | { type: "tool_message"; message: ChatMessageItem }
-  | { type: "agent_event"; event: Record<string, unknown> }
-  | { type: "error"; message: string; status_code?: number };
+  | { type: "session"; session_id: string; sequence_number?: number; run_id?: string }
+  | { type: "user_message"; message: ChatMessageItem; sequence_number?: number; run_id?: string }
+  | { type: "assistant_reasoning_delta"; content: string; sequence_number?: number; run_id?: string }
+  | { type: "assistant_delta"; content: string; sequence_number?: number; run_id?: string }
+  | { type: "assistant_message"; message: ChatMessageItem; sequence_number?: number; run_id?: string }
+  | { type: "tool_message"; message: ChatMessageItem; sequence_number?: number; run_id?: string }
+  | { type: "agent_event"; event: Record<string, unknown>; sequence_number?: number; run_id?: string }
+  | { type: "error"; message: string; status_code?: number; sequence_number?: number; run_id?: string };
 
 export type MessageQuery = {
   source?: string;

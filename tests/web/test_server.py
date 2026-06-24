@@ -335,7 +335,12 @@ def test_chat_turn_stream_endpoint_returns_sse(tmp_path, monkeypatch):
                 content=None,
                 event=None,
             )
-            yield SimpleNamespace(type="assistant_delta", message=None, content="先看", event=None)
+            yield SimpleNamespace(
+                type="assistant_delta",
+                message=None,
+                content="先看",
+                event=None,
+            )
             yield SimpleNamespace(
                 type="tool_message",
                 message=ChatMessage(
@@ -383,6 +388,185 @@ def test_chat_turn_stream_endpoint_returns_sse(tmp_path, monkeypatch):
     assert captured["content"] == "这个信号怎么看？"
     assert captured["provider_name"] == "deep"
     assert '"surface":"源头雷达"' in str(captured["llm_content"])
+
+
+def test_chat_run_endpoint_streams_replayable_events(tmp_path, monkeypatch):
+    from radar.core.chat import ChatSessionStore
+    from radar.core.chat.events import ChatMessage
+
+    captured: dict[str, object] = {}
+
+    class FakeChatAgent:
+        def __init__(self, config):
+            self.config = config
+            self.store = ChatSessionStore.from_config(config)
+
+        def create_session(self, *, title=None, metadata=None):
+            captured["title"] = title
+            captured["metadata"] = metadata
+            return self.store.create_session(title=title, metadata=metadata)
+
+        def stream_turn(self, session_id, content, **kwargs):
+            captured["session_id"] = session_id
+            captured["content"] = content
+            captured["llm_content"] = kwargs.get("llm_content")
+            yield SimpleNamespace(
+                type="user_message",
+                message=ChatMessage(
+                    message_id="user-run-1",
+                    role="user",
+                    content=content,
+                    created_at="2026-06-08T10:00:00",
+                ),
+                content=None,
+                event=None,
+            )
+            yield SimpleNamespace(
+                type="assistant_delta",
+                message=None,
+                content="先看",
+                event=None,
+            )
+            yield SimpleNamespace(
+                type="assistant_message",
+                message=ChatMessage(
+                    message_id="assistant-run-1",
+                    role="assistant",
+                    content="先看来源质量。",
+                    created_at="2026-06-08T10:00:01",
+                ),
+                content=None,
+                event=None,
+            )
+
+    monkeypatch.setattr("radar.web.server.routers.chat.ChatAgent", FakeChatAgent)
+    monkeypatch.setattr("radar.web.server.chat_run_worker.ChatAgent", FakeChatAgent)
+    client = TestClient(create_app(_config(tmp_path)))
+
+    created = client.post(
+        "/api/chat/runs",
+        json={
+            "title": "PCB",
+            "content": "这个信号怎么看？",
+            "context": {"surface": "源头雷达", "entity_id": "sig-1"},
+            "metadata": {"surface": "源头雷达"},
+        },
+    )
+
+    assert created.status_code == 200
+    run = created.json()["run"]
+    assert run["run_id"]
+    assert run["session_id"]
+
+    streamed = client.get(f"/api/chat/runs/{run['run_id']}/stream")
+
+    assert streamed.status_code == 200
+    assert "event: session" in streamed.text
+    assert "event: user_message" in streamed.text
+    assert "event: assistant_delta" in streamed.text
+    assert '"sequence_number":1' in streamed.text
+    assert '"content":"先看"' in streamed.text
+    assert captured["title"] == "PCB"
+    assert captured["content"] == "这个信号怎么看？"
+    assert '"surface":"源头雷达"' in str(captured["llm_content"])
+
+    replayed = client.get(f"/api/chat/runs/{run['run_id']}/stream?after_seq=1")
+
+    assert replayed.status_code == 200
+    assert "event: session" not in replayed.text
+    assert "event: assistant_delta" in replayed.text
+
+
+def test_chat_run_stream_restarts_running_run_from_sqlite(tmp_path, monkeypatch):
+    from radar.core.chat import ChatRunStore, ChatSessionStore
+    from radar.core.chat.events import ChatMessage
+
+    captured: dict[str, object] = {}
+
+    class FakeChatAgent:
+        def __init__(self, config):
+            self.config = config
+            self.store = ChatSessionStore.from_config(config)
+
+        def stream_turn(self, session_id, content, **kwargs):
+            captured["session_id"] = session_id
+            captured["content"] = content
+            captured["llm_content"] = kwargs.get("llm_content")
+            yield SimpleNamespace(
+                type="assistant_delta",
+                message=None,
+                content="恢复中",
+                event=None,
+            )
+            yield SimpleNamespace(
+                type="assistant_message",
+                message=ChatMessage(
+                    message_id="assistant-recovered-1",
+                    role="assistant",
+                    content="已恢复。",
+                    created_at="2026-06-08T10:00:01",
+                ),
+                content=None,
+                event=None,
+            )
+
+    config = _config(tmp_path)
+    session = ChatSessionStore.from_config(config).create_session(title="恢复测试")
+    run_store = ChatRunStore.from_config(config)
+    run = run_store.create_run(
+        session.session_id,
+        metadata={"surface": "洞察", "entity_id": "dashboard"},
+        request={
+            "content": "继续处理",
+            "llm_content": "继续处理\n\n页面上下文：\n{}",
+            "system_prompt": "system",
+            "provider_name": None,
+        },
+    )
+    run_store.append_event(run.run_id, "session", {"session_id": session.session_id})
+
+    monkeypatch.setattr("radar.web.server.chat_run_worker.ChatAgent", FakeChatAgent)
+    client = TestClient(create_app(config))
+
+    response = client.get(f"/api/chat/runs/{run.run_id}/stream")
+
+    assert response.status_code == 200
+    assert "event: assistant_delta" in response.text
+    assert '"content":"恢复中"' in response.text
+    assert captured["session_id"] == session.session_id
+    assert captured["content"] == "继续处理"
+    assert captured["llm_content"] == "继续处理\n\n页面上下文：\n{}"
+
+
+def test_chat_run_worker_skips_run_owned_by_another_lease(tmp_path, monkeypatch):
+    from radar.core.chat import ChatRunStore, ChatSessionStore
+    from radar.web.server.chat_run_worker import _execute_chat_run
+
+    config = _config(tmp_path)
+    session = ChatSessionStore.from_config(config).create_session(title="lease 测试")
+    run_store = ChatRunStore.from_config(config)
+    run = run_store.create_run(
+        session.session_id,
+        request={
+            "content": "继续处理",
+            "llm_content": "继续处理\n\n页面上下文：\n{}",
+        },
+    )
+    run_store.claim_run(run.run_id, "worker-1", ttl_seconds=30)
+    called = {"agent": False}
+
+    class FakeChatAgent:
+        def __init__(self, config):
+            called["agent"] = True
+
+    monkeypatch.setattr("radar.web.server.chat_run_worker.ChatAgent", FakeChatAgent)
+
+    _execute_chat_run(run_id=run.run_id, config=config, owner="worker-2")
+
+    current = run_store.get_run(run.run_id)
+    assert called["agent"] is False
+    assert current.status == "running"
+    assert current.lease_owner == "worker-1"
 
 
 def test_chat_model_options_endpoint_uses_shared_llm_config(tmp_path):

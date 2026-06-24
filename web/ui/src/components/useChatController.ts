@@ -1,16 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 
-import { continueChatTurn, deleteChatSession, fetchChatModelOptions, fetchChatSession, fetchChatSessions, streamChatTurn } from "../api/radarApi";
+import {
+  cancelChatRun,
+  continueChatTurn,
+  createChatRun,
+  deleteChatSession,
+  fetchActiveChatRun,
+  fetchChatModelOptions,
+  fetchChatSession,
+  fetchChatSessions,
+  streamChatRun,
+} from "../api/radarApi";
 import { formatChatTranscript } from "../lib/chatTranscript";
 import { copyText } from "../lib/clipboard";
 import type { ChatMessageItem, ChatModelOption, ChatSessionItem } from "../types";
 import {
+  type ActiveChatRunRecord,
   appendErrorTrace,
   chatTraceItems,
+  clearActiveChatRun,
   clearActiveSessionId,
   clearSelectedProviderName,
   completedStatus,
+  readActiveChatRun,
+  readActiveSessionId,
   readSelectedProviderName,
+  writeActiveChatRun,
   writeActiveSessionId,
   writeSelectedProviderName,
 } from "./chatHelpers";
@@ -32,6 +47,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const activeRunRef = useRef<ActiveChatRunRecord | null>(null);
   const idleTimerRef = useRef<number | null>(null);
   const autoFollowBottomRef = useRef(true);
   const messageListRef = useRef<HTMLDivElement | null>(null);
@@ -64,7 +80,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     }
     setBottomFollowMode(true);
     setHasNewMessagesBelow(false);
-    resetSessionState();
+    void restoreActiveRun();
     void refreshSessions();
     void refreshModelOptions();
   }, [active]);
@@ -99,6 +115,22 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       return;
     }
     list.scrollTop = list.scrollHeight;
+  }
+
+  function createIdleStatusScheduler(assistantDraftId: string) {
+    return (status = "仍在处理") => {
+      clearIdleTimer();
+      idleTimerRef.current = window.setTimeout(() => {
+        setMessages((current) =>
+          current.map((message) =>
+            message.message_id === assistantDraftId && message.metadata.streaming
+              ? { ...message, metadata: { ...message.metadata, status } }
+              : message,
+          ),
+        );
+        idleTimerRef.current = null;
+      }, 1000);
+    };
   }
 
   function stopAssistantDraft(assistantDraftId: string, errorMessage: string | null) {
@@ -153,22 +185,9 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     const userDraftId = `user-local-${Date.now()}`;
     const assistantDraftId = `assistant-stream-${Date.now()}`;
     const selectedModelOption = modelOptions.find((item) => item.provider_name === selectedProviderName) ?? null;
-    let currentSessionId = sessionId;
     const controller = new AbortController();
     abortControllerRef.current = controller;
-    const scheduleIdleStatus = (status = "仍在处理") => {
-      clearIdleTimer();
-      idleTimerRef.current = window.setTimeout(() => {
-        setMessages((current) =>
-          current.map((message) =>
-            message.message_id === assistantDraftId && message.metadata.streaming
-              ? { ...message, metadata: { ...message.metadata, status } }
-              : message,
-          ),
-        );
-        idleTimerRef.current = null;
-      }, 1000);
-    };
+    const scheduleIdleStatus = createIdleStatusScheduler(assistantDraftId);
     setMessages((current) => [
       ...current,
       {
@@ -192,59 +211,116 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       },
     ]);
     scheduleIdleStatus("正在准备");
-    const handleStreamEvent = createChatStreamHandler({
-      assistantDraftId,
-      setMessages,
-      clearIdleTimer,
-      scheduleIdleStatus,
-      onSession: (nextSessionId) => {
-        currentSessionId = nextSessionId;
-        setSessionId(nextSessionId);
-        writeActiveSessionId(nextSessionId);
-      },
-      onFollowUpSuggestion: setFollowUpSuggestion,
-    });
     try {
-      await streamChatTurn(
-        {
-          session_id: sessionId,
-          title: props.title,
-          content,
-          provider_name: selectedProviderName,
-          context: {
-            surface: props.surface,
-            entity_id: props.entityId,
-            title: props.title,
-            subtitle: props.subtitle,
-            fields: visibleContext,
-            evidence: props.evidence ?? [],
-          },
-          metadata: {
-            surface: props.surface,
-            entity_id: props.entityId,
-            title: props.title,
-            chat_provider_name: selectedProviderName,
-            chat_model: selectedModelOption?.model,
-          },
-        },
-        handleStreamEvent,
-        { signal: controller.signal },
-      );
-      setCanContinue(false);
+      const request = buildChatTurnRequest(content, selectedModelOption);
+      const response = await createChatRun(request);
+      const nextRun: ActiveChatRunRecord = {
+        runId: response.run.run_id,
+        sessionId: response.run.session_id,
+        assistantDraftId,
+        lastSeq: 0,
+        surface: props.surface,
+        entityId: props.entityId,
+        createdAt: response.run.created_at,
+      };
+      activeRunRef.current = nextRun;
+      writeActiveChatRun(nextRun);
+      setSessionId(response.run.session_id);
+      writeActiveSessionId(response.run.session_id);
+      await subscribeToRun(nextRun, { controller, userDraftId });
     } catch (err) {
       const errorMessage = chatTurnErrorMessage(err, "发送失败");
-      if (isChatStreamNetworkError(err) && currentSessionId && (await recoverCompletedTurn(currentSessionId, assistantDraftId))) {
+      if (err instanceof DOMException && err.name === "AbortError") {
         return;
+      }
+      const currentSessionId = activeRunRef.current?.sessionId ?? sessionId;
+      const networkError = isChatStreamNetworkError(err);
+      if (networkError && currentSessionId && (await recoverCompletedTurn(currentSessionId, assistantDraftId))) {
+        const recoveredRunId = activeRunRef.current?.runId;
+        if (recoveredRunId) {
+          clearActiveChatRun(recoveredRunId);
+        }
+        activeRunRef.current = null;
+        return;
+      }
+      const activeRunId = activeRunRef.current?.runId;
+      if (!networkError && activeRunId) {
+        clearActiveChatRun(activeRunId);
+        activeRunRef.current = null;
       }
       setError(null);
       stopAssistantDraft(assistantDraftId, errorMessage);
-      setCanContinue(Boolean(currentSessionId));
+      setCanContinue(false);
     } finally {
       clearIdleTimer();
       abortControllerRef.current = null;
       setSending(false);
       void refreshSessions();
     }
+  }
+
+  async function subscribeToRun(
+    record: ActiveChatRunRecord,
+    options: { controller: AbortController; userDraftId?: string; afterSeq?: number },
+  ) {
+    const scheduleIdleStatus = createIdleStatusScheduler(record.assistantDraftId);
+    const handleStreamEvent = createChatStreamHandler({
+      assistantDraftId: record.assistantDraftId,
+      userDraftId: options.userDraftId,
+      setMessages,
+      clearIdleTimer,
+      scheduleIdleStatus,
+      onSession: (nextSessionId) => {
+        const nextRecord = { ...record, sessionId: nextSessionId };
+        activeRunRef.current = nextRecord;
+        writeActiveChatRun(nextRecord);
+        setSessionId(nextSessionId);
+        writeActiveSessionId(nextSessionId);
+      },
+      onFollowUpSuggestion: setFollowUpSuggestion,
+    });
+    await streamChatRun(
+      record.runId,
+      (event) => {
+        const sequenceNumber = event.sequence_number;
+        if (typeof sequenceNumber === "number" && Number.isFinite(sequenceNumber)) {
+          const nextRecord = { ...(activeRunRef.current ?? record), lastSeq: sequenceNumber };
+          activeRunRef.current = nextRecord;
+          writeActiveChatRun(nextRecord);
+        }
+        handleStreamEvent(event);
+      },
+      { signal: options.controller.signal, afterSeq: options.afterSeq ?? record.lastSeq },
+    );
+    clearActiveChatRun(record.runId);
+    if (activeRunRef.current?.runId === record.runId) {
+      activeRunRef.current = null;
+    }
+    setCanContinue(false);
+  }
+
+  function buildChatTurnRequest(content: string, selectedModelOption: ChatModelOption | null) {
+    return {
+      session_id: sessionId,
+      title: props.title,
+      content,
+      provider_name: selectedProviderName,
+      context: {
+        surface: props.surface,
+        entity_id: props.entityId,
+        title: props.title,
+        subtitle: props.subtitle,
+        fields: visibleContext,
+        evidence: props.evidence ?? [],
+      },
+      metadata: {
+        surface: props.surface,
+        entity_id: props.entityId,
+        title: props.title,
+        chat_provider_name: selectedProviderName,
+        chat_model: selectedModelOption?.model,
+      },
+    };
   }
 
   async function continueTurn() {
@@ -315,7 +391,16 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   }
 
   function stopStreaming() {
+    const activeRun = activeRunRef.current;
     abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    if (activeRun) {
+      void cancelChatRun(activeRun.runId).catch(() => undefined);
+      clearActiveChatRun(activeRun.runId);
+      activeRunRef.current = null;
+      stopAssistantDraft(activeRun.assistantDraftId, "已停止");
+    }
+    setSending(false);
     setFollowUpSuggestion(null);
   }
 
@@ -356,9 +441,80 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     }
   }
 
+  async function restoreActiveRun() {
+    let record = readActiveChatRun();
+    if (!record || record.surface !== props.surface || record.entityId !== props.entityId) {
+      const active = await fetchActiveChatRun({
+        sessionId: readActiveSessionId(),
+        surface: props.surface,
+        entityId: props.entityId,
+      });
+      if (!active.run) {
+        return;
+      }
+      record = {
+        runId: active.run.run_id,
+        sessionId: active.run.session_id,
+        assistantDraftId: `assistant-stream-${Date.now()}`,
+        lastSeq: 0,
+        surface: props.surface,
+        entityId: props.entityId,
+        createdAt: active.run.created_at,
+      };
+      writeActiveChatRun(record);
+    }
+    if (activeRunRef.current?.runId === record.runId) {
+      return;
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    activeRunRef.current = record;
+    setSessionId(record.sessionId);
+    writeActiveSessionId(record.sessionId);
+    setSending(true);
+    setCanContinue(false);
+    setFollowUpSuggestion(null);
+    setError(null);
+    setMessages([
+      {
+        message_id: record.assistantDraftId,
+        role: "assistant",
+        content: "",
+        created_at: new Date().toISOString(),
+        metadata: { streaming: true, resumed: true, status: "正在同步后台进度" },
+      },
+    ]);
+    try {
+      await subscribeToRun(record, { controller, afterSeq: 0 });
+      await recoverCompletedTurn(record.sessionId, record.assistantDraftId);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
+      if (!isChatStreamNetworkError(err)) {
+        clearActiveChatRun(record.runId);
+        if (activeRunRef.current?.runId === record.runId) {
+          activeRunRef.current = null;
+        }
+      }
+      stopAssistantDraft(record.assistantDraftId, chatTurnErrorMessage(err, "同步后台进度失败"));
+    } finally {
+      clearIdleTimer();
+      abortControllerRef.current = null;
+      setSending(false);
+      void refreshSessions();
+    }
+  }
+
   async function restoreSession(nextSessionId: string) {
     setSessionAction({ sessionId: nextSessionId, label: "打开中" });
     try {
+      if (activeRunRef.current && activeRunRef.current.sessionId !== nextSessionId) {
+        abortControllerRef.current?.abort();
+        abortControllerRef.current = null;
+        activeRunRef.current = null;
+        setSending(false);
+      }
       const data = await fetchChatSession(nextSessionId);
       setBottomFollowMode(true);
       setHasNewMessagesBelow(false);
@@ -413,7 +569,14 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   }
 
   function resetSessionState() {
+    const activeRun = activeRunRef.current;
     abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    if (activeRun) {
+      void cancelChatRun(activeRun.runId).catch(() => undefined);
+      clearActiveChatRun(activeRun.runId);
+      activeRunRef.current = null;
+    }
     clearActiveSessionId();
     setSessionId(null);
     setMessages([]);
@@ -470,7 +633,9 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   async function removeSession(nextSessionId: string) {
     setSessionAction({ sessionId: nextSessionId, label: "删除中" });
     try {
-      if (nextSessionId === sessionId) abortControllerRef.current?.abort();
+      if (nextSessionId === sessionId) {
+        resetSessionState();
+      }
       await deleteChatSession(nextSessionId);
       if (nextSessionId === sessionId) {
         clearActiveSessionId();
@@ -595,7 +760,7 @@ function normalizeChatErrorMessage(message: string, fallback: string): string {
     return fallback;
   }
   if (/load failed|failed to fetch|networkerror/i.test(text)) {
-    return "连接中断，可以点右下角继续生成。";
+    return "连接中断，后台仍在处理，重新打开会同步。";
   }
   return text;
 }

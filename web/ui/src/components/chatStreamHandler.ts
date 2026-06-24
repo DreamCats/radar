@@ -17,6 +17,7 @@ import {
 
 type ChatStreamHandlerOptions = {
   assistantDraftId: string;
+  userDraftId?: string;
   setMessages: Dispatch<SetStateAction<ChatMessageItem[]>>;
   clearIdleTimer: () => void;
   scheduleIdleStatus: (status?: string) => void;
@@ -26,6 +27,7 @@ type ChatStreamHandlerOptions = {
 
 export function createChatStreamHandler({
   assistantDraftId,
+  userDraftId,
   setMessages,
   clearIdleTimer,
   scheduleIdleStatus,
@@ -40,6 +42,27 @@ export function createChatStreamHandler({
   return (event) => {
     if (event.type === "session") {
       onSession(event.session_id);
+      return;
+    }
+    if (event.type === "user_message") {
+      const message = event.message;
+      setMessages((current) => {
+        if (current.some((item) => item.message_id === message.message_id || item.metadata.server_message_id === message.message_id)) {
+          return current;
+        }
+        if (userDraftId) {
+          let replaced = false;
+          const next = current.map((item) => {
+            if (item.message_id !== userDraftId) {
+              return item;
+            }
+            replaced = true;
+            return { ...message, metadata: { ...message.metadata, server_message_id: message.message_id } };
+          });
+          return replaced ? next : [...current, message];
+        }
+        return [...current, message];
+      });
       return;
     }
     if (event.type === "error") {

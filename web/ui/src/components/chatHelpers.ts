@@ -1,7 +1,18 @@
 import type { ChatMessageItem } from "../types";
 
 const ACTIVE_SESSION_KEY = "radar.chat.activeSessionId";
+const ACTIVE_RUN_KEY = "radar.chat.activeRun";
 const SELECTED_PROVIDER_KEY = "radar.chat.selectedProviderName";
+
+export type ActiveChatRunRecord = {
+  runId: string;
+  sessionId: string;
+  assistantDraftId: string;
+  lastSeq: number;
+  surface: string;
+  entityId: string;
+  createdAt: string;
+};
 
 export type ToolActivityItem = {
   key: string;
@@ -121,6 +132,50 @@ export function formatToolName(toolName: string): string {
     radar_strategy_dashboard: "策略看板",
   };
   return labels[toolName] ?? (toolName || "工具");
+}
+
+export function readActiveChatRun(): ActiveChatRunRecord | null {
+  try {
+    const raw = localStorage.getItem(ACTIVE_RUN_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const runId = typeof parsed.runId === "string" ? parsed.runId : "";
+    const sessionId = typeof parsed.sessionId === "string" ? parsed.sessionId : "";
+    const assistantDraftId = typeof parsed.assistantDraftId === "string" ? parsed.assistantDraftId : "";
+    const surface = typeof parsed.surface === "string" ? parsed.surface : "";
+    const entityId = typeof parsed.entityId === "string" ? parsed.entityId : "";
+    if (!runId || !sessionId || !assistantDraftId || !surface || !entityId) {
+      return null;
+    }
+    return {
+      runId,
+      sessionId,
+      assistantDraftId,
+      surface,
+      entityId,
+      lastSeq: Math.max(0, Number(parsed.lastSeq) || 0),
+      createdAt: typeof parsed.createdAt === "string" ? parsed.createdAt : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function writeActiveChatRun(record: ActiveChatRunRecord): void {
+  localStorage.setItem(ACTIVE_RUN_KEY, JSON.stringify(record));
+}
+
+export function clearActiveChatRun(runId?: string): void {
+  if (!runId) {
+    localStorage.removeItem(ACTIVE_RUN_KEY);
+    return;
+  }
+  const current = readActiveChatRun();
+  if (current?.runId === runId) {
+    localStorage.removeItem(ACTIVE_RUN_KEY);
+  }
 }
 
 export function mergeAssistantMetadata(draft: ChatMessageItem, message: ChatMessageItem): ChatMessageItem {

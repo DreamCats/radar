@@ -384,6 +384,25 @@ class ChatTurnResponse(BaseModel):
     tool_messages: list[ChatMessageResponse] = Field(default_factory=list)
 
 
+class ChatRunResponse(BaseModel):
+    run_id: str
+    session_id: str
+    status: Literal["running", "completed", "failed", "cancelled"]
+    created_at: str
+    updated_at: str
+    last_seq: int = 0
+    cancel_requested: bool = False
+    error: str | None = None
+
+
+class ChatRunStartResponse(BaseModel):
+    run: ChatRunResponse
+
+
+class ChatActiveRunResponse(BaseModel):
+    run: ChatRunResponse | None = None
+
+
 class OrganizeClassificationResponse(BaseModel):
     summary: OrganizeClassificationSummary
     clusters: list[OrganizeClassificationCluster]

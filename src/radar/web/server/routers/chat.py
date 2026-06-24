@@ -5,13 +5,15 @@ from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from radar.core.chat import (
     ChatAgent,
     ChatEvent,
     ChatMessage,
+    ChatRun,
+    ChatRunStore,
     ChatSession,
     ChatSessionStore,
     build_chat_system_prompt,
@@ -19,12 +21,22 @@ from radar.core.chat import (
 from radar.core.chat.resume import can_continue_chat_session, stream_continue_turn
 from radar.core.config import RadarConfig
 from radar.web.server.chat_display import build_chat_display_messages
+from radar.web.server.chat_run_worker import (
+    ensure_chat_run_worker,
+    sse,
+    start_chat_run_worker,
+    stream_chat_run_events,
+    stream_item_sse,
+)
 from radar.web.server.deps import get_config
 from radar.web.server.schemas import (
     ChatContinueRequest,
+    ChatActiveRunResponse,
     ChatModelOptionResponse,
     ChatModelOptionsResponse,
     ChatMessageResponse,
+    ChatRunResponse,
+    ChatRunStartResponse,
     ChatSessionDetailResponse,
     ChatSessionListResponse,
     ChatSessionResponse,
@@ -179,6 +191,93 @@ def chat_continue_stream(
     )
 
 
+@router.post("/chat/runs", response_model=ChatRunStartResponse)
+def create_chat_run(
+    request: ChatTurnRequest,
+    config: RadarConfig = Depends(get_config),
+) -> ChatRunStartResponse:
+    agent = ChatAgent(config)
+    run_store = ChatRunStore.from_config(config)
+    try:
+        session_id = request.session_id
+        if not session_id:
+            session = agent.create_session(title=request.title, metadata=request.metadata)
+            session_id = session.session_id
+        else:
+            agent.store.get_session(session_id)
+        run = run_store.create_run(
+            session_id,
+            metadata=_run_metadata(request),
+            request=_run_request(request),
+        )
+        run_store.append_event(run.run_id, "session", {"session_id": session_id})
+        start_chat_run_worker(run.run_id, config)
+        run = run_store.get_run(run.run_id)
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)[:1000]) from error
+    return ChatRunStartResponse(run=_chat_run_response(run))
+
+
+@router.get("/chat/runs/active", response_model=ChatActiveRunResponse)
+def active_chat_run(
+    session_id: str | None = None,
+    surface: str | None = None,
+    entity_id: str | None = None,
+    config: RadarConfig = Depends(get_config),
+) -> ChatActiveRunResponse:
+    try:
+        run = ChatRunStore.from_config(config).active_run(
+            session_id=session_id,
+            surface=surface,
+            entity_id=entity_id,
+        )
+        if run:
+            ensure_chat_run_worker(run.run_id, config)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return ChatActiveRunResponse(run=_chat_run_response(run) if run else None)
+
+
+@router.get("/chat/runs/{run_id}/stream")
+def chat_run_stream(
+    run_id: str,
+    after_seq: int = Query(default=0, ge=0),
+    config: RadarConfig = Depends(get_config),
+) -> StreamingResponse:
+    store = ChatRunStore.from_config(config)
+    try:
+        store.get_run(run_id)
+        ensure_chat_run_worker(run_id, config)
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return StreamingResponse(
+        stream_chat_run_events(run_id, after_seq, config),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post("/chat/runs/{run_id}/cancel", response_model=ChatRunStartResponse)
+def cancel_chat_run(
+    run_id: str,
+    config: RadarConfig = Depends(get_config),
+) -> ChatRunStartResponse:
+    store = ChatRunStore.from_config(config)
+    try:
+        run = store.request_cancel(run_id)
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return ChatRunStartResponse(run=_chat_run_response(run))
+
+
 def _stream_chat_turn(request: ChatTurnRequest, config: RadarConfig) -> Iterator[str]:
     agent = ChatAgent(config)
     try:
@@ -186,7 +285,7 @@ def _stream_chat_turn(request: ChatTurnRequest, config: RadarConfig) -> Iterator
         if not session_id:
             session = agent.create_session(title=request.title, metadata=request.metadata)
             session_id = session.session_id
-        yield _sse("session", {"session_id": session_id})
+        yield sse("session", {"session_id": session_id})
 
         content = _content_with_context(request.content, request.context)
         for item in agent.stream_turn(
@@ -196,59 +295,33 @@ def _stream_chat_turn(request: ChatTurnRequest, config: RadarConfig) -> Iterator
             system_prompt=build_chat_system_prompt(_surface_from_context(request.context)),
             provider_name=request.provider_name,
         ):
-            yield _stream_item_sse(item)
+            yield stream_item_sse(item)
     except FileNotFoundError as error:
-        yield _sse("error", {"message": str(error), "status_code": 404})
+        yield sse("error", {"message": str(error), "status_code": 404})
     except ValueError as error:
-        yield _sse("error", {"message": str(error), "status_code": 400})
+        yield sse("error", {"message": str(error), "status_code": 400})
     except Exception as error:
-        yield _sse("error", {"message": str(error)[:1000], "status_code": 500})
+        yield sse("error", {"message": str(error)[:1000], "status_code": 500})
 
 
 def _stream_chat_continue(session_id: str, request: ChatContinueRequest, config: RadarConfig) -> Iterator[str]:
     agent = ChatAgent(config)
     try:
         session = agent.store.get_session(session_id)
-        yield _sse("session", {"session_id": session_id})
+        yield sse("session", {"session_id": session_id})
         for item in stream_continue_turn(
             agent,
             session_id,
             provider_name=request.provider_name,
             system_prompt=build_chat_system_prompt(_surface_from_context(session.metadata)),
         ):
-            yield _stream_item_sse(item)
+            yield stream_item_sse(item)
     except FileNotFoundError as error:
-        yield _sse("error", {"message": str(error), "status_code": 404})
+        yield sse("error", {"message": str(error), "status_code": 404})
     except ValueError as error:
-        yield _sse("error", {"message": str(error), "status_code": 400})
+        yield sse("error", {"message": str(error), "status_code": 400})
     except Exception as error:
-        yield _sse("error", {"message": str(error)[:1000], "status_code": 500})
-
-
-def _stream_item_sse(item: Any) -> str:
-    if item.message is not None:
-        message = _stream_message_response(item.message).model_dump(mode="json")
-        return _sse(item.type, {"message": message})
-    if item.content:
-        return _sse(item.type, {"content": item.content})
-    if item.event is not None:
-        return _sse("agent_event", {"event": item.event.model_dump(mode="json")})
-    return _sse("agent_event", {"event": {"type": item.type}})
-
-
-def _stream_message_response(message: ChatMessage) -> ChatMessageResponse:
-    if message.role == "tool":
-        message = message.model_copy(
-            update={
-                "content": "",
-                "metadata": {**message.metadata, "stream_content_omitted": True},
-            }
-        )
-    return ChatMessageResponse(**message.model_dump())
-
-
-def _sse(event: str, data: dict[str, Any]) -> str:
-    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False, separators=(',', ':'))}\n\n"
+        yield sse("error", {"message": str(error)[:1000], "status_code": 500})
 
 
 def _default_chat_provider_name(config: RadarConfig) -> str | None:
@@ -283,6 +356,32 @@ def _session_response(session: ChatSession, messages: list[ChatMessage], *, even
         preview=preview,
         can_continue=can_continue_chat_session(events or []),
     )
+
+
+def _chat_run_response(run: ChatRun) -> ChatRunResponse:
+    return ChatRunResponse(**run.model_dump(exclude={"metadata", "request"}))
+
+
+def _run_metadata(request: ChatTurnRequest) -> dict[str, Any]:
+    metadata = dict(request.metadata)
+    if request.title:
+        metadata.setdefault("title", request.title)
+    surface = request.context.get("surface")
+    entity_id = request.context.get("entity_id")
+    if isinstance(surface, str):
+        metadata.setdefault("surface", surface)
+    if isinstance(entity_id, str):
+        metadata.setdefault("entity_id", entity_id)
+    return metadata
+
+
+def _run_request(request: ChatTurnRequest) -> dict[str, Any]:
+    return {
+        "content": request.content,
+        "llm_content": _content_with_context(request.content, request.context),
+        "system_prompt": build_chat_system_prompt(_surface_from_context(request.context)),
+        "provider_name": request.provider_name,
+    }
 
 
 def _visible_message(message: ChatMessage) -> bool:

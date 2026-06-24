@@ -8,6 +8,8 @@ from radar.core.chat import (
     ChatAgent,
     ChatEvent,
     ChatMessage,
+    ChatRunLeaseLost,
+    ChatRunStore,
     ChatSessionStore,
     ChatTool,
     ExtensionContext,
@@ -89,6 +91,97 @@ def test_chat_session_store_reads_unicode_line_separator(tmp_path):
 
     assert len(events) == 2
     assert messages[0].content == content
+
+
+def test_chat_run_store_appends_replayable_events(tmp_path):
+    store = ChatRunStore(tmp_path / "chat")
+    run = store.create_run(
+        "session-1",
+        metadata={"surface": "洞察"},
+        request={"content": "继续处理"},
+    )
+
+    first = store.append_event(run.run_id, "session", {"session_id": "session-1"})
+    second = store.append_event(run.run_id, "assistant_delta", {"content": "处理中"})
+
+    assert first.seq == 1
+    assert second.seq == 2
+    assert (tmp_path / "chat" / "runs.sqlite3").exists()
+    assert store.get_run(run.run_id).request == {"content": "继续处理"}
+    assert [event.event for event in store.load_events(run.run_id)] == [
+        "session",
+        "assistant_delta",
+    ]
+    assert [event.event for event in store.load_events(run.run_id, after_seq=1)] == [
+        "assistant_delta",
+    ]
+    assert store.active_run(session_id="session-1") is not None
+
+    store.mark_completed(run.run_id)
+
+    assert store.active_run(session_id="session-1") is None
+
+
+def test_chat_run_store_claims_and_releases_leases(tmp_path):
+    store = ChatRunStore(tmp_path / "chat")
+    run = store.create_run("session-lease")
+
+    claimed = store.claim_run(run.run_id, "worker-1", ttl_seconds=30)
+
+    assert claimed is not None
+    assert claimed.lease_owner == "worker-1"
+    assert claimed.lease_until is not None
+    assert store.claim_run(run.run_id, "worker-2", ttl_seconds=30) is None
+
+    heartbeat = store.heartbeat(run.run_id, owner="worker-1", ttl_seconds=30)
+
+    assert heartbeat.lease_owner == "worker-1"
+
+    try:
+        store.heartbeat(run.run_id, owner="worker-2", ttl_seconds=30)
+    except ChatRunLeaseLost:
+        pass
+    else:
+        raise AssertionError("heartbeat with the wrong lease owner should fail")
+
+    store.release_lease(run.run_id, "worker-2")
+    assert store.get_run(run.run_id).lease_owner == "worker-1"
+
+    released = store.release_lease(run.run_id, "worker-1")
+
+    assert released.lease_owner is None
+    assert released.lease_until is None
+    assert store.claim_run(run.run_id, "worker-2", ttl_seconds=30) is not None
+
+
+def test_chat_run_store_cleans_terminal_runs(tmp_path):
+    store = ChatRunStore(tmp_path / "chat")
+    running = store.create_run("session-running")
+    terminal_run_ids = []
+
+    for index in range(3):
+        run = store.create_run(f"session-{index}")
+        store.append_event(run.run_id, "assistant_delta", {"content": str(index)})
+        store.mark_completed(run.run_id)
+        terminal_run_ids.append(run.run_id)
+
+    deleted = store.cleanup_terminal_runs(keep_latest=1)
+
+    assert deleted == 2
+    assert store.get_run(running.run_id).status == "running"
+    remaining_terminal_runs = [
+        run for run in store.list_runs() if run.status in {"completed", "failed", "cancelled"}
+    ]
+    assert len(remaining_terminal_runs) == 1
+    assert store.load_events(remaining_terminal_runs[0].run_id)
+
+    deleted_run_ids = set(terminal_run_ids) - {remaining_terminal_runs[0].run_id}
+    for run_id in deleted_run_ids:
+        try:
+            store.get_run(run_id)
+        except FileNotFoundError:
+            continue
+        raise AssertionError("terminal run should have been deleted")
 
 
 def test_can_continue_chat_session_detects_interrupted_turn(tmp_path):
