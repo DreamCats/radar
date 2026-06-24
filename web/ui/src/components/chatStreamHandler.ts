@@ -40,6 +40,9 @@ export function createChatStreamHandler({
   let turnStartedAtMs: number | null = null;
 
   return (event) => {
+    if (event.type === "ping") {
+      return;
+    }
     if (event.type === "session") {
       onSession(event.session_id);
       return;

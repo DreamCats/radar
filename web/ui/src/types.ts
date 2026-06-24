@@ -456,6 +456,7 @@ export type ChatModelOptions = {
 };
 
 export type ChatStreamEvent =
+  | { type: "ping"; sequence_number?: number; run_id?: string }
   | { type: "session"; session_id: string; sequence_number?: number; run_id?: string }
   | { type: "user_message"; message: ChatMessageItem; sequence_number?: number; run_id?: string }
   | { type: "assistant_reasoning_delta"; content: string; sequence_number?: number; run_id?: string }

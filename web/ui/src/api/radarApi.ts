@@ -305,6 +305,8 @@ function parseChatStreamEvent(rawEvent: string): ChatStreamEvent {
     ...(typeof data.run_id === "string" ? { run_id: data.run_id } : {}),
   };
   switch (eventName) {
+    case "ping":
+      return { type: "ping", ...streamMeta };
     case "session":
       return { type: "session", session_id: String(data.session_id ?? ""), ...streamMeta };
     case "user_message":
