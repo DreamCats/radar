@@ -769,11 +769,19 @@
 }
 
 .catalyst-card mark,
-.catalyst-full-content mark {
+.catalyst-evidence-message mark {
   border-radius: 3px;
-  background: color-mix(in srgb, var(--color-signal-hot) 24%, transparent);
   color: var(--color-ink);
   padding: 0 2px;
+}
+
+.catalyst-term-highlight {
+  background: color-mix(in srgb, var(--color-signal-hot) 24%, transparent);
+}
+
+.catalyst-stock-highlight {
+  background: color-mix(in srgb, #22d3ee 22%, transparent);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, #22d3ee 64%, transparent);
 }
 
 .catalyst-detail-panel {

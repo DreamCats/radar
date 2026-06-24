@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { copyText } from "../lib/clipboard";
 import { formatTime } from "../lib/datetime";
-import type { CatalystEvidenceMessage, CatalystFeedItem, CatalystTermHit } from "../types";
+import type { CatalystEvidenceMessage, CatalystFeedItem, CatalystStockMention, CatalystTermHit } from "../types";
 import { ChatLauncher } from "./ChatLauncher";
 
 const catalystEvidenceQuickPrompts = [
@@ -169,13 +169,18 @@ function CatalystMessageList({ item }: { item: CatalystFeedItem }) {
           key={message.message_id}
           message={message}
           index={index}
+          stockMentions={item.stock_mentions}
         />
       ))}
     </div>
   );
 }
 
-function CatalystEvidenceMessageBlock(props: { message: CatalystEvidenceMessage; index: number }) {
+function CatalystEvidenceMessageBlock(props: {
+  message: CatalystEvidenceMessage;
+  index: number;
+  stockMentions: CatalystStockMention[];
+}) {
   const hits = props.message.matched_terms;
   return (
     <article className="catalyst-evidence-message">
@@ -184,7 +189,7 @@ function CatalystEvidenceMessageBlock(props: { message: CatalystEvidenceMessage;
         <time>{formatTime(props.message.message_time)}</time>
         {hits.length > 0 && <span>{hits.length} 个命中词</span>}
       </header>
-      <p>{highlightCatalystText(props.message.raw_content, hits)}</p>
+      <p>{highlightCatalystText(props.message.raw_content, hits, props.stockMentions)}</p>
     </article>
   );
 }
@@ -197,16 +202,52 @@ export function CatalystTermChip({ hit }: { hit: CatalystTermHit }) {
   );
 }
 
-export function highlightCatalystText(text: string, hits: CatalystTermHit[]) {
+export function highlightCatalystText(
+  text: string,
+  hits: CatalystTermHit[],
+  stockMentions: CatalystStockMention[] = [],
+) {
   const terms = Array.from(new Set(hits.map((hit) => hit.term).filter(Boolean))).sort((a, b) => b.length - a.length);
-  if (terms.length === 0) {
+  const stocks = stockHighlightTerms(stockMentions);
+  const matches = Array.from(new Set([...stocks, ...terms])).sort((a, b) => b.length - a.length);
+  if (matches.length === 0) {
     return text;
   }
-  const pattern = new RegExp(`(${terms.map(escapeRegex).join("|")})`, "gi");
+  const termSet = new Set(terms.map((term) => term.toLowerCase()));
+  const stockSet = new Set(stocks.map((stock) => stock.toLowerCase()));
+  const pattern = new RegExp(`(${matches.map(escapeRegex).join("|")})`, "gi");
   return text.split(pattern).map((part, index) => {
-    const matched = terms.some((term) => term.toLowerCase() === part.toLowerCase());
-    return matched ? <mark key={`${part}-${index}`}>{part}</mark> : <span key={`${part}-${index}`}>{part}</span>;
+    const normalized = part.toLowerCase();
+    if (stockSet.has(normalized)) {
+      return (
+        <mark className="catalyst-stock-highlight" key={`${part}-${index}`}>
+          {part}
+        </mark>
+      );
+    }
+    if (termSet.has(normalized)) {
+      return (
+        <mark className="catalyst-term-highlight" key={`${part}-${index}`}>
+          {part}
+        </mark>
+      );
+    }
+    return <span key={`${part}-${index}`}>{part}</span>;
   });
+}
+
+function stockHighlightTerms(stockMentions: CatalystStockMention[]) {
+  const terms: string[] = [];
+  for (const stock of stockMentions) {
+    if (stock.stock_name) {
+      terms.push(stock.stock_name);
+    }
+    if (stock.ts_code) {
+      terms.push(stock.ts_code);
+      terms.push(stock.ts_code.split(".", 1)[0]);
+    }
+  }
+  return Array.from(new Set(terms.filter(Boolean))).sort((a, b) => b.length - a.length);
 }
 
 function buildCatalystChatContext(item: CatalystFeedItem) {
