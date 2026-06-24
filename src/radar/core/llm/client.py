@@ -36,6 +36,25 @@ class LlmChatDelta:
 
 
 @dataclass(frozen=True)
+class LlmToolCallStarted:
+    index: int
+    call_id: str = ""
+    name: str = ""
+
+
+@dataclass(frozen=True)
+class LlmToolCallDelta:
+    index: int
+    arguments_delta: str = ""
+
+
+@dataclass(frozen=True)
+class LlmToolCallDone:
+    index: int
+    tool_call: LlmToolCall
+
+
+@dataclass(frozen=True)
 class LlmReasoningDelta:
     content: str
 
@@ -45,7 +64,7 @@ class LlmChatDone:
     response: LlmChatResponse
 
 
-LlmChatStreamEvent = LlmChatDelta | LlmReasoningDelta | LlmChatDone
+LlmChatStreamEvent = LlmChatDelta | LlmToolCallStarted | LlmToolCallDelta | LlmToolCallDone | LlmReasoningDelta | LlmChatDone
 
 
 class LlmConfigError(RuntimeError):

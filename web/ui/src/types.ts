@@ -460,6 +460,10 @@ export type ChatStreamEvent =
   | { type: "session"; session_id: string; sequence_number?: number; run_id?: string }
   | { type: "user_message"; message: ChatMessageItem; sequence_number?: number; run_id?: string }
   | { type: "assistant_reasoning_delta"; content: string; sequence_number?: number; run_id?: string }
+  | { type: "assistant_candidate_delta"; content: string; sequence_number?: number; run_id?: string }
+  | { type: "assistant_candidate_commit"; content: string; sequence_number?: number; run_id?: string }
+  | { type: "assistant_candidate_discard"; content: string; sequence_number?: number; run_id?: string }
+  | { type: "assistant_progress_delta"; content: string; sequence_number?: number; run_id?: string }
   | { type: "assistant_delta"; content: string; sequence_number?: number; run_id?: string }
   | { type: "assistant_message"; message: ChatMessageItem; sequence_number?: number; run_id?: string }
   | { type: "tool_message"; message: ChatMessageItem; sequence_number?: number; run_id?: string }

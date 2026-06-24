@@ -315,6 +315,14 @@ function parseChatStreamEvent(rawEvent: string): ChatStreamEvent {
       return { type: eventName, message: data.message as ChatMessageItem, ...streamMeta };
     case "assistant_delta":
       return { type: "assistant_delta", content: String(data.content ?? ""), ...streamMeta };
+    case "assistant_candidate_delta":
+      return { type: "assistant_candidate_delta", content: String(data.content ?? ""), ...streamMeta };
+    case "assistant_candidate_commit":
+      return { type: "assistant_candidate_commit", content: String(data.content ?? ""), ...streamMeta };
+    case "assistant_candidate_discard":
+      return { type: "assistant_candidate_discard", content: String(data.content ?? ""), ...streamMeta };
+    case "assistant_progress_delta":
+      return { type: "assistant_progress_delta", content: String(data.content ?? ""), ...streamMeta };
     case "assistant_reasoning_delta":
       return { type: "assistant_reasoning_delta", content: String(data.content ?? ""), ...streamMeta };
     case "agent_event":

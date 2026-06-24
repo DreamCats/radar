@@ -36,6 +36,15 @@
   font-weight: 500;
 }
 
+.chat-agent-live-pulse {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--color-primary);
+  animation: chat-agent-live-pulse 1.4s ease-out infinite;
+}
+
 .chat-agent-trace[open] .chat-agent-summary svg {
   transform: rotate(180deg);
 }
@@ -67,6 +76,31 @@
   color: var(--color-ink-subtle);
   font-size: 12px;
   line-height: 1.6;
+}
+
+@keyframes chat-agent-live-pulse {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.8);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 42%, transparent);
+  }
+  70% {
+    opacity: 0.65;
+    transform: scale(1);
+    box-shadow: 0 0 0 7px transparent;
+  }
+  100% {
+    opacity: 0.95;
+    transform: scale(0.8);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-agent-live-pulse {
+    animation: none;
+    opacity: 0.8;
+  }
 }
 
 .chat-trace-entry {

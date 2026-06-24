@@ -9,7 +9,17 @@ import httpx
 if TYPE_CHECKING:
     from radar.core.llm.client import ChatMessage, LlmToolSpec, RuntimeLlmProvider
 
-from radar.core.llm.client import LlmChatDelta, LlmChatDone, LlmChatResponse, LlmChatStreamEvent, LlmReasoningDelta, LlmToolCall
+from radar.core.llm.client import (
+    LlmChatDelta,
+    LlmChatDone,
+    LlmChatResponse,
+    LlmChatStreamEvent,
+    LlmReasoningDelta,
+    LlmToolCall,
+    LlmToolCallDelta,
+    LlmToolCallDone,
+    LlmToolCallStarted,
+)
 
 
 def chat_openai(
@@ -84,6 +94,7 @@ def stream_chat_openai_response(
     payload["stream"] = True
     content_parts: list[str] = []
     tool_call_parts: dict[int, dict[str, str]] = {}
+    started_tool_call_indexes: set[int] = set()
 
     with httpx.Client(timeout=provider.timeout) as client:
         with client.stream(
@@ -109,12 +120,16 @@ def stream_chat_openai_response(
                 if isinstance(content, str) and content:
                     content_parts.append(content)
                     yield LlmChatDelta(content=content)
-                _collect_tool_call_deltas(tool_call_parts, delta)
+                yield from _collect_tool_call_deltas(tool_call_parts, delta, started_tool_call_indexes)
+
+    tool_call_items = _parse_stream_tool_call_items(tool_call_parts)
+    for index, tool_call in tool_call_items:
+        yield LlmToolCallDone(index=index, tool_call=tool_call)
 
     yield LlmChatDone(
         LlmChatResponse(
             content="".join(content_parts),
-            tool_calls=_parse_stream_tool_calls(tool_call_parts),
+            tool_calls=[tool_call for _, tool_call in tool_call_items],
         )
     )
 
@@ -175,7 +190,11 @@ def _first_delta(data: object) -> dict | None:
     return delta if isinstance(delta, dict) else None
 
 
-def _collect_tool_call_deltas(tool_call_parts: dict[int, dict[str, str]], delta: dict) -> None:
+def _collect_tool_call_deltas(
+    tool_call_parts: dict[int, dict[str, str]],
+    delta: dict,
+    started_tool_call_indexes: set[int],
+) -> Iterator[LlmToolCallStarted | LlmToolCallDelta]:
     raw_calls = delta.get("tool_calls")
     if not isinstance(raw_calls, list):
         return
@@ -190,28 +209,43 @@ def _collect_tool_call_deltas(tool_call_parts: dict[int, dict[str, str]], delta:
         if isinstance(call_id, str) and call_id:
             part["id"] = call_id
         function = raw_call.get("function")
-        if not isinstance(function, dict):
-            continue
-        name = function.get("name")
-        if isinstance(name, str) and name:
-            part["name"] += name
-        arguments = function.get("arguments")
-        if isinstance(arguments, str):
-            part["arguments"] += arguments
+        name_delta = ""
+        arguments_delta = ""
+        if isinstance(function, dict):
+            name = function.get("name")
+            if isinstance(name, str) and name:
+                part["name"] += name
+                name_delta = name
+            arguments = function.get("arguments")
+            if isinstance(arguments, str):
+                part["arguments"] += arguments
+                arguments_delta = arguments
+        if index not in started_tool_call_indexes:
+            started_tool_call_indexes.add(index)
+            yield LlmToolCallStarted(index=index, call_id=part["id"], name=name_delta)
+        if arguments_delta:
+            yield LlmToolCallDelta(index=index, arguments_delta=arguments_delta)
 
 
 def _parse_stream_tool_calls(tool_call_parts: dict[int, dict[str, str]]) -> list[LlmToolCall]:
-    calls: list[LlmToolCall] = []
+    return [tool_call for _, tool_call in _parse_stream_tool_call_items(tool_call_parts)]
+
+
+def _parse_stream_tool_call_items(tool_call_parts: dict[int, dict[str, str]]) -> list[tuple[int, LlmToolCall]]:
+    calls: list[tuple[int, LlmToolCall]] = []
     for index in sorted(tool_call_parts):
         part = tool_call_parts[index]
         name = part.get("name", "")
         if not name:
             continue
         calls.append(
-            LlmToolCall(
+            (
+                index,
+                LlmToolCall(
                 call_id=part.get("id") or name,
                 name=name,
                 arguments=_parse_arguments(part.get("arguments", "")),
+                ),
             )
         )
     return calls

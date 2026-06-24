@@ -21,6 +21,9 @@ from radar.core.llm import (
     LlmChatResponse,
     LlmReasoningDelta,
     LlmToolCall,
+    LlmToolCallDelta,
+    LlmToolCallDone,
+    LlmToolCallStarted,
     chat_response,
     resolve_provider,
     stream_chat_response,
@@ -250,6 +253,8 @@ class ChatAgent:
                 if max_tool_rounds is not None and tool_round > max_tool_rounds:
                     raise RuntimeError(f"工具调用超过最大轮数: {max_tool_rounds}")
                 response: LlmChatResponse | None = None
+                candidate_chunks: list[str] = []
+                tool_stream_started = False
                 for stream_event in self._request_llm_stream(
                     session_id,
                     content_overrides={user_message.message_id: llm_content} if llm_content else None,
@@ -265,10 +270,28 @@ class ChatAgent:
                         response = stream_event.response
                     elif isinstance(stream_event, LlmReasoningDelta):
                         yield ChatTurnStreamEvent(type="assistant_reasoning_delta", content=stream_event.content)
+                    elif isinstance(stream_event, (LlmToolCallStarted, LlmToolCallDelta, LlmToolCallDone)):
+                        if not tool_stream_started:
+                            tool_stream_started = True
+                            candidate_content = "".join(candidate_chunks)
+                            candidate_chunks.clear()
+                            if candidate_content:
+                                yield ChatTurnStreamEvent(type="assistant_candidate_discard", content=candidate_content)
                     elif stream_event.content:
-                        yield ChatTurnStreamEvent(type="assistant_delta", content=stream_event.content)
+                        if tool_stream_started:
+                            yield ChatTurnStreamEvent(type="assistant_progress_delta", content=stream_event.content)
+                        else:
+                            candidate_chunks.append(stream_event.content)
+                            yield ChatTurnStreamEvent(type="assistant_candidate_delta", content=stream_event.content)
                 if response is None:
                     response = LlmChatResponse(content="", tool_calls=[])
+                candidate_content = "".join(candidate_chunks)
+                confirmed_content = response.content or candidate_content
+                if confirmed_content and (candidate_content or not tool_stream_started):
+                    yield ChatTurnStreamEvent(
+                        type="assistant_candidate_discard" if tool_stream_started or response.tool_calls else "assistant_candidate_commit",
+                        content=confirmed_content,
+                    )
 
                 assistant_message = self._append_assistant_message(
                     session_id,

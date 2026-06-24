@@ -15,6 +15,7 @@ import { formatChatTranscript } from "../lib/chatTranscript";
 import { copyText } from "../lib/clipboard";
 import type { ChatMessageItem, ChatModelOption, ChatSessionItem } from "../types";
 import {
+  MODEL_THINKING_STATUS,
   type ActiveChatRunRecord,
   appendErrorTrace,
   appendStatusTrace,
@@ -122,7 +123,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   }
 
   function createIdleStatusScheduler(assistantDraftId: string) {
-    return (status = "仍在处理") => {
+    return (status = MODEL_THINKING_STATUS) => {
       clearIdleTimer();
       idleTimerRef.current = window.setTimeout(() => {
         setMessages((current) =>
@@ -420,7 +421,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     const assistantDraftId = `assistant-stream-${Date.now()}`;
     const controller = new AbortController();
     abortControllerRef.current = controller;
-    const scheduleIdleStatus = (status = "仍在处理") => {
+    const scheduleIdleStatus = (status = MODEL_THINKING_STATUS) => {
       clearIdleTimer();
       idleTimerRef.current = window.setTimeout(() => {
         setMessages((current) =>

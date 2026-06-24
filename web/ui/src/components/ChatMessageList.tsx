@@ -6,7 +6,14 @@ import { createPortal } from "react-dom";
 import type { ChatMessageItem } from "../types";
 import { fetchChatToolMessage } from "../api/radarApi";
 import { copyElementAsPng, copyText, renderElementAsPngBlob } from "../lib/clipboard";
-import { chatTraceItems, statusForChatMessage, toolActivities, type ChatTraceItem, type ToolActivityItem } from "./chatHelpers";
+import {
+  MODEL_THINKING_STATUS,
+  chatTraceItems,
+  statusForChatMessage,
+  toolActivities,
+  type ChatTraceItem,
+  type ToolActivityItem,
+} from "./chatHelpers";
 import { DrawerMarkdownContent } from "./DrawerMarkdownContent";
 import { MarkdownContent } from "./MarkdownContent";
 
@@ -195,7 +202,11 @@ export function ChatMessageList(props: ChatMessageListProps) {
                   ) : null}
                   {message.content && !hasAssistantTrace ? (
                     <>
-                      <Content content={message.content} />
+                      <SmoothStreamingContent
+                        Content={Content}
+                        content={message.content}
+                        streaming={Boolean(message.metadata.streaming)}
+                      />
                       {message.metadata.streaming ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
                     </>
                   ) : !hasAssistantTrace && message.metadata.streaming ? (
@@ -444,8 +455,13 @@ function ToolResultModal({ result, onClose }: { result: ToolResultState; onClose
   );
 }
 
-const TOOL_ACTIVITY_COLLAPSE_LIMIT = 6;
-const TRANSIENT_STATUS_LABELS = new Set(["正在推理", "正在查询本地数据", "正在整理结果", "正在生成回答"]);
+const TRANSIENT_STATUS_LABELS = new Set([
+  "正在推理",
+  "正在查询本地数据",
+  "正在整理结果",
+  "正在生成回答",
+  MODEL_THINKING_STATUS,
+]);
 const PROCESS_SUMMARIES = new Set([
   "我会先拆解你的问题，确定需要查哪些证据。",
   "我会先准备要查的数据，再按证据强度比较。",
@@ -506,23 +522,33 @@ function AssistantTrace({
 }) {
   const hasProcess = traceItems.length > 0 || activities.length > 0;
   const hasAssistantTrace = traceItems.some((item) => item.type === "assistant");
+  const hasFinalAssistantTrace = traceItems.some((item) => item.type === "assistant" && isFinalAssistantContent(item.content));
   const logEventCount = traceItems.filter((item) => item.type !== "assistant").length;
-  const [expanded, setExpanded] = useState(streaming && !hasAssistantTrace);
+  const [expanded, setExpanded] = useState(streaming && !hasFinalAssistantTrace);
+  const previousHasFinalAssistantTraceRef = useRef(hasFinalAssistantTrace);
+  const userToggledExpandedRef = useRef(false);
 
   useEffect(() => {
-    if (streaming && !hasAssistantTrace) {
-      setExpanded(true);
+    const changed = previousHasFinalAssistantTraceRef.current !== hasFinalAssistantTrace;
+    previousHasFinalAssistantTraceRef.current = hasFinalAssistantTrace;
+    if (!changed || userToggledExpandedRef.current) {
+      return;
     }
-  }, [hasAssistantTrace, streaming]);
+    setExpanded(!hasFinalAssistantTrace && streaming);
+  }, [hasFinalAssistantTrace, streaming]);
 
-  useEffect(() => {
-    if (hasAssistantTrace) {
-      setExpanded(false);
-    }
-  }, [hasAssistantTrace]);
+  function toggleExpanded() {
+    userToggledExpandedRef.current = true;
+    setExpanded((value) => !value);
+  }
 
   if (!hasProcess) {
-    return <div className="chat-agent-status">{status}</div>;
+    return (
+      <div className="chat-agent-status">
+        {status}
+        <StreamingPulse status={status} streaming={streaming} />
+      </div>
+    );
   }
 
   if (hasAssistantTrace) {
@@ -532,9 +558,10 @@ function AssistantTrace({
           className="chat-agent-summary"
           type="button"
           aria-expanded={expanded}
-          onClick={() => setExpanded((value) => !value)}
+          onClick={toggleExpanded}
         >
           <span>{status}</span>
+          <StreamingPulse status={status} streaming={streaming} />
           {logEventCount > 0 ? <em>消息日志事件 {logEventCount} 条</em> : null}
           <ChevronDown size={14} aria-hidden="true" />
         </button>
@@ -552,20 +579,118 @@ function AssistantTrace({
   }
 
   return (
-    <details className="chat-agent-trace" open={streaming}>
-      <summary className="chat-agent-summary">
+    <div className={expanded ? "chat-agent-trace is-open" : "chat-agent-trace"}>
+      <button
+        className="chat-agent-summary"
+        type="button"
+        aria-expanded={expanded}
+        onClick={toggleExpanded}
+      >
         <span>{status}</span>
+        <StreamingPulse status={status} streaming={streaming} />
         <ChevronDown size={14} aria-hidden="true" />
-      </summary>
-      <div className="chat-agent-process">
-        {traceItems.length > 0 ? (
-          <ChatProcessTimeline items={traceItems} onOpenToolResult={onOpenToolResult} streaming={streaming} />
-        ) : (
-          <ChatToolActivityList activities={activities} onOpenToolResult={onOpenToolResult} />
-        )}
-      </div>
-    </details>
+      </button>
+      {expanded ? (
+        <div className="chat-agent-process">
+          {traceItems.length > 0 ? (
+            <ChatProcessTimeline items={traceItems} onOpenToolResult={onOpenToolResult} streaming={streaming} />
+          ) : (
+            <ChatToolActivityList activities={activities} onOpenToolResult={onOpenToolResult} />
+          )}
+        </div>
+      ) : null}
+    </div>
   );
+}
+
+function StreamingPulse({ status, streaming }: { status: string; streaming: boolean }) {
+  if (!streaming || status.includes("连接")) {
+    return null;
+  }
+  return <span className="chat-agent-live-pulse" aria-hidden="true" />;
+}
+
+function SmoothStreamingContent({
+  Content,
+  content,
+  streaming,
+}: {
+  Content: ComponentType<{ content: string }>;
+  content: string;
+  streaming: boolean;
+}) {
+  const [displayContent, setDisplayContent] = useState(content);
+
+  useEffect(() => {
+    if (displayContent === content) {
+      return undefined;
+    }
+    if (!content.startsWith(displayContent)) {
+      setDisplayContent(content);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      const remaining = content.length - displayContent.length;
+      setDisplayContent(content.slice(0, displayContent.length + revealStepForRemaining(remaining)));
+    }, 34);
+
+    return () => window.clearTimeout(timer);
+  }, [content, displayContent]);
+
+  const className =
+    content.startsWith(displayContent) && displayContent.length < content.length
+      ? "chat-stream-smooth is-streaming is-catching-up"
+      : streaming
+        ? "chat-stream-smooth is-streaming"
+        : "chat-stream-smooth";
+
+  return (
+    <div className={className}>
+      <Content content={displayContent} />
+    </div>
+  );
+}
+
+function revealStepForRemaining(remaining: number): number {
+  if (remaining > 1200) {
+    return 96;
+  }
+  if (remaining > 600) {
+    return 56;
+  }
+  if (remaining > 240) {
+    return 32;
+  }
+  if (remaining > 80) {
+    return 16;
+  }
+  if (remaining > 24) {
+    return 8;
+  }
+  return 4;
+}
+
+function isFinalAssistantContent(content: string): boolean {
+  const text = content.trim();
+  if (!text) {
+    return false;
+  }
+  return !isProcessAssistantContent(text);
+}
+
+function isProcessAssistantContent(content: string): boolean {
+  const text = content.replace(/\s+/g, " ").trim();
+  if (!text) {
+    return true;
+  }
+  if (/^(我(来|会|先|将|需要|继续|准备|再)?|接下来|下一步|先|再)(查|查询|拉|拉取|补|补齐|确认|看一下|准备|获取|核对|验证)/.test(text)) {
+    return true;
+  }
+  if (/^(我(来|会|先|将|需要|继续|准备|再)?|接下来|下一步|再).*(然后|再|之后|以便|用于|基于).*(测算|估算|判断|比较|分析|确认|验证)/.test(text)) {
+    return true;
+  }
+  return false;
 }
 
 function ChatProcessTimeline({
@@ -580,12 +705,14 @@ function ChatProcessTimeline({
   const visibleItems = groupTraceItems(items.filter((item) => item.type !== "assistant"));
   const activeStatusKey = streaming ? latestItemKey(visibleItems, "status") : undefined;
   const activeSummaryKey = streaming && !activeStatusKey ? visibleItems[visibleItems.length - 1]?.key : undefined;
+  const cursorKey = streaming ? visibleItems[visibleItems.length - 1]?.key : undefined;
   return (
     <div className="chat-trace-timeline">
       {visibleItems.map((item) =>
         item.type === "tool_group" ? (
           <ChatTraceToolRow
             count={item.count}
+            cursor={item.key === cursorKey}
             key={item.key}
             label={item.label}
             onOpenToolResult={onOpenToolResult}
@@ -594,6 +721,7 @@ function ChatProcessTimeline({
         ) : item.type === "tool" ? (
           <ChatTraceToolRow
             count={1}
+            cursor={item.key === cursorKey}
             key={item.key}
             label={item.label}
             onOpenToolResult={onOpenToolResult}
@@ -601,11 +729,11 @@ function ChatProcessTimeline({
             toolMessageId={item.toolMessageId}
           />
         ) : item.type === "status" ? (
-          <ChatTraceStatusRow key={item.key} active={item.key === activeStatusKey} label={item.label} />
+          <ChatTraceStatusRow key={item.key} active={item.key === activeStatusKey} cursor={item.key === cursorKey} label={item.label} />
         ) : item.type === "summary" ? (
-          <ChatTraceSummaryRow key={item.key} active={item.key === activeSummaryKey} content={item.content} />
+          <ChatTraceSummaryRow key={item.key} active={item.key === activeSummaryKey} content={item.content} cursor={item.key === cursorKey} />
         ) : item.type === "error" ? (
-          <ChatTraceErrorRow key={item.key} message={item.message} />
+          <ChatTraceErrorRow key={item.key} cursor={item.key === cursorKey} message={item.message} />
         ) : null,
       )}
     </div>
@@ -626,7 +754,8 @@ function ChatTraceTimeline({
   streaming: boolean;
 }) {
   const displayItems = groupTraceItems(items);
-  const lastAssistantKey = [...displayItems].reverse().find((item) => item.type === "assistant")?.key;
+  const visibleItems = showProcess ? displayItems : displayItems.filter((item) => item.type === "assistant");
+  const cursorKey = streaming ? visibleItems[visibleItems.length - 1]?.key : undefined;
   const activeStatusKey = streaming ? latestItemKey(displayItems, "status") : undefined;
   const activeSummaryKey = streaming && !activeStatusKey ? displayItems[displayItems.length - 1]?.key : undefined;
   return (
@@ -637,8 +766,8 @@ function ChatTraceTimeline({
             <div className="chat-trace-entry chat-trace-entry-assistant" key={item.key}>
               <span className="chat-trace-node" aria-hidden="true" />
               <div className="chat-trace-body chat-trace-assistant">
-                <Content content={item.content} />
-                {streaming && item.key === lastAssistantKey ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
+                <SmoothStreamingContent Content={Content} content={item.content} streaming={streaming && item.key === cursorKey} />
+                {item.key === cursorKey ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
               </div>
             </div>
           );
@@ -650,6 +779,7 @@ function ChatTraceTimeline({
           return (
             <ChatTraceToolRow
               count={item.count}
+              cursor={item.key === cursorKey}
               key={item.key}
               label={item.label}
               onOpenToolResult={onOpenToolResult}
@@ -661,6 +791,7 @@ function ChatTraceTimeline({
           return (
             <ChatTraceToolRow
               count={1}
+              cursor={item.key === cursorKey}
               key={item.key}
               label={item.label}
               onOpenToolResult={onOpenToolResult}
@@ -670,13 +801,13 @@ function ChatTraceTimeline({
           );
         }
         if (item.type === "status") {
-          return <ChatTraceStatusRow key={item.key} active={item.key === activeStatusKey} label={item.label} />;
+          return <ChatTraceStatusRow key={item.key} active={item.key === activeStatusKey} cursor={item.key === cursorKey} label={item.label} />;
         }
         if (item.type === "summary") {
-          return <ChatTraceSummaryRow key={item.key} active={item.key === activeSummaryKey} content={item.content} />;
+          return <ChatTraceSummaryRow key={item.key} active={item.key === activeSummaryKey} content={item.content} cursor={item.key === cursorKey} />;
         }
         if (item.type === "error") {
-          return <ChatTraceErrorRow key={item.key} message={item.message} />;
+          return <ChatTraceErrorRow key={item.key} cursor={item.key === cursorKey} message={item.message} />;
         }
         return null;
       })}
@@ -714,43 +845,54 @@ function groupTraceItems(items: ChatTraceItem[]): TraceDisplayItem[] {
   }, []);
 }
 
-function ChatTraceStatusRow({ active, label }: { active?: boolean; label: string }) {
+function ChatTraceStatusRow({ active, cursor, label }: { active?: boolean; cursor?: boolean; label: string }) {
   return (
     <div className={active ? "chat-trace-entry chat-trace-entry-status is-active" : "chat-trace-entry chat-trace-entry-status"}>
       <span className="chat-trace-node" aria-hidden="true" />
-      <span className="chat-trace-body">{label}</span>
+      <span className="chat-trace-body">
+        {label}
+        {cursor ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
+      </span>
     </div>
   );
 }
 
-function ChatTraceSummaryRow({ active, content }: { active?: boolean; content: string }) {
+function ChatTraceSummaryRow({ active, content, cursor }: { active?: boolean; content: string; cursor?: boolean }) {
   return (
     <div className={active ? "chat-trace-entry chat-trace-entry-summary is-active" : "chat-trace-entry chat-trace-entry-summary"}>
       <span className="chat-trace-node" aria-hidden="true" />
-      <span className="chat-trace-body">{content}</span>
+      <span className="chat-trace-body">
+        {content}
+        {cursor ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
+      </span>
     </div>
   );
 }
 
-function ChatTraceErrorRow({ message }: { message: string }) {
+function ChatTraceErrorRow({ cursor, message }: { cursor?: boolean; message: string }) {
   return (
     <div className="chat-trace-entry chat-trace-entry-error">
       <span className="chat-trace-node" aria-hidden="true">
         <CircleAlert size={14} />
       </span>
-      <span className="chat-trace-body">{message}</span>
+      <span className="chat-trace-body">
+        {message}
+        {cursor ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
+      </span>
     </div>
   );
 }
 
 function ChatTraceToolRow({
   count,
+  cursor,
   label,
   onOpenToolResult,
   status,
   toolMessageId,
 }: {
   count: number;
+  cursor?: boolean;
   label: string;
   onOpenToolResult: (toolMessageId: string, label: string) => void;
   status: ToolActivityItem["status"];
@@ -769,6 +911,7 @@ function ChatTraceToolRow({
             结果
           </button>
         ) : null}
+        {cursor ? <i className="chat-stream-cursor" aria-hidden="true" /> : null}
       </span>
     </div>
   );
@@ -783,14 +926,8 @@ function ChatToolActivityList({
 }) {
   const [expanded, setExpanded] = useState(false);
   const groupedActivities = groupConsecutiveToolActivities(activities);
-  const hasHiddenGroups = groupedActivities.length > TOOL_ACTIVITY_COLLAPSE_LIMIT;
   const hasGroupedItems = groupedActivities.some((activity) => activity.count > 1);
-  const canExpand = hasHiddenGroups || hasGroupedItems;
-  const displayActivities =
-    expanded ? activities.map((activity) => ({ ...activity, count: 1 })) : groupedActivities.slice(0, TOOL_ACTIVITY_COLLAPSE_LIMIT);
-  const hiddenCount = hasHiddenGroups
-    ? groupedActivities.slice(TOOL_ACTIVITY_COLLAPSE_LIMIT).reduce((total, activity) => total + activity.count, 0)
-    : 0;
+  const displayActivities = expanded ? activities.map((activity) => ({ ...activity, count: 1 })) : groupedActivities;
 
   return (
     <div className="chat-tool-activity-block">
@@ -806,9 +943,9 @@ function ChatToolActivityList({
           />
         ))}
       </ul>
-      {canExpand ? (
+      {hasGroupedItems ? (
         <button className="chat-tool-activity-toggle" type="button" onClick={() => setExpanded((value) => !value)}>
-          {expanded ? "收起工具调用" : hiddenCount > 0 ? `还有 ${hiddenCount} 个工具调用` : `展开 ${activities.length} 个工具调用`}
+          {expanded ? "合并同类工具" : `展开 ${activities.length} 条工具明细`}
         </button>
       ) : null}
     </div>
