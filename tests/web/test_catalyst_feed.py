@@ -46,6 +46,173 @@ def test_catalyst_feed_endpoint_detects_stock_names_from_market_cache(tmp_path: 
     assert data["items"][0]["stock_mentions"][0] == {"ts_code": "300476.SZ", "stock_name": "胜宏科技"}
 
 
+def test_catalyst_feed_endpoint_hides_items_without_stock_mentions(tmp_path: Path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    put_tushare_cache(
+        config.market_database_path,
+        "stock_basic",
+        {},
+        [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
+    )
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(
+            conn,
+            [
+                _message("m1", "2026-06-23T09:00:00", raw_content="在手订单充足，Q3 交付节奏加快"),
+                _message("m2", "2026-06-23T09:10:00", raw_content="胜宏科技在手订单充足，Q3 交付节奏加快"),
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/catalyst/feed",
+        params={
+            "start_time": "2026-06-23T08:00:00",
+            "end_time": "2026-06-23T11:00:00",
+            "category_ids": "order_customer",
+            "limit": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert [item["message_id"] for item in data["items"]] == ["m2"]
+    assert data["summary"]["total_items"] == 1
+    assert data["summary"]["available_total_items"] == 1
+    assert data["summary"]["category_counts"] == {"order_customer": 1}
+
+
+def test_catalyst_feed_endpoint_dedupes_same_content_from_different_senders(tmp_path: Path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    put_tushare_cache(
+        config.market_database_path,
+        "stock_basic",
+        {},
+        [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
+    )
+    content = "胜宏科技在手订单充足，Q3 交付节奏加快"
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(
+            conn,
+            [
+                _message("m1", "2026-06-23T09:00:00", raw_content=content, sender="alice"),
+                _message("m2", "2026-06-23T09:10:00", raw_content=content, sender="bob"),
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/catalyst/feed",
+        params={
+            "start_time": "2026-06-23T08:00:00",
+            "end_time": "2026-06-23T11:00:00",
+            "category_ids": "order_customer",
+            "limit": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 1
+    item = data["items"][0]
+    assert item["duplicate_count"] == 2
+    assert {source["sender"] for source in item["duplicate_sources"]} == {"alice", "bob"}
+    assert data["summary"]["total_items"] == 1
+    assert data["summary"]["total_messages"] == 2
+    assert data["summary"]["duplicate_messages"] == 1
+
+
+def test_catalyst_feed_endpoint_dedupes_wechat_decorative_tokens(tmp_path: Path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    put_tushare_cache(
+        config.market_database_path,
+        "stock_basic",
+        {},
+        [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
+    )
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(
+            conn,
+            [
+                _message("m1", "2026-06-23T09:00:00", raw_content="胜宏科技在手订单充足，Q3 交付节奏加快"),
+                _message("m2", "2026-06-23T09:10:00", raw_content="胜宏科技在手订单充足，[玫瑰]Q3 交付节奏加快"),
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/catalyst/feed",
+        params={
+            "start_time": "2026-06-23T08:00:00",
+            "end_time": "2026-06-23T11:00:00",
+            "category_ids": "order_customer",
+            "limit": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 1
+    assert data["items"][0]["duplicate_count"] == 2
+
+
+def test_catalyst_feed_endpoint_dedupes_long_content_with_short_followup(tmp_path: Path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    put_tushare_cache(
+        config.market_database_path,
+        "stock_basic",
+        {},
+        [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
+    )
+    main_content = (
+        "胜宏科技在手订单充足，Q3 交付节奏加快，海外客户验证推进，"
+        "服务器 PCB 需求延续，产能利用率维持高位，后续订单兑现值得跟踪。"
+    )
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(
+            conn,
+            [
+                _message("m1", "2026-06-23T09:00:00", raw_content=main_content, sender="alice"),
+                _message("m2", "2026-06-23T09:00:10", raw_content="订单上调了", sender="alice"),
+                _message("m3", "2026-06-23T09:10:00", raw_content=main_content, sender="bob"),
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/catalyst/feed",
+        params={
+            "start_time": "2026-06-23T08:00:00",
+            "end_time": "2026-06-23T11:00:00",
+            "category_ids": "order_customer",
+            "limit": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 1
+    item = data["items"][0]
+    assert item["duplicate_count"] == 2
+    assert sorted(source["message_count"] for source in item["duplicate_sources"]) == [1, 2]
+
+
 def _config(tmp_path: Path, **overrides) -> RadarConfig:
     return RadarConfig(
         storage={
