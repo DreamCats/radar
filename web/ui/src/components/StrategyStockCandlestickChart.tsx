@@ -46,6 +46,9 @@ const chartColors = {
   marker: "#f0b84f",
 };
 
+const DESKTOP_INITIAL_VISIBLE_BARS = 64;
+const MOBILE_INITIAL_VISIBLE_BARS = 42;
+
 export function StrategyStockCandlestickChart({
   candles,
   stock,
@@ -159,7 +162,7 @@ export function StrategyStockCandlestickChart({
     });
 
     createSeriesMarkers(candleSeries, chartData.markers, { autoScale: true });
-    chart.timeScale().fitContent();
+    applyInitialVisibleRange(chart, chartData.candles.length, initialVisibleBars(container));
 
     const handleCrosshairMove = (param: MouseEventParams<Time>) => {
       if (!param.time || !param.point || param.point.x < 0 || param.point.y < 0) {
@@ -220,7 +223,7 @@ export function StrategyStockCandlestickChart({
           <em className="ma5">MA5:{formatPrice(chartData.maLatest[5])}</em>
           <em className="ma10">MA10:{formatPrice(chartData.maLatest[10])}</em>
           <em className="ma20">MA20:{formatPrice(chartData.maLatest[20])}</em>
-          <em>拖动缩放看位置</em>
+          <em>默认近段走势，可拖动看全量</em>
         </span>
       </div>
 
@@ -230,13 +233,33 @@ export function StrategyStockCandlestickChart({
       </div>
 
       <div className="strategy-stock-chart-foot">
-        <span>首现/最近消息已标在图上</span>
+        <span>首现/最近消息已标在图上，可拖动定位</span>
         <span>
           最新 {latestQuote.date} {latestQuote.close} · {latestQuote.change} {latestQuote.pct}
         </span>
       </div>
     </section>
   );
+}
+
+function initialVisibleBars(container: HTMLElement): number {
+  return container.clientWidth <= 560 ? MOBILE_INITIAL_VISIBLE_BARS : DESKTOP_INITIAL_VISIBLE_BARS;
+}
+
+function applyInitialVisibleRange(
+  chart: ReturnType<typeof createChart>,
+  dataLength: number,
+  visibleBars: number,
+) {
+  if (dataLength <= visibleBars) {
+    chart.timeScale().fitContent();
+    return;
+  }
+  const lastIndex = dataLength - 1;
+  chart.timeScale().setVisibleLogicalRange({
+    from: Math.max(0, lastIndex - visibleBars + 1),
+    to: lastIndex + 4,
+  });
 }
 
 function QuoteItem({ label, value, toneClass }: { label: string; value: string; toneClass?: string }) {

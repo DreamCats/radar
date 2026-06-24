@@ -10,7 +10,6 @@ import {
   clearActiveSessionId,
   clearSelectedProviderName,
   completedStatus,
-  readActiveSessionId,
   readSelectedProviderName,
   writeActiveSessionId,
   writeSelectedProviderName,
@@ -65,14 +64,9 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     }
     setBottomFollowMode(true);
     setHasNewMessagesBelow(false);
+    resetSessionState();
     void refreshSessions();
     void refreshModelOptions();
-    if (!sessionId && messages.length === 0) {
-      const activeSessionId = readActiveSessionId();
-      if (activeSessionId) {
-        void restoreSession(activeSessionId);
-      }
-    }
   }, [active]);
 
   useEffect(() => {
@@ -418,11 +412,9 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     }
   }
 
-  function startNewSession() {
+  function resetSessionState() {
     abortControllerRef.current?.abort();
     clearActiveSessionId();
-    setBottomFollowMode(true);
-    setHasNewMessagesBelow(false);
     setSessionId(null);
     setMessages([]);
     setDraft("");
@@ -430,6 +422,12 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     setFollowUpSuggestion(null);
     setError(null);
     setHistoryOpen(false);
+  }
+
+  function startNewSession() {
+    setBottomFollowMode(true);
+    setHasNewMessagesBelow(false);
+    resetSessionState();
   }
 
   async function copySessionId(nextSessionId: string) {
