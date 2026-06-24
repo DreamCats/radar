@@ -36,6 +36,19 @@ export function CatalystDetailDrawer({ item, onClose }: { item: CatalystFeedItem
   const chatEvidence = useMemo(() => buildCatalystChatEvidence(item), [item]);
 
   useEffect(() => {
+    const scrollY = window.scrollY;
+    const originalBodyStyle = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    };
+
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (document.querySelector(".chat-launcher-shell")) {
         return;
@@ -45,7 +58,14 @@ export function CatalystDetailDrawer({ item, onClose }: { item: CatalystFeedItem
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = originalBodyStyle.overflow;
+      document.body.style.position = originalBodyStyle.position;
+      document.body.style.top = originalBodyStyle.top;
+      document.body.style.width = originalBodyStyle.width;
+      window.scrollTo(0, scrollY);
+    };
   }, [onClose]);
 
   return (

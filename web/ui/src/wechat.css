@@ -544,6 +544,7 @@
   background: rgb(0 0 0 / 0.38);
   padding: 18px;
   animation: catalyst-backdrop-in 160ms var(--motion-ease) both;
+  overscroll-behavior: contain;
 }
 
 .catalyst-detail-drawer {
@@ -553,6 +554,7 @@
   box-shadow: 0 22px 70px rgb(0 0 0 / 0.42);
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   animation: catalyst-modal-in 180ms var(--motion-ease) both;
+  overscroll-behavior: contain;
 }
 
 .catalyst-feed-head,
@@ -817,6 +819,8 @@
 .catalyst-full-content {
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   margin: 12px 14px;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-md);
@@ -836,6 +840,8 @@
   border-top: 1px solid var(--color-hairline);
   padding: 12px 14px;
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .catalyst-duplicates strong {
