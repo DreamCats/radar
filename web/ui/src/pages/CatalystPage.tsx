@@ -266,7 +266,7 @@ export function CatalystPage() {
               <h2>催化词线索</h2>
               <span>
                 {page.summary.total_items} 条线索 · {page.summary.total_messages} 条原文
-                {page.summary.duplicate_messages > 0 ? ` · 去重 ${page.summary.duplicate_messages} 条` : ""}
+                {page.summary.duplicate_messages > 0 ? ` · 合并 ${page.summary.duplicate_messages} 条` : ""}
               </span>
             </div>
             {loading && page.items.length > 0 && <span className="catalyst-refresh-state">更新中</span>}
@@ -480,6 +480,7 @@ function CatalystCard(props: { item: CatalystFeedItem; active: boolean; onSelect
       <span className="catalyst-card-meta">
         <strong>{formatTime(props.item.first_message_time)}</strong>
         <em>{conversation || props.item.sender}</em>
+        {props.item.message_count > 1 && <b>连续 {props.item.message_count} 条</b>}
         {props.item.duplicate_count > 1 && <b>重复 {props.item.duplicate_count}</b>}
       </span>
       <span className="catalyst-chip-row">

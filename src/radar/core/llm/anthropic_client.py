@@ -17,6 +17,9 @@ from radar.core.llm.client import (
     LlmChatStreamEvent,
     LlmReasoningDelta,
     LlmToolCall,
+    LlmToolCallDelta,
+    LlmToolCallDone,
+    LlmToolCallStarted,
 )
 
 
@@ -117,21 +120,29 @@ def stream_chat_anthropic_response(
                     continue
                 event_type = data.get("type")
                 if event_type == "content_block_start":
-                    _collect_tool_block_start(tool_call_parts, data)
+                    started = _collect_tool_block_start(tool_call_parts, data)
+                    if started is not None:
+                        yield started
                 elif event_type == "content_block_delta":
-                    content, reasoning = _collect_content_delta(tool_call_parts, data)
+                    content, reasoning, tool_delta = _collect_content_delta(tool_call_parts, data)
                     if reasoning:
                         yield LlmReasoningDelta(content=reasoning)
                     if content:
                         content_parts.append(content)
                         yield LlmChatDelta(content=content)
+                    if tool_delta is not None:
+                        yield tool_delta
                 elif event_type == "message_stop":
                     break
+
+    tool_call_items = _parse_stream_tool_call_items(tool_call_parts)
+    for index, tool_call in tool_call_items:
+        yield LlmToolCallDone(index=index, tool_call=tool_call)
 
     yield LlmChatDone(
         response=LlmChatResponse(
             content="".join(content_parts),
-            tool_calls=_parse_stream_tool_calls(tool_call_parts),
+            tool_calls=[tool_call for _, tool_call in tool_call_items],
         )
     )
 
@@ -147,31 +158,35 @@ def _parse_stream_line(line: str) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
-def _collect_tool_block_start(tool_call_parts: dict[int, dict[str, str]], data: dict) -> None:
+def _collect_tool_block_start(tool_call_parts: dict[int, dict[str, str]], data: dict) -> LlmToolCallStarted | None:
     index = data.get("index")
     block = data.get("content_block")
     if not isinstance(index, int) or not isinstance(block, dict) or block.get("type") != "tool_use":
-        return
+        return None
     name = block.get("name")
     if not isinstance(name, str) or not name:
-        return
+        return None
+    call_id = str(block.get("id") or name)
     tool_call_parts[index] = {
-        "id": str(block.get("id") or name),
+        "id": call_id,
         "name": name,
         "arguments": json.dumps(block.get("input") or {}, ensure_ascii=False, separators=(",", ":")),
     }
+    return LlmToolCallStarted(index=index, call_id=call_id, name=name)
 
 
-def _collect_content_delta(tool_call_parts: dict[int, dict[str, str]], data: dict) -> tuple[str, str]:
+def _collect_content_delta(
+    tool_call_parts: dict[int, dict[str, str]], data: dict
+) -> tuple[str, str, LlmToolCallDelta | None]:
     delta = data.get("delta")
     if not isinstance(delta, dict):
-        return "", ""
+        return "", "", None
     if delta.get("type") == "text_delta":
         text = delta.get("text")
-        return text if isinstance(text, str) else "", ""
+        return text if isinstance(text, str) else "", "", None
     if delta.get("type") in {"thinking_delta", "reasoning_delta"}:
         thinking = delta.get("thinking") or delta.get("reasoning") or delta.get("text")
-        return "", thinking if isinstance(thinking, str) else ""
+        return "", thinking if isinstance(thinking, str) else "", None
     if delta.get("type") == "input_json_delta":
         index = data.get("index")
         partial = delta.get("partial_json")
@@ -180,21 +195,29 @@ def _collect_content_delta(tool_call_parts: dict[int, dict[str, str]], data: dic
             if part["arguments"] == "{}":
                 part["arguments"] = ""
             part["arguments"] += partial
-    return "", ""
+            return "", "", LlmToolCallDelta(index=index, arguments_delta=partial)
+    return "", "", None
 
 
 def _parse_stream_tool_calls(tool_call_parts: dict[int, dict[str, str]]) -> list[LlmToolCall]:
-    calls: list[LlmToolCall] = []
+    return [tool_call for _, tool_call in _parse_stream_tool_call_items(tool_call_parts)]
+
+
+def _parse_stream_tool_call_items(tool_call_parts: dict[int, dict[str, str]]) -> list[tuple[int, LlmToolCall]]:
+    calls: list[tuple[int, LlmToolCall]] = []
     for index in sorted(tool_call_parts):
         part = tool_call_parts[index]
         name = part.get("name", "")
         if not name:
             continue
         calls.append(
-            LlmToolCall(
+            (
+                index,
+                LlmToolCall(
                 call_id=part.get("id") or name,
                 name=name,
                 arguments=_parse_tool_input(part.get("arguments", "")),
+                ),
             )
         )
     return calls

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { copyText } from "../lib/clipboard";
 import { formatTime } from "../lib/datetime";
-import type { CatalystFeedItem, CatalystTermHit } from "../types";
+import type { CatalystEvidenceMessage, CatalystFeedItem, CatalystTermHit } from "../types";
 import { ChatLauncher } from "./ChatLauncher";
 
 const catalystEvidenceQuickPrompts = [
@@ -121,6 +121,7 @@ export function CatalystDetailDrawer({ item, onClose }: { item: CatalystFeedItem
         </header>
         {copied && <p className="catalyst-copy-state">已复制</p>}
         <div className="catalyst-chip-row detail">
+          {item.message_count > 1 && <span className="catalyst-stock-chip">连续 {item.message_count} 条</span>}
           {item.matched_terms.map((hit) => (
             <CatalystTermChip hit={hit} key={`${hit.category_id}-${hit.term}`} />
           ))}
@@ -130,19 +131,61 @@ export function CatalystDetailDrawer({ item, onClose }: { item: CatalystFeedItem
             </span>
           ))}
         </div>
-        <p className="catalyst-full-content">{highlightCatalystText(item.raw_content, item.matched_terms)}</p>
+        <CatalystMessageList item={item} />
         <div className="catalyst-duplicates">
           <strong>重复来源</strong>
           {item.duplicate_sources.map((source) => (
             <span key={source.message_id}>
               <em>{formatTime(source.message_time)}</em>
               {source.source === "个人群" ? source.group_name : source.sender}
-              <small>{source.sender}</small>
+              <small>
+                {source.sender}
+                {source.message_count > 1 ? ` · ${source.message_count}条` : ""}
+              </small>
             </span>
           ))}
         </div>
       </aside>
     </div>
+  );
+}
+
+function CatalystMessageList({ item }: { item: CatalystFeedItem }) {
+  const messages =
+    item.messages.length > 0
+      ? item.messages
+      : [
+          {
+            message_id: item.message_id,
+            message_time: item.first_message_time,
+            raw_content: item.raw_content,
+            matched_terms: item.matched_terms,
+          },
+        ];
+  return (
+    <div className="catalyst-message-list">
+      {messages.map((message, index) => (
+        <CatalystEvidenceMessageBlock
+          key={message.message_id}
+          message={message}
+          index={index}
+        />
+      ))}
+    </div>
+  );
+}
+
+function CatalystEvidenceMessageBlock(props: { message: CatalystEvidenceMessage; index: number }) {
+  const hits = props.message.matched_terms;
+  return (
+    <article className="catalyst-evidence-message">
+      <header>
+        <strong>第 {props.index + 1} 条</strong>
+        <time>{formatTime(props.message.message_time)}</time>
+        {hits.length > 0 && <span>{hits.length} 个命中词</span>}
+      </header>
+      <p>{highlightCatalystText(props.message.raw_content, hits)}</p>
+    </article>
   );
 }
 
@@ -184,10 +227,13 @@ function buildCatalystChatEvidence(item: CatalystFeedItem) {
     .slice(0, 6)
     .map((source) => `${formatTime(source.message_time)} ${source.source === "个人群" ? source.group_name : source.sender} ${source.sender}`)
     .join("\n");
+  const messages = (item.messages.length > 0 ? item.messages : []).map(
+    (message, index) => `第 ${index + 1} 条（${formatTime(message.message_time)}）：\n${message.raw_content}`,
+  );
   return [
     `命中催化词：${termSummary(item)}`,
     `标的识别：${stockSummary(item)}`,
-    `原文：\n${item.raw_content}`,
+    messages.length > 0 ? `原文分段：\n${messages.join("\n\n")}` : `原文：\n${item.raw_content}`,
     duplicates ? `重复来源：\n${duplicates}` : "",
   ].filter(Boolean);
 }

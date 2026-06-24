@@ -115,6 +115,15 @@ export type CatalystDuplicateSource = {
   sender: string;
   group_name?: string | null;
   message_time: string;
+  latest_message_time?: string | null;
+  message_count: number;
+};
+
+export type CatalystEvidenceMessage = {
+  message_id: string;
+  message_time: string;
+  raw_content: string;
+  matched_terms: CatalystTermHit[];
 };
 
 export type CatalystFeedItem = {
@@ -127,6 +136,8 @@ export type CatalystFeedItem = {
   latest_message_time: string;
   raw_content: string;
   normalized_content_hash: string;
+  message_count: number;
+  messages: CatalystEvidenceMessage[];
   matched_terms: CatalystTermHit[];
   stock_mentions: CatalystStockMention[];
   duplicate_count: number;
@@ -456,9 +467,14 @@ export type ChatModelOptions = {
 };
 
 export type ChatStreamEvent =
+  | { type: "ping"; sequence_number?: number; run_id?: string }
   | { type: "session"; session_id: string; sequence_number?: number; run_id?: string }
   | { type: "user_message"; message: ChatMessageItem; sequence_number?: number; run_id?: string }
   | { type: "assistant_reasoning_delta"; content: string; sequence_number?: number; run_id?: string }
+  | { type: "assistant_candidate_delta"; content: string; sequence_number?: number; run_id?: string }
+  | { type: "assistant_candidate_commit"; content: string; sequence_number?: number; run_id?: string }
+  | { type: "assistant_candidate_discard"; content: string; sequence_number?: number; run_id?: string }
+  | { type: "assistant_progress_delta"; content: string; sequence_number?: number; run_id?: string }
   | { type: "assistant_delta"; content: string; sequence_number?: number; run_id?: string }
   | { type: "assistant_message"; message: ChatMessageItem; sequence_number?: number; run_id?: string }
   | { type: "tool_message"; message: ChatMessageItem; sequence_number?: number; run_id?: string }

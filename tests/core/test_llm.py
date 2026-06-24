@@ -5,6 +5,9 @@ from radar.core.llm import (
     LlmChatDelta,
     LlmChatDone,
     LlmReasoningDelta,
+    LlmToolCallDelta,
+    LlmToolCallDone,
+    LlmToolCallStarted,
     LlmToolSpec,
     RuntimeLlmProvider,
     chat,
@@ -289,6 +292,11 @@ def test_openai_client_streams_text_and_parses_tool_calls(monkeypatch):
 
     assert captured["json"]["stream"] is True
     assert [event.content for event in events if isinstance(event, LlmChatDelta)] == ["先", "看"]
+    started = [event for event in events if isinstance(event, LlmToolCallStarted)]
+    assert [(event.index, event.call_id) for event in started] == [(0, "call-1")]
+    assert [event.arguments_delta for event in events if isinstance(event, LlmToolCallDelta)] == ['{"query"', ':"AI"}']
+    completed = [event for event in events if isinstance(event, LlmToolCallDone)]
+    assert [(event.index, event.tool_call.name) for event in completed] == [(0, "search_messages")]
     done = [event for event in events if isinstance(event, LlmChatDone)][0]
     assert done.response.content == "先看"
     assert done.response.tool_calls[0].name == "search_messages"
@@ -415,6 +423,11 @@ def test_anthropic_client_streams_text_and_parses_tool_calls(monkeypatch):
     assert captured["json"]["temperature"] == 1
     assert [event.content for event in events if isinstance(event, LlmReasoningDelta)] == ["先判断是否需要工具。"]
     assert [event.content for event in events if isinstance(event, LlmChatDelta)] == ["先", "看"]
+    started = [event for event in events if isinstance(event, LlmToolCallStarted)]
+    assert [(event.index, event.call_id, event.name) for event in started] == [(1, "toolu-1", "search_messages")]
+    assert [event.arguments_delta for event in events if isinstance(event, LlmToolCallDelta)] == ['{"query":"AI"}']
+    completed = [event for event in events if isinstance(event, LlmToolCallDone)]
+    assert [(event.index, event.tool_call.name) for event in completed] == [(1, "search_messages")]
     done = [event for event in events if isinstance(event, LlmChatDone)][0]
     assert done.response.content == "先看"
     assert done.response.tool_calls[0].call_id == "toolu-1"

@@ -19,7 +19,7 @@ from radar.core.chat import (
 from radar.core.chat.resume import can_continue_chat_session
 from radar.core.chat.events import new_id, now_iso
 from radar.core.config import RadarConfig
-from radar.core.llm import LlmChatDelta, LlmChatDone, LlmChatResponse, LlmReasoningDelta, LlmToolCall
+from radar.core.llm import LlmChatDelta, LlmChatDone, LlmChatResponse, LlmReasoningDelta, LlmToolCall, LlmToolCallStarted
 from radar.core.models import RawMessage
 from radar.core.storage import connect, init_db, upsert_messages
 
@@ -335,6 +335,13 @@ def test_chat_system_prompt_layers_surface_rules():
     assert "不要一次性拉取完整证据链" in common_prompt
     assert "输出 Markdown 时使用标准语法" in common_prompt
     assert "不要写 `##标题` 或 `-内容`" in common_prompt
+    assert "短计划 -> 查证据/数据 -> 判断新增信息是否会改变结论或是否还缺关键证据" in common_prompt
+    assert "不要为了显得忙而重复调用同一个工具和同一组参数" in common_prompt
+    assert "过程说明只写一句短句" in common_prompt
+    assert "最终正文用“结论：”" in common_prompt
+    assert "已确认的事实" in common_prompt
+    assert "基于事实的推断" in common_prompt
+    assert "仍需验证的条件" in common_prompt
     assert "radar_strategy_candidates" in stock_prompt
     assert "radar_stock_evidence_detail" in stock_prompt
     assert "radar_theme_candidates" in stock_prompt
@@ -375,10 +382,48 @@ def test_chat_agent_streams_and_persists_final_message(tmp_path, monkeypatch):
     messages = store.load_messages(session.session_id)
 
     assert [event.content for event in events if event.type == "assistant_reasoning_delta"] == ["需要先看上下文。"]
-    assert [event.content for event in events if event.type == "assistant_delta"] == ["先", "看"]
+    assert [event.content for event in events if event.type == "assistant_candidate_delta"] == ["先", "看"]
+    assert [event.content for event in events if event.type == "assistant_candidate_commit"] == ["先看"]
     assert [message.role for message in messages] == ["user", "assistant"]
     assert messages[0].content == "这个信号怎么看？"
     assert messages[-1].content == "先看"
+
+
+def test_chat_agent_stream_separates_progress_and_final_deltas(tmp_path, monkeypatch):
+    config = RadarConfig(config_dir=tmp_path)
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+    calls = []
+
+    def fake_stream_chat_response(config, messages, **kwargs):
+        calls.append(messages)
+        if len(calls) == 1:
+            yield LlmChatDelta(content="我先查数据。")
+            yield LlmToolCallStarted(index=0, call_id="call-1", name="search_messages")
+            yield LlmChatDone(
+                response=LlmChatResponse(
+                    content="我先查数据。",
+                    tool_calls=[LlmToolCall(call_id="call-1", name="search_messages", arguments={"round": 1})],
+                )
+            )
+            return
+        yield LlmChatDelta(content="结论：")
+        yield LlmChatDelta(content="完成")
+        yield LlmChatDone(response=LlmChatResponse(content="结论：完成", tool_calls=[]))
+
+    monkeypatch.setattr("radar.core.chat.agent.stream_chat_response", fake_stream_chat_response)
+
+    events = list(
+        ChatAgent(config, store=store, extensions=[CountingSearchExtension()], enable_builtin_tools=False).stream_turn(
+            session.session_id,
+            "连续查",
+        )
+    )
+
+    assert [event.content for event in events if event.type == "assistant_candidate_delta"] == ["我先查数据。", "结论：", "完成"]
+    assert [event.content for event in events if event.type == "assistant_candidate_discard"] == ["我先查数据。"]
+    assert [event.content for event in events if event.type == "assistant_candidate_commit"] == ["结论：完成"]
+    assert [event.message.content for event in events if event.type == "assistant_message"][-1] == "结论：完成"
 
 
 def test_chat_agent_executes_extension_tool_and_continues(tmp_path, monkeypatch):

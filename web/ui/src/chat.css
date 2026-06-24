@@ -726,6 +726,10 @@
   animation: chat-cursor-blink 900ms infinite;
 }
 
+.chat-stream-smooth {
+  min-width: 0;
+}
+
 @keyframes chat-typing-bounce {
   0%,
   80%,

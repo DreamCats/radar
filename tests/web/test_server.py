@@ -422,9 +422,15 @@ def test_chat_run_endpoint_streams_replayable_events(tmp_path, monkeypatch):
                 event=None,
             )
             yield SimpleNamespace(
-                type="assistant_delta",
+                type="assistant_candidate_delta",
                 message=None,
                 content="先看",
+                event=None,
+            )
+            yield SimpleNamespace(
+                type="assistant_candidate_commit",
+                message=None,
+                content="先看来源质量。",
                 event=None,
             )
             yield SimpleNamespace(
@@ -463,9 +469,11 @@ def test_chat_run_endpoint_streams_replayable_events(tmp_path, monkeypatch):
     assert streamed.status_code == 200
     assert "event: session" in streamed.text
     assert "event: user_message" in streamed.text
-    assert "event: assistant_delta" in streamed.text
+    assert "event: assistant_candidate_delta" in streamed.text
+    assert "event: assistant_candidate_commit" in streamed.text
     assert '"sequence_number":1' in streamed.text
     assert '"content":"先看"' in streamed.text
+    assert '"content":"先看来源质量。"' in streamed.text
     assert captured["title"] == "PCB"
     assert captured["content"] == "这个信号怎么看？"
     assert '"surface":"源头雷达"' in str(captured["llm_content"])
@@ -474,7 +482,8 @@ def test_chat_run_endpoint_streams_replayable_events(tmp_path, monkeypatch):
 
     assert replayed.status_code == 200
     assert "event: session" not in replayed.text
-    assert "event: assistant_delta" in replayed.text
+    assert "event: assistant_candidate_delta" in replayed.text
+    assert "event: assistant_candidate_commit" in replayed.text
 
 
 def test_chat_run_stream_restarts_running_run_from_sqlite(tmp_path, monkeypatch):

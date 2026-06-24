@@ -15,6 +15,7 @@ from radar.web.server.schemas import ChatMessageResponse
 _ACTIVE_WORKERS: set[str] = set()
 _ACTIVE_WORKERS_LOCK = threading.RLock()
 WORKER_ENSURE_INTERVAL_SECONDS = 5.0
+STREAM_KEEPALIVE_INTERVAL_SECONDS = 10.0
 
 
 def start_chat_run_worker(run_id: str, config: RadarConfig) -> None:
@@ -45,9 +46,11 @@ def stream_chat_run_events(run_id: str, after_seq: int, config: RadarConfig) -> 
     store = ChatRunStore.from_config(config)
     last_seq = after_seq
     next_worker_check_at = time.monotonic() + WORKER_ENSURE_INTERVAL_SECONDS
+    last_send_at = time.monotonic()
     while True:
         for event in store.load_events(run_id, after_seq=last_seq):
             last_seq = event.seq
+            last_send_at = time.monotonic()
             yield run_event_sse(event)
         run = store.get_run(run_id)
         if run.status != "running" and last_seq >= run.last_seq:
@@ -56,6 +59,9 @@ def stream_chat_run_events(run_id: str, after_seq: int, config: RadarConfig) -> 
         if run.status == "running" and now >= next_worker_check_at:
             ensure_chat_run_worker(run_id, config)
             next_worker_check_at = now + WORKER_ENSURE_INTERVAL_SECONDS
+        if run.status == "running" and now - last_send_at >= STREAM_KEEPALIVE_INTERVAL_SECONDS:
+            last_send_at = now
+            yield sse("ping", {"run_id": run_id, "sequence_number": last_seq})
         time.sleep(0.25)
 
 

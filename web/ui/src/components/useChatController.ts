@@ -15,8 +15,10 @@ import { formatChatTranscript } from "../lib/chatTranscript";
 import { copyText } from "../lib/clipboard";
 import type { ChatMessageItem, ChatModelOption, ChatSessionItem } from "../types";
 import {
+  MODEL_THINKING_STATUS,
   type ActiveChatRunRecord,
   appendErrorTrace,
+  appendStatusTrace,
   chatTraceItems,
   clearActiveChatRun,
   clearActiveSessionId,
@@ -31,6 +33,9 @@ import {
 } from "./chatHelpers";
 import { createChatStreamHandler } from "./chatStreamHandler";
 import type { ChatController, ChatSurfaceProps } from "./chatTypes";
+
+const CHAT_RUN_STALE_RECONNECT_MS = 25_000;
+const CHAT_RUN_RECONNECT_DELAY_MS = 800;
 
 export function useChatController(props: ChatSurfaceProps, active: boolean): ChatController {
   const [draft, setDraft] = useState("");
@@ -118,7 +123,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   }
 
   function createIdleStatusScheduler(assistantDraftId: string) {
-    return (status = "仍在处理") => {
+    return (status = MODEL_THINKING_STATUS) => {
       clearIdleTimer();
       idleTimerRef.current = window.setTimeout(() => {
         setMessages((current) =>
@@ -154,6 +159,40 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
             message.content.trim() ||
             chatTraceItems(message.metadata.trace_items).length > 0,
         ),
+    );
+  }
+
+  function markRunSubscriptionStale(assistantDraftId: string) {
+    setMessages((current) =>
+      current.map((message) =>
+        message.message_id === assistantDraftId && message.metadata.streaming
+          ? {
+              ...message,
+              metadata: {
+                ...message.metadata,
+                status: "连接无响应，正在重新连接",
+                trace_items: appendStatusTrace(message.metadata.trace_items, "连接无响应，正在重新连接"),
+              },
+            }
+          : message,
+      ),
+    );
+  }
+
+  function markRunSubscriptionRetrying(assistantDraftId: string) {
+    setMessages((current) =>
+      current.map((message) =>
+        message.message_id === assistantDraftId && message.metadata.streaming
+          ? {
+              ...message,
+              metadata: {
+                ...message.metadata,
+                status: "正在重新连接后台任务",
+                trace_items: appendStatusTrace(message.metadata.trace_items, "正在重新连接后台任务"),
+              },
+            }
+          : message,
+      ),
     );
   }
 
@@ -279,19 +318,65 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       },
       onFollowUpSuggestion: setFollowUpSuggestion,
     });
-    await streamChatRun(
-      record.runId,
-      (event) => {
-        const sequenceNumber = event.sequence_number;
-        if (typeof sequenceNumber === "number" && Number.isFinite(sequenceNumber)) {
-          const nextRecord = { ...(activeRunRef.current ?? record), lastSeq: sequenceNumber };
-          activeRunRef.current = nextRecord;
-          writeActiveChatRun(nextRecord);
+    let afterSeq = options.afterSeq ?? record.lastSeq;
+    while (!options.controller.signal.aborted) {
+      const streamController = new AbortController();
+      const abortStream = () => streamController.abort();
+      options.controller.signal.addEventListener("abort", abortStream, { once: true });
+      let staleTimer: number | null = null;
+      let abortedByWatchdog = false;
+      const clearStaleTimer = () => {
+        if (staleTimer === null) {
+          return;
         }
-        handleStreamEvent(event);
-      },
-      { signal: options.controller.signal, afterSeq: options.afterSeq ?? record.lastSeq },
-    );
+        window.clearTimeout(staleTimer);
+        staleTimer = null;
+      };
+      const armStaleTimer = () => {
+        clearStaleTimer();
+        staleTimer = window.setTimeout(() => {
+          abortedByWatchdog = true;
+          markRunSubscriptionStale(record.assistantDraftId);
+          streamController.abort();
+        }, CHAT_RUN_STALE_RECONNECT_MS);
+      };
+      armStaleTimer();
+      try {
+        await streamChatRun(
+          record.runId,
+          (event) => {
+            armStaleTimer();
+            const sequenceNumber = event.sequence_number;
+            if (typeof sequenceNumber === "number" && Number.isFinite(sequenceNumber)) {
+              const nextRecord = { ...(activeRunRef.current ?? record), lastSeq: sequenceNumber };
+              activeRunRef.current = nextRecord;
+              writeActiveChatRun(nextRecord);
+              afterSeq = sequenceNumber;
+            }
+            handleStreamEvent(event);
+          },
+          { signal: streamController.signal, afterSeq },
+        );
+        break;
+      } catch (err) {
+        if (options.controller.signal.aborted) {
+          throw err;
+        }
+        if (!abortedByWatchdog && !isChatStreamNetworkError(err)) {
+          throw err;
+        }
+        const currentRecord = activeRunRef.current ?? record;
+        afterSeq = currentRecord.lastSeq;
+        markRunSubscriptionRetrying(currentRecord.assistantDraftId);
+        await waitForChatRunReconnect(options.controller.signal);
+      } finally {
+        clearStaleTimer();
+        options.controller.signal.removeEventListener("abort", abortStream);
+      }
+    }
+    if (options.controller.signal.aborted) {
+      return;
+    }
     clearActiveChatRun(record.runId);
     if (activeRunRef.current?.runId === record.runId) {
       activeRunRef.current = null;
@@ -336,7 +421,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     const assistantDraftId = `assistant-stream-${Date.now()}`;
     const controller = new AbortController();
     abortControllerRef.current = controller;
-    const scheduleIdleStatus = (status = "仍在处理") => {
+    const scheduleIdleStatus = (status = MODEL_THINKING_STATUS) => {
       clearIdleTimer();
       idleTimerRef.current = window.setTimeout(() => {
         setMessages((current) =>
@@ -767,4 +852,22 @@ function normalizeChatErrorMessage(message: string, fallback: string): string {
 
 function hasVisibleAssistantAnswer(messages: ChatMessageItem[]): boolean {
   return messages.some((message) => message.role === "assistant" && Boolean(message.content.trim()));
+}
+
+function waitForChatRunReconnect(signal: AbortSignal): Promise<void> {
+  if (signal.aborted) {
+    return Promise.reject(new DOMException("Aborted", "AbortError"));
+  }
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener("abort", abort);
+      resolve();
+    }, CHAT_RUN_RECONNECT_DELAY_MS);
+    const abort = () => {
+      window.clearTimeout(timer);
+      signal.removeEventListener("abort", abort);
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+    signal.addEventListener("abort", abort, { once: true });
+  });
 }

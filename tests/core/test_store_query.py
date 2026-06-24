@@ -236,6 +236,85 @@ def test_catalyst_feed_uses_stock_detector_for_named_mentions(sqlite_conn):
     ]
 
 
+def test_catalyst_feed_groups_consecutive_messages_from_same_sender(sqlite_conn):
+    init_db(sqlite_conn)
+    upsert_messages(
+        sqlite_conn,
+        [
+            _message("m1", "2026-06-23T09:20:00", "东财策略", "长征十号乙 0到1 催化"),
+            _message("m2", "2026-06-23T09:20:08", "东财策略", "商业航天上下文正文"),
+            _message("m3", "2026-06-23T09:20:16", "东财策略", "商业航天深度报告合集"),
+            _message("m4", "2026-06-23T09:21:00", "东财策略", "普通聊天"),
+        ],
+    )
+    library = CatalystTermLibrary(
+        categories=[
+            CatalystCategory(id="trend", name="趋势", color="#14b8a6", terms=["0到1"]),
+            CatalystCategory(id="institution", name="机构传播", color="#5e6ad2", terms=["深度报告"]),
+        ]
+    )
+
+    page = list_catalyst_feed(
+        sqlite_conn,
+        library,
+        CatalystFeedFilters(
+            start_time=datetime.fromisoformat("2026-06-23T09:00:00"),
+            end_time=datetime.fromisoformat("2026-06-23T10:00:00"),
+            limit=10,
+        ),
+    )
+
+    assert page.summary.total_items == 1
+    assert page.summary.total_messages == 3
+    assert page.summary.duplicate_messages == 2
+    assert page.items[0].message_count == 3
+    assert [message.message_id for message in page.items[0].messages] == ["m1", "m2", "m3"]
+    assert [hit.term for hit in page.items[0].messages[0].matched_terms] == ["0到1"]
+    assert page.items[0].messages[1].matched_terms == []
+    assert [hit.term for hit in page.items[0].messages[2].matched_terms] == ["深度报告"]
+    assert page.items[0].duplicate_count == 1
+    assert [hit.term for hit in page.items[0].matched_terms] == ["0到1", "深度报告"]
+    assert "长征十号乙" in page.items[0].raw_content
+    assert "商业航天上下文正文" in page.items[0].raw_content
+    assert "商业航天深度报告合集" in page.items[0].raw_content
+
+
+def test_catalyst_feed_dedupes_repeated_clusters_when_message_order_differs(sqlite_conn):
+    init_db(sqlite_conn)
+    upsert_messages(
+        sqlite_conn,
+        [
+            _message("m1", "2026-06-23T09:20:00", "群一", "长征十号乙 0到1 催化"),
+            _message("m2", "2026-06-23T09:20:05", "群一", "商业航天深度报告合集"),
+            _message("m3", "2026-06-23T09:21:00", "群二", "商业航天深度报告合集"),
+            _message("m4", "2026-06-23T09:21:05", "群二", "长征十号乙 0到1 催化"),
+        ],
+    )
+    library = CatalystTermLibrary(
+        categories=[
+            CatalystCategory(id="trend", name="趋势", color="#14b8a6", terms=["0到1"]),
+            CatalystCategory(id="institution", name="机构传播", color="#5e6ad2", terms=["深度报告"]),
+        ]
+    )
+
+    page = list_catalyst_feed(
+        sqlite_conn,
+        library,
+        CatalystFeedFilters(
+            start_time=datetime.fromisoformat("2026-06-23T09:00:00"),
+            end_time=datetime.fromisoformat("2026-06-23T10:00:00"),
+            limit=10,
+        ),
+    )
+
+    assert page.summary.total_items == 1
+    assert page.summary.total_messages == 4
+    assert page.items[0].message_count == 2
+    assert len(page.items[0].messages) == 2
+    assert page.items[0].duplicate_count == 2
+    assert [source.message_count for source in page.items[0].duplicate_sources] == [2, 2]
+
+
 def test_fetch_window_record(sqlite_conn):
     init_db(sqlite_conn)
 

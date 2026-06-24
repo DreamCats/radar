@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 
 import type { ChatMessageItem, ChatStreamEvent } from "../types";
 import {
+  MODEL_THINKING_STATUS,
   appendAssistantTrace,
   appendErrorTrace,
   appendStatusTrace,
@@ -10,9 +11,12 @@ import {
   durationMsValue,
   ensureAssistantTrace,
   mergeAssistantMetadata,
+  removeTraceItem,
   statusForAgentEvent,
   updateToolActivities,
   updateToolTrace,
+  upsertAssistantTrace,
+  upsertStatusTrace,
 } from "./chatHelpers";
 
 type ChatStreamHandlerOptions = {
@@ -25,6 +29,9 @@ type ChatStreamHandlerOptions = {
   onFollowUpSuggestion?: (suggestion: string | null) => void;
 };
 
+const PENDING_ASSISTANT_STATUS_KEY = "assistant-progress-pending";
+const ASSISTANT_CANDIDATE_KEY = "assistant-candidate";
+
 export function createChatStreamHandler({
   assistantDraftId,
   userDraftId,
@@ -34,12 +41,15 @@ export function createChatStreamHandler({
   onSession,
   onFollowUpSuggestion,
 }: ChatStreamHandlerOptions): (event: ChatStreamEvent) => void {
-  let assistantRoundClosed = false;
-  let answerStarted = false;
+  let pendingProgressContent = "";
+  let pendingCandidateContent = "";
   let toolResultSummaryAdded = false;
   let turnStartedAtMs: number | null = null;
 
   return (event) => {
+    if (event.type === "ping") {
+      return;
+    }
     if (event.type === "session") {
       onSession(event.session_id);
       return;
@@ -86,14 +96,59 @@ export function createChatStreamHandler({
     }
     if (event.type === "assistant_delta") {
       if (!event.content) return;
+      pendingCandidateContent = "";
       clearIdleTimer();
       setMessages((current) =>
         current.map((message) =>
-          message.message_id === assistantDraftId ? appendAssistantDelta(message, event.content, assistantRoundClosed, !answerStarted) : message,
+          message.message_id === assistantDraftId ? appendFinalAssistantDelta(message, event.content) : message,
         ),
       );
-      answerStarted = true;
-      assistantRoundClosed = false;
+      scheduleIdleStatus("仍在处理");
+      return;
+    }
+    if (event.type === "assistant_candidate_delta") {
+      if (!event.content) return;
+      pendingCandidateContent = `${pendingCandidateContent}${event.content}`;
+      clearIdleTimer();
+      setMessages((current) =>
+        current.map((message) =>
+          message.message_id === assistantDraftId ? upsertCandidateAssistant(message, pendingCandidateContent) : message,
+        ),
+      );
+      scheduleIdleStatus("正在生成回答");
+      return;
+    }
+    if (event.type === "assistant_candidate_commit") {
+      const content = event.content || pendingCandidateContent;
+      if (!content) return;
+      pendingCandidateContent = "";
+      clearIdleTimer();
+      setMessages((current) =>
+        current.map((message) => (message.message_id === assistantDraftId ? commitCandidateAssistant(message, content) : message)),
+      );
+      scheduleIdleStatus("仍在处理");
+      return;
+    }
+    if (event.type === "assistant_candidate_discard") {
+      const content = event.content || pendingCandidateContent;
+      pendingCandidateContent = "";
+      pendingProgressContent = content;
+      clearIdleTimer();
+      setMessages((current) =>
+        current.map((message) => (message.message_id === assistantDraftId ? discardCandidateAssistant(message, content) : message)),
+      );
+      scheduleIdleStatus("正在查询本地数据");
+      return;
+    }
+    if (event.type === "assistant_progress_delta") {
+      if (!event.content) return;
+      pendingProgressContent = `${pendingProgressContent}${event.content}`;
+      clearIdleTimer();
+      setMessages((current) =>
+        current.map((message) =>
+          message.message_id === assistantDraftId ? appendProgressDelta(message, pendingProgressContent) : message,
+        ),
+      );
       scheduleIdleStatus("仍在处理");
       return;
     }
@@ -107,48 +162,48 @@ export function createChatStreamHandler({
                 ...message,
                 metadata: {
                   ...message.metadata,
-                  status: "正在推理",
+                  status: MODEL_THINKING_STATUS,
                   streaming: true,
                 },
               }
             : message,
         ),
       );
-      scheduleIdleStatus("正在推理");
+      scheduleIdleStatus(MODEL_THINKING_STATUS);
       return;
     }
     if (event.type === "assistant_message") {
       const message = event.message;
+      const messageHasToolCalls = hasToolCalls(message);
       clearIdleTimer();
-      if (!message.content.trim()) {
+      if (messageHasToolCalls) {
         setMessages((current) =>
           current.map((item) =>
             item.message_id === assistantDraftId
-              ? {
-                  ...item,
-                  metadata: {
-                    ...item.metadata,
-                    streaming: true,
-                    status: "正在查询本地数据",
-                    trace_items: appendSummaryTrace(item.metadata.trace_items, "我会先准备要查的数据，再按证据强度比较。"),
-                  },
-                }
+              ? mergeToolRoundAssistantMessage(item, message, pendingProgressContent)
               : item,
           ),
         );
+        pendingProgressContent = "";
         scheduleIdleStatus("正在查询本地数据");
+        return;
+      }
+      const finalContent = message.content.trim();
+      if (!finalContent.trim()) {
+        pendingProgressContent = "";
+        scheduleIdleStatus("正在处理");
         return;
       }
       setMessages((current) =>
         current.map((item) =>
-          item.message_id === assistantDraftId ? ensureMergedAssistantTrace(mergeAssistantMetadata(item, message)) : item,
+          item.message_id === assistantDraftId ? mergeFinalAssistantMessage(item, message) : item,
         ),
       );
       const suggestion = readFollowUpSuggestion(message.metadata.follow_up_suggestion);
       if (suggestion) {
         onFollowUpSuggestion?.(suggestion);
       }
-      assistantRoundClosed = true;
+      pendingProgressContent = "";
       scheduleIdleStatus("正在继续处理");
       return;
     }
@@ -172,7 +227,7 @@ export function createChatStreamHandler({
         ),
       );
       toolResultSummaryAdded = true;
-      scheduleIdleStatus("正在整理结果");
+      scheduleIdleStatus(MODEL_THINKING_STATUS);
       return;
     }
     if (event.type !== "agent_event") {
@@ -235,20 +290,107 @@ export function createChatStreamHandler({
   };
 }
 
-function appendAssistantDelta(message: ChatMessageItem, content: string, assistantRoundClosed: boolean, firstAnswerDelta: boolean): ChatMessageItem {
-  const traceWithSummary = firstAnswerDelta
-    ? appendSummaryTrace(message.metadata.trace_items, "判断已经形成，开始整理成可读回答。")
-    : message.metadata.trace_items;
+function appendFinalAssistantDelta(message: ChatMessageItem, content: string): ChatMessageItem {
   return {
     ...message,
-    content: `${message.content}${assistantRoundClosed && message.content.trim() ? "\n\n" : ""}${content}`,
+    content: `${message.content}${content}`,
     metadata: {
       ...message.metadata,
       status: "正在生成回答",
       streaming: true,
-      trace_items: appendAssistantTrace(traceWithSummary, content),
+      trace_items: appendAssistantTrace(
+        removeTraceItem(removeTraceItem(message.metadata.trace_items, PENDING_ASSISTANT_STATUS_KEY), ASSISTANT_CANDIDATE_KEY),
+        content,
+      ),
     },
   };
+}
+
+function upsertCandidateAssistant(message: ChatMessageItem, content: string): ChatMessageItem {
+  return {
+    ...message,
+    metadata: {
+      ...message.metadata,
+      status: "正在生成回答",
+      streaming: true,
+      trace_items: upsertAssistantTrace(message.metadata.trace_items, ASSISTANT_CANDIDATE_KEY, content),
+    },
+  };
+}
+
+function commitCandidateAssistant(message: ChatMessageItem, content: string): ChatMessageItem {
+  const baseTrace = removeTraceItem(removeTraceItem(message.metadata.trace_items, ASSISTANT_CANDIDATE_KEY), PENDING_ASSISTANT_STATUS_KEY);
+  return {
+    ...message,
+    content,
+    metadata: {
+      ...message.metadata,
+      status: "正在生成回答",
+      streaming: true,
+      trace_items: appendAssistantTrace(baseTrace, content),
+    },
+  };
+}
+
+function discardCandidateAssistant(message: ChatMessageItem, content: string): ChatMessageItem {
+  const baseTrace = removeTraceItem(removeTraceItem(message.metadata.trace_items, ASSISTANT_CANDIDATE_KEY), PENDING_ASSISTANT_STATUS_KEY);
+  return {
+    ...message,
+    metadata: {
+      ...message.metadata,
+      status: "正在查询本地数据",
+      streaming: true,
+      trace_items: content.trim() ? appendStatusTrace(baseTrace, content) : baseTrace,
+    },
+  };
+}
+
+function appendProgressDelta(message: ChatMessageItem, content: string): ChatMessageItem {
+  return {
+    ...message,
+    metadata: {
+      ...message.metadata,
+      status: "正在生成回答",
+      streaming: true,
+      trace_items: upsertStatusTrace(message.metadata.trace_items, PENDING_ASSISTANT_STATUS_KEY, content),
+    },
+  };
+}
+
+function mergeToolRoundAssistantMessage(draft: ChatMessageItem, message: ChatMessageItem, pendingContent: string): ChatMessageItem {
+  const processContent = (pendingContent || message.content).trim();
+  const baseTrace = removeTraceItem(removeTraceItem(draft.metadata.trace_items, PENDING_ASSISTANT_STATUS_KEY), ASSISTANT_CANDIDATE_KEY);
+  const traceItems = processContent
+    ? appendStatusTrace(baseTrace, processContent)
+    : appendSummaryTrace(baseTrace, "我会先准备要查的数据，再按证据强度比较。");
+  return {
+    ...draft,
+    metadata: {
+      ...draft.metadata,
+      ...message.metadata,
+      server_message_id: message.message_id,
+      tool_activities: draft.metadata.tool_activities,
+      trace_items: traceItems,
+      streaming: true,
+      status: "正在查询本地数据",
+    },
+  };
+}
+
+function mergeFinalAssistantMessage(draft: ChatMessageItem, message: ChatMessageItem): ChatMessageItem {
+  const normalizedDraft = {
+    ...draft,
+    metadata: {
+      ...draft.metadata,
+      trace_items: removeTraceItem(removeTraceItem(draft.metadata.trace_items, PENDING_ASSISTANT_STATUS_KEY), ASSISTANT_CANDIDATE_KEY),
+    },
+  };
+  return ensureMergedAssistantTrace(mergeAssistantMetadata(normalizedDraft, message));
+}
+
+function hasToolCalls(message: ChatMessageItem): boolean {
+  const toolCalls = message.metadata.tool_calls;
+  return Array.isArray(toolCalls) && toolCalls.length > 0;
 }
 
 function traceForAgentEvent(

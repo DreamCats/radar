@@ -4,6 +4,8 @@ const ACTIVE_SESSION_KEY = "radar.chat.activeSessionId";
 const ACTIVE_RUN_KEY = "radar.chat.activeRun";
 const SELECTED_PROVIDER_KEY = "radar.chat.selectedProviderName";
 
+export const MODEL_THINKING_STATUS = "模型仍在整理结论";
+
 export type ActiveChatRunRecord = {
   runId: string;
   sessionId: string;
@@ -209,6 +211,35 @@ export function appendStatusTrace(raw: unknown, label: string): ChatTraceItem[] 
     return current;
   }
   return [...current, { key: `status-${current.length + 1}`, type: "status", label: trimmedLabel }];
+}
+
+export function upsertStatusTrace(raw: unknown, key: string, label: string): ChatTraceItem[] {
+  const current = chatTraceItems(raw);
+  const trimmedLabel = label.trim();
+  if (!trimmedLabel) {
+    return current;
+  }
+  const existingIndex = current.findIndex((item) => item.key === key && item.type === "status");
+  if (existingIndex < 0) {
+    return [...current, { key, type: "status", label: trimmedLabel }];
+  }
+  return current.map((item, index) => (index === existingIndex && item.type === "status" ? { ...item, label: trimmedLabel } : item));
+}
+
+export function removeTraceItem(raw: unknown, key: string): ChatTraceItem[] {
+  return chatTraceItems(raw).filter((item) => item.key !== key);
+}
+
+export function upsertAssistantTrace(raw: unknown, key: string, content: string): ChatTraceItem[] {
+  const current = chatTraceItems(raw);
+  if (!content) {
+    return current;
+  }
+  const existingIndex = current.findIndex((item) => item.key === key && item.type === "assistant");
+  if (existingIndex < 0) {
+    return [...current, { key, type: "assistant", content }];
+  }
+  return current.map((item, index) => (index === existingIndex && item.type === "assistant" ? { ...item, content } : item));
 }
 
 export function appendSummaryTrace(raw: unknown, content: string): ChatTraceItem[] {
