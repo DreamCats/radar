@@ -108,6 +108,16 @@ def _item_summary(item: CatalystFeedItem) -> dict[str, Any]:
         "content": _clip(item.raw_content, 700),
         "content_length": len(item.raw_content),
         "content_truncated": len(item.raw_content) > 700,
+        "message_count": item.message_count,
+        "messages": [
+            {
+                "message_id": message.message_id,
+                "message_time": message.message_time.isoformat(),
+                "content": _clip(message.raw_content, 420),
+                "matched_terms": [hit.model_dump(mode="json") for hit in message.matched_terms],
+            }
+            for message in item.messages[:8]
+        ],
         "matched_terms": [hit.model_dump(mode="json") for hit in item.matched_terms],
         "stock_mentions": [stock.model_dump(mode="json") for stock in item.stock_mentions],
         "duplicate_count": item.duplicate_count,
@@ -118,6 +128,10 @@ def _item_summary(item: CatalystFeedItem) -> dict[str, Any]:
                 "sender": source.sender,
                 "group_name": source.group_name,
                 "message_time": source.message_time.isoformat(),
+                "latest_message_time": source.latest_message_time.isoformat()
+                if source.latest_message_time is not None
+                else None,
+                "message_count": source.message_count,
             }
             for source in item.duplicate_sources[:8]
         ],

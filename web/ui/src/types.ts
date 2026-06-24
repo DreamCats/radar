@@ -115,6 +115,15 @@ export type CatalystDuplicateSource = {
   sender: string;
   group_name?: string | null;
   message_time: string;
+  latest_message_time?: string | null;
+  message_count: number;
+};
+
+export type CatalystEvidenceMessage = {
+  message_id: string;
+  message_time: string;
+  raw_content: string;
+  matched_terms: CatalystTermHit[];
 };
 
 export type CatalystFeedItem = {
@@ -127,6 +136,8 @@ export type CatalystFeedItem = {
   latest_message_time: string;
   raw_content: string;
   normalized_content_hash: string;
+  message_count: number;
+  messages: CatalystEvidenceMessage[];
   matched_terms: CatalystTermHit[];
   stock_mentions: CatalystStockMention[];
   duplicate_count: number;
