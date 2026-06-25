@@ -24,13 +24,10 @@ type ChatComposerProps = {
   messages: ChatMessageItem[];
   contextItems: ChatContextItem[];
   evidence?: string[];
-  followUpSuggestion?: string | null;
   placeholder?: string;
   quickPrompts?: { label: string; prompt: string }[];
   readingHidden?: boolean;
-  onAcceptFollowUpSuggestion: () => void;
   onDraftChange: (value: string) => void;
-  onDismissFollowUpSuggestion: () => void;
   onProviderChange: (value: string | null) => void;
   onSubmit: () => void;
   onContinue: () => void;
@@ -46,13 +43,10 @@ export function ChatComposer({
   messages,
   contextItems,
   evidence,
-  followUpSuggestion,
   placeholder,
   quickPrompts,
   readingHidden,
-  onAcceptFollowUpSuggestion,
   onDraftChange,
-  onDismissFollowUpSuggestion,
   onProviderChange,
   onSubmit,
   onContinue,
@@ -72,9 +66,6 @@ export function ChatComposer({
   });
   const visualUsedPercent = contextUsage.usedTokens > 0 ? Math.max(1, contextUsage.usedPercent) : 0;
   const shouldContinue = canContinue && !draft.trim();
-  const normalizedFollowUpSuggestion = followUpSuggestion?.trim() ?? "";
-  const visibleFollowUpSuggestion =
-    !sending && !shouldContinue && !draft.trim() ? normalizedFollowUpSuggestion : "";
   const usedPercentLabel = formatUsedPercent(contextUsage);
   const remainingPercentLabel = formatRemainingPercent(contextUsage);
   const contextTooltip = [
@@ -109,20 +100,10 @@ export function ChatComposer({
             isComposingRef.current = false;
           }}
           rows={3}
-          placeholder={visibleFollowUpSuggestion ? "" : placeholder ?? "输入你的问题..."}
+          placeholder={placeholder ?? "输入你的问题..."}
           onKeyDown={(event) => {
             const nativeEvent = event.nativeEvent as KeyboardEvent;
             if (isComposingRef.current || nativeEvent.isComposing || nativeEvent.keyCode === 229) {
-              return;
-            }
-            if (visibleFollowUpSuggestion && event.key === "Tab" && !event.shiftKey) {
-              event.preventDefault();
-              onAcceptFollowUpSuggestion();
-              return;
-            }
-            if (visibleFollowUpSuggestion && event.key === "Escape") {
-              event.preventDefault();
-              onDismissFollowUpSuggestion();
               return;
             }
             if (event.key === "Enter" && !event.shiftKey) {
@@ -137,22 +118,6 @@ export function ChatComposer({
             }
           }}
         />
-        {visibleFollowUpSuggestion ? (
-          <button
-            className="chat-composer-suggestion"
-            type="button"
-            tabIndex={-1}
-            title={visibleFollowUpSuggestion}
-            aria-label={`采纳建议：${visibleFollowUpSuggestion}`}
-            onMouseDown={(event) => {
-              event.preventDefault();
-              onAcceptFollowUpSuggestion();
-            }}
-          >
-            <span>{visibleFollowUpSuggestion}</span>
-            <kbd>Tab</kbd>
-          </button>
-        ) : null}
         <div className="chat-composer-actions">
           <div className="chat-context-meter" tabIndex={0} aria-label={contextTooltip}>
             <span

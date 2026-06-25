@@ -45,7 +45,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   const [modelOptions, setModelOptions] = useState<ChatModelOption[]>([]);
   const [selectedProviderName, setSelectedProviderName] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [followUpSuggestion, setFollowUpSuggestion] = useState<string | null>(null);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [sessionAction, setSessionAction] = useState<{ label: string; sessionId: string } | null>(null);
   const [canContinue, setCanContinue] = useState(false);
@@ -219,7 +218,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     setSending(true);
     setError(null);
     setCanContinue(false);
-    setFollowUpSuggestion(null);
     setDraft("");
     const userDraftId = `user-local-${Date.now()}`;
     const assistantDraftId = `assistant-stream-${Date.now()}`;
@@ -316,7 +314,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
         setSessionId(nextSessionId);
         writeActiveSessionId(nextSessionId);
       },
-      onFollowUpSuggestion: setFollowUpSuggestion,
     });
     let afterSeq = options.afterSeq ?? record.lastSeq;
     while (!options.controller.signal.aborted) {
@@ -417,7 +414,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     setSending(true);
     setError(null);
     setCanContinue(false);
-    setFollowUpSuggestion(null);
     const assistantDraftId = `assistant-stream-${Date.now()}`;
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -454,7 +450,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
         setSessionId(nextSessionId);
         writeActiveSessionId(nextSessionId);
       },
-      onFollowUpSuggestion: setFollowUpSuggestion,
     });
     try {
       await continueChatTurn(sessionId, { provider_name: selectedProviderName }, handleStreamEvent, { signal: controller.signal });
@@ -486,7 +481,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       stopAssistantDraft(activeRun.assistantDraftId, "已停止");
     }
     setSending(false);
-    setFollowUpSuggestion(null);
   }
 
   function changeProvider(providerName: string | null) {
@@ -558,7 +552,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     writeActiveSessionId(record.sessionId);
     setSending(true);
     setCanContinue(false);
-    setFollowUpSuggestion(null);
     setError(null);
     setMessages([
       {
@@ -606,7 +599,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       setSessionId(data.session.session_id);
       setMessages(data.messages);
       setCanContinue(data.session.can_continue);
-      setFollowUpSuggestion(data.session.can_continue ? null : followUpSuggestionFromMessages(data.messages));
       writeActiveSessionId(data.session.session_id);
       setHistoryOpen(false);
       setError(null);
@@ -627,7 +619,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       setSessionId(data.session.session_id);
       writeActiveSessionId(data.session.session_id);
       setCanContinue(false);
-      setFollowUpSuggestion(followUpSuggestionFromMessages(data.messages));
       setError(null);
       if (hasVisibleAssistantAnswer(data.messages)) {
         setMessages(data.messages);
@@ -667,7 +658,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     setMessages([]);
     setDraft("");
     setCanContinue(false);
-    setFollowUpSuggestion(null);
     setError(null);
     setHistoryOpen(false);
   }
@@ -729,7 +719,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
         setSessionId(null);
         setMessages([]);
         setCanContinue(false);
-        setFollowUpSuggestion(null);
       }
       await refreshSessions();
       setError(null);
@@ -746,7 +735,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     canContinue,
     draft,
     error,
-    followUpSuggestion,
     hasNewMessagesBelow,
     composerHidden,
     historyOpen,
@@ -769,9 +757,7 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     refreshSessions,
     removeSession,
     restoreSession,
-    acceptFollowUpSuggestion,
-    dismissFollowUpSuggestion,
-    setDraft: updateDraft,
+    setDraft,
     setHistoryOpen,
     startNewSession,
     stopStreaming,
@@ -779,48 +765,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     updateMessageScrollState,
   };
 
-  function acceptFollowUpSuggestion() {
-    const suggestion = readFollowUpSuggestion(followUpSuggestion);
-    if (!suggestion) {
-      return;
-    }
-    setDraft(suggestion);
-    setFollowUpSuggestion(null);
-  }
-
-  function dismissFollowUpSuggestion() {
-    setFollowUpSuggestion(null);
-  }
-
-  function updateDraft(value: string) {
-    setDraft(value);
-    if (value.trim()) {
-      setFollowUpSuggestion(null);
-    }
-  }
-}
-
-function followUpSuggestionFromMessages(messages: ChatMessageItem[]): string | null {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-    if (message.role !== "assistant") {
-      continue;
-    }
-    const suggestion = readFollowUpSuggestion(message.metadata.follow_up_suggestion);
-    if (suggestion) {
-      return suggestion;
-    }
-    return null;
-  }
-  return null;
-}
-
-function readFollowUpSuggestion(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const suggestion = value.trim();
-  return suggestion ? suggestion : null;
 }
 
 function chatTurnErrorMessage(err: unknown, fallback: string): string | null {

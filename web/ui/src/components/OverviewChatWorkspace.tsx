@@ -96,14 +96,11 @@ export function OverviewChatWorkspace(props: OverviewChatWorkspaceProps) {
             messages={controller.messages}
             contextItems={controller.visibleContext}
             evidence={props.evidence}
-            followUpSuggestion={controller.followUpSuggestion}
             placeholder={props.composerPlaceholder}
             quickPrompts={props.quickPrompts}
             readingHidden={controller.composerHidden}
             sending={controller.sending}
-            onAcceptFollowUpSuggestion={controller.acceptFollowUpSuggestion}
             onDraftChange={controller.setDraft}
-            onDismissFollowUpSuggestion={controller.dismissFollowUpSuggestion}
             onProviderChange={controller.changeProvider}
             onContinue={() => void controller.continueTurn()}
             onStop={controller.stopStreaming}

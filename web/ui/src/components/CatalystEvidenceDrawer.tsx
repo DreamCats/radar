@@ -80,11 +80,6 @@ export function CatalystDetailDrawer({ item, onClose }: { item: CatalystFeedItem
               context={chatContext}
               evidence={chatEvidence}
               quickPrompts={catalystEvidenceQuickPrompts}
-              suggestedQuestions={[
-                "判断这条催化词线索的强度，并说明还缺什么证据。",
-                "找一下前后 48 小时有没有同主题或同标的的增强/削弱证据。",
-                "提取这条原文涉及的标的和产业链环节，区分直接证据和推断。",
-              ]}
             />
             <button
               className="mini-button"

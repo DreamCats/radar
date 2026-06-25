@@ -26,7 +26,6 @@ type ChatStreamHandlerOptions = {
   clearIdleTimer: () => void;
   scheduleIdleStatus: (status?: string) => void;
   onSession: (sessionId: string) => void;
-  onFollowUpSuggestion?: (suggestion: string | null) => void;
 };
 
 const PENDING_ASSISTANT_STATUS_KEY = "assistant-progress-pending";
@@ -39,7 +38,6 @@ export function createChatStreamHandler({
   clearIdleTimer,
   scheduleIdleStatus,
   onSession,
-  onFollowUpSuggestion,
 }: ChatStreamHandlerOptions): (event: ChatStreamEvent) => void {
   let pendingProgressContent = "";
   let pendingCandidateContent = "";
@@ -199,10 +197,6 @@ export function createChatStreamHandler({
           item.message_id === assistantDraftId ? mergeFinalAssistantMessage(item, message) : item,
         ),
       );
-      const suggestion = readFollowUpSuggestion(message.metadata.follow_up_suggestion);
-      if (suggestion) {
-        onFollowUpSuggestion?.(suggestion);
-      }
       pendingProgressContent = "";
       scheduleIdleStatus("正在继续处理");
       return;
@@ -479,12 +473,4 @@ function elapsedDurationMs(startedAtMs: number | null, completedAtMs: number): n
     return null;
   }
   return Math.round(completedAtMs - startedAtMs);
-}
-
-function readFollowUpSuggestion(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const suggestion = value.trim();
-  return suggestion ? suggestion : null;
 }

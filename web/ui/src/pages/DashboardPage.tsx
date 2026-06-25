@@ -66,7 +66,6 @@ export function DashboardPage() {
       entityId: summary?.latest_message_time ?? "dashboard",
       context: chatContext,
       evidence,
-      suggestedQuestions: SUGGESTED_QUESTIONS.map((item) => item.prompt),
     },
     true,
   );

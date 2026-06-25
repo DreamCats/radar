@@ -30,46 +30,6 @@
   outline: 2px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
 }
 
-.chat-composer-suggestion {
-  position: absolute;
-  top: 13px;
-  right: 14px;
-  left: 14px;
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
-  overflow: hidden;
-  border: 0;
-  background: transparent;
-  color: color-mix(in srgb, var(--color-ink-subtle) 74%, transparent);
-  cursor: text;
-  font: inherit;
-  line-height: 1.55;
-  padding: 0;
-  text-align: left;
-}
-
-.chat-composer-suggestion span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.chat-composer-suggestion kbd {
-  flex: 0 0 auto;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 34%, var(--color-hairline));
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--color-surface-2) 88%, transparent);
-  color: var(--color-ink-subtle);
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  padding: 4px 6px;
-}
-
 .chat-composer-shortcuts {
   display: flex;
   min-width: 0;

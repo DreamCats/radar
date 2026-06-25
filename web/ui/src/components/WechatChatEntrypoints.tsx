@@ -64,11 +64,6 @@ export function WechatListChatLauncher(props: {
       ]}
       evidence={props.conversations.slice(0, 8).map(formatConversationEvidence)}
       quickPrompts={wechatListQuickPrompts}
-      suggestedQuestions={[
-        "帮我从最近微信会话里找 3 条值得继续研究的线索。",
-        "最近哪些股票、行业或主题被反复提到？请区分原文证据和推断。",
-        "当前微信消息里有哪些只是噪音或证据不足，先不要跟？",
-      ]}
     />
   );
 }
@@ -120,11 +115,6 @@ export function WechatThreadHeader(props: {
             ]}
             evidence={props.threadEvidence}
             quickPrompts={wechatThreadQuickPrompts}
-            suggestedQuestions={[
-              "帮我解释这个会话最近在聊什么，哪些内容和投资有关？",
-              "这里面涉及哪些股票、行业或主题？请按原文证据和你的推断分开。",
-              "这段聊天有没有值得继续深挖的线索、风险或反证？",
-            ]}
           />
         </div>
         <div className="wechat-thread-filters" aria-label="群内筛选">

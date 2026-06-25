@@ -9,7 +9,6 @@ from typing import Any
 from radar.core.chat.builtin_extensions import RadarBuiltinExtension
 from radar.core.chat.extensions import ChatExtension, build_tool_registry
 from radar.core.chat.events import ChatEvent, ChatEventType, ChatMessage, new_id, now_iso
-from radar.core.chat.follow_up import build_follow_up_suggestion
 from radar.core.chat.prompts import DEFAULT_CHAT_SYSTEM_PROMPT
 from radar.core.chat.skill_tools import build_skill_tools
 from radar.core.chat.skills import ChatSkillLibrary, ChatSkillSelection
@@ -143,7 +142,6 @@ class ChatAgent:
                         session_id,
                         response,
                         llm_metadata=llm_metadata,
-                        user_content=content,
                     )
                     completed = self._append_event(
                         session_id,
@@ -167,7 +165,6 @@ class ChatAgent:
                     session_id,
                     response,
                     llm_metadata=llm_metadata,
-                    user_content=content,
                 )
                 for tool_call in response.tool_calls:
                     started = self._append_event(
@@ -297,7 +294,6 @@ class ChatAgent:
                     session_id,
                     response,
                     llm_metadata=llm_metadata,
-                    user_content=content,
                 )
                 yield ChatTurnStreamEvent(type="assistant_message", message=assistant_message)
                 if not response.tool_calls:
@@ -416,16 +412,11 @@ class ChatAgent:
         response: LlmChatResponse,
         *,
         llm_metadata: dict[str, Any],
-        user_content: str | None = None,
     ) -> ChatMessage:
         metadata: dict[str, Any] = {
             "tool_calls": [asdict(call) for call in response.tool_calls],
             "llm": llm_metadata,
         }
-        if user_content is not None and not response.tool_calls:
-            suggestion = build_follow_up_suggestion(user_content, response.content)
-            if suggestion:
-                metadata["follow_up_suggestion"] = suggestion
         assistant_message = ChatMessage(
             message_id=new_id(),
             role="assistant",

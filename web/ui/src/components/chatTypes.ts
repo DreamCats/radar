@@ -14,7 +14,6 @@ export type ChatSurfaceProps = {
   entityId: string;
   context: ChatContextItem[];
   evidence?: string[];
-  suggestedQuestions: string[];
 };
 
 export type ChatController = {
@@ -26,7 +25,6 @@ export type ChatController = {
   hasNewMessagesBelow: boolean;
   composerHidden: boolean;
   historyOpen: boolean;
-  followUpSuggestion: string | null;
   loadingSessions: boolean;
   messageListRef: RefObject<HTMLDivElement | null>;
   messages: ChatMessageItem[];
@@ -46,8 +44,6 @@ export type ChatController = {
   refreshSessions: () => Promise<void>;
   removeSession: (nextSessionId: string) => Promise<void>;
   restoreSession: (nextSessionId: string) => Promise<void>;
-  acceptFollowUpSuggestion: () => void;
-  dismissFollowUpSuggestion: () => void;
   setDraft: (value: string) => void;
   setHistoryOpen: (value: boolean | ((current: boolean) => boolean)) => void;
   startNewSession: () => void;

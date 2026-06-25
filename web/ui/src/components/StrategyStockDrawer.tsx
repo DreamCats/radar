@@ -308,11 +308,6 @@ export function StrategyStockDrawer({ stock, initialMode = "chart", onClose }: P
                 { label: "兑现判断", prompt: "结合首现消息和当前行情，判断股价是提前反映、刚开始发酵，还是利好兑现；列出最关键的证据和反证。" },
                 { label: "观察位", prompt: "给出后续观察位：接下来要盯的 3 个价格、量能或消息条件，以及什么情况下降低跟踪优先级。" },
               ]}
-              suggestedQuestions={[
-                "只看这张K线，当前价格位置和量能有什么风险？",
-                "从首现到最近消息，股价是提前反映、刚启动，还是已经兑现？",
-                "后续应该盯哪些均线、成交量和回撤位置？",
-              ]}
             />
             <button className="icon-btn" type="button" aria-label="关闭" onClick={closeDrawer}>
               <X size={16} />
