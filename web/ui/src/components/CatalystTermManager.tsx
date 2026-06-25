@@ -1,9 +1,12 @@
-import { Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { GripVertical, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 
 import type { CatalystCategory, CatalystTermLibrary } from "../types";
 
 type TermInputs = Record<string, string>;
+type DraggingTerm = { categoryId: string; term: string };
+type TermPlacement = "before" | "after";
 
 export function CatalystTermManager(props: {
   library: CatalystTermLibrary;
@@ -14,10 +17,26 @@ export function CatalystTermManager(props: {
 }) {
   const [draft, setDraft] = useState<CatalystTermLibrary>(() => cloneLibrary(props.library));
   const [termInputs, setTermInputs] = useState<TermInputs>({});
+  const [draggingTerm, setDraggingTerm] = useState<DraggingTerm | null>(null);
+  const draggingTermRef = useRef<DraggingTerm | null>(null);
   const totalTerms = useMemo(
     () => draft.categories.reduce((total, category) => total + category.terms.length, 0),
     [draft.categories],
   );
+
+  useEffect(() => {
+    function clearDraggingTerm() {
+      draggingTermRef.current = null;
+      setDraggingTerm(null);
+    }
+
+    window.addEventListener("pointerup", clearDraggingTerm);
+    window.addEventListener("pointercancel", clearDraggingTerm);
+    return () => {
+      window.removeEventListener("pointerup", clearDraggingTerm);
+      window.removeEventListener("pointercancel", clearDraggingTerm);
+    };
+  }, []);
 
   function updateCategory(categoryId: string, patch: Partial<CatalystCategory>) {
     setDraft((current) => ({
@@ -79,6 +98,74 @@ export function CatalystTermManager(props: {
     }));
   }
 
+  function moveTerm(categoryId: string, movingTerm: string, targetTerm: string, placement: TermPlacement) {
+    if (movingTerm === targetTerm) {
+      return;
+    }
+    setDraft((current) => ({
+      ...current,
+      categories: current.categories.map((category) => {
+        if (category.id !== categoryId) {
+          return category;
+        }
+        const withoutMovingTerm = category.terms.filter((term) => term !== movingTerm);
+        if (withoutMovingTerm.length === category.terms.length) {
+          return category;
+        }
+        const targetIndex = withoutMovingTerm.indexOf(targetTerm);
+        if (targetIndex === -1) {
+          return category;
+        }
+        const nextTerms = [...withoutMovingTerm];
+        nextTerms.splice(placement === "after" ? targetIndex + 1 : targetIndex, 0, movingTerm);
+        if (sameTerms(nextTerms, category.terms)) {
+          return category;
+        }
+        return { ...category, terms: nextTerms };
+      }),
+    }));
+  }
+
+  function startTermDrag(
+    event: ReactPointerEvent<HTMLButtonElement>,
+    categoryId: string,
+    term: string,
+  ) {
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+    const nextDraggingTerm = { categoryId, term };
+    draggingTermRef.current = nextDraggingTerm;
+    setDraggingTerm(nextDraggingTerm);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function updateTermDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+    const activeTerm = draggingTermRef.current;
+    if (!activeTerm) {
+      return;
+    }
+    const target = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>("[data-catalyst-term]");
+    const targetCategoryId = target?.dataset.categoryId;
+    const targetTerm = target?.dataset.termValue;
+    if (targetCategoryId !== activeTerm.categoryId || !targetTerm || targetTerm === activeTerm.term) {
+      return;
+    }
+    const rect = target.getBoundingClientRect();
+    const placement = event.clientX >= rect.left + rect.width / 2 ? "after" : "before";
+    moveTerm(activeTerm.categoryId, activeTerm.term, targetTerm, placement);
+    event.preventDefault();
+  }
+
+  function stopTermDrag() {
+    draggingTermRef.current = null;
+    setDraggingTerm(null);
+  }
+
   return (
     <div className="catalyst-manager-backdrop" role="presentation" onMouseDown={props.onClose}>
       <section
@@ -123,18 +210,43 @@ export function CatalystTermManager(props: {
                   <Trash2 size={14} />
                 </button>
               </div>
-              <div className="catalyst-term-list">
+              <div className="catalyst-term-list" role="list">
                 {category.terms.map((term) => (
-                  <button
-                    className="catalyst-term-pill"
+                  <span
+                    className={
+                      draggingTerm?.categoryId === category.id && draggingTerm.term === term
+                        ? "catalyst-term-pill dragging"
+                        : "catalyst-term-pill"
+                    }
+                    data-catalyst-term
+                    data-category-id={category.id}
+                    data-term-value={term}
                     key={term}
-                    type="button"
-                    onClick={() => removeTerm(category.id, term)}
-                    title="点击删除"
+                    role="listitem"
                   >
-                    {term}
-                    <X size={12} />
-                  </button>
+                    <button
+                      className="catalyst-term-drag"
+                      type="button"
+                      aria-label={`拖动${term}排序`}
+                      title="拖动排序"
+                      onPointerDown={(event) => startTermDrag(event, category.id, term)}
+                      onPointerMove={updateTermDrag}
+                      onPointerUp={stopTermDrag}
+                      onPointerCancel={stopTermDrag}
+                    >
+                      <GripVertical size={12} />
+                    </button>
+                    <span className="catalyst-term-label">{term}</span>
+                    <button
+                      className="catalyst-term-remove"
+                      type="button"
+                      onClick={() => removeTerm(category.id, term)}
+                      aria-label={`删除${term}`}
+                      title="删除关键词"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
                 ))}
               </div>
               <div className="catalyst-term-add">
@@ -192,4 +304,8 @@ function cloneLibrary(library: CatalystTermLibrary): CatalystTermLibrary {
       terms: [...category.terms],
     })),
   };
+}
+
+function sameTerms(left: string[], right: string[]) {
+  return left.length === right.length && left.every((term, index) => term === right[index]);
 }

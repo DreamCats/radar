@@ -86,14 +86,16 @@ def test_catalyst_terms_endpoint_reads_and_updates_personal_terms(tmp_path):
                 "id": "test",
                 "name": "测试标签",
                 "color": "#5e6ad2",
-                "terms": ["AI液冷", "AI液冷", ""],
+                "terms": ["涨价", "AI液冷", "涨价", "", "订单"],
             }
         ],
     }
     update_response = client.put("/api/catalyst/terms", json=updated)
 
     assert update_response.status_code == 200
-    assert update_response.json()["categories"][0]["terms"] == ["AI液冷"]
+    assert update_response.json()["categories"][0]["terms"] == ["涨价", "AI液冷", "订单"]
+    reload_response = client.get("/api/catalyst/terms")
+    assert reload_response.json()["categories"][0]["terms"] == ["涨价", "AI液冷", "订单"]
     assert (config.config_dir / "catalyst_terms.yaml").exists()
 
 

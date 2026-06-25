@@ -1071,15 +1071,57 @@
 .catalyst-term-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   min-height: 24px;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
   background: var(--color-surface-2);
   color: var(--color-ink-muted);
-  padding: 0 8px;
+  padding: 0 5px;
   font-size: 12px;
+  transition: border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.catalyst-term-pill.dragging {
+  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-hairline));
+  opacity: 0.62;
+}
+
+.catalyst-term-label {
+  padding: 0 2px;
+}
+
+.catalyst-term-drag,
+.catalyst-term-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.catalyst-term-drag {
+  cursor: grab;
+  touch-action: none;
+}
+
+.catalyst-term-drag:active {
+  cursor: grabbing;
+}
+
+.catalyst-term-remove {
   cursor: pointer;
+}
+
+.catalyst-term-drag:hover,
+.catalyst-term-remove:hover {
+  background: var(--color-surface-3);
+  color: var(--color-ink);
 }
 
 .mini-button.danger {
