@@ -167,6 +167,8 @@ export type CatalystFeedQuery = {
   group_name?: string;
   category_ids?: string[];
   keyword?: string;
+  term_category_id?: string;
+  term?: string;
   dedupe?: boolean;
   cursor_time?: string | null;
   cursor_key?: string | null;

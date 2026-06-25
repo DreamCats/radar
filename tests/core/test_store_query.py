@@ -215,6 +215,42 @@ def test_catalyst_feed_category_filter_keeps_global_counts_and_all_hits(sqlite_c
     assert [hit.term for hit in page.items[0].matched_terms] == ["新签订单", "涨价"]
 
 
+def test_catalyst_feed_term_filter_keeps_base_term_counts(sqlite_conn):
+    init_db(sqlite_conn)
+    upsert_messages(
+        sqlite_conn,
+        [
+            _message("m1", "2026-06-23T09:20:00", "东财策略", "300503 涨价 提价"),
+            _message("m2", "2026-06-23T09:30:00", "东财策略", "300476 提价"),
+            _message("m3", "2026-06-23T09:40:00", "东财策略", "300001 涨价"),
+        ],
+    )
+    library = CatalystTermLibrary(
+        categories=[
+            CatalystCategory(id="price", name="价格", color="#f5d547", terms=["涨价", "提价"]),
+        ]
+    )
+
+    page = list_catalyst_feed(
+        sqlite_conn,
+        library,
+        CatalystFeedFilters(
+            start_time=datetime.fromisoformat("2026-06-23T09:00:00"),
+            end_time=datetime.fromisoformat("2026-06-23T10:00:00"),
+            category_ids=["price"],
+            term_category_id="price",
+            term="提价",
+            limit=10,
+        ),
+    )
+
+    assert page.summary.total_items == 2
+    assert page.summary.available_total_items == 3
+    assert page.summary.category_counts == {"price": 3}
+    assert page.summary.term_counts == {"price": {"提价": 2, "涨价": 2}}
+    assert {item.message_id for item in page.items} == {"m1", "m2"}
+
+
 def test_catalyst_feed_uses_stock_detector_for_named_mentions(sqlite_conn):
     init_db(sqlite_conn)
     upsert_messages(

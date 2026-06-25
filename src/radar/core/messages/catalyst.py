@@ -187,6 +187,7 @@ def list_catalyst_feed(
     items.sort(key=lambda item: (item.latest_message_time, item.key), reverse=True)
     summary = _feed_summary(items)
     filtered_items = _filter_items_by_category(items, selected_category_ids)
+    filtered_items = _filter_items_by_term(filtered_items, filters.term_category_id, filters.term)
     summary = _feed_summary(
         filtered_items,
         category_counts=summary.category_counts,
@@ -456,6 +457,20 @@ def _filter_items_by_category(
         item
         for item in items
         if any(hit.category_id in category_ids for hit in item.matched_terms)
+    ]
+
+
+def _filter_items_by_term(
+    items: list[CatalystFeedItem],
+    category_id: str | None,
+    term: str | None,
+) -> list[CatalystFeedItem]:
+    if not category_id or not term:
+        return items
+    return [
+        item
+        for item in items
+        if any(hit.category_id == category_id and hit.term == term for hit in item.matched_terms)
     ]
 
 

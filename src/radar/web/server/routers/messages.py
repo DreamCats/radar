@@ -170,6 +170,8 @@ def catalyst_feed(
     group_name: str | None = Query(default=None),
     category_ids: str | None = Query(default=None),
     keyword: str | None = Query(default=None),
+    term_category_id: str | None = Query(default=None),
+    term: str | None = Query(default=None),
     dedupe: bool = Query(default=True),
     cursor_time: datetime | None = Query(default=None),
     cursor_key: str | None = Query(default=None),
@@ -178,6 +180,8 @@ def catalyst_feed(
 ) -> CatalystFeedPage:
     if bool(cursor_time) != bool(cursor_key):
         raise HTTPException(status_code=400, detail="cursor_time 和 cursor_key 必须一起传")
+    if bool(term_category_id) != bool(term):
+        raise HTTPException(status_code=400, detail="term_category_id 和 term 必须一起传")
 
     filters = CatalystFeedFilters(
         source=_source_value(source),
@@ -186,6 +190,8 @@ def catalyst_feed(
         end_time=end_time,
         category_ids=_split_csv(category_ids),
         keyword=keyword,
+        term_category_id=term_category_id,
+        term=term,
         dedupe=dedupe,
         cursor_time=cursor_time,
         cursor_key=cursor_key,

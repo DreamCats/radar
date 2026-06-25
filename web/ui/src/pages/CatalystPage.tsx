@@ -79,7 +79,12 @@ export function CatalystPage() {
     }
   }
 
-  async function loadFeed(append: boolean, categoryId = selectedCategory, keywordValue = keyword) {
+  async function loadFeed(
+    append: boolean,
+    categoryId = selectedCategory,
+    keywordValue = keyword,
+    termValue: string | null = selectedTerm,
+  ) {
     const start = toLocalIso(range.startDate, range.startTime);
     const end = toLocalIso(range.endDate, range.endTime);
     if (!start || !end) {
@@ -94,6 +99,8 @@ export function CatalystPage() {
         end_time: end,
         category_ids: categoryId ? [categoryId] : undefined,
         keyword: keywordValue.trim() || undefined,
+        term_category_id: categoryId && termValue ? categoryId : undefined,
+        term: termValue || undefined,
         dedupe: true,
         cursor_time: append ? page.next_cursor_time : undefined,
         cursor_key: append ? page.next_cursor_key : undefined,
@@ -155,33 +162,26 @@ export function CatalystPage() {
 
   function selectCategory(categoryId: string | null) {
     const nextCategory = selectedCategory === categoryId ? null : categoryId;
-    const nextKeyword = selectedTerm ? "" : keyword;
     setSelectedCategory(nextCategory);
     setSelectedTerm(null);
     setMobileTermSheetOpen(false);
-    if (selectedTerm) {
-      setKeyword("");
-    }
     setSelectedKey(null);
-    void loadFeed(false, nextCategory, nextKeyword);
+    void loadFeed(false, nextCategory, keyword, null);
   }
 
   function selectTerm(categoryId: string, term: string) {
     const nextTerm = selectedCategory === categoryId && selectedTerm === term ? null : term;
-    const nextKeyword = nextTerm ?? "";
     setSelectedCategory(categoryId);
     setSelectedTerm(nextTerm);
-    setKeyword(nextKeyword);
     setSelectedKey(null);
-    void loadFeed(false, categoryId, nextKeyword);
+    void loadFeed(false, categoryId, keyword, nextTerm);
   }
 
   function clearTerm(categoryId: string) {
     setSelectedCategory(categoryId);
     setSelectedTerm(null);
-    setKeyword("");
     setSelectedKey(null);
-    void loadFeed(false, categoryId, "");
+    void loadFeed(false, categoryId, keyword, null);
   }
 
   return (

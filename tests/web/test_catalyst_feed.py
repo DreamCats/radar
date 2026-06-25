@@ -87,6 +87,51 @@ def test_catalyst_feed_endpoint_hides_items_without_stock_mentions(tmp_path: Pat
     assert data["summary"]["term_counts"]["order_customer"]["在手订单"] == 1
 
 
+def test_catalyst_feed_endpoint_term_filter_keeps_base_term_counts(tmp_path: Path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    put_tushare_cache(
+        config.market_database_path,
+        "stock_basic",
+        {},
+        [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
+    )
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(
+            conn,
+            [
+                _message("m1", "2026-06-23T09:00:00", raw_content="胜宏科技 涨价 提价"),
+                _message("m2", "2026-06-23T09:01:00", raw_content="胜宏科技 提价"),
+                _message("m3", "2026-06-23T09:02:00", raw_content="胜宏科技 涨价"),
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/catalyst/feed",
+        params={
+            "start_time": "2026-06-23T08:00:00",
+            "end_time": "2026-06-23T11:00:00",
+            "category_ids": "price_supply",
+            "term_category_id": "price_supply",
+            "term": "提价",
+            "limit": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["summary"]["total_items"] == 2
+    assert data["summary"]["available_total_items"] == 3
+    assert data["summary"]["category_counts"]["price_supply"] == 3
+    assert data["summary"]["term_counts"]["price_supply"]["提价"] == 2
+    assert data["summary"]["term_counts"]["price_supply"]["涨价"] == 2
+    assert {item["message_id"] for item in data["items"]} == {"m1", "m2"}
+
+
 def test_catalyst_feed_endpoint_dedupes_same_content_from_different_senders(tmp_path: Path):
     config = _config(tmp_path, config_dir=tmp_path / "config")
     put_tushare_cache(

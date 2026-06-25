@@ -103,6 +103,8 @@ class CatalystFeedFilters(BaseModel):
     group_name: str | None = None
     category_ids: list[str] = Field(default_factory=list)
     keyword: str | None = None
+    term_category_id: str | None = None
+    term: str | None = None
     dedupe: bool = True
     cursor_time: datetime | None = None
     cursor_key: str | None = None
