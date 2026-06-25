@@ -1,5 +1,5 @@
 import { ListFilter, RefreshCw, Search, Settings2, Tags, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import {
   fetchCatalystFeed,
@@ -33,6 +33,7 @@ const emptyPage: CatalystFeedPage = {
     duplicate_messages: 0,
     available_total_items: 0,
     category_counts: {},
+    term_counts: {},
   },
 };
 
@@ -44,10 +45,12 @@ export function CatalystPage() {
   const [range, setRange] = useState<LocalRange>(() => buildPresetRange("yesterdayClose"));
   const [preset, setPreset] = useState<RangePreset>("yesterdayClose");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [keyword, setKeyword] = useState("");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [managerOpen, setManagerOpen] = useState(false);
   const [mobileCategorySheetOpen, setMobileCategorySheetOpen] = useState(false);
+  const [mobileTermSheetOpen, setMobileTermSheetOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedVersion, setFeedVersion] = useState(0);
@@ -56,6 +59,10 @@ export function CatalystPage() {
   const selectedItem = useMemo(
     () => page.items.find((item) => item.key === selectedKey) ?? null,
     [page.items, selectedKey],
+  );
+  const activeCategory = useMemo(
+    () => selectedCatalystCategory(library?.categories ?? [], selectedCategory),
+    [library?.categories, selectedCategory],
   );
 
   useEffect(() => {
@@ -72,7 +79,7 @@ export function CatalystPage() {
     }
   }
 
-  async function loadFeed(append: boolean, categoryId = selectedCategory) {
+  async function loadFeed(append: boolean, categoryId = selectedCategory, keywordValue = keyword) {
     const start = toLocalIso(range.startDate, range.startTime);
     const end = toLocalIso(range.endDate, range.endTime);
     if (!start || !end) {
@@ -86,7 +93,7 @@ export function CatalystPage() {
         start_time: start,
         end_time: end,
         category_ids: categoryId ? [categoryId] : undefined,
-        keyword: keyword.trim() || undefined,
+        keyword: keywordValue.trim() || undefined,
         dedupe: true,
         cursor_time: append ? page.next_cursor_time : undefined,
         cursor_key: append ? page.next_cursor_key : undefined,
@@ -148,9 +155,33 @@ export function CatalystPage() {
 
   function selectCategory(categoryId: string | null) {
     const nextCategory = selectedCategory === categoryId ? null : categoryId;
+    const nextKeyword = selectedTerm ? "" : keyword;
     setSelectedCategory(nextCategory);
+    setSelectedTerm(null);
+    setMobileTermSheetOpen(false);
+    if (selectedTerm) {
+      setKeyword("");
+    }
     setSelectedKey(null);
-    void loadFeed(false, nextCategory);
+    void loadFeed(false, nextCategory, nextKeyword);
+  }
+
+  function selectTerm(categoryId: string, term: string) {
+    const nextTerm = selectedCategory === categoryId && selectedTerm === term ? null : term;
+    const nextKeyword = nextTerm ?? "";
+    setSelectedCategory(categoryId);
+    setSelectedTerm(nextTerm);
+    setKeyword(nextKeyword);
+    setSelectedKey(null);
+    void loadFeed(false, categoryId, nextKeyword);
+  }
+
+  function clearTerm(categoryId: string) {
+    setSelectedCategory(categoryId);
+    setSelectedTerm(null);
+    setKeyword("");
+    setSelectedKey(null);
+    void loadFeed(false, categoryId, "");
   }
 
   return (
@@ -194,12 +225,15 @@ export function CatalystPage() {
             }}
           />
         </label>
-        <label className="field">
+        <label className="field catalyst-keyword-field">
           <span>临时关键词</span>
           <input
             value={keyword}
             placeholder="AI液冷"
-            onChange={(event) => setKeyword(event.target.value)}
+            onChange={(event) => {
+              setKeyword(event.target.value);
+              setSelectedTerm(null);
+            }}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.nativeEvent.isComposing) {
                 event.preventDefault();
@@ -212,24 +246,33 @@ export function CatalystPage() {
           <button
             className="btn btn-sm catalyst-query-button"
             type="button"
+            aria-label="查询催化词"
+            title="查询"
             disabled={loading}
             onClick={() => void loadFeed(false)}
           >
             <Search size={14} />
-            查询
+            <span className="catalyst-button-label">查询</span>
           </button>
           <button
             className={loading ? "btn btn-sm catalyst-icon-button is-spinning" : "btn btn-sm catalyst-icon-button"}
             type="button"
+            aria-label="刷新催化词"
             title="刷新"
             disabled={loading}
             onClick={() => void loadFeed(false)}
           >
             <RefreshCw size={14} />
           </button>
-          <button className="btn btn-sm catalyst-library-button" type="button" onClick={() => setManagerOpen(true)}>
+          <button
+            className="btn btn-sm catalyst-library-button"
+            type="button"
+            aria-label="打开催化词词库"
+            title="词库"
+            onClick={() => setManagerOpen(true)}
+          >
             <Settings2 size={14} />
-            词库
+            <span className="catalyst-button-label">词库</span>
           </button>
         </div>
       </div>
@@ -241,8 +284,20 @@ export function CatalystPage() {
         counts={page.summary.category_counts}
         selectedCategory={selectedCategory}
         total={page.summary.available_total_items}
-        onMore={() => setMobileCategorySheetOpen(true)}
+        onMore={() => {
+          setMobileTermSheetOpen(false);
+          setMobileCategorySheetOpen(true);
+        }}
         onSelect={selectCategory}
+      />
+      <MobileTermTrigger
+        category={activeCategory}
+        count={page.summary.total_items}
+        selectedTerm={selectedTerm}
+        onOpen={() => {
+          setMobileCategorySheetOpen(false);
+          setMobileTermSheetOpen(true);
+        }}
       />
 
       <div className="catalyst-workspace">
@@ -250,8 +305,11 @@ export function CatalystPage() {
           categories={library?.categories ?? []}
           counts={page.summary.category_counts}
           selectedCategory={selectedCategory}
+          selectedTerm={selectedTerm}
+          termCounts={page.summary.term_counts}
           total={page.summary.available_total_items}
           onSelect={selectCategory}
+          onSelectTerm={selectTerm}
         />
 
         <section
@@ -303,6 +361,24 @@ export function CatalystPage() {
           onSelect={(categoryId) => {
             selectCategory(categoryId);
             setMobileCategorySheetOpen(false);
+          }}
+        />
+      )}
+
+      {mobileTermSheetOpen && activeCategory && (
+        <MobileTermSheet
+          category={activeCategory}
+          count={page.summary.total_items}
+          selectedTerm={selectedTerm}
+          termCounts={page.summary.term_counts}
+          onClear={() => {
+            clearTerm(activeCategory.id);
+            setMobileTermSheetOpen(false);
+          }}
+          onClose={() => setMobileTermSheetOpen(false)}
+          onSelectTerm={(categoryId, term) => {
+            selectTerm(categoryId, term);
+            setMobileTermSheetOpen(false);
           }}
         />
       )}
@@ -367,8 +443,11 @@ function CategoryRail(props: {
   categories: CatalystCategory[];
   counts: Record<string, number>;
   selectedCategory: string | null;
+  selectedTerm: string | null;
+  termCounts: Record<string, Record<string, number>>;
   total: number;
   onSelect: (categoryId: string | null) => void;
+  onSelectTerm: (categoryId: string, term: string) => void;
 }) {
   return (
     <aside className="catalyst-category-panel content-panel panel">
@@ -385,18 +464,49 @@ function CategoryRail(props: {
         <em>{props.total}</em>
       </button>
       {props.categories.map((category) => (
-        <button
-          className={props.selectedCategory === category.id ? "catalyst-category active" : "catalyst-category"}
-          key={category.id}
-          type="button"
-          onClick={() => props.onSelect(category.id)}
-        >
-          <i style={{ backgroundColor: category.color }} />
-          <span>{category.name}</span>
-          <em>{props.counts[category.id] ?? 0}</em>
-        </button>
+        <Fragment key={category.id}>
+          <button
+            className={props.selectedCategory === category.id ? "catalyst-category active" : "catalyst-category"}
+            type="button"
+            onClick={() => props.onSelect(category.id)}
+          >
+            <i style={{ backgroundColor: category.color }} />
+            <span>{category.name}</span>
+            <em>{props.counts[category.id] ?? 0}</em>
+          </button>
+          {props.selectedCategory === category.id && (
+            <CategoryTermList
+              category={category}
+              selectedTerm={props.selectedTerm}
+              termCounts={props.termCounts[category.id] ?? {}}
+              onSelectTerm={props.onSelectTerm}
+            />
+          )}
+        </Fragment>
       ))}
     </aside>
+  );
+}
+
+function MobileTermTrigger(props: {
+  category: CatalystCategory | null;
+  count: number;
+  selectedTerm: string | null;
+  onOpen: () => void;
+}) {
+  const category = props.category;
+  if (!category?.terms.length) {
+    return null;
+  }
+  return (
+    <button className="catalyst-mobile-term-trigger" type="button" onClick={props.onOpen}>
+      <span>
+        <ListFilter size={14} />
+        {category.name}
+      </span>
+      <strong>{props.selectedTerm ?? "全部关键词"}</strong>
+      <em>{props.count}</em>
+    </button>
   );
 }
 
@@ -453,6 +563,111 @@ function MobileCategorySheet(props: {
       </aside>
     </div>
   );
+}
+
+function MobileTermSheet(props: {
+  category: CatalystCategory;
+  count: number;
+  selectedTerm: string | null;
+  termCounts: Record<string, Record<string, number>>;
+  onClear: () => void;
+  onClose: () => void;
+  onSelectTerm: (categoryId: string, term: string) => void;
+}) {
+  return (
+    <div
+      className="catalyst-mobile-term-sheet-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          props.onClose();
+        }
+      }}
+    >
+      <aside className="catalyst-mobile-term-sheet panel" role="dialog" aria-modal="true" aria-label={`${props.category.name}关键词`}>
+        <header>
+          <div>
+            <strong>{props.category.name}</strong>
+            <span>{props.count} 条线索</span>
+          </div>
+          <button className="mini-button" type="button" title="关闭" onClick={props.onClose}>
+            <X size={14} />
+          </button>
+        </header>
+        <div className="catalyst-mobile-term-sheet-list">
+          <button
+            className={props.selectedTerm === null ? "catalyst-category active" : "catalyst-category"}
+            type="button"
+            onClick={props.onClear}
+          >
+            <i style={{ backgroundColor: props.category.color }} />
+            <span>全部关键词</span>
+            {props.selectedTerm === null && <em>{props.count}</em>}
+          </button>
+          <CategoryTermList
+            category={props.category}
+            selectedTerm={props.selectedTerm}
+            termCounts={props.termCounts[props.category.id] ?? {}}
+            onSelectTerm={props.onSelectTerm}
+          />
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function CategoryTermList(props: {
+  category: CatalystCategory;
+  selectedTerm: string | null;
+  termCounts: Record<string, number>;
+  onSelectTerm: (categoryId: string, term: string) => void;
+}) {
+  if (!props.category.terms.length) {
+    return null;
+  }
+  return (
+    <div className="catalyst-category-terms" aria-label={`${props.category.name}关键词`}>
+      {props.category.terms.map((term) => (
+        <TermButton
+          category={props.category}
+          count={props.termCounts[term] ?? 0}
+          key={term}
+          selected={props.selectedTerm === term}
+          term={term}
+          onSelectTerm={props.onSelectTerm}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TermButton(props: {
+  category: CatalystCategory;
+  count: number;
+  selected: boolean;
+  term: string;
+  onSelectTerm: (categoryId: string, term: string) => void;
+}) {
+  return (
+    <button
+      className={props.selected ? "catalyst-category-term active" : "catalyst-category-term"}
+      style={{ "--term-color": props.category.color } as CSSProperties}
+      type="button"
+      onClick={() => props.onSelectTerm(props.category.id, props.term)}
+      title={props.term}
+    >
+      <i style={{ backgroundColor: props.category.color }} />
+      <span>{props.term}</span>
+      <em>{props.count}</em>
+    </button>
+  );
+}
+
+function selectedCatalystCategory(categories: CatalystCategory[], categoryId: string | null): CatalystCategory | null {
+  if (!categoryId) {
+    return null;
+  }
+  return categories.find((category) => category.id === categoryId) ?? null;
 }
 
 function mobileVisibleCategories(

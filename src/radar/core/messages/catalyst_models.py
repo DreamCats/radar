@@ -86,6 +86,7 @@ class CatalystFeedSummary(BaseModel):
     duplicate_messages: int
     available_total_items: int
     category_counts: dict[str, int] = Field(default_factory=dict)
+    term_counts: dict[str, dict[str, int]] = Field(default_factory=dict)
 
 
 class CatalystFeedPage(BaseModel):

@@ -84,6 +84,7 @@ def test_catalyst_feed_endpoint_hides_items_without_stock_mentions(tmp_path: Pat
     assert data["summary"]["total_items"] == 1
     assert data["summary"]["available_total_items"] == 1
     assert data["summary"]["category_counts"] == {"order_customer": 1}
+    assert data["summary"]["term_counts"]["order_customer"]["在手订单"] == 1
 
 
 def test_catalyst_feed_endpoint_dedupes_same_content_from_different_senders(tmp_path: Path):

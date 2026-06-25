@@ -181,8 +181,8 @@ def test_catalyst_feed_category_filter_keeps_global_counts_and_all_hits(sqlite_c
     upsert_messages(
         sqlite_conn,
         [
-            _message("m1", "2026-06-23T09:20:00", "东财策略", "AI 液冷 新签订单 涨价"),
-            _message("m2", "2026-06-23T10:30:00", "风险群", "客户砍单，需求不足"),
+            _message("m1", "2026-06-23T09:20:00", "东财策略", "300503 AI 液冷 新签订单 涨价"),
+            _message("m2", "2026-06-23T10:30:00", "风险群", "300476 客户砍单，需求不足"),
         ],
     )
     library = CatalystTermLibrary(
@@ -207,6 +207,11 @@ def test_catalyst_feed_category_filter_keeps_global_counts_and_all_hits(sqlite_c
     assert page.summary.total_items == 1
     assert page.summary.available_total_items == 2
     assert page.summary.category_counts == {"order": 1, "price": 1, "risk": 1}
+    assert page.summary.term_counts == {
+        "order": {"新签订单": 1},
+        "price": {"涨价": 1},
+        "risk": {"砍单": 1, "需求不足": 1},
+    }
     assert [hit.term for hit in page.items[0].matched_terms] == ["新签订单", "涨价"]
 
 

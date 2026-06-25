@@ -150,6 +150,7 @@ export type CatalystFeedSummary = {
   duplicate_messages: number;
   available_total_items: number;
   category_counts: Record<string, number>;
+  term_counts: Record<string, Record<string, number>>;
 };
 
 export type CatalystFeedPage = {

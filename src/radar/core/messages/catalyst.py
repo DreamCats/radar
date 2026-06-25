@@ -190,6 +190,7 @@ def list_catalyst_feed(
     summary = _feed_summary(
         filtered_items,
         category_counts=summary.category_counts,
+        term_counts=summary.term_counts,
         available_total_items=len(items),
     )
     page_items = _apply_cursor(filtered_items, filters)
@@ -462,19 +463,29 @@ def _feed_summary(
     items: list[CatalystFeedItem],
     *,
     category_counts: dict[str, int] | None = None,
+    term_counts: dict[str, dict[str, int]] | None = None,
     available_total_items: int | None = None,
 ) -> CatalystFeedSummary:
     summary_category_counts: dict[str, int] = dict(category_counts or {})
+    summary_term_counts: dict[str, dict[str, int]] = {
+        category_id: dict(counts)
+        for category_id, counts in (term_counts or {}).items()
+    }
     total_messages = 0
     for item in items:
         total_messages += sum(source.message_count for source in item.duplicate_sources)
         if category_counts is None:
             for category_id in {hit.category_id for hit in item.matched_terms}:
                 summary_category_counts[category_id] = summary_category_counts.get(category_id, 0) + 1
+        if term_counts is None:
+            for category_id, term in {(hit.category_id, hit.term) for hit in item.matched_terms}:
+                category_term_counts = summary_term_counts.setdefault(category_id, {})
+                category_term_counts[term] = category_term_counts.get(term, 0) + 1
     return CatalystFeedSummary(
         total_items=len(items),
         total_messages=total_messages,
         duplicate_messages=max(0, total_messages - len(items)),
         available_total_items=available_total_items if available_total_items is not None else len(items),
         category_counts=summary_category_counts,
+        term_counts=summary_term_counts,
     )
