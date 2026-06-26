@@ -7,6 +7,7 @@ from threading import Lock
 from radar.core.config import RadarConfig
 from radar.core.storage import fail_run, fail_stale_runs, finish_run, get_running_run, start_run
 from radar.core.tushare import refresh_stock_master
+from radar.web.server.job_locks import WRITE_JOB_LOCK
 from radar.web.server.schemas import DerivedJobItem, MarketStockRefreshRequest
 
 MARKET_STOCK_REFRESH_RUN_KIND = "market_stock_master_refresh"
@@ -57,18 +58,19 @@ def mark_stale_market_stock_refresh_runs(config: RadarConfig) -> int:
 
 
 def _run_market_stock_refresh_job(config: RadarConfig, request: MarketStockRefreshRequest, run_id: str) -> None:
-    try:
-        result = refresh_stock_master(config, force=request.force)
-        finish_run(
-            config.database_path,
-            run_id,
-            raw_count=result.fetched_count,
-            stored_count=result.stored_count,
-            filtered_count=result.fetched_count - result.stored_count,
-            metadata=_metadata(request) | result.metadata(),
-        )
-    except BaseException as exc:
-        fail_run(config.database_path, run_id, exc)
+    with WRITE_JOB_LOCK:
+        try:
+            result = refresh_stock_master(config, force=request.force)
+            finish_run(
+                config.database_path,
+                run_id,
+                raw_count=result.fetched_count,
+                stored_count=result.stored_count,
+                filtered_count=result.fetched_count - result.stored_count,
+                metadata=_metadata(request) | result.metadata(),
+            )
+        except BaseException as exc:
+            fail_run(config.database_path, run_id, exc)
 
 
 def _metadata(request: MarketStockRefreshRequest) -> dict[str, object]:

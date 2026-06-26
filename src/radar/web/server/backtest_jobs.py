@@ -9,6 +9,7 @@ from radar.core.models import MessageSource
 from radar.core.storage import fail_run, fail_stale_runs, get_running_run, start_run
 from radar.core.usecases.analyst_mentions import ANALYST_MENTION_EXTRACTOR_VERSION, refresh_analyst_stock_mentions
 from radar.core.usecases.analyst_mentions.refresh import ANALYST_MENTION_RUN_KIND
+from radar.web.server.job_locks import WRITE_JOB_LOCK
 from radar.web.server.schemas import AnalystBacktestRequest, DerivedJobItem
 
 STALE_AFTER = timedelta(hours=12)
@@ -60,22 +61,23 @@ def mark_stale_analyst_backtest_runs(config: RadarConfig) -> int:
 
 
 def _run_analyst_backtest_job(config: RadarConfig, request: AnalystBacktestRequest, run_id: str) -> None:
-    try:
-        refresh_analyst_stock_mentions(
-            config,
-            as_of=request.as_of,
-            lookback_days=request.lookback_days,
-            start_time=request.start_time,
-            end_time=request.end_time,
-            windows=request.windows,
-            source=_SOURCE_MAP[request.source],
-            cooldown_trade_days=request.cooldown_trade_days,
-            remote_price_fetch=request.remote_price_fetch,
-            benchmark_ts_code=request.benchmark_ts_code,
-            run_id=run_id,
-        )
-    except BaseException as exc:
-        fail_run(config.database_path, run_id, exc)
+    with WRITE_JOB_LOCK:
+        try:
+            refresh_analyst_stock_mentions(
+                config,
+                as_of=request.as_of,
+                lookback_days=request.lookback_days,
+                start_time=request.start_time,
+                end_time=request.end_time,
+                windows=request.windows,
+                source=_SOURCE_MAP[request.source],
+                cooldown_trade_days=request.cooldown_trade_days,
+                remote_price_fetch=request.remote_price_fetch,
+                benchmark_ts_code=request.benchmark_ts_code,
+                run_id=run_id,
+            )
+        except BaseException as exc:
+            fail_run(config.database_path, run_id, exc)
 
 
 def _analyst_target(request: AnalystBacktestRequest) -> str:

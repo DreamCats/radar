@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import sqlite3
 
-from radar.core.storage.db import applied_migrations, migrate_market_db, migrate_message_db
+from radar.core.storage import connect
+from radar.core.storage.db import SQLITE_BUSY_TIMEOUT_MS, applied_migrations, migrate_market_db, migrate_message_db
 
 
 def test_message_db_migrations_create_expected_tables(tmp_path):
@@ -87,6 +88,15 @@ def test_migrations_are_idempotent(tmp_path):
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
         assert count == 1
+    finally:
+        conn.close()
+
+
+def test_storage_connection_uses_wal_and_busy_timeout(tmp_path):
+    conn = connect(tmp_path / "radar.sqlite3")
+    try:
+        assert conn.execute("PRAGMA journal_mode").fetchone()[0].lower() == "wal"
+        assert conn.execute("PRAGMA busy_timeout").fetchone()[0] == SQLITE_BUSY_TIMEOUT_MS
     finally:
         conn.close()
 

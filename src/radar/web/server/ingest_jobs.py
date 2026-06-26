@@ -7,6 +7,7 @@ from threading import Lock
 from radar.core.config import RadarConfig
 from radar.core.storage import fail_run, fail_stale_runs, get_running_run, start_run
 from radar.core.usecases.ingest_wechat import ingest_range_metadata, ingest_range_target, ingest_wechat_range
+from radar.web.server.job_locks import WRITE_JOB_LOCK
 from radar.web.server.schemas import IngestWechatJobItem, IngestWechatRequest
 
 INGEST_RUN_KIND = "wechat_ingest_range"
@@ -70,16 +71,17 @@ def mark_stale_ingest_runs(config: RadarConfig) -> int:
 
 
 def _run_wechat_ingest_job(config: RadarConfig, request: IngestWechatRequest, source_key: str, run_id: str) -> None:
-    try:
-        ingest_wechat_range(
-            config,
-            source_key=source_key,
-            start_time=request.start_time,
-            end_time=request.end_time,
-            force=request.force,
-            chunk_hours=request.chunk_hours,
-            concurrency=request.concurrency,
-            run_id=run_id,
-        )
-    except Exception as exc:
-        fail_run(config.database_path, run_id, exc)
+    with WRITE_JOB_LOCK:
+        try:
+            ingest_wechat_range(
+                config,
+                source_key=source_key,
+                start_time=request.start_time,
+                end_time=request.end_time,
+                force=request.force,
+                chunk_hours=request.chunk_hours,
+                concurrency=request.concurrency,
+                run_id=run_id,
+            )
+        except Exception as exc:
+            fail_run(config.database_path, run_id, exc)

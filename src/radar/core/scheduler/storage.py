@@ -14,7 +14,7 @@ from radar.core.scheduler.defaults import (
 )
 from radar.core.scheduler.models import ScheduleRecord, ScheduleTickRecord, TickStatus
 from radar.core.scheduler.planner import compute_next_tick_at, scheduler_now
-from radar.core.storage.db import migrate_message_db
+from radar.core.storage.db import configure_sqlite_connection, migrate_message_db
 
 _SQLITE_TIMEOUT_SECONDS = 15.0
 _SQLITE_BUSY_TIMEOUT_MS = 15_000
@@ -307,7 +307,7 @@ def _connect(database: Path) -> sqlite3.Connection:
     database.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(database, timeout=_SQLITE_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
-    conn.execute(f"PRAGMA busy_timeout = {_SQLITE_BUSY_TIMEOUT_MS}")
+    configure_sqlite_connection(conn, busy_timeout_ms=_SQLITE_BUSY_TIMEOUT_MS)
     migrate_message_db(conn)
     return conn
 

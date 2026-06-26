@@ -9,6 +9,25 @@ from radar.core.storage.message_migrations import MESSAGE_MIGRATIONS
 
 Migration = tuple[str, str]
 _MIGRATION_LOCK = threading.Lock()
+SQLITE_TIMEOUT_SECONDS = 30.0
+SQLITE_BUSY_TIMEOUT_MS = 30_000
+
+
+def configure_sqlite_connection(
+    conn: sqlite3.Connection,
+    *,
+    busy_timeout_ms: int = SQLITE_BUSY_TIMEOUT_MS,
+    enable_wal: bool = True,
+) -> None:
+    conn.execute(f"PRAGMA busy_timeout = {busy_timeout_ms}")
+    if not enable_wal:
+        return
+    try:
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA synchronous = NORMAL")
+    except sqlite3.OperationalError as exc:
+        if "database is locked" not in str(exc).lower():
+            raise
 
 
 def migrate_message_db(conn: sqlite3.Connection) -> None:
@@ -25,7 +44,6 @@ def migrate_market_db(conn: sqlite3.Connection) -> None:
 
 def migrate(conn: sqlite3.Connection, migrations: Sequence[Migration]) -> None:
     with _MIGRATION_LOCK:
-        conn.execute("PRAGMA busy_timeout = 5000")
         _ensure_migration_table(conn)
         applied = applied_migrations(conn)
         for version, sql in migrations:

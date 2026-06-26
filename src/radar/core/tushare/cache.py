@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from radar.core.storage.db import migrate_market_db
+from radar.core.storage.db import SQLITE_TIMEOUT_SECONDS, configure_sqlite_connection, migrate_market_db
 
 
 DEFAULT_TTL = 86_400
@@ -113,6 +113,7 @@ def _key(api_name: str, params: dict[str, Any], fields: str | list[str] | None) 
 
 def _connect(database: Path) -> sqlite3.Connection:
     database.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(database, timeout=SQLITE_TIMEOUT_SECONDS)
+    configure_sqlite_connection(conn)
     migrate_market_db(conn)
     return conn

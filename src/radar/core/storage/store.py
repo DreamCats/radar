@@ -4,7 +4,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from radar.core.storage.db import migrate_message_db
+from radar.core.storage.db import SQLITE_TIMEOUT_SECONDS, configure_sqlite_connection, migrate_message_db
 from radar.core.models import (
     MessageSource,
     RawMessage,
@@ -15,8 +15,9 @@ def connect(database_path: Path) -> sqlite3.Connection:
     """创建 SQLite 连接；调用方负责关闭连接。"""
 
     database_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(database_path)
+    conn = sqlite3.connect(database_path, timeout=SQLITE_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
+    configure_sqlite_connection(conn)
     return conn
 
 
