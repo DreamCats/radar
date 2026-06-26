@@ -83,6 +83,7 @@ def _echo_ingest_result(result: IngestRangeResult) -> None:
     click.echo(
         f"{result.source_key}/{result.source}: "
         f"chunks={result.chunk_count} skipped={result.skipped_count} "
+        f"failed={result.failed_count} "
         f"raw={result.raw_count} filtered={result.filtered_count} stored={result.stored_count} "
         f"run_id={result.run_id}"
     )

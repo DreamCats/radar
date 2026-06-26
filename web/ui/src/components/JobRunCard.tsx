@@ -20,7 +20,9 @@ export function JobRunCard({ kind, source, run, runId, reusedExisting = false }:
   const metadata = run?.metadata ?? {};
   const title = `${kindTitle(kind)} · ${source}`;
   const progress = progressPercent(kind, run);
-  const stage = status === "failed" ? failedStage(run) : textValue(metadata.stage) || statusText(kind, status);
+  const stage = status === "failed" || status === "partial_failed"
+    ? failedStage(run)
+    : textValue(metadata.stage) || statusText(kind, status);
   const metrics = jobMetrics(kind, run);
   const detail = detailText(run);
 
@@ -57,7 +59,7 @@ export function JobRunCard({ kind, source, run, runId, reusedExisting = false }:
 }
 
 function StatusIcon({ status }: { status: RunItem["status"] | "running" }) {
-  if (status === "failed") {
+  if (status === "failed" || status === "partial_failed") {
     return <AlertCircle className="job-icon failed" size={17} />;
   }
   if (status === "succeeded" || status === "skipped") {
@@ -111,6 +113,7 @@ function ingestMetrics(run?: RunItem): string[] {
   const written = numberValue(metadata.written_chunk_count);
   const pending = numberValue(metadata.pending_chunk_count);
   const skipped = numberValue(metadata.skipped_count);
+  const failed = numberValue(metadata.failed_chunk_count);
   const raw = run?.raw_count ?? numberValue(metadata.raw_count);
   const filtered = run?.filtered_count ?? numberValue(metadata.filtered_count);
   const stored = run?.stored_count ?? numberValue(metadata.stored_count);
@@ -120,6 +123,7 @@ function ingestMetrics(run?: RunItem): string[] {
     `拉取 ${raw || numberValue(metadata.fetched_raw_count)} 条`,
     `过滤 ${filtered} 条`,
     `入库 ${stored} 条`,
+    failed ? `失败分片 ${failed}` : "",
     durationText(run),
   ].filter(Boolean);
 }
@@ -182,7 +186,7 @@ function detailText(run?: RunItem): string {
   if (!run) {
     return "任务已提交，等待服务端返回运行状态。";
   }
-  if (run.status === "failed") {
+  if (run.status === "failed" || run.status === "partial_failed") {
     return run.error_message ? `失败原因：${run.error_message}` : "任务失败。";
   }
   const metadata = run.metadata;
@@ -208,6 +212,9 @@ function statusText(kind: JobRunKind, status: RunItem["status"] | "running"): st
   }
   if (status === "skipped") {
     return kind === "ingest" ? "已覆盖" : "无需处理";
+  }
+  if (status === "partial_failed") {
+    return "部分失败";
   }
   return "失败";
 }

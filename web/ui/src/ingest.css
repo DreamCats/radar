@@ -257,7 +257,8 @@
   color: var(--color-market-up);
 }
 
-.job-status.failed {
+.job-status.failed,
+.job-status.partial_failed {
   border-color: color-mix(in srgb, var(--color-market-down) 40%, transparent);
   color: var(--color-market-down);
 }
@@ -283,7 +284,8 @@
   background: var(--color-market-up);
 }
 
-.job-card.failed .job-progress span {
+.job-card.failed .job-progress span,
+.job-card.partial_failed .job-progress span {
   background: var(--color-market-down);
 }
 

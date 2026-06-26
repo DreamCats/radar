@@ -19,6 +19,7 @@ export type IngestResultItem = {
   raw_count: number;
   filtered_count: number;
   stored_count: number;
+  failed_count: number;
   run_id?: string | null;
 };
 

@@ -34,6 +34,9 @@ class WechatSourceConfig(BaseModel):
 
 class WechatConfig(BaseModel):
     timeout: float = 30.0
+    retry_attempts: int = Field(default=3, ge=1, le=10)
+    retry_backoff_seconds: float = Field(default=1.0, ge=0.0, le=60.0)
+    retry_max_backoff_seconds: float = Field(default=8.0, ge=0.0, le=120.0)
     sources: dict[str, WechatSourceConfig] = Field(
         default_factory=lambda: {
             "personal_message": WechatSourceConfig(name="个人消息", endpoint="wechat_main"),

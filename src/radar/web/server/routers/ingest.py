@@ -45,6 +45,7 @@ def ingest_wechat(
                 raw_count=result.raw_count,
                 filtered_count=result.filtered_count,
                 stored_count=result.stored_count,
+                failed_count=result.failed_count,
                 run_id=result.run_id,
             )
         )

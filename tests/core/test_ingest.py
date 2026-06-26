@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import httpx
+
 from radar.core.config import RadarConfig, RadarSecrets, WechatEndpointSecret, WechatSecrets
 from radar.core.models import MessageSource, RawMessage
 from radar.core.storage import get_run
@@ -190,6 +192,138 @@ def test_ingest_wechat_range_skips_chunks_covered_by_larger_window(tmp_path):
     assert run.status == "skipped"
 
 
+def test_ingest_wechat_range_retries_transient_chunk_failure(tmp_path):
+    config = _config(
+        tmp_path,
+        wechat={
+            "retry_attempts": 2,
+            "retry_backoff_seconds": 0,
+            "retry_max_backoff_seconds": 0,
+        },
+    )
+    start_time = datetime.fromisoformat("2026-06-04T09:00:00")
+    end_time = datetime.fromisoformat("2026-06-04T10:00:00")
+    calls = 0
+
+    def fetcher(
+        base_url: str,
+        source: MessageSource,
+        start: datetime,
+        end: datetime,
+        timeout: float,
+    ) -> list[RawMessage]:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise httpx.ConnectTimeout("timed out")
+        return [_message("m-retry", "东财策略")]
+
+    result = ingest_wechat_range(
+        config,
+        source_key="group_message",
+        start_time=start_time,
+        end_time=end_time,
+        fetcher=fetcher,
+    )
+
+    assert calls == 2
+    assert result.failed_count == 0
+    assert result.raw_count == 1
+    assert result.stored_count == 1
+    assert result.run_id is not None
+
+    run = get_run(config.database_path, result.run_id)
+    assert run is not None
+    assert run.status == "succeeded"
+    assert run.metadata["retry_count"] == 1
+
+
+def test_ingest_wechat_range_keeps_successful_chunks_when_one_chunk_fails(tmp_path):
+    config = _config(
+        tmp_path,
+        wechat={
+            "retry_attempts": 1,
+            "retry_backoff_seconds": 0,
+            "retry_max_backoff_seconds": 0,
+        },
+    )
+    start_time = datetime.fromisoformat("2026-06-04T09:00:00")
+    end_time = datetime.fromisoformat("2026-06-04T12:00:00")
+
+    def fetcher(
+        base_url: str,
+        source: MessageSource,
+        start: datetime,
+        end: datetime,
+        timeout: float,
+    ) -> list[RawMessage]:
+        if start.hour == 10:
+            raise httpx.ConnectTimeout("timed out")
+        return [
+            _message(
+                f"m{start.hour}",
+                "东财策略",
+                message_time=f"2026-06-04T{start.hour:02d}:30:00",
+            )
+        ]
+
+    result = ingest_wechat_range(
+        config,
+        source_key="group_message",
+        start_time=start_time,
+        end_time=end_time,
+        chunk_hours=1,
+        concurrency=2,
+        fetcher=fetcher,
+    )
+
+    assert result.chunk_count == 3
+    assert result.failed_count == 1
+    assert result.raw_count == 2
+    assert result.stored_count == 2
+    assert result.run_id is not None
+
+    conn = connect(config.database_path)
+    try:
+        windows = conn.execute(
+            """
+            SELECT start_time, end_time FROM fetch_windows
+            ORDER BY start_time
+            """
+        ).fetchall()
+        assert [(row["start_time"], row["end_time"]) for row in windows] == [
+            ("2026-06-04T09:00:00", "2026-06-04T10:00:00"),
+            ("2026-06-04T11:00:00", "2026-06-04T12:00:00"),
+        ]
+        assert conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0] == 2
+    finally:
+        conn.close()
+
+    run = get_run(config.database_path, result.run_id)
+    assert run is not None
+    assert run.status == "partial_failed"
+    assert run.error_message is not None
+    assert "2026-06-04T10:00:00" in run.error_message
+    assert run.metadata["failed_chunk_count"] == 1
+    assert run.metadata["written_chunk_count"] == 2
+
+    retry = ingest_wechat_range(
+        config,
+        source_key="group_message",
+        start_time=start_time,
+        end_time=end_time,
+        chunk_hours=1,
+        concurrency=2,
+        fetcher=lambda base_url, source, start, end, timeout: [
+            _message("m10", "东财策略", message_time="2026-06-04T10:30:00")
+        ],
+    )
+
+    assert retry.skipped_count == 2
+    assert retry.failed_count == 0
+    assert retry.stored_count == 1
+
+
 def test_ingest_wechat_range_records_failed_run(tmp_path):
     config = _config(tmp_path)
     start_time = datetime.fromisoformat("2026-06-04T09:00:00")
@@ -224,12 +358,14 @@ def test_ingest_wechat_range_records_failed_run(tmp_path):
     assert row is not None
     run = get_run(config.database_path, row["run_id"])
     assert run is not None
-    assert run.error_message == "微信 API 超时"
+    assert run.error_message is not None
+    assert "微信 API 超时" in run.error_message
 
 
-def _config(tmp_path) -> RadarConfig:
+def _config(tmp_path, *, wechat: dict[str, object] | None = None) -> RadarConfig:
     return RadarConfig(
         storage={"data_dir": tmp_path, "database": tmp_path / "radar.sqlite3"},
+        wechat=wechat or {},
         filters={"group_blacklist_patterns": ["小学"]},
         secrets=RadarSecrets(
             wechat=WechatSecrets(

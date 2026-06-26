@@ -92,7 +92,7 @@ def test_ingest_wechat_invokes_core_usecase(monkeypatch, tmp_path):
     )
 
     assert result.exit_code == 0
-    assert "chunks=24 skipped=0 raw=3 filtered=1 stored=2 run_id=run-123" in result.output
+    assert "chunks=24 skipped=0 failed=0 raw=3 filtered=1 stored=2 run_id=run-123" in result.output
     assert calls == [
         {
             "database": tmp_path / "radar.sqlite3",

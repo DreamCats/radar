@@ -457,7 +457,7 @@ export type RunItem = {
   target: string;
   started_at: string;
   finished_at?: string | null;
-  status: "running" | "succeeded" | "skipped" | "failed";
+  status: "running" | "succeeded" | "skipped" | "partial_failed" | "failed";
   raw_count: number;
   stored_count: number;
   filtered_count: number;

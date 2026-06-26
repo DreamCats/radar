@@ -171,6 +171,7 @@ class IngestWechatItem(BaseModel):
     raw_count: int
     filtered_count: int
     stored_count: int
+    failed_count: int = 0
     run_id: str | None
 
 

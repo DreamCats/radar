@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from threading import Lock
+from time import sleep
 
+import httpx
 from pydantic import BaseModel
 
 from radar.core.config import RadarConfig
@@ -48,7 +51,43 @@ class IngestRangeResult(BaseModel):
     raw_count: int = 0
     filtered_count: int = 0
     stored_count: int = 0
+    failed_count: int = 0
     run_id: str | None = None
+
+
+@dataclass(frozen=True)
+class FetchChunkResult:
+    start_time: datetime
+    end_time: datetime
+    raw_messages: list[RawMessage]
+    attempts: int
+
+
+@dataclass(frozen=True)
+class ChunkWriteResult:
+    raw_count: int
+    filtered_count: int
+    stored_count: int
+
+
+@dataclass(frozen=True)
+class FetchAndWriteResult:
+    fetched_chunk_count: int
+    written_chunk_count: int
+    failed_chunks: list[dict[str, object]]
+    retry_count: int
+    raw_count: int
+    filtered_count: int
+    stored_count: int
+
+
+class ChunkFetchError(Exception):
+    def __init__(self, start_time: datetime, end_time: datetime, attempts: int, error: BaseException) -> None:
+        super().__init__(str(error))
+        self.start_time = start_time
+        self.end_time = end_time
+        self.attempts = attempts
+        self.original_error = error
 
 
 def ingest_wechat_window(
@@ -201,7 +240,7 @@ def ingest_wechat_range(
                 "written_chunk_count": 0,
             },
         )
-        fetched_chunks = _fetch_chunks(
+        chunk_result = _fetch_and_write_chunks(
             config,
             source_key,
             source,
@@ -210,23 +249,30 @@ def ingest_wechat_range(
             fetcher,
             progress=lambda metadata: update_run_progress(config.database_path, run_id, metadata=metadata),
         )
-        raw_count, filtered_count, stored_count = _write_chunks(
-            config,
-            source,
-            fetched_chunks,
-            progress=lambda metadata: update_run_progress(
-                config.database_path,
-                run_id,
-                raw_count=metadata.get("raw_count") if isinstance(metadata.get("raw_count"), int) else None,
-                stored_count=metadata.get("stored_count") if isinstance(metadata.get("stored_count"), int) else None,
-                filtered_count=metadata.get("filtered_count") if isinstance(metadata.get("filtered_count"), int) else None,
-                metadata=metadata,
-            ),
-        )
-        status = "skipped" if skipped_count == len(chunks) else "succeeded"
+        raw_count = chunk_result.raw_count
+        filtered_count = chunk_result.filtered_count
+        stored_count = chunk_result.stored_count
+        failed_chunks = chunk_result.failed_chunks
+        if failed_chunks and not (chunk_result.written_chunk_count or skipped_count):
+            error_message = _failed_chunks_summary(failed_chunks)
+            _safe_fail_run(config, run_id, RuntimeError(error_message))
+            raise RuntimeError(error_message)
+
+        if failed_chunks:
+            status = "partial_failed"
+            error_message = _failed_chunks_summary(failed_chunks)
+        else:
+            status = "skipped" if skipped_count == len(chunks) else "succeeded"
+            error_message = None
         final_metadata = run_metadata | {
             "chunk_count": len(chunks),
+            "pending_chunk_count": len(pending_chunks),
             "skipped_count": skipped_count,
+            "fetched_chunk_count": chunk_result.fetched_chunk_count,
+            "written_chunk_count": chunk_result.written_chunk_count,
+            "failed_chunk_count": len(failed_chunks),
+            "failed_chunks": failed_chunks,
+            "retry_count": chunk_result.retry_count,
         }
         finish_run(
             config.database_path,
@@ -235,6 +281,7 @@ def ingest_wechat_range(
             raw_count=raw_count,
             stored_count=stored_count,
             filtered_count=filtered_count,
+            error_message=error_message,
             metadata=final_metadata,
         )
 
@@ -248,6 +295,7 @@ def ingest_wechat_range(
             raw_count=raw_count,
             filtered_count=filtered_count,
             stored_count=stored_count,
+            failed_count=len(failed_chunks),
             run_id=run_id,
         )
     except Exception as exc:
@@ -300,7 +348,7 @@ def _pending_chunks(
         conn.close()
 
 
-def _fetch_chunks(
+def _fetch_and_write_chunks(
     config: RadarConfig,
     source_key: str,
     source: MessageSource,
@@ -308,7 +356,7 @@ def _fetch_chunks(
     concurrency: int,
     fetcher: FetchMessages | None,
     progress: ProgressUpdate | None = None,
-) -> list[tuple[datetime, datetime, list[RawMessage]]]:
+) -> FetchAndWriteResult:
     fetch_messages_fn = fetcher or _default_fetcher
     base_url = config.wechat_endpoint_url(source_key)
     max_workers = min(concurrency, len(chunks)) or 1
@@ -316,6 +364,8 @@ def _fetch_chunks(
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(
+                _fetch_chunk_with_retries,
+                config,
                 fetch_messages_fn,
                 base_url,
                 source,
@@ -325,61 +375,123 @@ def _fetch_chunks(
             ): (chunk_start, chunk_end)
             for chunk_start, chunk_end in chunks
         }
-        fetched: list[tuple[datetime, datetime, list[RawMessage]]] = []
-        fetched_raw_count = 0
-        for future in as_completed(futures):
-            chunk_start, chunk_end = futures[future]
-            raw_messages = future.result()
-            fetched.append((chunk_start, chunk_end, raw_messages))
-            fetched_raw_count += len(raw_messages)
-            if progress is not None:
-                progress(
-                    {
-                        "stage": "拉取数据中",
-                        "pending_chunk_count": len(chunks),
-                        "fetched_chunk_count": len(fetched),
-                        "fetched_raw_count": fetched_raw_count,
-                        "current_chunk_start": chunk_start.isoformat(),
-                        "current_chunk_end": chunk_end.isoformat(),
-                    }
-                )
-    return sorted(fetched, key=lambda item: item[0])
-
-
-def _write_chunks(
-    config: RadarConfig,
-    source: MessageSource,
-    chunks: list[tuple[datetime, datetime, list[RawMessage]]],
-    progress: ProgressUpdate | None = None,
-) -> tuple[int, int, int]:
-    with _WRITE_LOCK:
-        return _write_chunks_locked(config, source, chunks, progress)
-
-
-def _write_chunks_locked(
-    config: RadarConfig,
-    source: MessageSource,
-    chunks: list[tuple[datetime, datetime, list[RawMessage]]],
-    progress: ProgressUpdate | None,
-) -> tuple[int, int, int]:
-    conn = connect(config.database_path)
-    try:
-        init_db(conn)
+        fetched_chunk_count = 0
+        written_chunk_count = 0
+        failed_chunks: list[dict[str, object]] = []
+        retry_count = 0
         raw_count = 0
         filtered_count = 0
         stored_count = 0
-        for chunk_index, (chunk_start, chunk_end, raw_messages) in enumerate(chunks, start=1):
+        for future in as_completed(futures):
+            chunk_start, chunk_end = futures[future]
+            try:
+                fetched = future.result()
+            except ChunkFetchError as exc:
+                retry_count += max(0, exc.attempts - 1)
+                failed_chunks.append(_failed_chunk_metadata(exc))
+                if progress is not None:
+                    progress(
+                        {
+                            "stage": "部分分片失败",
+                            "pending_chunk_count": len(chunks),
+                            "fetched_chunk_count": fetched_chunk_count,
+                            "written_chunk_count": written_chunk_count,
+                            "failed_chunk_count": len(failed_chunks),
+                            "retry_count": retry_count,
+                            "failed_chunks": failed_chunks,
+                            "current_chunk_start": chunk_start.isoformat(),
+                            "current_chunk_end": chunk_end.isoformat(),
+                        }
+                    )
+                continue
+
+            fetched_chunk_count += 1
+            retry_count += max(0, fetched.attempts - 1)
+            written = _write_chunk(config, source, fetched.start_time, fetched.end_time, fetched.raw_messages)
+            written_chunk_count += 1
+            raw_count += written.raw_count
+            filtered_count += written.filtered_count
+            stored_count += written.stored_count
+            if progress is not None:
+                progress(
+                    {
+                        "stage": "写入数据中",
+                        "pending_chunk_count": len(chunks),
+                        "fetched_chunk_count": fetched_chunk_count,
+                        "written_chunk_count": written_chunk_count,
+                        "failed_chunk_count": len(failed_chunks),
+                        "retry_count": retry_count,
+                        "raw_count": raw_count,
+                        "filtered_count": filtered_count,
+                        "stored_count": stored_count,
+                        "current_chunk_start": fetched.start_time.isoformat(),
+                        "current_chunk_end": fetched.end_time.isoformat(),
+                    }
+                )
+    return FetchAndWriteResult(
+        fetched_chunk_count=fetched_chunk_count,
+        written_chunk_count=written_chunk_count,
+        failed_chunks=failed_chunks,
+        retry_count=retry_count,
+        raw_count=raw_count,
+        filtered_count=filtered_count,
+        stored_count=stored_count,
+    )
+
+
+def _fetch_chunk_with_retries(
+    config: RadarConfig,
+    fetch_messages_fn: FetchMessages,
+    base_url: str,
+    source: MessageSource,
+    chunk_start: datetime,
+    chunk_end: datetime,
+    timeout: float,
+) -> FetchChunkResult:
+    attempts = max(1, config.wechat.retry_attempts)
+    for attempt in range(1, attempts + 1):
+        try:
+            raw_messages = fetch_messages_fn(base_url, source, chunk_start, chunk_end, timeout)
+            return FetchChunkResult(chunk_start, chunk_end, raw_messages, attempt)
+        except Exception as exc:
+            if attempt >= attempts or not _is_retryable_fetch_error(exc):
+                raise ChunkFetchError(chunk_start, chunk_end, attempt, exc) from exc
+            delay = min(
+                config.wechat.retry_backoff_seconds * (2 ** (attempt - 1)),
+                config.wechat.retry_max_backoff_seconds,
+            )
+            if delay > 0:
+                sleep(delay)
+    raise RuntimeError("unreachable")
+
+
+def _is_retryable_fetch_error(error: BaseException) -> bool:
+    if isinstance(error, (httpx.TimeoutException, httpx.ConnectError, httpx.ReadError, httpx.RemoteProtocolError)):
+        return True
+    if isinstance(error, httpx.HTTPStatusError):
+        return error.response.status_code in {502, 503, 504}
+    return False
+
+
+def _write_chunk(
+    config: RadarConfig,
+    source: MessageSource,
+    chunk_start: datetime,
+    chunk_end: datetime,
+    raw_messages: list[RawMessage],
+) -> ChunkWriteResult:
+    with _WRITE_LOCK:
+        conn = connect(config.database_path)
+        try:
+            init_db(conn)
             # 黑名单过滤在写库前完成，避免明显非投研群进入主表和 FTS。
             messages = [
                 message
                 for message in raw_messages
                 if not is_group_blacklisted(message.group_name, config.filters.group_blacklist_patterns)
             ]
-            raw_count += len(raw_messages)
             chunk_filtered_count = len(raw_messages) - len(messages)
             chunk_stored_count = upsert_messages(conn, messages)
-            filtered_count += chunk_filtered_count
-            stored_count += chunk_stored_count
             record_fetch_window(
                 conn,
                 source=source,
@@ -390,22 +502,30 @@ def _write_chunks_locked(
                 stored_count=chunk_stored_count,
                 filtered_count=chunk_filtered_count,
             )
-            if progress is not None:
-                progress(
-                    {
-                        "stage": "写入数据中",
-                        "pending_chunk_count": len(chunks),
-                        "written_chunk_count": chunk_index,
-                        "raw_count": raw_count,
-                        "filtered_count": filtered_count,
-                        "stored_count": stored_count,
-                        "current_chunk_start": chunk_start.isoformat(),
-                        "current_chunk_end": chunk_end.isoformat(),
-                    }
-                )
-        return raw_count, filtered_count, stored_count
-    finally:
-        conn.close()
+            return ChunkWriteResult(
+                raw_count=len(raw_messages),
+                filtered_count=chunk_filtered_count,
+                stored_count=chunk_stored_count,
+            )
+        finally:
+            conn.close()
+
+
+def _failed_chunk_metadata(error: ChunkFetchError) -> dict[str, object]:
+    return {
+        "start_time": error.start_time.isoformat(),
+        "end_time": error.end_time.isoformat(),
+        "attempts": error.attempts,
+        "error": str(error.original_error)[:500],
+    }
+
+
+def _failed_chunks_summary(failed_chunks: list[dict[str, object]]) -> str:
+    first = failed_chunks[0]
+    return (
+        f"{len(failed_chunks)} 个分片拉取失败，首个失败 "
+        f"{first.get('start_time')}..{first.get('end_time')}: {first.get('error')}"
+    )
 
 
 def _run_target(source_key: str, start_time: datetime, end_time: datetime) -> str:

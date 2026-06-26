@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from radar.core.storage.db import migrate_message_db
 
-RunStatus = Literal["running", "succeeded", "skipped", "failed"]
+RunStatus = Literal["running", "succeeded", "skipped", "partial_failed", "failed"]
 _SQLITE_TIMEOUT_SECONDS = 15.0
 _SQLITE_BUSY_TIMEOUT_MS = 15_000
 
@@ -57,10 +57,11 @@ def finish_run(
     database: Path,
     run_id: str,
     *,
-    status: Literal["succeeded", "skipped"] = "succeeded",
+    status: Literal["succeeded", "skipped", "partial_failed"] = "succeeded",
     raw_count: int = 0,
     stored_count: int = 0,
     filtered_count: int = 0,
+    error_message: str | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> None:
     with _connect(database) as conn:
@@ -72,7 +73,7 @@ def finish_run(
                 raw_count = ?,
                 stored_count = ?,
                 filtered_count = ?,
-                error_message = NULL,
+                error_message = ?,
                 metadata_json = ?
             WHERE run_id = ? AND status = 'running'
             """,
@@ -82,6 +83,7 @@ def finish_run(
                 raw_count,
                 stored_count,
                 filtered_count,
+                error_message,
                 _metadata_json(metadata),
                 run_id,
             ),
