@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HOST="${RADAR_MACMINI_HOST:-myhome}"
+REMOTE_ROOT="${RADAR_MACMINI_RADAR_DIR:-~/Projects/radar}"
+TIMEOUT="${RADAR_MACMINI_TIMEOUT:-900}"
+
+remote_cmd="cd ${REMOTE_ROOT} && uv run python scripts/cleanup_legacy_db.py"
+if [[ "${1:-}" == "--no-vacuum" ]]; then
+  remote_cmd="${remote_cmd} --no-vacuum"
+fi
+
+rtk dev exec "${HOST}" --timeout "${TIMEOUT}" -- "zsh -lc '${remote_cmd}'"

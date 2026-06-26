@@ -7,7 +7,11 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from radar.core.scheduler.defaults import DEFAULT_SCHEDULES
+from radar.core.scheduler.defaults import (
+    DEFAULT_SCHEDULES,
+    RETIRED_SCHEDULE_IDS,
+    RETIRED_SCHEDULE_JOB_KEYS,
+)
 from radar.core.scheduler.models import ScheduleRecord, ScheduleTickRecord, TickStatus
 from radar.core.scheduler.planner import compute_next_tick_at, scheduler_now
 from radar.core.storage.db import migrate_message_db
@@ -20,6 +24,7 @@ def ensure_default_schedules(database: Path, *, now: datetime | None = None) -> 
     current = now or scheduler_now()
     current_text = current.isoformat()
     with _connect(database) as conn:
+        _delete_retired_schedules(conn)
         for schedule in DEFAULT_SCHEDULES:
             existing = conn.execute(
                 "SELECT 1 FROM job_schedules WHERE schedule_id = ?",
@@ -34,12 +39,13 @@ def ensure_default_schedules(database: Path, *, now: datetime | None = None) -> 
                     schedule_id, job_key, title, enabled, timezone, cadence_kind,
                     cadence_json, window_preset, request_json, catch_up_policy,
                     max_lag_minutes, next_tick_at, sort_order, created_at, updated_at
-                ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     schedule.schedule_id,
                     schedule.job_key,
                     schedule.title,
+                    1 if schedule.enabled else 0,
                     schedule.timezone,
                     schedule.cadence_kind,
                     _json(schedule.cadence),
@@ -92,7 +98,13 @@ def list_due_schedules(database: Path, *, now: datetime, limit: int = 20) -> lis
     return [_row_to_schedule(row) for row in rows]
 
 
-def set_schedule_enabled(database: Path, schedule_id: str, *, enabled: bool, now: datetime | None = None) -> ScheduleRecord | None:
+def set_schedule_enabled(
+    database: Path,
+    schedule_id: str,
+    *,
+    enabled: bool,
+    now: datetime | None = None,
+) -> ScheduleRecord | None:
     current = now or scheduler_now()
     schedule = get_schedule(database, schedule_id)
     if schedule is None:
@@ -219,7 +231,12 @@ def get_schedule_tick(database: Path, tick_id: str) -> ScheduleTickRecord | None
     return _row_to_tick(row) if row is not None else None
 
 
-def list_schedule_ticks(database: Path, *, schedule_id: str | None = None, limit: int = 50) -> list[ScheduleTickRecord]:
+def list_schedule_ticks(
+    database: Path,
+    *,
+    schedule_id: str | None = None,
+    limit: int = 50,
+) -> list[ScheduleTickRecord]:
     if limit < 1 or limit > 200:
         raise ValueError("limit 必须在 1 到 200 之间")
     ensure_default_schedules(database)
@@ -235,12 +252,43 @@ def list_schedule_ticks(database: Path, *, schedule_id: str | None = None, limit
     return [_row_to_tick(row) for row in rows]
 
 
+def _delete_retired_schedules(conn: sqlite3.Connection) -> None:
+    _delete_retired_schedules_by_ids(conn)
+    _delete_retired_schedules_by_job_keys(conn)
+
+
+def _delete_retired_schedules_by_ids(conn: sqlite3.Connection) -> None:
+    if not RETIRED_SCHEDULE_IDS:
+        return
+    placeholders = ", ".join("?" for _ in RETIRED_SCHEDULE_IDS)
+    params = list(RETIRED_SCHEDULE_IDS)
+    conn.execute(f"DELETE FROM job_schedule_ticks WHERE schedule_id IN ({placeholders})", params)
+    conn.execute(f"DELETE FROM job_schedules WHERE schedule_id IN ({placeholders})", params)
+
+
+def _delete_retired_schedules_by_job_keys(conn: sqlite3.Connection) -> None:
+    if not RETIRED_SCHEDULE_JOB_KEYS:
+        return
+    placeholders = ", ".join("?" for _ in RETIRED_SCHEDULE_JOB_KEYS)
+    params = list(RETIRED_SCHEDULE_JOB_KEYS)
+    conn.execute(
+        f"""
+        DELETE FROM job_schedule_ticks
+        WHERE schedule_id IN (
+            SELECT schedule_id FROM job_schedules WHERE job_key IN ({placeholders})
+        )
+        """,
+        params,
+    )
+    conn.execute(f"DELETE FROM job_schedules WHERE job_key IN ({placeholders})", params)
+
+
 def _default_next_tick(default_schedule, now: datetime) -> datetime:
     record = ScheduleRecord(
         schedule_id=default_schedule.schedule_id,
         job_key=default_schedule.job_key,
         title=default_schedule.title,
-        enabled=False,
+        enabled=default_schedule.enabled,
         timezone=default_schedule.timezone,
         cadence_kind=default_schedule.cadence_kind,
         cadence=default_schedule.cadence,

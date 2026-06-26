@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from radar.core.filtering import group_blacklist_sql, is_group_blacklisted
+from radar.core.wechat.filtering import group_blacklist_sql, is_group_blacklisted
 
 
 def test_is_group_blacklisted_by_name_contains():

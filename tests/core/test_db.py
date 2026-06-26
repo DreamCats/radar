@@ -17,20 +17,14 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
             "messages_fts",
             "fetch_windows",
             "runs",
-            "message_classifications",
             "analyst_stock_mentions",
             "analyst_stock_mention_windows",
             "analysts",
             "analyst_aliases",
-            "view_cache",
-            "stock_message_mentions",
-            "stock_lifecycle_candidates",
-            "stock_lifecycle_judgements",
-            "stock_mention_status",
-            "opportunity_lifecycle_digests",
             "job_schedules",
             "job_schedule_ticks",
         } <= tables
+        assert "view_cache" not in tables
         assert "strategy_snapshots" not in tables
         assert "strategy_snapshot_stocks" not in tables
         assert "strategy_snapshot_returns" not in tables
@@ -41,34 +35,18 @@ def test_message_db_migrations_create_expected_tables(tmp_path):
         assert "source_signal_snapshots" not in tables
         assert "recommendation_events" not in tables
         assert "recommendation_backtest_windows" not in tables
+        assert "message_classifications" not in tables
+        assert "stock_message_mentions" not in tables
+        assert "stock_lifecycle_candidates" not in tables
+        assert "stock_lifecycle_judgements" not in tables
+        assert "stock_mention_status" not in tables
+        assert "opportunity_lifecycle_digests" not in tables
         assert applied_migrations(conn) == {
-            "001_init_messages",
-            "002_init_runs",
-            "003_message_fingerprint_index",
-            "004_message_conversation_indexes",
-            "005_message_source_time_index",
-            "006_message_classifications",
-            "007_message_anchors",
-            "008_aggregate_refine_results",
-            "009_recommendation_backtest",
-            "010_recommendation_identity_sector",
-            "012_view_cache",
-            "013_source_radar",
-            "014_anchor_status_trade_date_key",
-            "015_drop_deprecated_source_radar",
-            "016_stock_evidence_chain",
-            "017_stock_mention_status",
-            "018_stock_lifecycle_judgement_signature",
-            "019_drop_deprecated_fermentation_strategy",
-            "020_drop_message_anchor_tables",
-            "021_drop_deprecated_aggregate_and_anchor_backtests",
-            "022_opportunity_lifecycle_digests",
-            "023_opportunity_lifecycle_digest_hash_parts",
-            "024_analyst_stock_mentions",
-            "025_analyst_stock_mention_quality_flags",
-            "026_drop_recommendation_backtest",
-            "027_job_schedules",
+            "001_message_schema",
         }
+        analyst_columns = _columns(conn, "analyst_stock_mentions")
+        assert "category" not in analyst_columns
+        assert "classification_confidence" not in analyst_columns
     finally:
         conn.close()
 
@@ -81,21 +59,20 @@ def test_market_db_migrations_are_independent(tmp_path):
         tables = _tables(conn)
         assert {
             "schema_migrations",
+            "stocks",
             "tushare_cache",
             "tushare_history",
-            "market_anchors",
-            "market_anchor_members",
-            "market_anchor_current_members",
-            "market_anchor_member_spans",
-            "theme_nodes",
-            "theme_source_links",
-            "stock_theme_memberships",
         } <= tables
+        assert "market_anchors" not in tables
+        assert "market_anchor_members" not in tables
+        assert "market_anchor_current_members" not in tables
+        assert "market_anchor_member_spans" not in tables
+        assert "theme_nodes" not in tables
+        assert "theme_source_links" not in tables
+        assert "stock_theme_memberships" not in tables
         assert applied_migrations(conn) == {
-            "001_init_market",
-            "002_market_anchors",
-            "003_market_anchor_derivatives",
-            "004_market_theme_normalization",
+            "001_market_schema",
+            "002_stock_master",
         }
         assert "messages" not in tables
     finally:
@@ -109,7 +86,7 @@ def test_migrations_are_idempotent(tmp_path):
         migrate_message_db(conn)
 
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 26
+        assert count == 1
     finally:
         conn.close()
 
@@ -119,3 +96,8 @@ def _tables(conn: sqlite3.Connection) -> set[str]:
         "SELECT name FROM sqlite_master WHERE type IN ('table', 'virtual table')"
     ).fetchall()
     return {row[0] for row in rows}
+
+
+def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    return {row[1] for row in rows}

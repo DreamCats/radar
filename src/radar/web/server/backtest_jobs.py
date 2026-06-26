@@ -70,7 +70,6 @@ def _run_analyst_backtest_job(config: RadarConfig, request: AnalystBacktestReque
             windows=request.windows,
             source=_SOURCE_MAP[request.source],
             cooldown_trade_days=request.cooldown_trade_days,
-            min_classification_confidence=request.min_classification_confidence,
             remote_price_fetch=request.remote_price_fetch,
             benchmark_ts_code=request.benchmark_ts_code,
             run_id=run_id,
@@ -88,7 +87,6 @@ def _analyst_target(request: AnalystBacktestRequest) -> str:
     return (
         f"{request.source}:{window_target}:"
         f"windows={windows}|benchmark={request.benchmark_ts_code}"
-        f"|min_conf={request.min_classification_confidence}"
         f"|cooldown={request.cooldown_trade_days}"
         f"|remote_prices={request.remote_price_fetch}"
         f"|extractor={ANALYST_MENTION_EXTRACTOR_VERSION}"

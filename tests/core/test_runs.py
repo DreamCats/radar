@@ -59,7 +59,7 @@ def test_update_run_progress_merges_running_metadata(tmp_path):
     db = tmp_path / "radar.sqlite3"
     run_id = start_run(
         db,
-        kind="message_classify_range",
+        kind="wechat_ingest_range",
         target="all:window",
         metadata={"source": "all"},
     )
@@ -69,7 +69,7 @@ def test_update_run_progress_merges_running_metadata(tmp_path):
         run_id,
         raw_count=12,
         stored_count=10,
-        metadata={"stage": "LLM 分类中", "scanned_count": 12},
+        metadata={"stage": "拉取中", "scanned_count": 12},
     )
 
     record = get_run(db, run_id)
@@ -79,7 +79,7 @@ def test_update_run_progress_merges_running_metadata(tmp_path):
     assert record.raw_count == 12
     assert record.stored_count == 10
     assert record.metadata["source"] == "all"
-    assert record.metadata["stage"] == "LLM 分类中"
+    assert record.metadata["stage"] == "拉取中"
     assert record.metadata["scanned_count"] == 12
     assert "progress_updated_at" in record.metadata
 

@@ -1,7 +1,4 @@
 import type {
-  ClassifyJobItem,
-  ClassifyRequest,
-  AnchorRequest,
   AnalystBacktestRequest,
   AnalystBacktestEvidence,
   AnalystBacktestMessageEvidence,
@@ -21,34 +18,21 @@ import type {
   CatalystFeedPage,
   CatalystFeedQuery,
   CatalystTermLibrary,
-  DashboardSummary,
   DerivedJobItem,
   IngestJobItem,
   IngestRequest,
   IngestResultItem,
   IndustryChainDetail,
   IndustryChainList,
-  LifecycleDigestJobRequest,
-  LifecycleDigestPreview,
   MessageConversationPage,
   MessageConversationQuery,
   MessageGroupItem,
-  MessageOverview,
   MessagePage,
   MessageQuery,
-  OrganizeClassificationPage,
-  OrganizeClassificationQuery,
-  OrganizeEvidencePage,
-  OrganizeEvidenceQuery,
+  MarketStockRefreshRequest,
   RunItem,
   ScheduleItem,
   ScheduleTickItem,
-  StockEvidenceChainDashboard,
-  StockEvidenceChainSnapshotList,
-  StockEvidenceFinancials,
-  StockEvidenceChainJobRequest,
-  StockEvidenceStockChart,
-  StockEvidenceStockChartQuery,
 } from "../types";
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
@@ -82,10 +66,6 @@ export async function fetchMessages(query: MessageQuery): Promise<MessagePage> {
   return getJson(`/api/messages?${params(query)}`);
 }
 
-export async function fetchDashboardSummary(): Promise<DashboardSummary> {
-  return getJson("/api/dashboard/summary");
-}
-
 export async function fetchConversations(query: MessageConversationQuery): Promise<MessageConversationPage> {
   return getJson(`/api/conversations?${params(query)}`);
 }
@@ -93,12 +73,6 @@ export async function fetchConversations(query: MessageConversationQuery): Promi
 export async function fetchMessageGroups(query: { source?: string; keyword?: string; limit?: number } = {}): Promise<MessageGroupItem[]> {
   const data = await getJson<{ items: MessageGroupItem[] }>(`/api/message-groups?${params(query)}`);
   return data.items;
-}
-
-export async function fetchMessageOverview(
-  query: { days?: number; top_limit?: number } = {},
-): Promise<MessageOverview> {
-  return getJson(`/api/messages/overview?${params(query)}`);
 }
 
 export async function fetchCatalystTerms(): Promise<CatalystTermLibrary> {
@@ -334,16 +308,6 @@ function parseChatStreamEvent(rawEvent: string): ChatStreamEvent {
   }
 }
 
-export async function fetchOrganizeClassifications(
-  query: OrganizeClassificationQuery = {},
-): Promise<OrganizeClassificationPage> {
-  return getJson(`/api/organize/classifications?${params(query)}`);
-}
-
-export async function fetchOrganizeEvidence(query: OrganizeEvidenceQuery): Promise<OrganizeEvidencePage> {
-  return getJson(`/api/organize/classifications/evidence?${params(query)}`);
-}
-
 export async function fetchRuns(query: { kind?: string; kinds?: string[]; status?: RunItem["status"]; limit?: number } = {}): Promise<RunItem[]> {
   const data = await getJson<{ items: RunItem[] }>(`/api/runs?${params({ limit: 20, ...query })}`);
   return data.items;
@@ -435,26 +399,6 @@ export async function fetchAnalystBacktestMessageEvidence(query: {
   return getJson(`/api/analyst/backtest/message-evidence?${params(query)}`);
 }
 
-export async function fetchStockEvidenceChainLatest(query: { limit?: number; as_of_time?: string } = {}): Promise<StockEvidenceChainDashboard> {
-  return getJson(`/api/strategy/evidence-chain/latest?${params(query)}`);
-}
-
-export async function fetchStockEvidenceChainSnapshots(query: { limit?: number } = {}): Promise<StockEvidenceChainSnapshotList> {
-  return getJson(`/api/strategy/evidence-chain/snapshots?${params(query)}`);
-}
-
-export async function fetchStockEvidenceStockChart(tsCode: string, query: StockEvidenceStockChartQuery = {}): Promise<StockEvidenceStockChart> {
-  return getJson(`/api/strategy/stocks/${encodeURIComponent(tsCode)}/chart?${params(query)}`);
-}
-
-export async function fetchStockEvidenceFinancials(tsCode: string, query: { years?: number } = {}): Promise<StockEvidenceFinancials> {
-  return getJson(`/api/strategy/stocks/${encodeURIComponent(tsCode)}/financials?${params(query)}`);
-}
-
-export async function fetchLifecycleDigestPreview(query: { limit?: number; force?: boolean } = {}): Promise<LifecycleDigestPreview> {
-  return getJson(`/api/strategy/lifecycle-digests/preview?${params(query)}`);
-}
-
 export async function ingestWechat(request: IngestRequest): Promise<IngestResultItem[]> {
   const response = await apiFetch("/api/ingest/wechat", {
     method: "POST",
@@ -481,32 +425,6 @@ export async function startIngestWechatJob(request: IngestRequest): Promise<Inge
   return data.items;
 }
 
-export async function startClassifyMessagesJob(request: ClassifyRequest): Promise<ClassifyJobItem[]> {
-  const response = await apiFetch("/api/classify/messages/jobs", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    throw new Error(await errorText(response));
-  }
-  const data = (await response.json()) as { items: ClassifyJobItem[] };
-  return data.items;
-}
-
-export async function startMarketAnchorUpdateJob(request: AnchorRequest): Promise<DerivedJobItem[]> {
-  const response = await apiFetch("/api/market/anchors/jobs", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    throw new Error(await errorText(response));
-  }
-  const data = (await response.json()) as { items: DerivedJobItem[] };
-  return data.items;
-}
-
 export async function startAnalystBacktestJob(request: AnalystBacktestRequest): Promise<DerivedJobItem[]> {
   const response = await apiFetch("/api/analyst/backtest/jobs", {
     method: "POST",
@@ -520,21 +438,8 @@ export async function startAnalystBacktestJob(request: AnalystBacktestRequest): 
   return data.items;
 }
 
-export async function startStockEvidenceChainJob(request: StockEvidenceChainJobRequest): Promise<DerivedJobItem[]> {
-  const response = await apiFetch("/api/strategy/evidence-chain/jobs", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    throw new Error(await errorText(response));
-  }
-  const data = (await response.json()) as { items: DerivedJobItem[] };
-  return data.items;
-}
-
-export async function startLifecycleDigestJob(request: LifecycleDigestJobRequest): Promise<DerivedJobItem[]> {
-  const response = await apiFetch("/api/strategy/lifecycle-digests/jobs", {
+export async function startMarketStockRefreshJob(request: MarketStockRefreshRequest): Promise<DerivedJobItem[]> {
+  const response = await apiFetch("/api/market/stocks/refresh/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

@@ -169,7 +169,6 @@ class WebSecrets(BaseModel):
 
 
 class FeatureFlags(BaseModel):
-    llm_classify: bool = False
     signal_radar: bool = False
     tushare_market: bool = False
     delivery: bool = False

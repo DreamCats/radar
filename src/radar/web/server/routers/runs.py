@@ -5,11 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from radar.core.config import RadarConfig
 from radar.core.storage import RunRecord, RunStatus, cancel_run, list_runs
 from radar.web.server.backtest_jobs import mark_stale_analyst_backtest_runs
-from radar.web.server.classify_jobs import mark_stale_classify_runs
 from radar.web.server.deps import get_config
 from radar.web.server.ingest_jobs import mark_stale_ingest_runs
-from radar.web.server.market_anchor_jobs import mark_stale_market_anchor_runs
-from radar.web.server.strategy_jobs import mark_stale_stock_evidence_chain_runs
 from radar.web.server.schemas import RunListResponse
 
 router = APIRouter(prefix="/api", tags=["runs"])
@@ -24,10 +21,7 @@ def runs(
     config: RadarConfig = Depends(get_config),
 ) -> RunListResponse:
     mark_stale_ingest_runs(config)
-    mark_stale_classify_runs(config)
-    mark_stale_market_anchor_runs(config)
     mark_stale_analyst_backtest_runs(config)
-    mark_stale_stock_evidence_chain_runs(config)
     kind_list = [item.strip() for item in kinds.split(",") if item.strip()] if kinds else None
     return RunListResponse(items=list_runs(config.database_path, kind=kind, kinds=kind_list, status=status, limit=limit))
 

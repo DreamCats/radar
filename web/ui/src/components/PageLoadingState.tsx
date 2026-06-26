@@ -1,7 +1,6 @@
-type LoadingVariant = "dashboard" | "strategy" | "organize";
+type LoadingVariant = "strategy";
 
 export function PageLoadingState(props: { label: string; variant: LoadingVariant }) {
-  const chartCount = props.variant === "dashboard" ? 7 : props.variant === "organize" ? 4 : 3;
   return (
     <div className={`page-loading-state page-loading-${props.variant}`} role="status" aria-live="polite">
       <LoadingPill label={props.label} />
@@ -15,7 +14,7 @@ export function PageLoadingState(props: { label: string; variant: LoadingVariant
         ))}
       </div>
       <div className="page-loading-panels" aria-hidden="true">
-        {Array.from({ length: chartCount }).map((_, index) => (
+        {Array.from({ length: 3 }).map((_, index) => (
           <span className="page-loading-panel" key={index}>
             <i />
             <b />

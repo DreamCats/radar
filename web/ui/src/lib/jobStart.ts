@@ -1,10 +1,7 @@
 import {
   startAnalystBacktestJob,
-  startClassifyMessagesJob,
   startIngestWechatJob,
-  startLifecycleDigestJob,
-  startMarketAnchorUpdateJob,
-  startStockEvidenceChainJob,
+  startMarketStockRefreshJob,
 } from "../api/radarApi";
 import type { IngestSource } from "../types";
 import { sourceLabel, type JobTemplateKey, type TrackedJob } from "./jobRuns";
@@ -14,7 +11,6 @@ type StartJobParams = {
   kind: JobTemplateKey;
   source: IngestSource;
   force: boolean;
-  tradeDate: string;
   range: LocalRange;
   window: {
     start_time: string;
@@ -23,7 +19,7 @@ type StartJobParams = {
 };
 
 export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
-  const { kind, source, force, tradeDate, range, window } = params;
+  const { kind, source, force, range, window } = params;
   if (kind === "ingest") {
     const items = await startIngestWechatJob({
       source,
@@ -35,28 +31,6 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
     });
     return items.map((item) => ({ kind, source: item.source, run_id: item.run_id, reused_existing: item.reused_existing }));
   }
-  if (kind === "classify") {
-    const items = await startClassifyMessagesJob({
-      source,
-      start_time: window.start_time,
-      end_time: window.end_time,
-      force,
-      chunk_hours: 1,
-      limit: 500,
-      batch_size: 16,
-      max_concurrency: 10,
-      low_confidence_threshold: 0.65,
-    });
-    return items.map((item) => ({ kind, source: item.source, run_id: item.run_id, reused_existing: item.reused_existing }));
-  }
-  if (kind === "anchor") {
-    const items = await startMarketAnchorUpdateJob({
-      trade_date: tradeDate,
-      force,
-      min_anchor_count: 100,
-    });
-    return derivedJobs(kind, "市场词库", items);
-  }
   if (kind === "analystBacktest") {
     const items = await startAnalystBacktestJob({
       as_of: range.endDate,
@@ -66,31 +40,14 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
       windows: [1, 3, 5],
       source,
       cooldown_trade_days: 5,
-      min_classification_confidence: 0.7,
       benchmark_ts_code: "000300.SH",
       remote_price_fetch: true,
     });
     return derivedJobs(kind, sourceLabel(source), items);
   }
-  if (kind === "stockEvidenceChain") {
-    const items = await startStockEvidenceChainJob({
-      start_time: window.start_time,
-      end_time: window.end_time,
-      evidence_days: 40,
-      limit: 120,
-      run_llm: true,
-      llm_workers: 16,
-      force_llm: force,
-    });
-    return derivedJobs(kind, "全库证据", items);
-  }
-  if (kind === "lifecycleDigest") {
-    const items = await startLifecycleDigestJob({
-      limit: 120,
-      force,
-      llm_workers: 16,
-    });
-    return derivedJobs(kind, "机会摘要", items);
+  if (kind === "marketStockRefresh") {
+    const items = await startMarketStockRefreshJob({ force: true });
+    return derivedJobs(kind, "A股股票主数据", items);
   }
   throw new Error(`未知作业类型：${kind}`);
 }

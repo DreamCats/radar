@@ -17,6 +17,7 @@ class DefaultSchedule:
     catch_up_policy: str = "latest_only"
     max_lag_minutes: int = 60
     sort_order: int = 0
+    enabled: bool = False
 
 
 DEFAULT_SCHEDULES: tuple[DefaultSchedule, ...] = (
@@ -31,34 +32,6 @@ DEFAULT_SCHEDULES: tuple[DefaultSchedule, ...] = (
         sort_order=10,
     ),
     DefaultSchedule(
-        schedule_id="message-classify-incremental",
-        job_key="message_classify",
-        title="消息分类增量",
-        cadence_kind="interval",
-        cadence={"minutes": 30, "offset_minutes": 10},
-        window_preset="yesterday_1500_to_now",
-        request={
-            "source": "all",
-            "force": False,
-            "chunk_hours": 1,
-            "limit": 500,
-            "batch_size": 16,
-            "max_concurrency": 10,
-            "low_confidence_threshold": 0.65,
-        },
-        sort_order=20,
-    ),
-    DefaultSchedule(
-        schedule_id="market-anchor-close",
-        job_key="market_anchor_update",
-        title="Anchor 更新",
-        cadence_kind="daily",
-        cadence={"time": "15:20", "weekdays_only": True},
-        request={"force": False, "min_anchor_count": 100},
-        max_lag_minutes=180,
-        sort_order=30,
-    ),
-    DefaultSchedule(
         schedule_id="analyst-backtest-close",
         job_key="analyst_backtest",
         title="分析师回测",
@@ -69,11 +42,31 @@ DEFAULT_SCHEDULES: tuple[DefaultSchedule, ...] = (
             "windows": [1, 3, 5],
             "source": "all",
             "cooldown_trade_days": 5,
-            "min_classification_confidence": 0.7,
             "benchmark_ts_code": "000300.SH",
             "remote_price_fetch": True,
         },
         max_lag_minutes=180,
-        sort_order=40,
+        sort_order=20,
     ),
+    DefaultSchedule(
+        schedule_id="market-stock-refresh-morning",
+        job_key="market_stock_refresh",
+        title="市场主数据全量刷新",
+        enabled=True,
+        cadence_kind="daily",
+        cadence={"time": "08:30", "weekdays_only": False},
+        request={"force": True},
+        max_lag_minutes=180,
+        sort_order=15,
+    ),
+)
+
+RETIRED_SCHEDULE_IDS: tuple[str, ...] = (
+    "message-classify-incremental",
+    "market-anchor-close",
+)
+
+RETIRED_SCHEDULE_JOB_KEYS: tuple[str, ...] = (
+    "message_classify",
+    "market_anchor_update",
 )

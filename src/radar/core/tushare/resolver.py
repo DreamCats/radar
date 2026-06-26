@@ -4,8 +4,9 @@ import re
 from typing import Any
 
 from radar.core.config import RadarConfig
-from radar.core.tushare.client import call
+from radar.core.storage import connect, migrate_market_db
 from radar.core.tushare.exceptions import TushareApiError
+from radar.core.tushare.stock_master import load_stock_master
 
 
 _TS_CODE_RE = re.compile(r"^\d{6}\.(SH|SZ|BJ)$", re.IGNORECASE)
@@ -36,14 +37,12 @@ def _stock_candidates(rows: tuple[dict[str, Any], ...], value: str) -> list[dict
 
 
 def _all_stocks(config: RadarConfig) -> tuple[dict[str, Any], ...]:
-    rows: list[dict[str, Any]] = []
-    for status in ("L", "D", "P"):
-        rows.extend(
-            call(
-                config,
-                "stock_basic",
-                params={"list_status": status},
-                fields="ts_code,symbol,name",
-            )
-        )
+    conn = connect(config.market_database_path)
+    try:
+        migrate_market_db(conn)
+        rows = load_stock_master(conn, list_status=None)
+    finally:
+        conn.close()
+    if not rows:
+        raise TushareApiError("市场股票主数据为空，请先刷新市场主数据")
     return tuple(rows)

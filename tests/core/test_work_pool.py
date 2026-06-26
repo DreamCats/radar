@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 import time
 
-from radar.core.work_pool import run_resource_work_pool, run_work_pool
+from radar.core.runtime.work_pool import run_resource_work_pool, run_work_pool
 
 
 def test_run_work_pool_limits_concurrency():

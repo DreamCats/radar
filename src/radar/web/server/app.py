@@ -13,17 +13,13 @@ from radar.web.server.routers import (
     auth,
     backtest,
     chat,
-    classify,
-    dashboard,
     health,
     ingest,
     industry_chains,
     market,
     messages,
-    organize,
     runs,
     schedules,
-    strategy,
 )
 from radar.web.server.scheduler import SchedulerLoop
 
@@ -49,17 +45,13 @@ def create_app(config: RadarConfig | None = None) -> FastAPI:
     app.include_router(auth.router)
     app.include_router(health.router)
     app.include_router(chat.router)
-    app.include_router(dashboard.router)
     app.include_router(messages.router)
     app.include_router(runs.router)
     app.include_router(schedules.router)
     app.include_router(ingest.router)
-    app.include_router(classify.router)
-    app.include_router(industry_chains.router)
     app.include_router(market.router)
+    app.include_router(industry_chains.router)
     app.include_router(backtest.router)
-    app.include_router(organize.router)
-    app.include_router(strategy.router)
 
     @app.get("/")
     def root() -> dict[str, str]:

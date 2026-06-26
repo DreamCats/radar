@@ -5,13 +5,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from radar.core.dashboard import DashboardSummaryPayload
-from radar.core.models import ClassificationRetryMode, MessageSource, RawMessage
-from radar.core.organize import (
-    OrganizeClassificationCluster,
-    OrganizeClassificationSummary,
-    OrganizeEvidenceMessage,
-)
+from radar.core.models import MessageSource, RawMessage
 from radar.core.scheduler import ScheduleRecord, ScheduleTickRecord
 from radar.core.storage import RunRecord
 from radar.core.usecases.analyst_mentions import (
@@ -19,13 +13,6 @@ from radar.core.usecases.analyst_mentions import (
     AnalystMentionEvidenceResult,
     AnalystMentionMessageEvidenceResult,
     AnalystMentionSummaryResult,
-)
-from radar.core.usecases.stock_evidence_chain import (
-    LifecycleDigestPreview,
-    StockEvidenceChainDashboard,
-    StockEvidenceChainSnapshotList,
-    StockEvidenceFinancials,
-    StockEvidenceStockChart,
 )
 
 SourceKey = Literal["personal_message", "group_message"]
@@ -167,10 +154,6 @@ class ScheduleRunNowResponse(BaseModel):
     item: ScheduleTickRecord
 
 
-class DashboardSummaryResponse(DashboardSummaryPayload):
-    runs: list[RunRecord]
-
-
 class IngestWechatRequest(BaseModel):
     source: Literal["all", "personal_message", "group_message"] = "all"
     start_time: datetime
@@ -207,39 +190,6 @@ class IngestWechatJobResponse(BaseModel):
     items: list[IngestWechatJobItem]
 
 
-class ClassifyMessagesRequest(BaseModel):
-    source: JobSourceKey = "all"
-    start_time: datetime
-    end_time: datetime
-    force: bool = False
-    chunk_hours: int = Field(default=1, ge=1, le=24)
-    limit: int = Field(default=500, ge=1, le=5000)
-    batch_size: int = Field(default=16, ge=1, le=64)
-    max_concurrency: int = Field(default=10, ge=1, le=32)
-    provider_name: str | None = None
-    provider_names: list[str] | None = None
-    retry: ClassificationRetryMode | None = None
-    low_confidence_threshold: float = Field(default=0.65, ge=0, le=1)
-
-
-class ClassifyMessagesJobItem(BaseModel):
-    source_key: JobSourceKey
-    source: str
-    run_id: str
-    reused_existing: bool = False
-    status: Literal["running"]
-
-
-class ClassifyMessagesJobResponse(BaseModel):
-    items: list[ClassifyMessagesJobItem]
-
-
-class MarketAnchorUpdateRequest(BaseModel):
-    trade_date: str
-    force: bool = False
-    min_anchor_count: int = Field(default=100, ge=1, le=100000)
-
-
 class AnalystBacktestRequest(BaseModel):
     as_of: date
     lookback_days: int = Field(default=40, ge=1, le=120)
@@ -248,37 +198,18 @@ class AnalystBacktestRequest(BaseModel):
     windows: list[int] = Field(default_factory=lambda: [1, 3, 5])
     source: JobSourceKey = "all"
     cooldown_trade_days: int = Field(default=5, ge=0, le=30)
-    min_classification_confidence: float = Field(default=0.7, ge=0, le=1)
     benchmark_ts_code: str = DEFAULT_BENCHMARK_TS_CODE
     remote_price_fetch: bool = True
 
 
-class StockEvidenceChainJobRequest(BaseModel):
-    start_time: datetime
-    end_time: datetime
-    evidence_days: int = Field(default=40, ge=7, le=90)
-    limit: int = Field(default=120, ge=1, le=500)
-    run_llm: bool = True
-    llm_workers: int = Field(default=16, ge=1, le=64)
-    provider_names: list[str] | None = None
-    model: str | None = None
-    force_llm: bool = False
-
-
-class LifecycleDigestJobRequest(BaseModel):
-    limit: int = Field(default=120, ge=1, le=500)
-    force: bool = False
-    llm_workers: int = Field(default=16, ge=1, le=64)
-    provider_names: list[str] | None = None
-    model: str | None = None
+class MarketStockRefreshRequest(BaseModel):
+    force: bool = True
 
 
 class DerivedJobItem(BaseModel):
     job_type: Literal[
-        "anchor",
         "analyst_backtest",
-        "stock_evidence_chain",
-        "lifecycle_digest",
+        "market_stock_refresh",
     ]
     run_id: str
     reused_existing: bool = False
@@ -298,26 +229,6 @@ class AnalystMentionEvidenceResponse(AnalystMentionEvidenceResult):
 
 
 class AnalystMentionMessageEvidenceResponse(AnalystMentionMessageEvidenceResult):
-    pass
-
-
-class StockEvidenceChainDashboardResponse(StockEvidenceChainDashboard):
-    pass
-
-
-class StockEvidenceChainSnapshotListResponse(StockEvidenceChainSnapshotList):
-    pass
-
-
-class StockEvidenceStockChartResponse(StockEvidenceStockChart):
-    pass
-
-
-class StockEvidenceFinancialsResponse(StockEvidenceFinancials):
-    pass
-
-
-class LifecycleDigestPreviewResponse(LifecycleDigestPreview):
     pass
 
 
@@ -401,14 +312,3 @@ class ChatRunStartResponse(BaseModel):
 
 class ChatActiveRunResponse(BaseModel):
     run: ChatRunResponse | None = None
-
-
-class OrganizeClassificationResponse(BaseModel):
-    summary: OrganizeClassificationSummary
-    clusters: list[OrganizeClassificationCluster]
-
-
-class OrganizeEvidencePageResponse(BaseModel):
-    items: list[OrganizeEvidenceMessage]
-    next_cursor_time: datetime | None = None
-    next_cursor_id: str | None = None

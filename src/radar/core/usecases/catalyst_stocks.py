@@ -5,13 +5,13 @@ from collections.abc import Callable
 from radar.core.config import RadarConfig
 from radar.core.messages import CatalystStockMention
 from radar.core.storage import connect, migrate_market_db
-from radar.core.usecases.stock_evidence_chain.matcher import StockMatcher, load_stocks
+from radar.core.tushare.stock_matcher import StockMatcher, load_stocks
 
 CatalystStockDetector = Callable[[str], list[CatalystStockMention]]
 
 
 def load_catalyst_stock_detector(config: RadarConfig) -> CatalystStockDetector | None:
-    """从 market stock_basic 缓存构造中文标的识别器；没有缓存时保持沉默。"""
+    """从市场主数据构造中文标的识别器；没有主数据时保持沉默。"""
 
     conn = connect(config.market_database_path)
     try:

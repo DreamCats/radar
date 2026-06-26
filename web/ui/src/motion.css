@@ -55,8 +55,7 @@
 .result-line,
 .content-panel,
 .filter-panel,
-.panel,
-.overview-chat-workspace {
+.panel {
   transition:
     background-color var(--motion-base) var(--motion-ease),
     border-color var(--motion-base) var(--motion-ease),
@@ -74,8 +73,7 @@
 @media (hover: hover) {
   .content-panel:hover,
   .filter-panel:hover,
-  .panel:hover,
-  .overview-chat-workspace:hover {
+  .panel:hover {
     border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-hairline));
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.035),

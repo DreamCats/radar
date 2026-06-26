@@ -8,8 +8,8 @@ from threading import Lock
 from pydantic import BaseModel
 
 from radar.core.config import RadarConfig
-from radar.core.fetch import fetch_messages
-from radar.core.filtering import is_group_blacklisted
+from radar.core.wechat.fetch import fetch_messages
+from radar.core.wechat.filtering import is_group_blacklisted
 from radar.core.models import MessageSource, RawMessage
 from radar.core.storage import fail_run, finish_run, start_run, update_run_progress
 from radar.core.storage import (

@@ -414,10 +414,10 @@ function traceForAgentEvent(
 function summaryForToolPhase(toolName: string): string {
   const normalizedName = toolName.toLowerCase();
   if (containsAny(normalizedName, ["strategy", "candidate", "theme", "dashboard", "策略", "候选", "主题"])) {
-    return "我会先从策略候选里拿到可比较的标的池。";
+    return "我会先用现有消息、行情和外部来源补齐可比证据。";
   }
   if (containsAny(normalizedName, ["evidence", "证据"])) {
-    return "我会补证据链详情，检查触发、验证点和暂缓条件。";
+    return "我会补原文证据、验证点和暂缓条件。";
   }
   if (containsAny(normalizedName, ["message", "conversation", "context", "overview", "消息", "会话", "上下文"])) {
     return "我会回到本地消息里补原文证据、来源密度和反证。";

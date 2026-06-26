@@ -18,7 +18,6 @@ _TOOL_LABELS = {
     "radar_resolve_stock": "股票代码解析",
     "radar_scan_catalysts": "催化词扫描",
     "radar_search_messages": "消息搜索",
-    "radar_strategy_dashboard": "策略看板",
 }
 
 
@@ -259,9 +258,9 @@ def _summary_for_tool_phase(tool_name: str) -> str:
         normalized,
         ["strategy", "candidate", "theme", "dashboard", "策略", "候选", "主题"],
     ):
-        return "我会先从策略候选里拿到可比较的标的池。"
+        return "我会先用现有消息、行情和外部来源补齐可比证据。"
     if _contains_any(normalized, ["evidence", "证据"]):
-        return "我会补证据链详情，检查触发、验证点和暂缓条件。"
+        return "我会补原文证据、验证点和暂缓条件。"
     if _contains_any(
         normalized,
         ["message", "conversation", "context", "overview", "消息", "会话", "上下文"],

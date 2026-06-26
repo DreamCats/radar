@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import {
-  Activity,
   BarChart3,
   Database,
-  Layers3,
   LogOut,
   Menu,
   MessageCircle,
   Network,
   RadioTower,
-  Search,
   Tags,
   Timer,
   UserRoundCheck,
@@ -20,42 +17,33 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/r
 import { AUTH_EXPIRED_EVENT, fetchAuthStatus, login, logout } from "./api/radarApi";
 import { AnalystPage } from "./pages/AnalystPage";
 import { CatalystPage } from "./pages/CatalystPage";
-import { DashboardPage } from "./pages/DashboardPage";
 import { IngestPage } from "./pages/IngestPage";
 import { IndustryChainPage } from "./pages/IndustryChainPage";
 import { LoginPage } from "./pages/LoginPage";
-import { OrganizePage } from "./pages/OrganizePage";
 import { SchedulePage } from "./pages/SchedulePage";
-import { StrategyPage } from "./pages/StrategyPage";
 import { WechatPage } from "./pages/WechatPage";
 import type { AuthStatus } from "./types";
 
 type TabKey =
-  | "dashboard"
   | "wechat"
   | "catalyst"
-  | "organize"
   | "industry-chain"
   | "analyst"
-  | "strategy"
   | "schedule"
   | "ingest";
 
 const NAV_ITEMS = [
-  { key: "dashboard", label: "洞察", icon: Activity },
   { key: "wechat", label: "微信", icon: MessageCircle },
   { key: "catalyst", label: "催化词", icon: Tags },
-  { key: "organize", label: "整理", icon: Layers3 },
   { key: "industry-chain", label: "产业链", icon: Network },
   { key: "analyst", label: "分析师", icon: UserRoundCheck },
-  { key: "strategy", label: "策略", icon: Search },
   { key: "schedule", label: "定时", icon: Timer },
   { key: "ingest", label: "作业", icon: Database },
-] satisfies Array<{ key: TabKey; label: string; icon: typeof Activity }>;
+] satisfies Array<{ key: TabKey; label: string; icon: typeof MessageCircle }>;
 
 const TAB_STORAGE_KEY = "radar.activeTab";
 const TAB_KEYS = new Set<TabKey>(NAV_ITEMS.map((item) => item.key));
-const VISIBLE_NAV_ITEMS = NAV_ITEMS.filter((item) => item.key !== "organize");
+const VISIBLE_NAV_ITEMS = NAV_ITEMS;
 const MOBILE_NAV_QUERY = "(max-width: 720px)";
 const MOBILE_NAV_EDGE_WIDTH = 32;
 const MOBILE_NAV_SWIPE_DISTANCE = 56;
@@ -129,7 +117,7 @@ export function App() {
   async function handleLogout() {
     const next = await logout();
     setAuth(next);
-    setTab("dashboard");
+    setTab("wechat");
   }
 
   function handleSelectTab(nextTab: TabKey) {
@@ -201,13 +189,10 @@ export function App() {
       <section className="main workspace-main">
         <div className="content">
           <div className="page-motion">
-            {tab === "dashboard" && <DashboardPage />}
             {tab === "wechat" && <WechatPage />}
             {tab === "catalyst" && <CatalystPage />}
-            {tab === "organize" && <OrganizePage />}
             {tab === "industry-chain" && <IndustryChainPage />}
             {tab === "analyst" && <AnalystPage />}
-            {tab === "strategy" && <StrategyPage />}
             {tab === "schedule" && <SchedulePage />}
             {tab === "ingest" && <IngestPage />}
           </div>
@@ -447,7 +432,7 @@ function useMobileNavSwipe(enabled: boolean, mobileNavOpen: boolean, setMobileNa
 
 function readInitialTab(): TabKey {
   if (typeof window === "undefined") {
-    return "dashboard";
+    return "wechat";
   }
   const urlTab = new URLSearchParams(window.location.search).get("tab");
   if (isTabKey(urlTab)) {
@@ -459,9 +444,9 @@ function readInitialTab(): TabKey {
       return storedTab;
     }
   } catch {
-    // Safari 隐私模式或存储异常时退回默认页，不影响看板可用性。
+    // Safari 隐私模式或存储异常时退回默认页，不影响主界面可用性。
   }
-  return "dashboard";
+  return "wechat";
 }
 
 function persistActiveTab(tab: TabKey) {

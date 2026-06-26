@@ -19,8 +19,6 @@ wechat:
     group_message:
       name: 个人群
       endpoint: wechat_main
-features:
-  llm_classify: false
 filters:
   group_blacklist_patterns:
     - 小学
@@ -54,7 +52,6 @@ wechat:
     assert "~" not in str(config.database_path)
     assert config.market_database_path == config.data_dir / "market.sqlite3"
     assert config.wechat_endpoint_url("group_message") == "https://example.invalid/wechat"
-    assert config.features.llm_classify is False
     assert config.filters.group_blacklist_patterns == ["小学", "寝室"]
     assert config.chat_skill_paths == [config_dir / "skills"]
     assert config.chat.skills.max_active == 2

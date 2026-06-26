@@ -6,19 +6,6 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 MessageSource = Literal["个人消息", "个人群"]
-MessageCategory = Literal[
-    "research",
-    "recommendation",
-    "event",
-    "industry",
-    "tool_ad",
-    "chat",
-    "unknown",
-]
-ClassificationStatus = Literal["auto", "needs_review", "confirmed", "ignored"]
-ClassifierType = Literal["rule", "llm", "manual"]
-ClassificationRetryMode = Literal["needs_review", "unknown", "low_confidence"]
-MessageAnchorType = Literal["stock", "concept", "industry", "theme"]
 
 
 class RawMessage(BaseModel):
@@ -32,23 +19,6 @@ class RawMessage(BaseModel):
     fetch_time: datetime
     fetch_window: str
     group_name: str | None = None
-
-
-class MessageClassification(BaseModel):
-    """原始消息的派生分类结果；原文仍以 messages 表为准。"""
-
-    message_id: str
-    category: MessageCategory
-    confidence: float = Field(ge=0.0, le=1.0)
-    reason: str
-    status: ClassificationStatus = "auto"
-    classifier_type: ClassifierType = "rule"
-    llm_provider: str | None = None
-    model: str | None = None
-    prompt_version: str | None = None
-    classifier_version: str = "rule-v1"
-    created_at: datetime
-    updated_at: datetime
 
 
 class WechatApiMessage(BaseModel):

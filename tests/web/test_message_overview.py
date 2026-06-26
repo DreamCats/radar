@@ -6,8 +6,8 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
-from radar.core.models import MessageClassification, RawMessage
-from radar.core.storage import connect, init_db, upsert_message_classifications, upsert_messages
+from radar.core.models import RawMessage
+from radar.core.storage import connect, init_db, upsert_messages
 from radar.web.server.app import create_app
 
 
@@ -22,14 +22,6 @@ def test_messages_overview_endpoint_does_not_return_anchor_heat(tmp_path: Path):
     try:
         init_db(conn)
         upsert_messages(conn, messages)
-        upsert_message_classifications(
-            conn,
-            [
-                _classification(messages[0], "research", 0.90, "研究观点"),
-                _classification(messages[1], "chat", 0.90, "闲聊"),
-                _classification(messages[2], "research", 0.90, "旧研究"),
-            ],
-        )
     finally:
         conn.close()
 
@@ -56,17 +48,3 @@ def _message(message_id: str, message_time: str) -> RawMessage:
         fetch_window="20260604090000-20260604110000",
     )
 
-
-def _classification(message: RawMessage, category: str, confidence: float, reason: str) -> MessageClassification:
-    now = datetime.fromisoformat("2026-06-04T12:00:00")
-    return MessageClassification(
-        message_id=message.message_id,
-        category=category,
-        confidence=confidence,
-        reason=reason,
-        status="auto",
-        classifier_type="llm",
-        classifier_version="test",
-        created_at=now,
-        updated_at=now,
-    )

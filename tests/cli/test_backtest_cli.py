@@ -25,7 +25,6 @@ def test_backtest_refresh_command_invokes_analyst_usecase(monkeypatch, tmp_path)
         windows,
         source,
         cooldown_trade_days,
-        min_classification_confidence,
         remote_price_fetch,
         benchmark_ts_code,
     ):
@@ -37,7 +36,6 @@ def test_backtest_refresh_command_invokes_analyst_usecase(monkeypatch, tmp_path)
                 "windows": windows,
                 "source": source,
                 "cooldown_trade_days": cooldown_trade_days,
-                "min_classification_confidence": min_classification_confidence,
                 "remote_price_fetch": remote_price_fetch,
                 "benchmark_ts_code": benchmark_ts_code,
             }
@@ -85,8 +83,6 @@ def test_backtest_refresh_command_invokes_analyst_usecase(monkeypatch, tmp_path)
             "000300.SH",
             "--cooldown-trade-days",
             "5",
-            "--min-classification-confidence",
-            "0.8",
             "--remote-prices",
         ],
     )
@@ -104,7 +100,6 @@ def test_backtest_refresh_command_invokes_analyst_usecase(monkeypatch, tmp_path)
             "windows": [1, 5],
             "source": "个人群",
             "cooldown_trade_days": 5,
-            "min_classification_confidence": 0.8,
             "remote_price_fetch": True,
             "benchmark_ts_code": "000300.SH",
         }
@@ -242,7 +237,6 @@ def test_backtest_evidence_command_invokes_analyst_usecase(monkeypatch, tmp_path
                     ts_code="600900.SH",
                     stock_name="长江电力",
                     message_time=datetime.fromisoformat("2026-06-08T10:00:00"),
-                    category="research",
                     evidence_snippet="继续关注长江电力的水电逻辑",
                     stock_count_in_message=8,
                     quality_flags=("broad_list",),

@@ -1,8 +1,6 @@
 export type MessageSource = "个人消息" | "个人群";
 export type SourceKey = "personal_message" | "group_message";
 export type IngestSource = "all" | SourceKey;
-export type MessageCategory = "research" | "recommendation" | "event" | "industry" | "tool_ad" | "chat" | "unknown";
-export type ClassificationRetryMode = "needs_review" | "unknown" | "low_confidence";
 
 export type MessageItem = {
   message_id: string;
@@ -42,47 +40,6 @@ export type MessageGroupItem = {
   message_count: number;
   first_seen_at: string;
   last_seen_at: string;
-};
-
-export type MessageOverviewSummary = {
-  total_count: number;
-  group_message_count: number;
-  personal_message_count: number;
-  group_count: number;
-  sender_count: number;
-  first_message_time?: string | null;
-  latest_message_time?: string | null;
-};
-
-export type MessageOverviewBucket = {
-  date: string;
-  total_count: number;
-  group_message_count: number;
-  personal_message_count: number;
-};
-
-export type MessageOverviewSource = {
-  source: MessageSource;
-  count: number;
-};
-
-export type MessageOverviewGroup = {
-  group_name: string;
-  count: number;
-  last_message_time: string;
-};
-
-export type MessageOverviewHour = {
-  hour: number;
-  count: number;
-};
-
-export type MessageOverview = {
-  summary: MessageOverviewSummary;
-  date_buckets: MessageOverviewBucket[];
-  source_breakdown: MessageOverviewSource[];
-  top_groups: MessageOverviewGroup[];
-  hourly_buckets: MessageOverviewHour[];
 };
 
 export type CatalystCategory = {
@@ -173,12 +130,6 @@ export type CatalystFeedQuery = {
   cursor_time?: string | null;
   cursor_key?: string | null;
   limit?: number;
-};
-
-export type DashboardSummary = {
-  overview: MessageOverview;
-  classifications: OrganizeClassificationPage;
-  runs: RunItem[];
 };
 
 export type IndustryChainEvidenceStatus = "supported" | "weakly_supported" | "candidate" | "unsupported";
@@ -538,7 +489,6 @@ export type AnalystBacktestEvidenceItem = {
   ts_code: string;
   stock_name: string;
   message_time: string;
-  category: string;
   evidence_snippet: string;
   stock_count_in_message: number;
   quality_flags: string[];
@@ -563,7 +513,6 @@ export type AnalystBacktestMessageEvidenceItem = {
   analyst_id: string;
   analyst_display_name: string;
   message_time: string;
-  category: string;
   raw_content: string;
   stock_count: number;
   mentioned_stock_count: number;
@@ -582,98 +531,12 @@ export type AnalystBacktestMessageEvidence = {
 };
 
 export type {
-  AnchorRequest,
   AnalystBacktestRequest,
-  ClassifyJobItem,
-  ClassifyRequest,
   DerivedJobItem,
   IngestJobItem,
   IngestRequest,
   IngestResultItem,
-  LifecycleDigestJobRequest,
+  MarketStockRefreshRequest,
   ScheduleItem,
   ScheduleTickItem,
-  StockEvidenceChainJobRequest,
 } from "./types/jobs";
-
-export type OrganizeEvidenceMessage = {
-  message_id: string;
-  source: MessageSource;
-  sender: string;
-  group_name?: string | null;
-  message_time: string;
-  raw_content: string;
-  category: MessageCategory;
-  confidence: number;
-  reason: string;
-  status: string;
-};
-
-export type OrganizeClassificationCluster = {
-  category: MessageCategory;
-  label: string;
-  count: number;
-  average_confidence: number;
-  low_confidence_count: number;
-  latest_time: string;
-  evidence: OrganizeEvidenceMessage[];
-};
-
-export type OrganizeClassificationSummary = {
-  classified_count: number;
-  total_count: number;
-  cluster_count: number;
-  low_confidence_count: number;
-  noise_count: number;
-  hidden_count: number;
-  average_confidence: number;
-};
-
-export type OrganizeClassificationPage = {
-  summary: OrganizeClassificationSummary;
-  clusters: OrganizeClassificationCluster[];
-};
-
-export type OrganizeClassificationQuery = {
-  source?: SourceKey;
-  keyword?: string;
-  start_time?: string;
-  end_time?: string;
-  evidence_limit?: number;
-  low_confidence_threshold?: number;
-};
-
-export type OrganizeEvidencePage = {
-  items: OrganizeEvidenceMessage[];
-  next_cursor_time?: string | null;
-  next_cursor_id?: string | null;
-};
-
-export type OrganizeEvidenceQuery = Omit<OrganizeClassificationQuery, "evidence_limit"> & {
-  category: MessageCategory;
-  cursor_time?: string;
-  cursor_id?: string;
-  limit?: number;
-};
-
-export type {
-  StockEvidenceChainDashboard,
-  StockEvidenceChainItem,
-  StockEvidenceChainSnapshot,
-  StockEvidenceChainSnapshotList,
-  StockEvidenceFinancialMetric,
-  StockEvidenceFinancials,
-  StockEvidenceLifecycleDigestContext,
-  StockEvidenceMarketPoint,
-  StockEvidenceMarketValidation,
-  StockEvidenceMessage,
-  StockEvidenceRecognitionContext,
-  StockEvidenceReviewContext,
-  StockEvidenceStockCandle,
-  StockEvidenceStockChart,
-  StockEvidenceStockChartQuery,
-  StockEvidenceThemeContext,
-  LifecycleDigestHashes,
-  LifecycleDigestPreview,
-  LifecycleDigestPreviewItem,
-} from "./types/strategy";

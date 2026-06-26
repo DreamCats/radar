@@ -794,27 +794,3 @@
 .chat-workspace .drawer-markdown-content a {
   color: var(--color-primary);
 }
-
-.overview-chat-workspace .markdown-content {
-  max-width: 820px;
-  color: color-mix(in srgb, var(--color-ink-muted) 92%, var(--color-ink));
-  font-size: 14px;
-}
-
-.overview-chat-workspace .markdown-content p {
-  max-width: 78ch;
-}
-
-.overview-chat-workspace .markdown-table-wrap {
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.overview-chat-workspace .markdown-content table {
-  background: transparent;
-}
-
-.overview-chat-workspace .markdown-content th {
-  background: transparent;
-}

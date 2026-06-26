@@ -151,7 +151,7 @@ def _rows(
         f"""
         SELECT
             m.mention_id, m.message_id, m.analyst_id, m.analyst_display_name,
-            m.ts_code, m.stock_name, m.symbol, m.message_time, m.category, m.evidence_snippet,
+            m.ts_code, m.stock_name, m.symbol, m.message_time, m.evidence_snippet,
             m.stock_count_in_message, m.quality_flags,
             msg.raw_content,
             w.status, w.target_trade_date, w.return_rate, w.positive, w.excess_return_rate
@@ -186,7 +186,6 @@ def _item(row: sqlite3.Row, *, window: int) -> AnalystMentionEvidenceItem:
         ts_code=ts_code,
         stock_name=stock_name,
         message_time=datetime.fromisoformat(str(row["message_time"])),
-        category=str(row["category"]),
         evidence_snippet=snippet,
         stock_count_in_message=int(row["stock_count_in_message"] or 1),
         quality_flags=_quality_flags(row["quality_flags"]),
@@ -250,7 +249,6 @@ def _message_item(
         analyst_id=str(first["analyst_id"]),
         analyst_display_name=str(first["analyst_display_name"]),
         message_time=datetime.fromisoformat(str(first["message_time"])),
-        category=str(first["category"]),
         raw_content=str(first["raw_content"] or ""),
         stock_count=len(items),
         mentioned_stock_count=max(int(row["stock_count_in_message"] or 1) for row in rows),

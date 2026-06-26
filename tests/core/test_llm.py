@@ -25,7 +25,7 @@ from radar.core.llm.openai_client import stream_chat_openai_response
 def test_resolve_provider_uses_task_routing_and_secret():
     config = _config()
 
-    name, provider = resolve_provider(config, task="classify")
+    name, provider = resolve_provider(config, task="chat")
 
     assert name == "anthropic_main"
     assert provider.protocol == "anthropic"
@@ -450,7 +450,7 @@ def _config() -> RadarConfig:
                     "model": "claude-test",
                 },
             },
-            "task_routing": {"classify": "anthropic_main"},
+            "task_routing": {"chat": "anthropic_main"},
         },
         secrets=RadarSecrets(
             llm={

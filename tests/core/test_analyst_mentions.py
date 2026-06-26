@@ -5,8 +5,8 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from radar.core.config import MarketConfig, RadarConfig, StorageConfig
-from radar.core.models import MessageClassification, RawMessage
-from radar.core.storage import connect, init_db, upsert_message_classifications, upsert_messages
+from radar.core.models import RawMessage
+from radar.core.storage import connect, init_db, upsert_messages
 from radar.core.storage.db import migrate_market_db
 from radar.core.usecases.analyst_mentions import (
     QUALITY_FLAG_BROAD_LIST,
@@ -16,8 +16,7 @@ from radar.core.usecases.analyst_mentions import (
     summarize_analyst_stock_mentions,
 )
 from radar.core.usecases.analyst_mentions.extract import extract_mentions, stock_segment
-from radar.core.usecases.stock_evidence_chain.matcher import StockMatcher
-from radar.core.usecases.stock_evidence_chain.models import Stock
+from radar.core.tushare.stock_matcher import Stock, StockMatcher
 
 
 def test_refresh_analyst_mentions_extracts_stock_mentions_and_backtests(tmp_path: Path):
@@ -33,14 +32,6 @@ def test_refresh_analyst_mentions_extracts_stock_mentions_and_backtests(tmp_path
         init_db(conn)
         migrate_market_db(market_conn)
         upsert_messages(conn, messages)
-        upsert_message_classifications(
-            conn,
-            [
-                _classification(messages[0], "research", 0.92),
-                _classification(messages[1], "research", 0.90),
-                _classification(messages[2], "chat", 0.99),
-            ],
-        )
         _seed_market(market_conn)
     finally:
         conn.close()
@@ -55,7 +46,7 @@ def test_refresh_analyst_mentions_extracts_stock_mentions_and_backtests(tmp_path
         cooldown_trade_days=5,
     )
 
-    assert result.scanned_message_count == 2
+    assert result.scanned_message_count == 3
     assert result.stock_hit_message_count == 2
     assert result.raw_mention_count == 3
     assert result.inserted_mention_count == 3
@@ -153,13 +144,6 @@ def test_extract_mentions_filters_broker_source_and_flags_broad_list(tmp_path: P
     try:
         init_db(conn)
         upsert_messages(conn, messages)
-        upsert_message_classifications(
-            conn,
-            [
-                _classification(messages[0], "research", 0.95),
-                _classification(messages[1], "research", 0.95),
-            ],
-        )
         mentions, scanned, stock_hit, broker_filtered = extract_mentions(
             conn,
             StockMatcher(_quality_test_stocks()),
@@ -167,7 +151,6 @@ def test_extract_mentions_filters_broker_source_and_flags_broad_list(tmp_path: P
             end_time=datetime.fromisoformat("2026-06-06T00:00:00"),
             source=None,
             extractor_version="test-v1",
-            min_classification_confidence=0.7,
         )
     finally:
         conn.close()
@@ -487,43 +470,16 @@ def _message(message_id: str, timestamp: str, sender: str, content: str) -> RawM
     )
 
 
-def _classification(
-    message: RawMessage,
-    category: str,
-    confidence: float,
-) -> MessageClassification:
-    now = datetime.fromisoformat("2026-06-01T12:00:00")
-    return MessageClassification(
-        message_id=message.message_id,
-        category=category,  # type: ignore[arg-type]
-        confidence=confidence,
-        reason="test",
-        status="auto",
-        classifier_type="rule",
-        classifier_version="test-v1",
-        created_at=now,
-        updated_at=now,
-    )
-
-
 def _seed_market(conn) -> None:
-    conn.execute(
+    conn.executemany(
         """
-        INSERT INTO tushare_cache (key, api_name, fetched_at, data)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO stocks (ts_code, symbol, name, list_status, updated_at)
+        VALUES (?, ?, ?, 'L', datetime('now'))
         """,
-        (
-            "stock_basic",
-            "stock_basic",
-            1,
-            json.dumps(
-                [
-                    {"ts_code": "600900.SH", "symbol": "600900", "name": "长江电力"},
-                    {"ts_code": "600886.SH", "symbol": "600886", "name": "国投电力"},
-                ],
-                ensure_ascii=False,
-            ),
-        ),
+        [
+            ("600900.SH", "600900", "长江电力"),
+            ("600886.SH", "600886", "国投电力"),
+        ],
     )
     _insert_prices(
         conn,
@@ -596,12 +552,11 @@ def _insert_rank_sample(
         """
         INSERT INTO analyst_stock_mentions (
             mention_id, message_id, source, sender, analyst_id, analyst_display_name,
-            analyst_alias_key, group_name, category, classification_confidence,
-            ts_code, stock_name, symbol, message_time, event_date, evidence_snippet,
+            analyst_alias_key, group_name, ts_code, stock_name, symbol, message_time, event_date, evidence_snippet,
             content_fingerprint, extractor_version, stock_count_in_message, quality_flags,
             is_effective, dedupe_key, dedupe_reason, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             mention_id,
@@ -612,8 +567,6 @@ def _insert_rank_sample(
             analyst_name,
             analyst_id,
             message.group_name,
-            "research",
-            0.95,
             "600900.SH",
             "长江电力",
             "600900",

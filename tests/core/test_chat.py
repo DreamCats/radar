@@ -187,7 +187,7 @@ def test_chat_run_store_cleans_terminal_runs(tmp_path):
 def test_can_continue_chat_session_detects_interrupted_turn(tmp_path):
     store = ChatSessionStore(tmp_path / "chat")
     session = store.create_session()
-    user_message = ChatMessage(message_id=new_id(), role="user", content="查证据链", created_at=now_iso())
+    user_message = ChatMessage(message_id=new_id(), role="user", content="查催化词", created_at=now_iso())
     store.append_message(session.session_id, user_message)
     store.append_event(
         ChatEvent(
@@ -331,8 +331,8 @@ def test_chat_system_prompt_layers_surface_rules():
     assert "证据完整度、跟踪优先级" in common_prompt
     assert "多次调用 radar_search_messages / radar_get_conversation_window 和 radar_search_web" in common_prompt
     assert "本地消息用于定位线索，Brave Search 用于补公开来源" in common_prompt
-    assert "radar_strategy_candidates / radar_theme_candidates" in common_prompt
-    assert "不要一次性拉取完整证据链" in common_prompt
+    assert "本地消息、催化词、行情和公开来源查证" in common_prompt
+    assert "不要补造候选池或结论" in common_prompt
     assert "输出 Markdown 时使用标准语法" in common_prompt
     assert "不要写 `##标题` 或 `-内容`" in common_prompt
     assert "短计划 -> 查证据/数据 -> 判断新增信息是否会改变结论或是否还缺关键证据" in common_prompt
@@ -342,9 +342,8 @@ def test_chat_system_prompt_layers_surface_rules():
     assert "已确认的事实" in common_prompt
     assert "基于事实的推断" in common_prompt
     assert "仍需验证的条件" in common_prompt
-    assert "radar_strategy_candidates" in stock_prompt
-    assert "radar_stock_evidence_detail" in stock_prompt
-    assert "radar_theme_candidates" in stock_prompt
+    assert "先查本地消息和催化词" in stock_prompt
+    assert "明确写缺口" in stock_prompt
     assert "radar_get_conversation_window" in wechat_prompt
     assert "页面传入的 evidence" in wechat_prompt
     assert "暂缓跟踪条件" in wechat_prompt
@@ -353,7 +352,7 @@ def test_chat_system_prompt_layers_surface_rules():
     assert "才调用 radar_scan_catalysts 扩展证据半径" in catalyst_prompt
     assert "才调用 radar_get_conversation_window" in catalyst_prompt
     assert "才调用 radar_list_catalyst_terms" in catalyst_prompt
-    assert "radar_stock_evidence_chart" in stock_prompt
+    assert "radar_stock_evidence_chart" not in stock_prompt
     assert "当前入口：个股深挖" in stock_prompt
 
 
@@ -583,10 +582,10 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     assert "radar_get_stock_moneyflow" in tool_names
     assert "radar_get_stock_technical_factors" in tool_names
     assert "radar_get_limit_pool" in tool_names
-    assert "radar_strategy_candidates" in tool_names
-    assert "radar_stock_evidence_detail" in tool_names
-    assert "radar_theme_candidates" in tool_names
-    assert "radar_stock_evidence_chart" in tool_names
+    assert "radar_strategy_candidates" not in tool_names
+    assert "radar_stock_evidence_detail" not in tool_names
+    assert "radar_theme_candidates" not in tool_names
+    assert "radar_stock_evidence_chart" not in tool_names
     assert "radar_scan_catalysts" in tool_names
     assert "radar_list_catalyst_terms" in tool_names
     assert "radar_stock_evidence_chain" not in tool_names

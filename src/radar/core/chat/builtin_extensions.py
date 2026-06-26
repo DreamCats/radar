@@ -8,7 +8,6 @@ from radar.core.chat.catalyst_tools import RadarCatalystTools
 from radar.core.chat.extensions import ExtensionContext
 from radar.core.chat.market_quote_tools import RadarMarketQuoteTools
 from radar.core.chat.shell_tool import build_shell_tool
-from radar.core.chat.stock_evidence_tools import RadarStockEvidenceTools
 from radar.core.chat.tushare_tools import RadarTushareTools
 from radar.core.chat.tools import ChatTool
 from radar.core.config import RadarConfig
@@ -50,7 +49,6 @@ class RadarBuiltinExtension:
             *RadarBraveSearchTools(self.config).tools(),
             *RadarMarketQuoteTools(self.config).tools(),
             *RadarTushareTools(self.config).tools(),
-            *RadarStockEvidenceTools(self.config).tools(),
             *RadarCatalystTools(self.config).tools(),
             self._analyst_backtest_summary_tool(),
         ):

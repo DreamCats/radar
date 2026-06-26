@@ -1,7 +1,6 @@
 type SourceKey = "personal_message" | "group_message";
 type IngestSource = "all" | SourceKey;
 type MessageSource = "个人消息" | "个人群";
-type ClassificationRetryMode = "needs_review" | "unknown" | "low_confidence";
 
 export type IngestRequest = {
   source: IngestSource;
@@ -31,33 +30,6 @@ export type IngestJobItem = {
   status: "running";
 };
 
-export type ClassifyRequest = {
-  source: IngestSource;
-  start_time: string;
-  end_time: string;
-  force: boolean;
-  chunk_hours: number;
-  limit: number;
-  batch_size: number;
-  max_concurrency: number;
-  retry?: ClassificationRetryMode;
-  low_confidence_threshold: number;
-};
-
-export type ClassifyJobItem = {
-  source_key: IngestSource;
-  source: string;
-  run_id: string;
-  reused_existing: boolean;
-  status: "running";
-};
-
-export type AnchorRequest = {
-  trade_date: string;
-  force: boolean;
-  min_anchor_count: number;
-};
-
 export type AnalystBacktestRequest = {
   as_of: string;
   lookback_days: number;
@@ -66,33 +38,16 @@ export type AnalystBacktestRequest = {
   windows: number[];
   source: IngestSource;
   cooldown_trade_days: number;
-  min_classification_confidence: number;
   benchmark_ts_code: string;
   remote_price_fetch: boolean;
 };
 
-export type StockEvidenceChainJobRequest = {
-  start_time: string;
-  end_time: string;
-  evidence_days: number;
-  limit: number;
-  run_llm: boolean;
-  llm_workers: number;
-  force_llm: boolean;
-};
-
-export type LifecycleDigestJobRequest = {
-  limit: number;
+export type MarketStockRefreshRequest = {
   force: boolean;
-  llm_workers: number;
 };
 
 export type DerivedJobItem = {
-  job_type:
-    | "anchor"
-    | "analyst_backtest"
-    | "stock_evidence_chain"
-    | "lifecycle_digest";
+  job_type: "analyst_backtest" | "market_stock_refresh";
   run_id: string;
   reused_existing: boolean;
   status: "running";

@@ -7,17 +7,14 @@ from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
 from radar.core.models import RawMessage
-from radar.core.storage import connect, init_db, upsert_messages
-from radar.core.tushare.cache import put as put_tushare_cache
+from radar.core.storage import connect, init_db, migrate_market_db, upsert_messages
 from radar.web.server.app import create_app
 
 
-def test_catalyst_feed_endpoint_detects_stock_names_from_market_cache(tmp_path: Path):
+def test_catalyst_feed_endpoint_detects_stock_names_from_market_master(tmp_path: Path):
     config = _config(tmp_path, config_dir=tmp_path / "config")
-    put_tushare_cache(
-        config.market_database_path,
-        "stock_basic",
-        {},
+    _seed_stocks(
+        config,
         [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
     )
     conn = connect(config.database_path)
@@ -46,12 +43,86 @@ def test_catalyst_feed_endpoint_detects_stock_names_from_market_cache(tmp_path: 
     assert data["items"][0]["stock_mentions"][0] == {"ts_code": "300476.SZ", "stock_name": "胜宏科技"}
 
 
+def test_catalyst_feed_endpoint_detects_three_character_stock_names(tmp_path: Path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    _seed_stocks(
+        config,
+        [{"ts_code": "002837.SZ", "symbol": "002837", "name": "英维克"}],
+    )
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(
+            conn,
+            [
+                _message(
+                    "m1",
+                    "2026-06-23T09:00:00",
+                    raw_content="绿色AI向前一步，英特尔联合英维克、嘉实多发布单相冷板液冷工质测试验证成果",
+                )
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/catalyst/feed",
+        params={
+            "start_time": "2026-06-23T08:00:00",
+            "end_time": "2026-06-23T11:00:00",
+            "category_ids": "technology_product",
+            "limit": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["items"][0]["stock_mentions"] == [{"ts_code": "002837.SZ", "stock_name": "英维克"}]
+
+
+def test_catalyst_feed_endpoint_keeps_context_required_stock_names_strict(tmp_path: Path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    _seed_stocks(
+        config,
+        [{"ts_code": "300024.SZ", "symbol": "300024", "name": "机器人"}],
+    )
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(
+            conn,
+            [
+                _message(
+                    "m1",
+                    "2026-06-23T09:00:00",
+                    raw_content="人形机器人客户验证加速，产业趋势继续扩散",
+                )
+            ],
+        )
+    finally:
+        conn.close()
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/catalyst/feed",
+        params={
+            "start_time": "2026-06-23T08:00:00",
+            "end_time": "2026-06-23T11:00:00",
+            "category_ids": "order_customer",
+            "limit": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["items"] == []
+
+
 def test_catalyst_feed_endpoint_hides_items_without_stock_mentions(tmp_path: Path):
     config = _config(tmp_path, config_dir=tmp_path / "config")
-    put_tushare_cache(
-        config.market_database_path,
-        "stock_basic",
-        {},
+    _seed_stocks(
+        config,
         [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
     )
     conn = connect(config.database_path)
@@ -89,10 +160,8 @@ def test_catalyst_feed_endpoint_hides_items_without_stock_mentions(tmp_path: Pat
 
 def test_catalyst_feed_endpoint_term_filter_keeps_base_term_counts(tmp_path: Path):
     config = _config(tmp_path, config_dir=tmp_path / "config")
-    put_tushare_cache(
-        config.market_database_path,
-        "stock_basic",
-        {},
+    _seed_stocks(
+        config,
         [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
     )
     conn = connect(config.database_path)
@@ -134,10 +203,8 @@ def test_catalyst_feed_endpoint_term_filter_keeps_base_term_counts(tmp_path: Pat
 
 def test_catalyst_feed_endpoint_dedupes_same_content_from_different_senders(tmp_path: Path):
     config = _config(tmp_path, config_dir=tmp_path / "config")
-    put_tushare_cache(
-        config.market_database_path,
-        "stock_basic",
-        {},
+    _seed_stocks(
+        config,
         [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
     )
     content = "胜宏科技在手订单充足，Q3 交付节奏加快"
@@ -178,10 +245,8 @@ def test_catalyst_feed_endpoint_dedupes_same_content_from_different_senders(tmp_
 
 def test_catalyst_feed_endpoint_dedupes_wechat_decorative_tokens(tmp_path: Path):
     config = _config(tmp_path, config_dir=tmp_path / "config")
-    put_tushare_cache(
-        config.market_database_path,
-        "stock_basic",
-        {},
+    _seed_stocks(
+        config,
         [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
     )
     conn = connect(config.database_path)
@@ -216,10 +281,8 @@ def test_catalyst_feed_endpoint_dedupes_wechat_decorative_tokens(tmp_path: Path)
 
 def test_catalyst_feed_endpoint_dedupes_long_content_with_short_followup(tmp_path: Path):
     config = _config(tmp_path, config_dir=tmp_path / "config")
-    put_tushare_cache(
-        config.market_database_path,
-        "stock_basic",
-        {},
+    _seed_stocks(
+        config,
         [{"ts_code": "300476.SZ", "symbol": "300476", "name": "胜宏科技"}],
     )
     main_content = (
@@ -267,6 +330,22 @@ def _config(tmp_path: Path, **overrides) -> RadarConfig:
         },
         **overrides,
     )
+
+
+def _seed_stocks(config: RadarConfig, rows: list[dict[str, str]]) -> None:
+    conn = connect(config.market_database_path)
+    try:
+        migrate_market_db(conn)
+        conn.executemany(
+            """
+            INSERT INTO stocks (ts_code, symbol, name, list_status, updated_at)
+            VALUES (?, ?, ?, 'L', datetime('now'))
+            """,
+            [(row["ts_code"], row["symbol"], row["name"]) for row in rows],
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def _message(

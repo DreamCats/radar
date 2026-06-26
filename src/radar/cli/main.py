@@ -5,14 +5,10 @@ from pathlib import Path
 import click
 
 from radar import __version__
-from radar.cli.anchor import anchor
 from radar.cli.backtest import backtest
-from radar.cli.classify import classify
 from radar.cli.dashboard import dashboard
 from radar.cli.ingest import ingest
-from radar.cli.market import market
 from radar.cli.query import query_messages
-from radar.cli.strategy import strategy
 from radar.cli.test import test_commands
 
 
@@ -41,11 +37,7 @@ def doctor() -> None:
 
 
 main.add_command(ingest)
-main.add_command(anchor)
 main.add_command(backtest)
-main.add_command(classify)
 main.add_command(query_messages)
 main.add_command(test_commands)
-main.add_command(market)
 main.add_command(dashboard)
-main.add_command(strategy)

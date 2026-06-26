@@ -44,11 +44,10 @@ def replace_mentions(
             """
             INSERT INTO analyst_stock_mentions (
                 mention_id, message_id, source, sender, analyst_id, analyst_display_name,
-                analyst_alias_key, group_name, category, classification_confidence,
-                ts_code, stock_name, symbol, message_time, event_date, evidence_snippet,
+                analyst_alias_key, group_name, ts_code, stock_name, symbol, message_time, event_date, evidence_snippet,
                 content_fingerprint, extractor_version, stock_count_in_message,
                 quality_flags, is_effective, dedupe_key, dedupe_reason, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [_mention_values(item) for item in mentions],
         )
@@ -99,8 +98,6 @@ def _mention_values(item: AnalystMentionEvent) -> tuple[object, ...]:
         item.analyst_display_name,
         item.analyst_alias_key,
         item.group_name,
-        item.category,
-        item.classification_confidence,
         item.ts_code,
         item.stock_name,
         item.symbol,

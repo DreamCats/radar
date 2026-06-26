@@ -241,7 +241,7 @@ export function AnalystPage() {
             ) : (
               <div className="analyst-empty">
                 <strong>暂无分析师回测结果</strong>
-                <span>先在作业页执行“分析师回测”，或检查分类和行情覆盖水位。</span>
+                <span>先在作业页执行“分析师回测”，或检查消息、股票映射和行情覆盖水位。</span>
               </div>
             )}
           </section>
@@ -346,7 +346,6 @@ function EvidenceList(props: {
           <div className="analyst-evidence-title">
             <div>
               <strong>{formatTime(row.message_time)}</strong>
-              <span>{categoryLabel(row.category)}</span>
             </div>
             <strong className={toneClass(messageMetric(row, "avg_return"))}>{pct(messageMetric(row, "avg_return"))}</strong>
           </div>
@@ -484,22 +483,6 @@ function intMessageMetric(row: AnalystBacktestMessageEvidenceItem, key: string):
 
 function previewText(value: string): string {
   return value.replace(/\s+/g, " ").trim();
-}
-
-function categoryLabel(value: string): string {
-  if (value === "recommendation") {
-    return "推荐";
-  }
-  if (value === "research") {
-    return "研究";
-  }
-  if (value === "event") {
-    return "事件";
-  }
-  if (value === "industry") {
-    return "行业";
-  }
-  return value || "未分类";
 }
 
 function pct(value: number | null | undefined, digits = 2): string {

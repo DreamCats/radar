@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 import sqlite3
 from datetime import datetime
-from typing import Any
 
 from radar.core.models import MessageSource
 from radar.core.usecases.analyst_mentions.identity import (
@@ -16,9 +15,8 @@ from radar.core.usecases.analyst_mentions.models import (
     QUALITY_FLAG_BROAD_LIST,
     AnalystMentionEvent,
 )
-from radar.core.usecases.stock_evidence_chain.matcher import StockMatcher, content_fingerprint
+from radar.core.tushare.stock_matcher import StockMatcher, content_fingerprint
 
-HIGH_VALUE_CATEGORIES = ("research", "recommendation", "event", "industry")
 _SNIPPET_LIMIT = 360
 _SEGMENT_SPLIT_RE = re.compile(r"[\n\r。；;!?！？]")
 _TOP_LEVEL_SECTION_RE = re.compile(r"^(?:\d+[、.．)]|[一二三四五六七八九十]+[、.．)]|【.+】|\[.+\])")
@@ -64,20 +62,14 @@ def extract_mentions(
     end_time: datetime,
     source: MessageSource | None,
     extractor_version: str,
-    min_classification_confidence: float,
 ) -> tuple[list[AnalystMentionEvent], int, int, int]:
     where = [
         "m.message_time >= ?",
         "m.message_time < ?",
-        f"c.category IN ({', '.join('?' for _ in HIGH_VALUE_CATEGORIES)})",
-        "c.status != 'ignored'",
-        "c.confidence >= ?",
     ]
-    params: list[Any] = [
+    params: list[object] = [
         start_time.isoformat(),
         end_time.isoformat(),
-        *HIGH_VALUE_CATEGORIES,
-        min_classification_confidence,
     ]
     if source:
         where.append("m.source = ?")
@@ -85,10 +77,8 @@ def extract_mentions(
     rows = conn.execute(
         f"""
         SELECT
-            m.message_id, m.source, m.sender, m.message_time, m.raw_content, m.group_name,
-            c.category, c.confidence
+            m.message_id, m.source, m.sender, m.message_time, m.raw_content, m.group_name
         FROM messages m
-        JOIN message_classifications c ON c.message_id = m.message_id
         WHERE {" AND ".join(where)}
         ORDER BY m.message_time ASC, m.message_id ASC
         """,
@@ -129,8 +119,6 @@ def extract_mentions(
                     analyst_display_name=analyst.display_name,
                     analyst_alias_key=analyst.alias_key,
                     group_name=str(row["group_name"]) if row["group_name"] else None,
-                    category=str(row["category"]),
-                    classification_confidence=float(row["confidence"] or 0),
                     ts_code=stock.ts_code,
                     stock_name=stock.name,
                     symbol=stock.symbol,

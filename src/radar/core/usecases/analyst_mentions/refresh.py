@@ -13,7 +13,6 @@ from radar.core.usecases.analyst_mentions.models import (
     DEFAULT_BENCHMARK_TS_CODE,
     DEFAULT_COOLDOWN_TRADE_DAYS,
     DEFAULT_LOOKBACK_DAYS,
-    DEFAULT_MIN_CLASSIFICATION_CONFIDENCE,
     DEFAULT_REMOTE_PRICE_FETCH,
     QUALITY_FLAG_BROAD_LIST,
     AnalystMentionRefreshResult,
@@ -26,7 +25,7 @@ from radar.core.usecases.analyst_mentions.pricing import (
     refresh_windows,
 )
 from radar.core.usecases.analyst_mentions.storage import replace_mentions, upsert_analysts
-from radar.core.usecases.stock_evidence_chain.matcher import StockMatcher, load_stocks
+from radar.core.tushare.stock_matcher import StockMatcher, load_stocks
 
 ANALYST_MENTION_RUN_KIND = "analyst_stock_mention_backtest_refresh"
 
@@ -41,7 +40,6 @@ def refresh_analyst_stock_mentions(
     windows: list[int] | None = None,
     source: MessageSource | None = None,
     cooldown_trade_days: int = DEFAULT_COOLDOWN_TRADE_DAYS,
-    min_classification_confidence: float = DEFAULT_MIN_CLASSIFICATION_CONFIDENCE,
     remote_price_fetch: bool = DEFAULT_REMOTE_PRICE_FETCH,
     extractor_version: str = ANALYST_MENTION_EXTRACTOR_VERSION,
     benchmark_ts_code: str = DEFAULT_BENCHMARK_TS_CODE,
@@ -53,7 +51,6 @@ def refresh_analyst_stock_mentions(
     _validate_inputs(
         lookback_days,
         cooldown_trade_days,
-        min_classification_confidence,
         benchmark_ts_code,
         start_time,
         end_time,
@@ -69,7 +66,6 @@ def refresh_analyst_stock_mentions(
         windows=window_values,
         source=source,
         cooldown_trade_days=cooldown_trade_days,
-        min_classification_confidence=min_classification_confidence,
         remote_price_fetch=remote_price_fetch,
         extractor_version=extractor_version,
         benchmark_ts_code=benchmark_ts_code,
@@ -122,7 +118,6 @@ def refresh_analyst_stock_mentions(
             end_time=end_time,
             source=source,
             extractor_version=extractor_version,
-            min_classification_confidence=min_classification_confidence,
         )
         mentions = apply_effective_dedupe(
             raw_mentions,
@@ -205,7 +200,6 @@ def _normalize_windows(windows: list[int] | None) -> list[int]:
 def _validate_inputs(
     lookback_days: int,
     cooldown_trade_days: int,
-    min_classification_confidence: float,
     benchmark_ts_code: str,
     start_time: datetime | None,
     end_time: datetime | None,
@@ -214,8 +208,6 @@ def _validate_inputs(
         raise ValueError("lookback_days 必须大于 0")
     if cooldown_trade_days < 0:
         raise ValueError("cooldown_trade_days 不能小于 0")
-    if min_classification_confidence < 0 or min_classification_confidence > 1:
-        raise ValueError("min_classification_confidence 必须在 0 到 1 之间")
     if not benchmark_ts_code:
         raise ValueError("benchmark_ts_code 不能为空")
     if (start_time is None) != (end_time is None):
@@ -233,7 +225,6 @@ def _metadata(
     windows: list[int],
     source: MessageSource | None,
     cooldown_trade_days: int,
-    min_classification_confidence: float,
     remote_price_fetch: bool,
     extractor_version: str,
     benchmark_ts_code: str,
@@ -246,7 +237,6 @@ def _metadata(
         "windows": windows,
         "source": source,
         "cooldown_trade_days": cooldown_trade_days,
-        "min_classification_confidence": min_classification_confidence,
         "remote_price_fetch": remote_price_fetch,
         "extractor_version": extractor_version,
         "benchmark_ts_code": benchmark_ts_code,

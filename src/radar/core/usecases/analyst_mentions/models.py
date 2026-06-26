@@ -10,7 +10,6 @@ DEFAULT_ANALYST_MENTION_WINDOWS: tuple[int, ...] = (1, 3, 5)
 DEFAULT_COOLDOWN_TRADE_DAYS = 5
 DEFAULT_LOOKBACK_DAYS = 40
 DEFAULT_BENCHMARK_TS_CODE = "000300.SH"
-DEFAULT_MIN_CLASSIFICATION_CONFIDENCE = 0.7
 DEFAULT_REMOTE_PRICE_FETCH = False
 DEFAULT_BROAD_LIST_STOCK_THRESHOLD = 8
 QUALITY_FLAG_BROAD_LIST = "broad_list"
@@ -27,8 +26,6 @@ class AnalystMentionEvent(BaseModel):
     analyst_display_name: str
     analyst_alias_key: str
     group_name: str | None = None
-    category: str
-    classification_confidence: float
     ts_code: str
     stock_name: str
     symbol: str
@@ -115,7 +112,6 @@ class AnalystMentionEvidenceItem(BaseModel):
     ts_code: str
     stock_name: str
     message_time: datetime
-    category: str
     evidence_snippet: str
     stock_count_in_message: int = 1
     quality_flags: tuple[str, ...] = ()
@@ -140,7 +136,6 @@ class AnalystMentionMessageEvidenceItem(BaseModel):
     analyst_id: str
     analyst_display_name: str
     message_time: datetime
-    category: str
     raw_content: str
     stock_count: int = 0
     mentioned_stock_count: int = 0

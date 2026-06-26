@@ -75,14 +75,6 @@
   padding: 16px;
 }
 
-.page-loading-dashboard .page-loading-panel:first-child {
-  min-height: 128px;
-}
-
-.page-loading-dashboard .page-loading-panel:nth-child(2) {
-  min-height: 390px;
-}
-
 .page-loading-strategy .page-loading-panel:first-child {
   min-height: 520px;
 }
@@ -209,7 +201,6 @@
     grid-column: auto;
   }
 
-  .page-loading-dashboard .page-loading-panel:nth-child(2),
   .page-loading-strategy .page-loading-panel:first-child {
     min-height: 320px;
   }

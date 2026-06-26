@@ -4,11 +4,8 @@ import type { RunItem } from "../types";
 
 type JobRunKind =
   | "ingest"
-  | "classify"
-  | "anchor"
   | "analystBacktest"
-  | "stockEvidenceChain"
-  | "lifecycleDigest";
+  | "marketStockRefresh";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -77,20 +74,8 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "ingest") {
       return ingestProgress(run);
     }
-    if (kind === "classify") {
-      return chunkProgress(run);
-    }
-    if (kind === "anchor") {
-      return run?.stored_count || numberValue(run?.metadata.dictionary_anchor_count) ? 70 : 12;
-    }
     if (kind === "analystBacktest") {
       return analystBacktestProgress(run);
-    }
-    if (kind === "stockEvidenceChain") {
-      return evidenceChainProgress(run);
-    }
-    if (kind === "lifecycleDigest") {
-      return lifecycleDigestProgress(run);
     }
     return 8;
   }
@@ -107,50 +92,15 @@ function ingestProgress(run?: RunItem): number {
   return boundedPercent(done, total);
 }
 
-function chunkProgress(run?: RunItem): number {
-  const metadata = run?.metadata ?? {};
-  const total = numberValue(metadata.chunk_count);
-  const done = numberValue(metadata.completed_chunk_count);
-  if (!total) {
-    return numberValue(metadata.scanned_count) > 0 ? 25 : 8;
-  }
-  return boundedPercent(done, total);
-}
-
-function evidenceChainProgress(run?: RunItem): number {
-  const metadata = run?.metadata ?? {};
-  if (numberValue(metadata.candidate_count) > 0 || run?.stored_count) {
-    return 65;
-  }
-  return numberValue(metadata.indexed_messages) > 0 ? 35 : 8;
-}
-
-function lifecycleDigestProgress(run?: RunItem): number {
-  const metadata = run?.metadata ?? {};
-  if (numberValue(metadata.generated_count) > 0 || numberValue(metadata.reused_count) > 0 || run?.stored_count) {
-    return 70;
-  }
-  return numberValue(metadata.processable_count) > 0 ? 35 : 8;
-}
-
 function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   if (kind === "ingest") {
     return ingestMetrics(run);
   }
-  if (kind === "classify") {
-    return classifyMetrics(run);
-  }
-  if (kind === "anchor") {
-    return anchorMetrics(run);
-  }
   if (kind === "analystBacktest") {
     return analystBacktestMetrics(run);
   }
-  if (kind === "stockEvidenceChain") {
-    return evidenceChainMetrics(run);
-  }
-  if (kind === "lifecycleDigest") {
-    return lifecycleDigestMetrics(run);
+  if (kind === "marketStockRefresh") {
+    return marketStockRefreshMetrics(run);
   }
   return [];
 }
@@ -170,50 +120,6 @@ function ingestMetrics(run?: RunItem): string[] {
     `拉取 ${raw || numberValue(metadata.fetched_raw_count)} 条`,
     `过滤 ${filtered} 条`,
     `入库 ${stored} 条`,
-    durationText(run),
-  ].filter(Boolean);
-}
-
-function classifyMetrics(run?: RunItem): string[] {
-  const metadata = run?.metadata ?? {};
-  const scanned = run?.raw_count || numberValue(metadata.scanned_count);
-  const classified = numberValue(metadata.classified_count);
-  const inserted = run?.stored_count || numberValue(metadata.inserted_count);
-  const failed = numberValue(metadata.failed_llm_batches);
-  const chunkCount = numberValue(metadata.chunk_count);
-  const completedChunks = numberValue(metadata.completed_chunk_count);
-  const distribution = distributionText(metadata.distribution);
-
-  return [
-    chunkCount ? `分片 ${completedChunks}/${chunkCount}` : "",
-    `扫描 ${scanned} 条`,
-    `分类 ${classified} 条`,
-    `写入 ${inserted} 条`,
-    failed ? `失败批次 ${failed}` : "失败批次 0",
-    distribution,
-    durationText(run),
-  ].filter(Boolean);
-}
-
-function anchorMetrics(run?: RunItem): string[] {
-  const metadata = run?.metadata ?? {};
-  const anchors = run?.stored_count || numberValue(metadata.dictionary_anchor_count) || numberValue(metadata.anchor_count);
-  const members = run?.raw_count || numberValue(metadata.market_anchor_member_count) || numberValue(metadata.member_count);
-  const current = optionalNumberValue(metadata.derived_current_count);
-  const spans = optionalNumberValue(metadata.derived_span_count);
-  const themes = optionalNumberValue(metadata.theme_count);
-  const themeCoverage = optionalNumberValue(metadata.theme_coverage_ratio);
-  const failedSources = recordKeys(metadata.failed_sources).length;
-  return [
-    anchorTradeDateText(metadata),
-    `词库 ${anchors} 个`,
-    `成分 ${members} 条`,
-    current !== null ? `current ${current}` : "",
-    spans !== null ? `spans ${spans}` : "",
-    themes !== null ? `主题 ${themes}` : "",
-    themeCoverage !== null ? `覆盖 ${(themeCoverage * 100).toFixed(0)}%` : "",
-    metadata.market_anchor_refreshed === false ? "已复用" : "",
-    failedSources ? `失败源 ${failedSources}` : "",
     durationText(run),
   ].filter(Boolean);
 }
@@ -255,41 +161,19 @@ function analystBacktestMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
-function evidenceChainMetrics(run?: RunItem): string[] {
+function marketStockRefreshMetrics(run?: RunItem): string[] {
   const metadata = run?.metadata ?? {};
-  const indexed = numberValue(metadata.indexed_messages) || run?.raw_count || 0;
-  const mentions = numberValue(metadata.mention_count);
-  const candidates = numberValue(metadata.candidate_count) || run?.stored_count || 0;
-  const judged = numberValue(metadata.judged_count);
-  const reused = numberValue(metadata.reused_count);
-  const failed = numberValue(metadata.failed_count) || run?.filtered_count || 0;
-  return [
-    `索引消息 ${indexed} 条`,
-    `股票命中 ${mentions} 条`,
-    `候选 ${candidates} 只`,
-    `LLM 新判 ${judged}`,
-    `复用 ${reused}`,
-    `失败 ${failed}`,
-    durationText(run),
-  ].filter(Boolean);
-}
-
-function lifecycleDigestMetrics(run?: RunItem): string[] {
-  const metadata = run?.metadata ?? {};
-  const processable = numberValue(metadata.processable_count) || run?.raw_count || 0;
+  const fetched = run?.raw_count ?? numberValue(metadata.fetched_count);
+  const stored = run?.stored_count ?? numberValue(metadata.stored_count);
+  const listed = numberValue(metadata.listed_count);
+  const delisted = numberValue(metadata.delisted_count);
   const pending = numberValue(metadata.pending_count);
-  const generated = numberValue(metadata.generated_count);
-  const reused = numberValue(metadata.reused_count);
-  const skipped = numberValue(metadata.skipped_count);
-  const failed = numberValue(metadata.failed_count) || run?.filtered_count || 0;
   return [
-    `可处理 ${processable} 个`,
-    `需调用 ${pending} 次`,
-    rerunReasonText(metadata.rerun_reason_counts),
-    `生成 ${generated}`,
-    `复用 ${reused}`,
-    `跳过 ${skipped}`,
-    `失败 ${failed}`,
+    `拉取 ${fetched} 条`,
+    `入库 ${stored} 条`,
+    `上市 ${listed}`,
+    `退市 ${delisted}`,
+    `待上市 ${pending}`,
     durationText(run),
   ].filter(Boolean);
 }
@@ -304,9 +188,7 @@ function detailText(run?: RunItem): string {
   const metadata = run.metadata;
   const start = textValue(metadata.start_time);
   const end = textValue(metadata.end_time);
-  const base = start && end ? `时间窗口：${start} - ${end}` : `目标：${run.target}`;
-  const anchorReason = textValue(metadata.market_anchor_skipped_reason);
-  return anchorReason ? `${base}；${anchorReason}` : base;
+  return start && end ? `时间窗口：${start} - ${end}` : `目标：${run.target}`;
 }
 
 function failedStage(run?: RunItem): string {
@@ -334,20 +216,11 @@ function kindTitle(kind: JobRunKind): string {
   if (kind === "ingest") {
     return "拉取";
   }
-  if (kind === "classify") {
-    return "分类";
-  }
-  if (kind === "anchor") {
-    return "Anchor 更新";
-  }
   if (kind === "analystBacktest") {
     return "分析师回测";
   }
-  if (kind === "stockEvidenceChain") {
-    return "个股证据链";
-  }
-  if (kind === "lifecycleDigest") {
-    return "生命周期摘要";
+  if (kind === "marketStockRefresh") {
+    return "市场主数据";
   }
   return "作业";
 }
@@ -368,35 +241,6 @@ function durationText(run?: RunItem): string {
   return `用时 ${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
-function distributionText(value: unknown): string {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return "";
-  }
-  const parts = Object.entries(value)
-    .filter(([, count]) => typeof count === "number" && count > 0)
-    .slice(0, 3)
-    .map(([category, count]) => `${category} ${count}`);
-  return parts.length ? `类别 ${parts.join(" / ")}` : "";
-}
-
-function rerunReasonText(value: unknown): string {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return "";
-  }
-  const parts = Object.entries(value)
-    .filter(([, count]) => typeof count === "number" && count > 0)
-    .sort((a, b) => Number(b[1]) - Number(a[1]))
-    .slice(0, 3)
-    .map(([reason, count]) => `${reason} ${count}`);
-  return parts.length ? `原因 ${parts.join(" / ")}` : "";
-}
-
-function anchorTradeDateText(metadata: Record<string, unknown>): string {
-  const requested = textValue(metadata.requested_trade_date);
-  const actual = textValue(metadata.trade_date);
-  return requested && actual && requested !== actual ? `词库 ${actual}` : "";
-}
-
 function boundedPercent(done: number, total: number): number {
   if (total <= 0) {
     return 8;
@@ -406,14 +250,6 @@ function boundedPercent(done: number, total: number): number {
 
 function numberValue(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function optionalNumberValue(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function recordKeys(value: unknown): string[] {
-  return value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value) : [];
 }
 
 function textValue(value: unknown): string {

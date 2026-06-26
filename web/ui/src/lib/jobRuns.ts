@@ -2,11 +2,8 @@ import type { IngestSource, RunItem } from "../types";
 
 export type JobTemplateKey =
   | "ingest"
-  | "classify"
-  | "anchor"
   | "analystBacktest"
-  | "stockEvidenceChain"
-  | "lifecycleDigest";
+  | "marketStockRefresh";
 
 export type TrackedJob = {
   kind: JobTemplateKey;
@@ -17,11 +14,8 @@ export type TrackedJob = {
 
 const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   wechat_ingest_range: "ingest",
-  message_classify_range: "classify",
-  market_anchor_update: "anchor",
   analyst_stock_mention_backtest_refresh: "analystBacktest",
-  stock_evidence_chain: "stockEvidenceChain",
-  opportunity_lifecycle_digest: "lifecycleDigest",
+  market_stock_master_refresh: "marketStockRefresh",
 };
 
 export const JOB_RUN_KINDS = Object.keys(RUN_KIND_TO_JOB);
@@ -76,17 +70,11 @@ export function sourceLabel(value: IngestSource): string {
 }
 
 function sourceFromRun(run: RunItem): string {
-  if (run.kind === "stock_evidence_chain") {
-    return "全库证据";
-  }
-  if (run.kind === "opportunity_lifecycle_digest") {
-    return "机会摘要";
-  }
-  if (run.kind === "market_anchor_update") {
-    return "市场词库";
-  }
   if (run.kind === "analyst_stock_mention_backtest_refresh") {
     return "分析师提及";
+  }
+  if (run.kind === "market_stock_master_refresh") {
+    return "A股股票主数据";
   }
   const source = textValue(run.metadata.source);
   if (source && !isSourceKey(source)) {

@@ -11,7 +11,6 @@ from radar.core.usecases.analyst_mentions import (
     DEFAULT_BENCHMARK_TS_CODE,
     DEFAULT_COOLDOWN_TRADE_DAYS,
     DEFAULT_LOOKBACK_DAYS,
-    DEFAULT_MIN_CLASSIFICATION_CONFIDENCE,
     DEFAULT_REMOTE_PRICE_FETCH,
     AnalystMentionEvidenceResult,
     AnalystMentionRefreshResult,
@@ -75,12 +74,6 @@ def backtest() -> None:
     show_default=True,
 )
 @click.option(
-    "--min-classification-confidence",
-    type=click.FloatRange(0, 1),
-    default=DEFAULT_MIN_CLASSIFICATION_CONFIDENCE,
-    show_default=True,
-)
-@click.option(
     "--remote-prices/--no-remote-prices",
     default=DEFAULT_REMOTE_PRICE_FETCH,
     show_default=True,
@@ -95,7 +88,6 @@ def refresh_command(
     benchmark_ts_code: str,
     source_key: str,
     cooldown_trade_days: int,
-    min_classification_confidence: float,
     remote_prices: bool,
 ) -> None:
     """刷新分析师股票提及后的 T+N 表现。"""
@@ -107,7 +99,6 @@ def refresh_command(
         windows=list(windows) or list(DEFAULT_ANALYST_MENTION_WINDOWS),
         source=_SOURCE_MAP[source_key],
         cooldown_trade_days=cooldown_trade_days,
-        min_classification_confidence=min_classification_confidence,
         remote_price_fetch=remote_prices,
         benchmark_ts_code=benchmark_ts_code,
     )
