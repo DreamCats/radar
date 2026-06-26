@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import sqlite3
 
-from radar.core.storage import connect
+import pytest
+
+from radar.core.storage import connect, connect_readonly, init_db
 from radar.core.storage.db import SQLITE_BUSY_TIMEOUT_MS, applied_migrations, migrate_market_db, migrate_message_db
 
 
@@ -99,6 +101,22 @@ def test_storage_connection_uses_wal_and_busy_timeout(tmp_path):
         assert conn.execute("PRAGMA busy_timeout").fetchone()[0] == SQLITE_BUSY_TIMEOUT_MS
     finally:
         conn.close()
+
+
+def test_readonly_connection_blocks_writes(tmp_path):
+    conn = connect(tmp_path / "radar.sqlite3")
+    try:
+        init_db(conn)
+    finally:
+        conn.close()
+
+    readonly_conn = connect_readonly(tmp_path / "radar.sqlite3")
+    try:
+        assert readonly_conn.execute("PRAGMA query_only").fetchone()[0] == 1
+        with pytest.raises(sqlite3.OperationalError):
+            readonly_conn.execute("CREATE TABLE should_fail (id INTEGER)")
+    finally:
+        readonly_conn.close()
 
 
 def _tables(conn: sqlite3.Connection) -> set[str]:

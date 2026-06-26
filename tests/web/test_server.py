@@ -187,6 +187,33 @@ def test_conversations_endpoint_omits_message_count(tmp_path):
         assert "message_count" not in item
 
 
+def test_message_read_endpoints_use_readonly_connection(tmp_path, monkeypatch):
+    config = _config(tmp_path)
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+        upsert_messages(conn, [_message()])
+    finally:
+        conn.close()
+
+    from radar.web.server.routers import messages as messages_router
+
+    calls = []
+    real_connect_readonly = messages_router.connect_readonly
+
+    def fake_connect_readonly(database_path):
+        calls.append(database_path)
+        return real_connect_readonly(database_path)
+
+    monkeypatch.setattr(messages_router, "connect_readonly", fake_connect_readonly)
+
+    client = TestClient(create_app(config))
+    response = client.get("/api/conversations", params={"source": "group_message"})
+
+    assert response.status_code == 200
+    assert calls == [config.database_path]
+
+
 def test_auth_disabled_by_default(tmp_path):
     client = TestClient(create_app(_config(tmp_path)))
 

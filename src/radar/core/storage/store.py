@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 
 from radar.core.storage.db import SQLITE_TIMEOUT_SECONDS, configure_sqlite_connection, migrate_message_db
-from radar.core.models import (
-    MessageSource,
-    RawMessage,
-)
+from radar.core.models import RawMessage
 
 
 def connect(database_path: Path) -> sqlite3.Connection:
@@ -18,6 +15,17 @@ def connect(database_path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(database_path, timeout=SQLITE_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
     configure_sqlite_connection(conn)
+    return conn
+
+
+def connect_readonly(database_path: Path) -> sqlite3.Connection:
+    """创建只读 SQLite 连接；用于 Web 读接口，避免 GET 请求参与写锁。"""
+
+    uri_path = quote(database_path.resolve().as_posix(), safe="/")
+    conn = sqlite3.connect(f"file:{uri_path}?mode=ro", uri=True, timeout=SQLITE_TIMEOUT_SECONDS)
+    conn.row_factory = sqlite3.Row
+    configure_sqlite_connection(conn, enable_wal=False)
+    conn.execute("PRAGMA query_only = ON")
     return conn
 
 

@@ -21,6 +21,7 @@ from radar.web.server.routers import (
     runs,
     schedules,
 )
+from radar.web.server.read_through import ReadRequestCoordinator
 from radar.web.server.scheduler import SchedulerLoop
 
 
@@ -29,6 +30,7 @@ def create_app(config: RadarConfig | None = None) -> FastAPI:
 
     app = FastAPI(title="radar dashboard", version="0.1.0", lifespan=_lifespan)
     app.state.radar_config = config or load_config()
+    app.state.read_coordinator = ReadRequestCoordinator()
     app.state.scheduler_loop = SchedulerLoop(app.state.radar_config)
     app.add_middleware(
         CORSMiddleware,

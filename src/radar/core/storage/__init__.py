@@ -17,6 +17,7 @@ from radar.core.storage.runs import (
 )
 from radar.core.storage.store import (
     connect,
+    connect_readonly,
     fetch_window_covered,
     fetch_window_exists,
     init_db,
@@ -30,6 +31,7 @@ __all__ = [
     "applied_migrations",
     "cancel_run",
     "connect",
+    "connect_readonly",
     "fail_run",
     "fail_stale_runs",
     "fetch_window_covered",
