@@ -30,8 +30,7 @@ import {
 import type { IngestSource, RunItem } from "../types";
 
 const INGEST_RANGE_PRESETS: Array<[RangePreset, string]> = [["yesterdayClose", "昨日 15:00"], ...RANGE_PRESETS];
-const RECENT_RUN_LIMIT = 50;
-const RUNNING_RUN_LIMIT = 50;
+const RECENT_RUN_LIMIT = 80;
 const RUNNING_REFRESH_MS = 4000;
 const IDLE_REFRESH_MS = 30000;
 
@@ -105,10 +104,8 @@ export function IngestPage() {
       setError(null);
     }
     try {
-      const [runItems, runningItems] = await Promise.all([
-        fetchRuns({ kinds: JOB_RUN_KINDS, limit: RECENT_RUN_LIMIT }),
-        fetchRuns({ kinds: JOB_RUN_KINDS, status: "running", limit: RUNNING_RUN_LIMIT }),
-      ]);
+      const runItems = await fetchRuns({ kinds: JOB_RUN_KINDS, limit: RECENT_RUN_LIMIT });
+      const runningItems = runItems.filter((item) => item.status === "running");
       const mergedRuns = mergeRuns(runItems, runningItems);
       setRuns(mergedRuns);
       const restoredRunningJobs = runningItems.map((item) => trackedJobFromRun(item)).filter((item): item is TrackedJob => item !== null);
