@@ -5,6 +5,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import quote
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -258,6 +259,7 @@ def list_runs(
     kinds: list[str] | None = None,
     status: RunStatus | None = None,
     limit: int = 50,
+    readonly: bool = False,
 ) -> list[RunRecord]:
     """按开始时间倒序查看执行记录；Web/CLI 只展示脱敏摘要。"""
 
@@ -282,7 +284,11 @@ def list_runs(
     sql.append("ORDER BY started_at DESC LIMIT ?")
     params.append(limit)
 
-    with _connect(database) as conn:
+    if readonly and not database.exists():
+        return []
+
+    connect_fn = _connect_readonly if readonly else _connect
+    with connect_fn(database) as conn:
         rows = conn.execute(" ".join(sql), params).fetchall()
     return [_row_to_run(row) for row in rows]
 
@@ -298,6 +304,15 @@ def _connect(
     conn.row_factory = sqlite3.Row
     configure_sqlite_connection(conn, busy_timeout_ms=busy_timeout_ms or _SQLITE_BUSY_TIMEOUT_MS)
     migrate_message_db(conn)
+    return conn
+
+
+def _connect_readonly(database: Path) -> sqlite3.Connection:
+    uri_path = quote(database.resolve().as_posix(), safe="/")
+    conn = sqlite3.connect(f"file:{uri_path}?mode=ro", uri=True, timeout=_SQLITE_TIMEOUT_SECONDS)
+    conn.row_factory = sqlite3.Row
+    configure_sqlite_connection(conn, enable_wal=False)
+    conn.execute("PRAGMA query_only = ON")
     return conn
 
 

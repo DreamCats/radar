@@ -852,7 +852,7 @@ def test_runs_endpoint_returns_recent_runs(tmp_path):
     assert response.json()["items"][0]["run_id"] == run_id
 
 
-def test_runs_endpoint_marks_stale_ingest_runs(monkeypatch, tmp_path):
+def test_runs_endpoint_keeps_reads_side_effect_free(monkeypatch, tmp_path):
     config = _config(tmp_path)
     run_id = start_run(config.database_path, kind="wechat_ingest_range", target="group_message:stale")
 
@@ -869,8 +869,8 @@ def test_runs_endpoint_marks_stale_ingest_runs(monkeypatch, tmp_path):
     assert response.status_code == 200
     item = response.json()["items"][0]
     assert item["run_id"] == run_id
-    assert item["status"] == "failed"
-    assert "过期" in item["error_message"]
+    assert item["status"] == "running"
+    assert item["error_message"] is None
 
 
 def test_ingest_endpoint_invokes_usecase(monkeypatch, tmp_path):
