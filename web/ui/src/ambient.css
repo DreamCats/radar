@@ -343,7 +343,10 @@
   .workspace-shell {
     --mobile-topbar-height: 54px;
     display: block;
+    height: auto;
+    min-height: 100vh;
     min-height: 100dvh;
+    overflow: visible;
     padding-top: calc(var(--mobile-topbar-height) + env(safe-area-inset-top, 0px));
     padding-bottom: 0;
   }
