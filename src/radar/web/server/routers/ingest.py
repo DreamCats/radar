@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from radar.core.config import RadarConfig
 from radar.core.usecases import ingest_wechat_range
 from radar.web.server.deps import get_config
-from radar.web.server.ingest_jobs import submit_wechat_ingest_jobs
+from radar.web.server.ingest_jobs import JobSubmissionBusyError, submit_wechat_ingest_jobs
 from radar.web.server.schemas import (
     IngestWechatItem,
     IngestWechatJobResponse,
@@ -60,4 +60,7 @@ def start_ingest_wechat_job(
     if request.end_time <= request.start_time:
         raise HTTPException(status_code=400, detail="end_time 必须晚于 start_time")
 
-    return IngestWechatJobResponse(items=submit_wechat_ingest_jobs(config, request))
+    try:
+        return IngestWechatJobResponse(items=submit_wechat_ingest_jobs(config, request))
+    except JobSubmissionBusyError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc

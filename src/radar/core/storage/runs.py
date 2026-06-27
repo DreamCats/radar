@@ -36,12 +36,14 @@ def start_run(
     kind: str,
     target: str,
     metadata: dict[str, Any] | None = None,
+    timeout_seconds: float | None = None,
+    busy_timeout_ms: int | None = None,
 ) -> str:
     """记录一次 core 执行；run_id 用于 CLI/Web 排查同一次任务。"""
 
     run_id = uuid4().hex
     now = datetime.now().isoformat()
-    with _connect(database) as conn:
+    with _connect(database, timeout_seconds=timeout_seconds, busy_timeout_ms=busy_timeout_ms) as conn:
         conn.execute(
             """
             INSERT INTO runs (
@@ -182,8 +184,15 @@ def get_run(database: Path, run_id: str) -> RunRecord | None:
     return _row_to_run(row)
 
 
-def get_running_run(database: Path, *, kind: str, target: str) -> RunRecord | None:
-    with _connect(database) as conn:
+def get_running_run(
+    database: Path,
+    *,
+    kind: str,
+    target: str,
+    timeout_seconds: float | None = None,
+    busy_timeout_ms: int | None = None,
+) -> RunRecord | None:
+    with _connect(database, timeout_seconds=timeout_seconds, busy_timeout_ms=busy_timeout_ms) as conn:
         row = conn.execute(
             """
             SELECT * FROM runs
@@ -204,7 +213,14 @@ def is_run_running(database: Path, run_id: str) -> bool:
     return row is not None
 
 
-def fail_stale_runs(database: Path, *, older_than: datetime, kind: str | None = None) -> int:
+def fail_stale_runs(
+    database: Path,
+    *,
+    older_than: datetime,
+    kind: str | None = None,
+    timeout_seconds: float | None = None,
+    busy_timeout_ms: int | None = None,
+) -> int:
     """把服务重启后遗留的 running 标记为失败，避免前端一直等。"""
 
     sql = [
@@ -226,7 +242,7 @@ def fail_stale_runs(database: Path, *, older_than: datetime, kind: str | None = 
         params.append(kind)
 
     try:
-        with _connect(database) as conn:
+        with _connect(database, timeout_seconds=timeout_seconds, busy_timeout_ms=busy_timeout_ms) as conn:
             cursor = conn.execute(" ".join(sql), params)
             return cursor.rowcount
     except sqlite3.OperationalError as exc:
@@ -271,11 +287,16 @@ def list_runs(
     return [_row_to_run(row) for row in rows]
 
 
-def _connect(database: Path) -> sqlite3.Connection:
+def _connect(
+    database: Path,
+    *,
+    timeout_seconds: float | None = None,
+    busy_timeout_ms: int | None = None,
+) -> sqlite3.Connection:
     database.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(database, timeout=_SQLITE_TIMEOUT_SECONDS)
+    conn = sqlite3.connect(database, timeout=timeout_seconds or _SQLITE_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
-    configure_sqlite_connection(conn, busy_timeout_ms=_SQLITE_BUSY_TIMEOUT_MS)
+    configure_sqlite_connection(conn, busy_timeout_ms=busy_timeout_ms or _SQLITE_BUSY_TIMEOUT_MS)
     migrate_message_db(conn)
     return conn
 

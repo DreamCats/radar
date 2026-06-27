@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -970,6 +971,35 @@ def test_ingest_jobs_endpoint_starts_and_reuses_running_job(monkeypatch, tmp_pat
 
     assert second["run_id"] == first["run_id"]
     assert second["reused_existing"] is True
+
+
+def test_ingest_jobs_endpoint_returns_503_when_run_store_is_busy(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    start_run(config.database_path, kind="wechat_ingest_range", target="bootstrap")
+    monkeypatch.setattr("radar.web.server.ingest_jobs.SUBMIT_SQLITE_TIMEOUT_SECONDS", 0.01)
+    monkeypatch.setattr("radar.web.server.ingest_jobs.SUBMIT_SQLITE_BUSY_TIMEOUT_MS", 10)
+
+    locker = sqlite3.connect(config.database_path, timeout=0.01)
+    try:
+        locker.execute("BEGIN EXCLUSIVE")
+        client = TestClient(create_app(config))
+        response = client.post(
+            "/api/ingest/wechat/jobs",
+            json={
+                "source": "group_message",
+                "start_time": "2026-06-03T00:00:00",
+                "end_time": "2026-06-04T00:00:00",
+                "force": False,
+                "chunk_hours": 1,
+                "concurrency": 4,
+            },
+        )
+    finally:
+        locker.rollback()
+        locker.close()
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "数据库正在写入，请稍后再提交"
 
 
 def test_aggregate_refine_endpoints_are_removed(tmp_path):

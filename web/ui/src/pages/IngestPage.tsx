@@ -99,9 +99,11 @@ export function IngestPage() {
     };
   }, []);
 
-  async function refreshRunsAndResults(): Promise<boolean> {
+  async function refreshRunsAndResults(options: { quiet?: boolean } = {}): Promise<boolean> {
     setRunsLoading(true);
-    setError(null);
+    if (!options.quiet) {
+      setError(null);
+    }
     try {
       const [runItems, runningItems] = await Promise.all([
         fetchRuns({ kinds: JOB_RUN_KINDS, limit: RECENT_RUN_LIMIT }),
@@ -118,7 +120,9 @@ export function IngestPage() {
       }
       return runningItems.length > 0;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载作业数据失败");
+      if (!options.quiet) {
+        setError(err instanceof Error ? err.message : "加载作业数据失败");
+      }
       return false;
     } finally {
       setRunsLoading(false);
@@ -139,7 +143,8 @@ export function IngestPage() {
         window: { start_time, end_time },
       });
       setTrackedJobs((current) => mergeTrackedJobs(newJobs, current));
-      await refreshRunsAndResults();
+      setSubmitting(false);
+      void refreshRunsAndResults({ quiet: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "作业提交失败");
     } finally {
