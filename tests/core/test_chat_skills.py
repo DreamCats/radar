@@ -7,7 +7,7 @@ import pytest
 from radar.core.chat import ChatAgent, ChatSessionStore, parse_chat_skill
 from radar.core.chat.skill_tools import build_skill_tools
 from radar.core.chat.skills import ChatSkillLibrary
-from radar.core.config import RadarConfig
+from radar.core.config import BUILTIN_CHAT_SKILLS_DIR, RadarConfig
 from radar.core.llm import LlmChatResponse, LlmToolCall
 
 
@@ -31,6 +31,29 @@ description: 行情研究
     assert skill.description == "行情研究"
     assert "先确认标的" in skill.instructions
     assert skill.root_dir == skill_dir
+
+
+def test_builtin_chat_skills_are_loaded_before_user_skills(tmp_path):
+    user_skill_dir = tmp_path / "skills" / "market"
+    user_skill_dir.mkdir(parents=True)
+    (user_skill_dir / "SKILL.md").write_text(
+        """---
+name: market_research
+description: 股票行情研究
+---
+读取本地行情。
+""",
+        encoding="utf-8",
+    )
+
+    skills = ChatSkillLibrary.from_config(RadarConfig(config_dir=tmp_path)).list()
+    skill_by_name = {skill.name: skill for skill in skills}
+    names = [skill.name for skill in skills]
+
+    assert names.index("evidence_chain") < names.index("market_research")
+    assert names.index("stock_deep_dive") < names.index("market_research")
+    assert skill_by_name["evidence_chain"].source_path.is_relative_to(BUILTIN_CHAT_SKILLS_DIR)
+    assert skill_by_name["stock_deep_dive"].source_path.is_relative_to(BUILTIN_CHAT_SKILLS_DIR)
 
 
 def test_chat_agent_injects_skill_catalog_without_full_skill_body(tmp_path, monkeypatch):

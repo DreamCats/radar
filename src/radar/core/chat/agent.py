@@ -14,6 +14,7 @@ from radar.core.chat.skill_tools import build_skill_tools
 from radar.core.chat.skills import ChatSkillLibrary, ChatSkillSelection
 from radar.core.chat.store import ChatSessionStore
 from radar.core.chat.tools import ToolRegistry
+from radar.core.chat.trading_day import build_trading_day_prompt
 from radar.core.config import RadarConfig
 from radar.core.llm import (
     LlmChatDone,
@@ -495,7 +496,11 @@ class ChatAgent:
         messages: list[dict[str, str]] = []
         resolved_system_prompt = system_prompt or DEFAULT_CHAT_SYSTEM_PROMPT
         if resolved_system_prompt:
-            resolved_system_prompt = f"{resolved_system_prompt}\n\n当日日期：{_today_prompt_date()}"
+            today_text = _today_prompt_date()
+            resolved_system_prompt = f"{resolved_system_prompt}\n\n当日日期：{today_text}"
+            trading_day_prompt = build_trading_day_prompt(self.config, today=date.fromisoformat(today_text))
+            if trading_day_prompt:
+                resolved_system_prompt = f"{resolved_system_prompt}\n{trading_day_prompt}"
         if skill_prompt:
             resolved_system_prompt = f"{resolved_system_prompt}\n\n{skill_prompt}" if resolved_system_prompt else skill_prompt
         if resolved_system_prompt:

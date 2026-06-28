@@ -234,6 +234,7 @@ def test_chat_agent_passes_file_backed_context_to_llm(tmp_path, monkeypatch):
 
     monkeypatch.setattr("radar.core.chat.agent.chat_response", fake_chat_response)
     monkeypatch.setattr("radar.core.chat.agent._today_prompt_date", lambda: "2026-06-09")
+    monkeypatch.setattr("radar.core.chat.agent.build_trading_day_prompt", lambda config, today=None: "今日是否 A 股交易日：是")
 
     agent = ChatAgent(config, store=store)
     result = agent.run_turn(
@@ -246,10 +247,10 @@ def test_chat_agent_passes_file_backed_context_to_llm(tmp_path, monkeypatch):
     assert result.assistant_message.content == "收到"
     assert result.user_message.metadata["llm"]["provider_name"] == "openai_main"
     assert result.assistant_message.metadata["llm"]["provider_name"] == "openai_main"
-    assert seen["messages"] == [
-        {"role": "system", "content": "你是 radar 投研助手\n\n当日日期：2026-06-09"},
-        {"role": "user", "content": "帮我看一下今天消息"},
-    ]
+    assert seen["messages"][0]["role"] == "system"
+    assert seen["messages"][0]["content"].startswith("你是 radar 投研助手\n\n当日日期：2026-06-09\n今日是否 A 股交易日：是")
+    assert "可用 skills 目录" in seen["messages"][0]["content"]
+    assert seen["messages"][1] == {"role": "user", "content": "帮我看一下今天消息"}
     assert seen["kwargs"]["task"] == "chat"
     assert seen["kwargs"]["provider_name"] == "openai_main"
     assert seen["kwargs"]["tools"]
@@ -310,10 +311,16 @@ def test_chat_agent_uses_default_system_prompt(tmp_path, monkeypatch):
 
     monkeypatch.setattr("radar.core.chat.agent.chat_response", fake_chat_response)
     monkeypatch.setattr("radar.core.chat.agent._today_prompt_date", lambda: "2026-06-09")
+    monkeypatch.setattr("radar.core.chat.agent.build_trading_day_prompt", lambda config, today=None: "今日是否 A 股交易日：是")
 
     ChatAgent(config, store=store).run_turn(session.session_id, "今天有什么机会？")
 
-    assert seen["messages"][0] == {"role": "system", "content": f"{DEFAULT_CHAT_SYSTEM_PROMPT}\n\n当日日期：2026-06-09"}
+    assert seen["messages"][0]["role"] == "system"
+    assert seen["messages"][0]["content"].startswith(
+        f"{DEFAULT_CHAT_SYSTEM_PROMPT}\n\n当日日期：2026-06-09\n今日是否 A 股交易日：是"
+    )
+    assert "evidence_chain: 本地消息和公开来源的证据链复核" in seen["messages"][0]["content"]
+    assert "stock_deep_dive: 个股线索深挖和跟踪条件整理" in seen["messages"][0]["content"]
     assert seen["messages"][1] == {"role": "user", "content": "今天有什么机会？"}
 
 
@@ -342,6 +349,10 @@ def test_chat_system_prompt_layers_surface_rules():
     assert "已确认的事实" in common_prompt
     assert "基于事实的推断" in common_prompt
     assert "仍需验证的条件" in common_prompt
+    assert "radar_run_shell 做只读查询" in common_prompt
+    assert "不执行写入、安装、长任务、批量拉取或通知发送" in common_prompt
+    assert "radar_search_web 多轮搜索" in common_prompt
+    assert "每轮换关键词、公司名、产品名、公告、官方来源或反证方向" in common_prompt
     assert "先查本地消息和催化词" in stock_prompt
     assert "明确写缺口" in stock_prompt
     assert "radar_get_conversation_window" in wechat_prompt

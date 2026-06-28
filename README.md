@@ -109,7 +109,8 @@ market:
 chat:
   skills:
     enabled: true
-    # 默认就是 ~/.config/radar/skills；只有显式配置时才会扫描其他目录。
+    # 仓库内置 src/radar/core/skills 会始终加载；用户目录适合本机草稿。
+    # 默认用户目录是 ~/.config/radar/skills；只有显式配置时才会扫描其他目录。
     paths:
       - skills
     max_active: 3

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from radar.core.config import load_config
+from radar.core.config import BUILTIN_CHAT_SKILLS_DIR, load_config
 
 
 def test_load_split_config(config_dir: Path):
@@ -82,7 +82,7 @@ cloud:
     assert config.market_database_path == config.data_dir / "market.sqlite3"
     assert config.wechat_endpoint_url("group_message") == "https://example.invalid/wechat"
     assert config.filters.group_blacklist_patterns == ["小学", "寝室"]
-    assert config.chat_skill_paths == [config_dir / "skills"]
+    assert config.chat_skill_paths == [BUILTIN_CHAT_SKILLS_DIR, config_dir / "skills"]
     assert config.chat.skills.max_active == 2
     assert str(config.chat.shell.default_cwd).endswith("Work/radar")
     assert "~" not in str(config.chat.shell.default_cwd)

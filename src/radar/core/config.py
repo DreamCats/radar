@@ -13,6 +13,7 @@ DEFAULT_BRAVE_SEARCH_BASE_URL = "https://api.search.brave.com"
 DEFAULT_BRAVE_SEARCH_TIMEOUT = 30.0
 DEFAULT_BARK_BASE_URL = "https://api.day.app"
 DEFAULT_BARK_TIMEOUT = 10.0
+BUILTIN_CHAT_SKILLS_DIR = Path(__file__).resolve().parent / "skills"
 
 
 class StorageConfig(BaseModel):
@@ -276,8 +277,9 @@ class RadarConfig(BaseModel):
 
     @property
     def chat_skill_paths(self) -> list[Path]:
-        paths = self.chat.skills.paths or [self.config_dir / "skills"]
-        return [path if path.is_absolute() else self.config_dir / path for path in paths]
+        paths = self.chat.skills.paths or [Path("skills")]
+        resolved_paths = [path if path.is_absolute() else self.config_dir / path for path in paths]
+        return [BUILTIN_CHAT_SKILLS_DIR, *resolved_paths]
 
     @property
     def wechat_base_url(self) -> str | None:
