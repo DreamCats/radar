@@ -11,6 +11,8 @@ from pydantic import BaseModel, Field, model_validator
 DEFAULT_CONFIG_DIR = Path.home() / ".config" / "radar"
 DEFAULT_BRAVE_SEARCH_BASE_URL = "https://api.search.brave.com"
 DEFAULT_BRAVE_SEARCH_TIMEOUT = 30.0
+DEFAULT_BARK_BASE_URL = "https://api.day.app"
+DEFAULT_BARK_TIMEOUT = 10.0
 
 
 class StorageConfig(BaseModel):
@@ -161,6 +163,53 @@ class BraveSearchSecret(BaseModel):
     api_key: str | None = None
 
 
+class BarkChannelConfig(BaseModel):
+    enabled: bool = False
+    secret_ref: str | None = None
+    base_url: str = DEFAULT_BARK_BASE_URL
+    timeout: float = DEFAULT_BARK_TIMEOUT
+    default_group: str | None = None
+    default_level: (
+        Literal["critical", "active", "timeSensitive", "passive"] | None
+    ) = None
+
+
+class ChannelConfig(BaseModel):
+    bark: BarkChannelConfig = Field(default_factory=BarkChannelConfig)
+
+
+class BarkChannelSecret(BaseModel):
+    device_key: str | None = None
+    device_keys: list[str] = Field(default_factory=list)
+
+
+class ChannelSecrets(BaseModel):
+    bark: dict[str, BarkChannelSecret] = Field(default_factory=dict)
+
+
+class AlyCloudConfig(BaseModel):
+    enabled: bool = False
+    secret_ref: str | None = None
+    host: str = ""
+    user: str = ""
+    port: int = Field(default=22, ge=1, le=65535)
+    remote_dir: str = ""
+    url_prefix: str = ""
+    sshpass_path: str = "sshpass"
+
+
+class CloudConfig(BaseModel):
+    aly: AlyCloudConfig = Field(default_factory=AlyCloudConfig)
+
+
+class AlyCloudSecret(BaseModel):
+    password: str | None = None
+
+
+class CloudSecrets(BaseModel):
+    aly: dict[str, AlyCloudSecret] = Field(default_factory=dict)
+
+
 class WebAuthSecret(BaseModel):
     username: str | None = None
     password: str | None = None
@@ -190,6 +239,8 @@ class RadarSecrets(BaseModel):
     llm: dict[str, LlmProviderSecret] = Field(default_factory=dict)
     market: dict[str, MarketSecret] = Field(default_factory=dict)
     brave_search: dict[str, BraveSearchSecret] = Field(default_factory=dict)
+    channel: ChannelSecrets = Field(default_factory=ChannelSecrets)
+    cloud: CloudSecrets = Field(default_factory=CloudSecrets)
     web: WebSecrets = Field(default_factory=WebSecrets)
 
 
@@ -201,6 +252,8 @@ class RadarConfig(BaseModel):
     wechat: WechatConfig = Field(default_factory=WechatConfig)
     llm: LlmConfig = Field(default_factory=LlmConfig)
     chat: ChatConfig = Field(default_factory=ChatConfig)
+    channel: ChannelConfig = Field(default_factory=ChannelConfig)
+    cloud: CloudConfig = Field(default_factory=CloudConfig)
     web: WebConfig = Field(default_factory=WebConfig)
     market: MarketConfig = Field(default_factory=MarketConfig)
     brave_search: BraveSearchConfig = Field(default_factory=BraveSearchConfig)
@@ -299,9 +352,35 @@ def _apply_env_overrides(config: RadarConfig) -> RadarConfig:
     if market_database:
         config.market.database = Path(market_database).expanduser()
 
+    _apply_channel_overrides(config)
     _apply_brave_search_overrides(config)
     _apply_web_auth_overrides(config)
     return config
+
+
+def _apply_channel_overrides(config: RadarConfig) -> None:
+    bark_device_key = os.getenv("RADAR_BARK_DEVICE_KEY") or os.getenv("BARK_DEVICE_KEY")
+    bark_device_keys = os.getenv("RADAR_BARK_DEVICE_KEYS") or os.getenv("BARK_DEVICE_KEYS")
+    if bark_device_key:
+        secret_ref = config.channel.bark.secret_ref or "bark_main"
+        config.channel.bark.enabled = True
+        config.channel.bark.secret_ref = secret_ref
+        config.secrets.channel.bark[secret_ref] = BarkChannelSecret(device_key=bark_device_key)
+    if bark_device_keys:
+        secret_ref = config.channel.bark.secret_ref or "bark_main"
+        config.channel.bark.enabled = True
+        config.channel.bark.secret_ref = secret_ref
+        config.secrets.channel.bark[secret_ref] = BarkChannelSecret(
+            device_keys=_split_env_list(bark_device_keys)
+        )
+
+    bark_base_url = os.getenv("RADAR_BARK_BASE_URL") or os.getenv("BARK_BASE_URL")
+    if bark_base_url:
+        config.channel.bark.base_url = bark_base_url
+
+    bark_timeout = os.getenv("RADAR_BARK_TIMEOUT")
+    if bark_timeout:
+        config.channel.bark.timeout = float(bark_timeout)
 
 
 def _apply_brave_search_overrides(config: RadarConfig) -> None:
@@ -318,6 +397,10 @@ def _apply_brave_search_overrides(config: RadarConfig) -> None:
     timeout = os.getenv("RADAR_BRAVE_SEARCH_TIMEOUT")
     if timeout:
         config.brave_search.timeout = float(timeout)
+
+
+def _split_env_list(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def _brave_search_env_key() -> str | None:

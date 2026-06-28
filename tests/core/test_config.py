@@ -32,6 +32,24 @@ chat:
     default_cwd: ~/Work/radar
     timeout_seconds: 10
     max_output_chars: 2000
+channel:
+  bark:
+    enabled: true
+    secret_ref: bark_main
+    base_url: https://example.invalid/bark
+    timeout: 8
+    default_group: radar
+    default_level: timeSensitive
+cloud:
+  aly:
+    enabled: true
+    secret_ref: aly_main
+    host: 39.106.190.32
+    user: root
+    port: 22
+    remote_dir: /usr/share/caddy/radar
+    url_prefix: http://39.106.190.32/radar
+    sshpass_path: /opt/homebrew/bin/sshpass
 """,
         encoding="utf-8",
     )
@@ -41,6 +59,17 @@ wechat:
   endpoints:
     wechat_main:
       base_url: https://example.invalid/wechat
+channel:
+  bark:
+    bark_main:
+      device_key: bark-secret
+      device_keys:
+        - bark-secret-2
+        - bark-secret-3
+cloud:
+  aly:
+    aly_main:
+      password: aly-secret
 """,
         encoding="utf-8",
     )
@@ -59,6 +88,26 @@ wechat:
     assert "~" not in str(config.chat.shell.default_cwd)
     assert config.chat.shell.timeout_seconds == 10
     assert config.chat.shell.max_output_chars == 2000
+    assert config.channel.bark.enabled is True
+    assert config.channel.bark.secret_ref == "bark_main"
+    assert config.channel.bark.base_url == "https://example.invalid/bark"
+    assert config.channel.bark.timeout == 8
+    assert config.channel.bark.default_group == "radar"
+    assert config.channel.bark.default_level == "timeSensitive"
+    assert config.secrets.channel.bark["bark_main"].device_key == "bark-secret"
+    assert config.secrets.channel.bark["bark_main"].device_keys == [
+        "bark-secret-2",
+        "bark-secret-3",
+    ]
+    assert config.cloud.aly.enabled is True
+    assert config.cloud.aly.secret_ref == "aly_main"
+    assert config.cloud.aly.host == "39.106.190.32"
+    assert config.cloud.aly.user == "root"
+    assert config.cloud.aly.port == 22
+    assert config.cloud.aly.remote_dir == "/usr/share/caddy/radar"
+    assert config.cloud.aly.url_prefix == "http://39.106.190.32/radar"
+    assert config.cloud.aly.sshpass_path == "/opt/homebrew/bin/sshpass"
+    assert config.secrets.cloud.aly["aly_main"].password == "aly-secret"
 
 
 def test_env_overrides_wechat_base_url(config_dir: Path, monkeypatch):
@@ -98,6 +147,30 @@ def test_env_overrides_brave_search_key(config_dir: Path, monkeypatch):
     assert config.brave_search.base_url == "https://example.invalid/brave"
     assert config.brave_search.timeout == 12
     assert config.secrets.brave_search["brave_search_main"].api_key == "brave-key-from-env"
+
+
+def test_env_overrides_bark_channel(config_dir: Path, monkeypatch):
+    monkeypatch.setenv("RADAR_BARK_DEVICE_KEY", "bark-key-from-env")
+    monkeypatch.setenv("RADAR_BARK_BASE_URL", "https://example.invalid/bark")
+    monkeypatch.setenv("RADAR_BARK_TIMEOUT", "6")
+
+    config = load_config(config_dir)
+
+    assert config.channel.bark.enabled is True
+    assert config.channel.bark.secret_ref == "bark_main"
+    assert config.channel.bark.base_url == "https://example.invalid/bark"
+    assert config.channel.bark.timeout == 6
+    assert config.secrets.channel.bark["bark_main"].device_key == "bark-key-from-env"
+
+
+def test_env_overrides_bark_device_keys(config_dir: Path, monkeypatch):
+    monkeypatch.setenv("RADAR_BARK_DEVICE_KEYS", "bark-a, bark-b")
+
+    config = load_config(config_dir)
+
+    assert config.channel.bark.enabled is True
+    assert config.channel.bark.secret_ref == "bark_main"
+    assert config.secrets.channel.bark["bark_main"].device_keys == ["bark-a", "bark-b"]
 
 
 def test_load_does_not_read_brave_search_cli_config(config_dir: Path, tmp_path: Path, monkeypatch):
