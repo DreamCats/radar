@@ -12,17 +12,23 @@ from radar.core.usecases.analyst_mentions import (
     refresh_analyst_stock_mentions,
     summarize_analyst_stock_mentions,
 )
+from radar.core.usecases.catalyst_strategy import (
+    CatalystStrategyRunResult,
+    run_catalyst_strategy_report,
+)
 from radar.core.usecases.smoke import SmokeResult, test_llm, test_market
 
 __all__ = [
     "AnalystMentionRefreshResult",
     "AnalystMentionSummaryResult",
+    "CatalystStrategyRunResult",
     "IngestRangeResult",
     "IngestWindowResult",
     "SmokeResult",
     "ingest_wechat_range",
     "ingest_wechat_window",
     "refresh_analyst_stock_mentions",
+    "run_catalyst_strategy_report",
     "summarize_analyst_stock_mentions",
     "test_llm",
     "test_market",

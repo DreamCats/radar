@@ -229,7 +229,11 @@ function cadenceText(schedule: ScheduleItem): string {
   if (schedule.cadence_kind === "interval") {
     const minutes = Number(schedule.cadence.minutes ?? 30);
     const offset = Number(schedule.cadence.offset_minutes ?? 0);
-    return offset > 0 ? `每 ${minutes} 分钟，延后 ${offset} 分钟` : `每 ${minutes} 分钟`;
+    const base = offset > 0 ? `每 ${minutes} 分钟，延后 ${offset} 分钟` : `每 ${minutes} 分钟`;
+    if (schedule.cadence.active_start && schedule.cadence.active_end) {
+      return `${base} · ${String(schedule.cadence.active_start)}-${String(schedule.cadence.active_end)}`;
+    }
+    return base;
   }
   if (schedule.cadence_kind === "daily") {
     return `每天 ${String(schedule.cadence.time ?? "15:20")}`;
@@ -248,6 +252,9 @@ function windowPresetText(value?: string | null): string {
   if (value === "yesterday_1500_to_now") {
     return "昨日 15:00 -> 当前";
   }
+  if (value === "last_1h") {
+    return "近 1 小时";
+  }
   return value ?? "固定参数";
 }
 
@@ -258,6 +265,12 @@ function requestTags(schedule: ScheduleItem): string[] {
   }
   if (schedule.request.source) {
     tags.push(`source=${String(schedule.request.source)}`);
+  }
+  if (schedule.request.publish === true) {
+    tags.push("publish=true");
+  }
+  if (typeof schedule.request.notify === "boolean") {
+    tags.push(`notify=${String(schedule.request.notify)}`);
   }
   return tags;
 }

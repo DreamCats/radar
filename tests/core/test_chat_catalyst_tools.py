@@ -4,7 +4,7 @@ from datetime import datetime
 
 from radar.core.chat import ChatAgent, ChatSessionStore
 from radar.core.config import RadarConfig
-from radar.core.messages import CatalystCategory, CatalystTermLibrary, save_catalyst_terms
+from radar.core.messages import CatalystCategory, CatalystTermLibrary, load_catalyst_terms, save_catalyst_terms
 from radar.core.models import RawMessage
 from radar.core.storage import connect, init_db, upsert_messages
 
@@ -55,6 +55,15 @@ def test_builtin_catalyst_tools_read_terms_and_scan_local_database(tmp_path):
     assert scan_result["items"][0]["duplicate_count"] == 2
     assert [hit["term"] for hit in scan_result["items"][0]["matched_terms"]] == ["新签订单"]
     assert scan_result["items"][0]["stock_mentions"][0]["ts_code"] == "300503.SZ"
+
+
+def test_default_catalyst_terms_exclude_low_signal_meeting_terms(tmp_path):
+    config = RadarConfig(config_dir=tmp_path, storage={"data_dir": tmp_path / "data"})
+
+    library = load_catalyst_terms(config)
+    terms = {term for category in library.categories for term in category.terms}
+
+    assert {"调研", "会议", "路演", "1v1", "一对一", "董秘", "IR", "继续推荐", "弹性"}.isdisjoint(terms)
 
 
 def _message(message_id: str, message_time: str, group_name: str, content: str) -> RawMessage:

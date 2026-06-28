@@ -47,8 +47,18 @@ export type MarketStockRefreshRequest = {
   force: boolean;
 };
 
+export type CatalystStrategyJobRequest = {
+  start_time: string;
+  end_time: string;
+  limit: number;
+  max_stocks: number;
+  llm_concurrency: number;
+  publish: boolean;
+  notify: boolean;
+};
+
 export type DerivedJobItem = {
-  job_type: "analyst_backtest" | "market_stock_refresh";
+  job_type: "analyst_backtest" | "catalyst_strategy" | "market_stock_refresh";
   run_id: string;
   reused_existing: boolean;
   status: "running";

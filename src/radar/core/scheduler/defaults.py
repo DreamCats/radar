@@ -59,6 +59,17 @@ DEFAULT_SCHEDULES: tuple[DefaultSchedule, ...] = (
         max_lag_minutes=180,
         sort_order=15,
     ),
+    DefaultSchedule(
+        schedule_id="catalyst-strategy-hourly",
+        job_key="catalyst_strategy",
+        title="催化策略报告",
+        cadence_kind="interval",
+        cadence={"minutes": 60, "offset_minutes": 0, "active_start": "08:00", "active_end": "22:00"},
+        window_preset="last_1h",
+        request={"limit": 200, "max_stocks": 12, "llm_concurrency": 3, "publish": True, "notify": True},
+        max_lag_minutes=60,
+        sort_order=30,
+    ),
 )
 
 RETIRED_SCHEDULE_IDS: tuple[str, ...] = (

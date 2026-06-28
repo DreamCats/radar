@@ -408,8 +408,13 @@ def _stock_codes(content: str) -> list[str]:
     for match in re.finditer(r"(?<!\d)([03468]\d{5})(?:\.(SH|SZ|BJ))?(?!\d)", content, re.I):
         symbol = match.group(1)
         suffix = match.group(2)
+        expected_suffix = _stock_suffix(symbol)
+        if expected_suffix is None:
+            continue
+        if suffix and suffix.upper() != expected_suffix:
+            continue
         if not suffix:
-            suffix = _stock_suffix(symbol)
+            suffix = expected_suffix
         code = f"{symbol}.{suffix.upper()}" if suffix else symbol
         if code not in codes:
             codes.append(code)
@@ -417,11 +422,29 @@ def _stock_codes(content: str) -> list[str]:
 
 
 def _stock_suffix(symbol: str) -> str | None:
-    if symbol.startswith("6"):
+    if symbol.startswith(("600", "601", "603", "605", "688", "689")):
         return "SH"
-    if symbol.startswith(("0", "3")):
+    if symbol.startswith(("000", "001", "002", "003", "300", "301")):
         return "SZ"
-    if symbol.startswith(("4", "8")):
+    if symbol.startswith(
+        (
+            "430",
+            "831",
+            "832",
+            "833",
+            "834",
+            "835",
+            "836",
+            "837",
+            "838",
+            "839",
+            "870",
+            "871",
+            "872",
+            "873",
+            "920",
+        )
+    ):
         return "BJ"
     return None
 

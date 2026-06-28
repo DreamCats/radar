@@ -1,4 +1,4 @@
-import { Database, RefreshCw, UserRoundCheck } from "lucide-react";
+import { Database, RefreshCw, UserRoundCheck, Zap } from "lucide-react";
 
 import type { IngestSource } from "../types";
 import type { JobTemplateKey } from "./jobRuns";
@@ -25,6 +25,13 @@ const ALL_JOB_TEMPLATES = [
     serves: "追踪分析师提及后表现",
     icon: UserRoundCheck,
   },
+  {
+    key: "catalystStrategy",
+    title: "催化策略报告",
+    meta: "近窗推演",
+    serves: "生成并上传 HTML",
+    icon: Zap,
+  },
 ] satisfies Array<{ key: JobTemplateKey; title: string; meta: string; serves: string; icon: typeof Database }>;
 
 export const JOB_TEMPLATES = ALL_JOB_TEMPLATES;
@@ -32,7 +39,7 @@ export const JOB_TEMPLATES = ALL_JOB_TEMPLATES;
 export const JOB_TEMPLATE_GROUPS = [
   {
     title: "基础作业",
-    items: JOB_TEMPLATES.filter((item) => ["ingest", "marketStockRefresh", "analystBacktest"].includes(item.key)),
+    items: JOB_TEMPLATES.filter((item) => ["ingest", "marketStockRefresh", "analystBacktest", "catalystStrategy"].includes(item.key)),
   },
 ].filter((group) => group.items.length > 0);
 
@@ -45,6 +52,9 @@ export function configHints(kind: JobTemplateKey): string[] {
   }
   if (kind === "marketStockRefresh") {
     return ["刷新 stocks 主数据表", "Tushare stock_basic", "L/D/P 全量替换"];
+  }
+  if (kind === "catalystStrategy") {
+    return ["催化词筛选", "按标的聚合", "上传 Aly", "发 Bark"];
   }
   return [];
 }

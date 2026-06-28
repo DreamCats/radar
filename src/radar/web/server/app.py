@@ -12,6 +12,7 @@ from radar.web.server.auth import auth_required, current_username
 from radar.web.server.routers import (
     auth,
     backtest,
+    catalyst_strategy,
     chat,
     health,
     ingest,
@@ -51,6 +52,7 @@ def create_app(config: RadarConfig | None = None) -> FastAPI:
     app.include_router(runs.router)
     app.include_router(schedules.router)
     app.include_router(ingest.router)
+    app.include_router(catalyst_strategy.router)
     app.include_router(market.router)
     app.include_router(industry_chains.router)
     app.include_router(backtest.router)

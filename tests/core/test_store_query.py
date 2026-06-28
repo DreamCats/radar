@@ -146,7 +146,7 @@ def test_catalyst_feed_matches_terms_and_dedupes_sources(sqlite_conn):
             _message("m1", "2026-06-23T09:20:00", "东财策略", "AI 液冷 新签订单 300503"),
             _message("m2", "2026-06-23T09:30:00", "最强科技", "AI液冷，新签订单 300503"),
             _message("m3", "2026-06-23T10:00:00", "东财策略", "普通聊天"),
-            _message("m4", "2026-06-23T10:30:00", "风险群", "客户砍单，需求不足"),
+            _message("m4", "2026-06-23T10:30:00", "风险群", "300476 客户砍单，需求不足"),
         ],
     )
     library = CatalystTermLibrary(
@@ -174,6 +174,34 @@ def test_catalyst_feed_matches_terms_and_dedupes_sources(sqlite_conn):
     assert [source.message_id for source in order_item.duplicate_sources] == ["m1", "m2"]
     assert [hit.term for hit in order_item.matched_terms] == ["新签订单"]
     assert order_item.stock_mentions[0].ts_code == "300503.SZ"
+
+
+def test_catalyst_feed_ignores_meeting_password_like_stock_code(sqlite_conn):
+    init_db(sqlite_conn)
+    upsert_messages(
+        sqlite_conn,
+        [
+            _message("m1", "2026-06-23T09:20:00", "东财策略", "电话会议通知，密码：354817，扩产交流"),
+            _message("m2", "2026-06-23T09:30:00", "东财策略", "利和兴 301013 扩产进展"),
+        ],
+    )
+    library = CatalystTermLibrary(
+        categories=[CatalystCategory(id="capacity", name="产能", color="#38bdf8", terms=["扩产"])]
+    )
+
+    page = list_catalyst_feed(
+        sqlite_conn,
+        library,
+        CatalystFeedFilters(
+            start_time=datetime.fromisoformat("2026-06-23T09:00:00"),
+            end_time=datetime.fromisoformat("2026-06-23T10:00:00"),
+            limit=10,
+        ),
+    )
+
+    assert page.summary.total_items == 1
+    assert page.items[0].message_id == "m2"
+    assert [mention.ts_code for mention in page.items[0].stock_mentions] == ["301013.SZ"]
 
 
 def test_catalyst_feed_category_filter_keeps_global_counts_and_all_hits(sqlite_conn):

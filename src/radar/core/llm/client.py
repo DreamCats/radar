@@ -163,6 +163,7 @@ def chat(
     temperature: float | None = None,
     max_tokens: int | None = None,
     disable_thinking: bool = False,
+    enable_thinking: bool = False,
 ) -> str:
     """发送 LLM 聊天请求；业务层负责控制 prompt 和成本。"""
 
@@ -175,6 +176,7 @@ def chat(
         temperature=temperature,
         max_tokens=max_tokens,
         disable_thinking=disable_thinking,
+        enable_thinking=enable_thinking,
     ).content
 
 
@@ -245,6 +247,7 @@ def chat_json(
     task: str | None = None,
     model: str | None = None,
     disable_thinking: bool = False,
+    enable_thinking: bool = False,
 ) -> dict[str, object]:
     """发送请求并解析 JSON object；失败时补一轮纠错提示。"""
 
@@ -256,6 +259,7 @@ def chat_json(
             task=task,
             model=model,
             disable_thinking=disable_thinking,
+            enable_thinking=enable_thinking,
         ).strip()
         try:
             parsed = json.loads(_strip_json_fence(raw))
@@ -276,6 +280,7 @@ def chat_json_list(
     task: str | None = None,
     model: str | None = None,
     disable_thinking: bool = False,
+    enable_thinking: bool = False,
 ) -> list[dict[str, object]]:
     """发送请求并解析 JSON array；dict 会兼容包装成单元素数组。"""
 
@@ -287,6 +292,7 @@ def chat_json_list(
             task=task,
             model=model,
             disable_thinking=disable_thinking,
+            enable_thinking=enable_thinking,
         ).strip()
         try:
             parsed = json.loads(_strip_json_fence(raw))

@@ -17,6 +17,7 @@ import type {
   AuthStatus,
   CatalystFeedPage,
   CatalystFeedQuery,
+  CatalystStrategyJobRequest,
   CatalystTermLibrary,
   DerivedJobItem,
   IngestJobItem,
@@ -440,6 +441,19 @@ export async function startAnalystBacktestJob(request: AnalystBacktestRequest): 
 
 export async function startMarketStockRefreshJob(request: MarketStockRefreshRequest): Promise<DerivedJobItem[]> {
   const response = await apiFetch("/api/market/stocks/refresh/jobs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: DerivedJobItem[] };
+  return data.items;
+}
+
+export async function startCatalystStrategyJob(request: CatalystStrategyJobRequest): Promise<DerivedJobItem[]> {
+  const response = await apiFetch("/api/catalyst-strategy/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

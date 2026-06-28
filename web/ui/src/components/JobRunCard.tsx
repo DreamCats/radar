@@ -5,6 +5,7 @@ import type { RunItem } from "../types";
 type JobRunKind =
   | "ingest"
   | "analystBacktest"
+  | "catalystStrategy"
   | "marketStockRefresh";
 
 type JobRunCardProps = {
@@ -104,6 +105,9 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   if (kind === "marketStockRefresh") {
     return marketStockRefreshMetrics(run);
   }
+  if (kind === "catalystStrategy") {
+    return catalystStrategyMetrics(run);
+  }
   return [];
 }
 
@@ -182,6 +186,18 @@ function marketStockRefreshMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
+function catalystStrategyMetrics(run?: RunItem): string[] {
+  const metadata = run?.metadata ?? {};
+  const feedItems = run?.raw_count ?? numberValue(metadata.total_feed_items);
+  const stocks = run?.stored_count ?? numberValue(metadata.total_stocks);
+  return [
+    `线索 ${feedItems} 条`,
+    `标的 ${stocks}`,
+    textValue(metadata.published_url) ? "已上传" : "本地报告",
+    durationText(run),
+  ].filter(Boolean);
+}
+
 function detailText(run?: RunItem): string {
   if (!run) {
     return "任务已提交，等待服务端返回运行状态。";
@@ -190,6 +206,10 @@ function detailText(run?: RunItem): string {
     return run.error_message ? `失败原因：${run.error_message}` : "任务失败。";
   }
   const metadata = run.metadata;
+  const url = textValue(metadata.published_url);
+  if (url) {
+    return `报告：${url}`;
+  }
   const start = textValue(metadata.start_time);
   const end = textValue(metadata.end_time);
   return start && end ? `时间窗口：${start} - ${end}` : `目标：${run.target}`;
@@ -228,6 +248,9 @@ function kindTitle(kind: JobRunKind): string {
   }
   if (kind === "marketStockRefresh") {
     return "市场主数据";
+  }
+  if (kind === "catalystStrategy") {
+    return "催化策略";
   }
   return "作业";
 }

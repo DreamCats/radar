@@ -50,10 +50,8 @@ description: 股票行情研究
     skill_by_name = {skill.name: skill for skill in skills}
     names = [skill.name for skill in skills]
 
-    assert names.index("evidence_chain") < names.index("market_research")
-    assert names.index("stock_deep_dive") < names.index("market_research")
-    assert skill_by_name["evidence_chain"].source_path.is_relative_to(BUILTIN_CHAT_SKILLS_DIR)
-    assert skill_by_name["stock_deep_dive"].source_path.is_relative_to(BUILTIN_CHAT_SKILLS_DIR)
+    assert names.index("investment-valuation") < names.index("market_research")
+    assert skill_by_name["investment-valuation"].source_path.is_relative_to(BUILTIN_CHAT_SKILLS_DIR)
 
 
 def test_chat_agent_injects_skill_catalog_without_full_skill_body(tmp_path, monkeypatch):

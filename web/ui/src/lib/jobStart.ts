@@ -1,5 +1,6 @@
 import {
   startAnalystBacktestJob,
+  startCatalystStrategyJob,
   startIngestWechatJob,
   startMarketStockRefreshJob,
 } from "../api/radarApi";
@@ -48,6 +49,18 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
   if (kind === "marketStockRefresh") {
     const items = await startMarketStockRefreshJob({ force: true });
     return derivedJobs(kind, "A股股票主数据", items);
+  }
+  if (kind === "catalystStrategy") {
+    const items = await startCatalystStrategyJob({
+      start_time: window.start_time,
+      end_time: window.end_time,
+      limit: 200,
+      max_stocks: 12,
+      llm_concurrency: 3,
+      publish: true,
+      notify: true,
+    });
+    return derivedJobs(kind, "催化策略", items);
   }
   throw new Error(`未知作业类型：${kind}`);
 }

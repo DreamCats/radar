@@ -532,6 +532,7 @@ export type AnalystBacktestMessageEvidence = {
 
 export type {
   AnalystBacktestRequest,
+  CatalystStrategyJobRequest,
   DerivedJobItem,
   IngestJobItem,
   IngestRequest,

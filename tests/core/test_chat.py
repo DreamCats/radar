@@ -319,8 +319,10 @@ def test_chat_agent_uses_default_system_prompt(tmp_path, monkeypatch):
     assert seen["messages"][0]["content"].startswith(
         f"{DEFAULT_CHAT_SYSTEM_PROMPT}\n\n当日日期：2026-06-09\n今日是否 A 股交易日：是"
     )
-    assert "evidence_chain: 本地消息和公开来源的证据链复核" in seen["messages"][0]["content"]
-    assert "stock_deep_dive: 个股线索深挖和跟踪条件整理" in seen["messages"][0]["content"]
+    assert (
+        "investment-valuation: 投研估值分析：基于研报、调研纪要、公告、市场传闻等材料"
+        in seen["messages"][0]["content"]
+    )
     assert seen["messages"][1] == {"role": "user", "content": "今天有什么机会？"}
 
 
@@ -333,7 +335,8 @@ def test_chat_system_prompt_layers_surface_rules():
     assert common_prompt == COMMON_CHAT_SYSTEM_PROMPT
     assert DEFAULT_CHAT_SYSTEM_PROMPT == COMMON_CHAT_SYSTEM_PROMPT
     assert "只做研究辅助和证据整理" in common_prompt
-    assert "不输出买入、卖出、持有、仓位、目标价" in common_prompt
+    assert "默认不输出买入、卖出、持有、仓位、目标价" in common_prompt
+    assert "加载 investment-valuation skill 时" in common_prompt
     assert "投资价值排序" in common_prompt
     assert "证据完整度、跟踪优先级" in common_prompt
     assert "多次调用 radar_search_messages / radar_get_conversation_window 和 radar_search_web" in common_prompt

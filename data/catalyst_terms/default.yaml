@@ -7,15 +7,9 @@ categories:
       - 深度报告
       - 首次覆盖
       - 点评
-      - 调研
-      - 董秘
-      - IR
-      - 一对一
-      - 1v1
       - 强推
       - 强烈推荐
       - 重点推荐
-      - 继续推荐
       - 首推
       - 金股
       - 目标价
@@ -176,7 +170,6 @@ categories:
       - 0到1
       - 从0到1
       - 1到N
-      - 弹性
   - id: market_confirmation
     name: 行情确认
     color: "#f6465d"

@@ -27,10 +27,11 @@ def ensure_default_schedules(database: Path, *, now: datetime | None = None) -> 
         _delete_retired_schedules(conn)
         for schedule in DEFAULT_SCHEDULES:
             existing = conn.execute(
-                "SELECT 1 FROM job_schedules WHERE schedule_id = ?",
+                "SELECT * FROM job_schedules WHERE schedule_id = ?",
                 (schedule.schedule_id,),
             ).fetchone()
             if existing is not None:
+                _sync_catalyst_strategy_default(conn, schedule, existing, current_text, current)
                 continue
             next_tick = _default_next_tick(schedule, current)
             conn.execute(
@@ -255,6 +256,45 @@ def list_schedule_ticks(
 def _delete_retired_schedules(conn: sqlite3.Connection) -> None:
     _delete_retired_schedules_by_ids(conn)
     _delete_retired_schedules_by_job_keys(conn)
+
+
+def _sync_catalyst_strategy_default(
+    conn: sqlite3.Connection,
+    default_schedule,
+    row: sqlite3.Row,
+    current_text: str,
+    current: datetime,
+) -> None:
+    if default_schedule.schedule_id != "catalyst-strategy-hourly":
+        return
+
+    updates: list[str] = []
+    params: list[object] = []
+    request = _load_json(row["request_json"], {})
+    if request.get("notify") is False:
+        request["notify"] = True
+        updates.append("request_json = ?")
+        params.append(_json(request))
+
+    if row["created_at"] == row["updated_at"] and bool(row["enabled"]) != default_schedule.enabled:
+        updates.append("enabled = ?")
+        params.append(1 if default_schedule.enabled else 0)
+        updates.append("next_tick_at = ?")
+        params.append(_default_next_tick(default_schedule, current).isoformat())
+
+    if not updates:
+        return
+    updates.append("updated_at = ?")
+    params.append(current_text)
+    params.append(default_schedule.schedule_id)
+    conn.execute(
+        f"""
+        UPDATE job_schedules
+        SET {", ".join(updates)}
+        WHERE schedule_id = ?
+        """,
+        params,
+    )
 
 
 def _delete_retired_schedules_by_ids(conn: sqlite3.Connection) -> None:

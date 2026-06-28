@@ -68,6 +68,22 @@ def test_chat_json_retries_invalid_json(monkeypatch):
     assert seen_messages[1][-1]["content"].startswith("返回格式不是合法 JSON 对象")
 
 
+def test_chat_json_can_enable_thinking(monkeypatch):
+    config = _config()
+    captured: dict[str, object] = {}
+
+    def fake_chat(config, messages, **kwargs):
+        captured.update(kwargs)
+        return '{"ok": true}'
+
+    monkeypatch.setattr("radar.core.llm.client.chat", fake_chat)
+
+    parsed = chat_json(config, [{"role": "user", "content": "return json"}], enable_thinking=True)
+
+    assert parsed == {"ok": True}
+    assert captured["enable_thinking"] is True
+
+
 def test_openai_client_builds_chat_completions_request(monkeypatch):
     captured = {}
 

@@ -54,7 +54,8 @@ export function IngestPage() {
   const endValue = toLocalIso(range.endDate, range.endTime);
   const validWindow = Boolean(startValue && endValue) && startValue <= endValue;
   const usesTimeWindow = selectedJob !== "marketStockRefresh";
-  const usesSource = selectedJob !== "marketStockRefresh";
+  const usesSource = selectedJob !== "marketStockRefresh" && selectedJob !== "catalystStrategy";
+  const usesForce = selectedJob !== "catalystStrategy";
   const canSubmit = usesTimeWindow ? validWindow : true;
   const selectedTemplate = JOB_TEMPLATES.find((item) => item.key === selectedJob) ?? JOB_TEMPLATES[0];
   const rows = runs
@@ -190,6 +191,12 @@ export function IngestPage() {
 
   function selectJob(kind: JobTemplateKey) {
     setSelectedJob(kind);
+    if (kind === "catalystStrategy" && selectedJob !== kind) {
+      const nextRange = buildPresetRange("last1h");
+      setPreset("last1h");
+      setRange(nextRange);
+      return;
+    }
     const needsHistoryWindow = kind === "analystBacktest";
     if (!needsHistoryWindow && preset === "last30d") {
       const nextRange = buildYesterdayCloseRange();
@@ -296,15 +303,17 @@ export function IngestPage() {
                 )}
                 {usesTimeWindow && <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />}
                 {usesTimeWindow && <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />}
-                <label className="toggle-field">
-                  <input
-                    checked={selectedJob === "marketStockRefresh" ? true : force}
-                    disabled={selectedJob === "marketStockRefresh"}
-                    type="checkbox"
-                    onChange={(event) => setForce(event.target.checked)}
-                  />
-                  <span>{forceLabel(selectedJob)}</span>
-                </label>
+                {usesForce && (
+                  <label className="toggle-field">
+                    <input
+                      checked={selectedJob === "marketStockRefresh" ? true : force}
+                      disabled={selectedJob === "marketStockRefresh"}
+                      type="checkbox"
+                      onChange={(event) => setForce(event.target.checked)}
+                    />
+                    <span>{forceLabel(selectedJob)}</span>
+                  </label>
+                )}
                 <button
                   className={submitButtonClass}
                   type="button"
