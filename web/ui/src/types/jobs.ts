@@ -47,6 +47,10 @@ export type MarketStockRefreshRequest = {
   force: boolean;
 };
 
+export type ThsConceptRefreshRequest = {
+  force: boolean;
+};
+
 export type CatalystStrategyJobRequest = {
   start_time: string;
   end_time: string;
@@ -58,7 +62,7 @@ export type CatalystStrategyJobRequest = {
 };
 
 export type DerivedJobItem = {
-  job_type: "analyst_backtest" | "catalyst_strategy" | "market_stock_refresh";
+  job_type: "analyst_backtest" | "catalyst_strategy" | "market_stock_refresh" | "ths_concept_refresh";
   run_id: string;
   reused_existing: boolean;
   status: "running";

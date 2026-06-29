@@ -53,8 +53,8 @@ export function IngestPage() {
   const startValue = toLocalIso(range.startDate, range.startTime);
   const endValue = toLocalIso(range.endDate, range.endTime);
   const validWindow = Boolean(startValue && endValue) && startValue <= endValue;
-  const usesTimeWindow = selectedJob !== "marketStockRefresh";
-  const usesSource = selectedJob !== "marketStockRefresh" && selectedJob !== "catalystStrategy";
+  const usesTimeWindow = selectedJob !== "marketStockRefresh" && selectedJob !== "thsConceptRefresh";
+  const usesSource = selectedJob !== "marketStockRefresh" && selectedJob !== "thsConceptRefresh" && selectedJob !== "catalystStrategy";
   const usesForce = selectedJob !== "catalystStrategy";
   const canSubmit = usesTimeWindow ? validWindow : true;
   const selectedTemplate = JOB_TEMPLATES.find((item) => item.key === selectedJob) ?? JOB_TEMPLATES[0];
@@ -378,6 +378,9 @@ function forceLabel(kind: JobTemplateKey): string {
   }
   if (kind === "marketStockRefresh") {
     return "全量刷新";
+  }
+  if (kind === "thsConceptRefresh") {
+    return "强制重刷全部成员";
   }
   return "强制重跑";
 }

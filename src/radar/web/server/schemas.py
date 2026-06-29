@@ -207,6 +207,10 @@ class MarketStockRefreshRequest(BaseModel):
     force: bool = True
 
 
+class ThsConceptRefreshRequest(BaseModel):
+    force: bool = False
+
+
 class CatalystStrategyJobRequest(BaseModel):
     start_time: datetime
     end_time: datetime
@@ -224,6 +228,7 @@ class DerivedJobItem(BaseModel):
         "analyst_backtest",
         "catalyst_strategy",
         "market_stock_refresh",
+        "ths_concept_refresh",
     ]
     run_id: str
     reused_existing: bool = False

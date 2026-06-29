@@ -32,8 +32,11 @@ import type {
   MessageQuery,
   MarketStockRefreshRequest,
   RunItem,
+  PremarketSignalQuery,
+  PremarketSignalResult,
   ScheduleItem,
   ScheduleTickItem,
+  ThsConceptRefreshRequest,
 } from "../types";
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
@@ -102,6 +105,10 @@ export async function resetCatalystTerms(): Promise<CatalystTermLibrary> {
 
 export async function fetchCatalystFeed(query: CatalystFeedQuery): Promise<CatalystFeedPage> {
   return getJson(`/api/catalyst/feed?${params(query)}`);
+}
+
+export async function fetchPremarketSignal(query: PremarketSignalQuery): Promise<PremarketSignalResult> {
+  return getJson(`/api/premarket/signals?${params(query)}`);
 }
 
 export async function fetchIndustryChains(): Promise<IndustryChainList> {
@@ -441,6 +448,19 @@ export async function startAnalystBacktestJob(request: AnalystBacktestRequest): 
 
 export async function startMarketStockRefreshJob(request: MarketStockRefreshRequest): Promise<DerivedJobItem[]> {
   const response = await apiFetch("/api/market/stocks/refresh/jobs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: DerivedJobItem[] };
+  return data.items;
+}
+
+export async function startThsConceptRefreshJob(request: ThsConceptRefreshRequest): Promise<DerivedJobItem[]> {
+  const response = await apiFetch("/api/market/ths-concepts/refresh/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

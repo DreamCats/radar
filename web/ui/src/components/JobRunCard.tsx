@@ -6,7 +6,8 @@ type JobRunKind =
   | "ingest"
   | "analystBacktest"
   | "catalystStrategy"
-  | "marketStockRefresh";
+  | "marketStockRefresh"
+  | "thsConceptRefresh";
 
 type JobRunCardProps = {
   kind: JobRunKind;
@@ -80,6 +81,9 @@ function progressPercent(kind: JobRunKind, run?: RunItem): number {
     if (kind === "analystBacktest") {
       return analystBacktestProgress(run);
     }
+    if (kind === "thsConceptRefresh") {
+      return thsConceptRefreshProgress(run);
+    }
     return 8;
   }
   return 100;
@@ -104,6 +108,9 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   }
   if (kind === "marketStockRefresh") {
     return marketStockRefreshMetrics(run);
+  }
+  if (kind === "thsConceptRefresh") {
+    return thsConceptRefreshMetrics(run);
   }
   if (kind === "catalystStrategy") {
     return catalystStrategyMetrics(run);
@@ -186,6 +193,28 @@ function marketStockRefreshMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
+function thsConceptRefreshProgress(run?: RunItem): number {
+  const metadata = run?.metadata ?? {};
+  const total = numberValue(metadata.concept_count);
+  const done = numberValue(metadata.refreshed_member_count) + numberValue(metadata.skipped_member_count);
+  return total ? boundedPercent(done, total) : 8;
+}
+
+function thsConceptRefreshMetrics(run?: RunItem): string[] {
+  const metadata = run?.metadata ?? {};
+  const concepts = run?.raw_count ?? numberValue(metadata.concept_count);
+  const memberRows = run?.stored_count ?? numberValue(metadata.member_row_count);
+  const refreshed = numberValue(metadata.refreshed_member_count);
+  const skipped = run?.filtered_count ?? numberValue(metadata.skipped_member_count);
+  return [
+    `概念 ${concepts}`,
+    `成员行 ${memberRows}`,
+    `刷新 ${refreshed}`,
+    `跳过 ${skipped}`,
+    durationText(run),
+  ].filter(Boolean);
+}
+
 function catalystStrategyMetrics(run?: RunItem): string[] {
   const metadata = run?.metadata ?? {};
   const feedItems = run?.raw_count ?? numberValue(metadata.total_feed_items);
@@ -248,6 +277,9 @@ function kindTitle(kind: JobRunKind): string {
   }
   if (kind === "marketStockRefresh") {
     return "市场主数据";
+  }
+  if (kind === "thsConceptRefresh") {
+    return "THS 概念";
   }
   if (kind === "catalystStrategy") {
     return "催化策略";

@@ -1,0 +1,467 @@
+.premarket-page {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+}
+
+.workspace-shell.active-tab-premarket .content {
+  min-height: 0;
+}
+
+.premarket-control-bar {
+  grid-template-columns: auto minmax(140px, 0.9fr) minmax(110px, 0.6fr) minmax(110px, 0.6fr) auto auto;
+  align-items: end;
+  min-width: 0;
+  animation: catalyst-panel-in 180ms var(--motion-ease) both;
+}
+
+.premarket-control-bar .field,
+.premarket-control-bar .btn {
+  min-width: 0;
+}
+
+.premarket-control-bar .btn {
+  align-self: end;
+  gap: 6px;
+  min-height: 34px;
+  height: 34px;
+  padding: 0 10px;
+  line-height: 1;
+}
+
+.premarket-window-presets {
+  display: inline-flex;
+  align-self: end;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+  padding: 3px;
+}
+
+.premarket-window-presets button {
+  min-height: 28px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink-subtle);
+  padding: 0 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.premarket-window-presets button:hover,
+.premarket-window-presets button.active {
+  background: var(--color-surface-3);
+  color: var(--color-ink);
+}
+
+.premarket-query-button {
+  border-color: var(--color-hairline-strong);
+  background: transparent;
+  color: var(--color-ink-muted);
+}
+
+.premarket-query-button:hover:not(:disabled) {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+}
+
+.premarket-icon-button {
+  width: 34px;
+  padding: 0;
+}
+
+.premarket-icon-button.is-spinning svg {
+  animation: catalyst-spin 820ms linear infinite;
+}
+
+.premarket-error {
+  border: 1px solid color-mix(in srgb, var(--color-market-down) 48%, var(--color-hairline));
+  border-radius: var(--radius-md);
+  background: var(--color-market-down-soft);
+  color: color-mix(in srgb, var(--color-market-down) 72%, white);
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.premarket-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.premarket-rank-panel {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  height: calc(100vh - 154px);
+  min-height: 0;
+}
+
+.premarket-rank-panel {
+  position: relative;
+}
+
+.premarket-rank-panel.is-refreshing::before {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  width: 42%;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-primary) 72%, white);
+  content: "";
+  animation: catalyst-progress-sweep 980ms var(--motion-ease) infinite;
+}
+
+.premarket-summary-strip,
+.premarket-detail-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 10px;
+}
+
+.premarket-detail-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: 0;
+  padding: 0;
+}
+
+.premarket-metric {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  padding: 8px 10px;
+}
+
+.premarket-metric strong {
+  color: var(--color-ink);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.premarket-metric em {
+  color: var(--color-ink-tertiary);
+  font-style: normal;
+  font-size: 11px;
+}
+
+.premarket-detail-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 10px;
+}
+
+.premarket-rank-index {
+  color: var(--color-ink-tertiary);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+}
+
+.premarket-score-pill {
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 36%, var(--color-hairline));
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: color-mix(in srgb, var(--color-primary) 68%, var(--color-ink));
+  padding: 2px 7px;
+  font-style: normal;
+  font-size: 11px;
+}
+
+.premarket-detail-body {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.premarket-detail-backdrop {
+  position: fixed;
+  z-index: 70;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.42);
+  padding: 18px;
+  overscroll-behavior: contain;
+  animation: catalyst-backdrop-in 160ms var(--motion-ease) both;
+}
+
+.premarket-detail-drawer {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(920px, calc(100vw - 40px));
+  height: min(78dvh, 760px);
+  min-height: 360px;
+  box-shadow: 0 22px 70px rgb(0 0 0 / 0.42);
+  animation: catalyst-modal-in 180ms var(--motion-ease) both;
+}
+
+.premarket-detail-close {
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+}
+
+.premarket-stock-table {
+  display: grid;
+  gap: 6px;
+}
+
+.premarket-stock-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px 52px 52px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  padding: 9px 10px;
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+}
+
+.premarket-stock-row div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.premarket-stock-row strong {
+  min-width: 0;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.premarket-stock-row span,
+.premarket-stock-row time {
+  color: var(--color-ink-tertiary);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+}
+
+.premarket-stock-row em {
+  color: var(--color-ink-muted);
+  font-style: normal;
+}
+
+.premarket-stock-toggle {
+  justify-self: start;
+  min-height: 30px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-muted);
+  padding: 0 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.premarket-stock-toggle:hover {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+}
+
+.premarket-evidence-list {
+  display: grid;
+  gap: 10px;
+}
+
+.premarket-evidence {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+  padding: 10px 12px 12px;
+}
+
+.premarket-evidence header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  min-width: 0;
+  color: var(--color-ink-tertiary);
+  font-size: 12px;
+}
+
+.premarket-evidence header strong {
+  color: var(--color-ink-muted);
+  font-weight: 700;
+}
+
+.premarket-evidence header span {
+  margin-left: auto;
+  min-width: 0;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.premarket-evidence p {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.premarket-empty {
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+  color: var(--color-ink-tertiary);
+  font-size: 13px;
+}
+
+@media (max-width: 1180px) {
+  .premarket-control-bar,
+  .premarket-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .premarket-rank-panel {
+    height: auto;
+    min-height: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace-shell.active-tab-premarket .content {
+    display: block;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .workspace-shell.active-tab-premarket .page-motion {
+    display: block;
+  }
+
+  .premarket-page,
+  .premarket-workspace {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .premarket-control-bar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px 44px;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .premarket-window-presets {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .premarket-window-presets button {
+    flex: 1 1 0;
+  }
+
+  .premarket-control-bar .field:first-of-type {
+    grid-column: 1 / -1;
+  }
+
+  .premarket-control-bar .field {
+    gap: 4px;
+  }
+
+  .premarket-control-bar .field > span {
+    font-size: 11px;
+  }
+
+  .premarket-control-bar .field input {
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 9px;
+    font-size: 14px;
+  }
+
+  .premarket-control-bar .btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  .premarket-query-button span {
+    display: none;
+  }
+
+  .premarket-summary-strip,
+  .premarket-detail-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .premarket-summary-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .premarket-summary-strip .premarket-metric {
+    padding: 8px;
+  }
+
+  .premarket-summary-strip .premarket-metric strong {
+    font-size: 16px;
+  }
+
+  .premarket-rank-panel {
+    display: block;
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .premarket-stock-row {
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+  }
+
+  .premarket-stock-row time {
+    display: none;
+  }
+
+  .premarket-detail-drawer {
+    width: 100%;
+    height: min(82dvh, 720px);
+    min-height: 340px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premarket-control-bar,
+  .premarket-board-row,
+  .premarket-detail-backdrop,
+  .premarket-detail-drawer,
+  .premarket-rank-panel.is-refreshing::before,
+  .premarket-icon-button.is-spinning svg {
+    animation: none !important;
+  }
+
+  .premarket-board-row,
+  .premarket-query-button,
+  .premarket-icon-button {
+    transition: none !important;
+  }
+}

@@ -132,6 +132,90 @@ export type CatalystFeedQuery = {
   limit?: number;
 };
 
+export type PremarketSignalQuery = {
+  start_time: string;
+  end_time: string;
+  limit?: number;
+};
+
+export type PremarketEvidence = {
+  message_id: string;
+  source: MessageSource;
+  sender: string;
+  group_name?: string | null;
+  message_time: string;
+  raw_content: string;
+  matched_terms: CatalystTermHit[];
+  stock_mentions: CatalystStockMention[];
+};
+
+export type PremarketStockRank = {
+  ts_code?: string | null;
+  stock_name: string;
+  mention_count: number;
+  person_count: number;
+  message_count: number;
+  first_time: string;
+  latest_time: string;
+  catalyst_terms: CatalystTermHit[];
+};
+
+export type PremarketConceptSource = "ths" | "dc" | "none";
+
+export type PremarketConceptRank = {
+  concept_code: string;
+  concept_name: string;
+  source: PremarketConceptSource;
+  score: number;
+  velocity_score: number;
+  early_mention_count: number;
+  late_mention_count: number;
+  stock_count: number;
+  mention_count: number;
+  person_count: number;
+  message_count: number;
+  top_stocks: PremarketStockRank[];
+  catalyst_terms: CatalystTermHit[];
+  evidence: PremarketEvidence[];
+};
+
+export type PremarketSignalSummary = {
+  start_time: string;
+  end_time: string;
+  messages_scanned: number;
+  catalyst_items: number;
+  stock_mentions: number;
+  dedup_person_stock_mentions: number;
+  concept_source: PremarketConceptSource;
+  concept_count: number;
+  ranked_concept_count: number;
+};
+
+export type PremarketConcentrationItem = {
+  concept_count: number;
+  covered_dedup_person_stock_mentions: number;
+  total_dedup_person_stock_mentions: number;
+  coverage_pct: number;
+};
+
+export type PremarketTimeBucket = {
+  start_time: string;
+  end_time: string;
+  catalyst_items: number;
+  dedup_person_stock_mentions: number;
+};
+
+export type PremarketSignalResult = {
+  query: PremarketSignalQuery;
+  summary: PremarketSignalSummary;
+  concepts: PremarketConceptRank[];
+  top_concepts: PremarketConceptRank[];
+  bottom_concepts: PremarketConceptRank[];
+  velocity_concepts: PremarketConceptRank[];
+  concentration: PremarketConcentrationItem[];
+  time_buckets: PremarketTimeBucket[];
+};
+
 export type IndustryChainEvidenceStatus = "supported" | "weakly_supported" | "candidate" | "unsupported";
 
 export type IndustryChainIndexItem = {
@@ -540,4 +624,5 @@ export type {
   MarketStockRefreshRequest,
   ScheduleItem,
   ScheduleTickItem,
+  ThsConceptRefreshRequest,
 } from "./types/jobs";

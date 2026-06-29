@@ -6,6 +6,7 @@ import {
   Menu,
   MessageCircle,
   Network,
+  Radar,
   RadioTower,
   Tags,
   Timer,
@@ -20,6 +21,7 @@ import { CatalystPage } from "./pages/CatalystPage";
 import { IngestPage } from "./pages/IngestPage";
 import { IndustryChainPage } from "./pages/IndustryChainPage";
 import { LoginPage } from "./pages/LoginPage";
+import { PremarketPage } from "./pages/PremarketPage";
 import { SchedulePage } from "./pages/SchedulePage";
 import { WechatPage } from "./pages/WechatPage";
 import type { AuthStatus } from "./types";
@@ -27,6 +29,7 @@ import type { AuthStatus } from "./types";
 type TabKey =
   | "wechat"
   | "catalyst"
+  | "premarket"
   | "industry-chain"
   | "analyst"
   | "schedule"
@@ -35,6 +38,7 @@ type TabKey =
 const NAV_ITEMS = [
   { key: "wechat", label: "微信", icon: MessageCircle },
   { key: "catalyst", label: "催化词", icon: Tags },
+  { key: "premarket", label: "盘前预测", icon: Radar },
   { key: "industry-chain", label: "产业链", icon: Network },
   { key: "analyst", label: "分析师", icon: UserRoundCheck },
   { key: "schedule", label: "定时", icon: Timer },
@@ -191,6 +195,7 @@ export function App() {
           <div className="page-motion">
             {tab === "wechat" && <WechatPage />}
             {tab === "catalyst" && <CatalystPage />}
+            {tab === "premarket" && <PremarketPage />}
             {tab === "industry-chain" && <IndustryChainPage />}
             {tab === "analyst" && <AnalystPage />}
             {tab === "schedule" && <SchedulePage />}

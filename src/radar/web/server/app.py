@@ -19,6 +19,7 @@ from radar.web.server.routers import (
     industry_chains,
     market,
     messages,
+    premarket,
     runs,
     schedules,
 )
@@ -49,6 +50,7 @@ def create_app(config: RadarConfig | None = None) -> FastAPI:
     app.include_router(health.router)
     app.include_router(chat.router)
     app.include_router(messages.router)
+    app.include_router(premarket.router)
     app.include_router(runs.router)
     app.include_router(schedules.router)
     app.include_router(ingest.router)

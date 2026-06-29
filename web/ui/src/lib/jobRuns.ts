@@ -4,7 +4,8 @@ export type JobTemplateKey =
   | "ingest"
   | "analystBacktest"
   | "catalystStrategy"
-  | "marketStockRefresh";
+  | "marketStockRefresh"
+  | "thsConceptRefresh";
 
 export type TrackedJob = {
   kind: JobTemplateKey;
@@ -18,6 +19,7 @@ const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   analyst_stock_mention_backtest_refresh: "analystBacktest",
   catalyst_strategy_report: "catalystStrategy",
   market_stock_master_refresh: "marketStockRefresh",
+  market_ths_concept_refresh: "thsConceptRefresh",
 };
 
 export const JOB_RUN_KINDS = Object.keys(RUN_KIND_TO_JOB);
@@ -77,6 +79,9 @@ function sourceFromRun(run: RunItem): string {
   }
   if (run.kind === "market_stock_master_refresh") {
     return "A股股票主数据";
+  }
+  if (run.kind === "market_ths_concept_refresh") {
+    return "THS 概念";
   }
   if (run.kind === "catalyst_strategy_report") {
     return "催化策略";

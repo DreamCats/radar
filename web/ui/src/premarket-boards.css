@@ -1,0 +1,151 @@
+.premarket-board-region {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  align-items: start;
+  gap: 10px;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 10px;
+}
+
+.premarket-board-region[aria-busy="true"] .premarket-board-row {
+  opacity: 0.7;
+}
+
+.premarket-board {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-width: 0;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+  overflow: hidden;
+}
+
+.premarket-board header {
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 10px;
+}
+
+.premarket-board header div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.premarket-board header strong {
+  color: var(--color-ink);
+  font-size: 13px;
+}
+
+.premarket-board header span,
+.premarket-board-head {
+  color: var(--color-ink-subtle);
+  font-size: 11px;
+}
+
+.premarket-board-head,
+.premarket-board-row {
+  display: grid;
+  grid-template-columns: 32px minmax(88px, 1fr) 58px 54px;
+  align-items: center;
+  gap: 8px;
+}
+
+.premarket-board-head {
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 7px 10px;
+}
+
+.premarket-board-head.velocity,
+.premarket-board-row.velocity {
+  grid-template-columns: 32px minmax(88px, 1fr) 56px 42px 42px;
+}
+
+.premarket-board-list {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: 0;
+  padding: 8px;
+}
+
+.premarket-board-row {
+  width: 100%;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-ink-muted);
+  padding: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease);
+}
+
+.premarket-board-row:hover,
+.premarket-board-row.active {
+  border-color: var(--color-hairline-strong);
+  background: var(--color-surface-3);
+}
+
+.premarket-board-row:hover {
+  transform: translateY(-1px);
+}
+
+.premarket-board-row.active {
+  box-shadow: inset 2px 0 0 var(--color-primary);
+}
+
+.premarket-board-row strong {
+  min-width: 0;
+  color: var(--color-ink);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.premarket-board-row > em {
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 36%, var(--color-hairline));
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: color-mix(in srgb, var(--color-primary) 68%, var(--color-ink));
+  padding: 2px 7px;
+  font-style: normal;
+  font-size: 11px;
+}
+
+.premarket-board-row > span:not(.premarket-rank-index) {
+  color: var(--color-ink-muted);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+
+@media (max-width: 1180px) {
+  .premarket-board-region {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .premarket-board-region {
+    display: grid;
+    overflow: visible;
+    padding: 10px 8px;
+  }
+
+  .premarket-board {
+    overflow: visible;
+  }
+
+  .premarket-board-list {
+    min-height: auto;
+  }
+}

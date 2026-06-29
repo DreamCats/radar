@@ -3,6 +3,7 @@ import {
   startCatalystStrategyJob,
   startIngestWechatJob,
   startMarketStockRefreshJob,
+  startThsConceptRefreshJob,
 } from "../api/radarApi";
 import type { IngestSource } from "../types";
 import { sourceLabel, type JobTemplateKey, type TrackedJob } from "./jobRuns";
@@ -49,6 +50,10 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
   if (kind === "marketStockRefresh") {
     const items = await startMarketStockRefreshJob({ force: true });
     return derivedJobs(kind, "A股股票主数据", items);
+  }
+  if (kind === "thsConceptRefresh") {
+    const items = await startThsConceptRefreshJob({ force });
+    return derivedJobs(kind, force ? "THS 概念全量" : "THS 概念增量", items);
   }
   if (kind === "catalystStrategy") {
     const items = await startCatalystStrategyJob({

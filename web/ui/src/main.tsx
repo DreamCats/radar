@@ -18,6 +18,8 @@ import "./industry-chain-detail.css";
 import "./industry-chain-mobile-article.css";
 import "./login.css";
 import "./loading.css";
+import "./premarket.css";
+import "./premarket-boards.css";
 import "./schedule.css";
 import "./wechat.css";
 
