@@ -3,7 +3,7 @@ import type { IngestSource, RunItem } from "../types";
 export type JobTemplateKey =
   | "ingest"
   | "analystBacktest"
-  | "catalystStrategy"
+  | "catalystValuationReport"
   | "marketStockRefresh"
   | "thsConceptRefresh";
 
@@ -17,7 +17,7 @@ export type TrackedJob = {
 const RUN_KIND_TO_JOB: Record<string, JobTemplateKey> = {
   wechat_ingest_range: "ingest",
   analyst_stock_mention_backtest_refresh: "analystBacktest",
-  catalyst_strategy_report: "catalystStrategy",
+  catalyst_valuation_report: "catalystValuationReport",
   market_stock_master_refresh: "marketStockRefresh",
   market_ths_concept_refresh: "thsConceptRefresh",
 };
@@ -83,8 +83,8 @@ function sourceFromRun(run: RunItem): string {
   if (run.kind === "market_ths_concept_refresh") {
     return "THS 概念";
   }
-  if (run.kind === "catalyst_strategy_report") {
-    return "催化策略";
+  if (run.kind === "catalyst_valuation_report") {
+    return "催化估值线索";
   }
   const source = textValue(run.metadata.source);
   if (source && !isSourceKey(source)) {

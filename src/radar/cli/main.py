@@ -6,7 +6,7 @@ import click
 
 from radar import __version__
 from radar.cli.backtest import backtest
-from radar.cli.catalyst_strategy import catalyst_strategy
+from radar.cli.catalyst_valuation_report import catalyst_valuation_report
 from radar.cli.dashboard import dashboard
 from radar.cli.ingest import ingest
 from radar.cli.query import query_messages
@@ -39,7 +39,7 @@ def doctor() -> None:
 
 main.add_command(ingest)
 main.add_command(backtest)
-main.add_command(catalyst_strategy)
+main.add_command(catalyst_valuation_report)
 main.add_command(query_messages)
 main.add_command(test_commands)
 main.add_command(dashboard)

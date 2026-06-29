@@ -51,18 +51,17 @@ export type ThsConceptRefreshRequest = {
   force: boolean;
 };
 
-export type CatalystStrategyJobRequest = {
+export type CatalystValuationReportJobRequest = {
   start_time: string;
   end_time: string;
   limit: number;
   max_stocks: number;
-  llm_concurrency: number;
   publish: boolean;
   notify: boolean;
 };
 
 export type DerivedJobItem = {
-  job_type: "analyst_backtest" | "catalyst_strategy" | "market_stock_refresh" | "ths_concept_refresh";
+  job_type: "analyst_backtest" | "catalyst_valuation_report" | "market_stock_refresh" | "ths_concept_refresh";
   run_id: string;
   reused_existing: boolean;
   status: "running";

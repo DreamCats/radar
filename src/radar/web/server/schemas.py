@@ -211,14 +211,11 @@ class ThsConceptRefreshRequest(BaseModel):
     force: bool = False
 
 
-class CatalystStrategyJobRequest(BaseModel):
+class CatalystValuationReportJobRequest(BaseModel):
     start_time: datetime
     end_time: datetime
     limit: int = Field(default=200, ge=1, le=200)
     max_stocks: int = Field(default=12, ge=1, le=50)
-    llm_concurrency: int = Field(default=3, ge=1, le=8)
-    provider_name: str | None = None
-    model: str | None = None
     publish: bool = True
     notify: bool = False
 
@@ -226,7 +223,7 @@ class CatalystStrategyJobRequest(BaseModel):
 class DerivedJobItem(BaseModel):
     job_type: Literal[
         "analyst_backtest",
-        "catalyst_strategy",
+        "catalyst_valuation_report",
         "market_stock_refresh",
         "ths_concept_refresh",
     ]

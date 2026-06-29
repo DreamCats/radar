@@ -60,13 +60,13 @@ DEFAULT_SCHEDULES: tuple[DefaultSchedule, ...] = (
         sort_order=15,
     ),
     DefaultSchedule(
-        schedule_id="catalyst-strategy-hourly",
-        job_key="catalyst_strategy",
-        title="催化策略报告",
+        schedule_id="catalyst-valuation-report-hourly",
+        job_key="catalyst_valuation_report",
+        title="催化估值线索报告",
         cadence_kind="interval",
         cadence={"minutes": 60, "offset_minutes": 0, "active_start": "08:00", "active_end": "22:00"},
         window_preset="last_1h",
-        request={"limit": 200, "max_stocks": 12, "llm_concurrency": 3, "publish": True, "notify": True},
+        request={"limit": 200, "max_stocks": 12, "publish": True, "notify": True},
         max_lag_minutes=60,
         sort_order=30,
     ),
@@ -75,9 +75,11 @@ DEFAULT_SCHEDULES: tuple[DefaultSchedule, ...] = (
 RETIRED_SCHEDULE_IDS: tuple[str, ...] = (
     "message-classify-incremental",
     "market-anchor-close",
+    "catalyst-strategy-hourly",
 )
 
 RETIRED_SCHEDULE_JOB_KEYS: tuple[str, ...] = (
     "message_classify",
     "market_anchor_update",
+    "catalyst_strategy",
 )

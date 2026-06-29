@@ -9,10 +9,10 @@ from radar.core.scheduler import ScheduleRecord, resolve_window_preset
 from radar.core.storage import list_runs
 from radar.core.usecases.analyst_mentions.refresh import ANALYST_MENTION_RUN_KIND
 from radar.web.server.backtest_jobs import mark_stale_analyst_backtest_runs, submit_analyst_backtest_job
-from radar.web.server.catalyst_strategy_jobs import (
-    CATALYST_STRATEGY_RUN_KIND,
-    mark_stale_catalyst_strategy_runs,
-    submit_catalyst_strategy_job,
+from radar.web.server.catalyst_valuation_report_jobs import (
+    CATALYST_VALUATION_REPORT_RUN_KIND,
+    mark_stale_catalyst_valuation_report_runs,
+    submit_catalyst_valuation_report_job,
 )
 from radar.web.server.ingest_jobs import INGEST_RUN_KIND, mark_stale_ingest_runs, submit_wechat_ingest_jobs
 from radar.web.server.market_stock_jobs import (
@@ -22,7 +22,7 @@ from radar.web.server.market_stock_jobs import (
 )
 from radar.web.server.schemas import (
     AnalystBacktestRequest,
-    CatalystStrategyJobRequest,
+    CatalystValuationReportJobRequest,
     IngestWechatRequest,
     MarketStockRefreshRequest,
 )
@@ -44,7 +44,7 @@ RUN_KINDS_BY_JOB_KEY: dict[str, tuple[str, ...]] = {
     "wechat_ingest": (INGEST_RUN_KIND,),
     "analyst_backtest": (ANALYST_MENTION_RUN_KIND,),
     "market_stock_refresh": (MARKET_STOCK_REFRESH_RUN_KIND,),
-    "catalyst_strategy": (CATALYST_STRATEGY_RUN_KIND,),
+    "catalyst_valuation_report": (CATALYST_VALUATION_REPORT_RUN_KIND,),
 }
 
 
@@ -62,8 +62,8 @@ def mark_stale_scheduled_runs(config: RadarConfig, schedule: ScheduleRecord) -> 
         return mark_stale_analyst_backtest_runs(config)
     if schedule.job_key == "market_stock_refresh":
         return mark_stale_market_stock_refresh_runs(config)
-    if schedule.job_key == "catalyst_strategy":
-        return mark_stale_catalyst_strategy_runs(config)
+    if schedule.job_key == "catalyst_valuation_report":
+        return mark_stale_catalyst_valuation_report_runs(config)
     return 0
 
 
@@ -82,8 +82,8 @@ def prepare_schedule_job(schedule: ScheduleRecord, *, now: datetime) -> Prepared
     elif schedule.job_key == "market_stock_refresh":
         payload.setdefault("force", True)
         request = MarketStockRefreshRequest(**payload)
-    elif schedule.job_key == "catalyst_strategy":
-        request = CatalystStrategyJobRequest(**payload)
+    elif schedule.job_key == "catalyst_valuation_report":
+        request = CatalystValuationReportJobRequest(**payload)
     else:
         raise ValueError(f"未知定时作业: {schedule.job_key}")
 
@@ -106,8 +106,8 @@ def submit_prepared_schedule_job(
     elif schedule.job_key == "market_stock_refresh":
         item = submit_market_stock_refresh_job(config, _typed(prepared.request_model, MarketStockRefreshRequest))
         items = [item]
-    elif schedule.job_key == "catalyst_strategy":
-        item = submit_catalyst_strategy_job(config, _typed(prepared.request_model, CatalystStrategyJobRequest))
+    elif schedule.job_key == "catalyst_valuation_report":
+        item = submit_catalyst_valuation_report_job(config, _typed(prepared.request_model, CatalystValuationReportJobRequest))
         items = [item]
     else:
         raise ValueError(f"未知定时作业: {schedule.job_key}")

@@ -54,8 +54,8 @@ export function IngestPage() {
   const endValue = toLocalIso(range.endDate, range.endTime);
   const validWindow = Boolean(startValue && endValue) && startValue <= endValue;
   const usesTimeWindow = selectedJob !== "marketStockRefresh" && selectedJob !== "thsConceptRefresh";
-  const usesSource = selectedJob !== "marketStockRefresh" && selectedJob !== "thsConceptRefresh" && selectedJob !== "catalystStrategy";
-  const usesForce = selectedJob !== "catalystStrategy";
+  const usesSource = selectedJob !== "marketStockRefresh" && selectedJob !== "thsConceptRefresh" && selectedJob !== "catalystValuationReport";
+  const usesForce = selectedJob !== "catalystValuationReport";
   const canSubmit = usesTimeWindow ? validWindow : true;
   const selectedTemplate = JOB_TEMPLATES.find((item) => item.key === selectedJob) ?? JOB_TEMPLATES[0];
   const rows = runs
@@ -191,7 +191,7 @@ export function IngestPage() {
 
   function selectJob(kind: JobTemplateKey) {
     setSelectedJob(kind);
-    if (kind === "catalystStrategy" && selectedJob !== kind) {
+    if (kind === "catalystValuationReport" && selectedJob !== kind) {
       const nextRange = buildPresetRange("last1h");
       setPreset("last1h");
       setRange(nextRange);

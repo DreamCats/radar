@@ -33,10 +33,10 @@ const ALL_JOB_TEMPLATES = [
     icon: UserRoundCheck,
   },
   {
-    key: "catalystStrategy",
-    title: "催化策略报告",
-    meta: "近窗推演",
-    serves: "生成并上传 HTML",
+    key: "catalystValuationReport",
+    title: "催化估值线索",
+    meta: "规则过滤",
+    serves: "筛出可估值原文证据",
     icon: Zap,
   },
 ] satisfies Array<{ key: JobTemplateKey; title: string; meta: string; serves: string; icon: typeof Database }>;
@@ -47,7 +47,7 @@ export const JOB_TEMPLATE_GROUPS = [
   {
     title: "基础作业",
     items: JOB_TEMPLATES.filter((item) =>
-      ["ingest", "marketStockRefresh", "thsConceptRefresh", "analystBacktest", "catalystStrategy"].includes(item.key),
+      ["ingest", "marketStockRefresh", "thsConceptRefresh", "analystBacktest", "catalystValuationReport"].includes(item.key),
     ),
   },
 ].filter((group) => group.items.length > 0);
@@ -65,8 +65,8 @@ export function configHints(kind: JobTemplateKey): string[] {
   if (kind === "thsConceptRefresh") {
     return ["刷新 ths_index", "增量补 ths_member", "写入 tushare_cache"];
   }
-  if (kind === "catalystStrategy") {
-    return ["催化词筛选", "按标的聚合", "上传 Aly", "发 Bark"];
+  if (kind === "catalystValuationReport") {
+    return ["催化词筛选", "估值数字门槛", "原文证据 HTML", "发 Bark"];
   }
   return [];
 }

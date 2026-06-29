@@ -195,4 +195,95 @@ MESSAGE_MIGRATIONS: list[Migration] = [
             ON job_schedule_ticks(status, created_at DESC);
         """,
     ),
+    (
+        "002_rename_catalyst_valuation_report",
+        """
+        UPDATE job_schedule_ticks
+        SET schedule_id = 'catalyst-valuation-report-hourly'
+        WHERE schedule_id = 'catalyst-strategy-hourly'
+          AND EXISTS (
+              SELECT 1 FROM job_schedules
+              WHERE schedule_id = 'catalyst-valuation-report-hourly'
+          );
+
+        DELETE FROM job_schedules
+        WHERE schedule_id = 'catalyst-strategy-hourly'
+          AND EXISTS (
+              SELECT 1 FROM job_schedules
+              WHERE schedule_id = 'catalyst-valuation-report-hourly'
+          );
+
+        UPDATE job_schedules
+        SET schedule_id = 'catalyst-valuation-report-hourly',
+            job_key = 'catalyst_valuation_report',
+            title = '催化估值线索报告',
+            updated_at = datetime('now')
+        WHERE schedule_id = 'catalyst-strategy-hourly'
+          AND NOT EXISTS (
+              SELECT 1 FROM job_schedules
+              WHERE schedule_id = 'catalyst-valuation-report-hourly'
+          );
+
+        UPDATE job_schedule_ticks
+        SET schedule_id = 'catalyst-valuation-report-hourly'
+        WHERE schedule_id = 'catalyst-strategy-hourly';
+
+        UPDATE job_schedules
+        SET job_key = 'catalyst_valuation_report',
+            title = '催化估值线索报告',
+            request_json = replace(
+                replace(
+                    replace(
+                        replace(
+                            replace(
+                                replace(request_json,
+                                    ', "llm_concurrency": 3', ''
+                                ),
+                                '"llm_concurrency": 3, ', ''
+                            ),
+                            '"llm_concurrency": 3', ''
+                        ),
+                        ',"llm_concurrency":3', ''
+                    ),
+                    '"llm_concurrency":3,', ''
+                ),
+                '"llm_concurrency":3', ''
+            ),
+            updated_at = datetime('now')
+        WHERE schedule_id = 'catalyst-valuation-report-hourly'
+           OR job_key = 'catalyst_strategy';
+
+        UPDATE job_schedule_ticks
+        SET request_json = replace(
+                replace(
+                    replace(
+                        replace(
+                            replace(
+                                replace(request_json,
+                                    ', "llm_concurrency": 3', ''
+                                ),
+                                '"llm_concurrency": 3, ', ''
+                            ),
+                            '"llm_concurrency": 3', ''
+                        ),
+                        ',"llm_concurrency":3', ''
+                    ),
+                    '"llm_concurrency":3,', ''
+                ),
+                '"llm_concurrency":3', ''
+            ),
+            updated_at = datetime('now')
+        WHERE schedule_id = 'catalyst-valuation-report-hourly';
+
+        UPDATE runs
+        SET kind = 'catalyst_valuation_report',
+            metadata_json = replace(
+                replace(metadata_json, 'catalyst_strategy_report', 'catalyst_valuation_report'),
+                'catalyst_strategy',
+                'catalyst_valuation_report'
+            )
+        WHERE kind = 'catalyst_strategy_report'
+           OR metadata_json LIKE '%catalyst_strategy%';
+        """,
+    ),
 ]

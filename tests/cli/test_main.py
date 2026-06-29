@@ -10,7 +10,10 @@ from radar.cli.main import main
 from radar.core.models import RawMessage
 from radar.core.storage import connect, init_db, upsert_messages
 from radar.core.usecases import IngestRangeResult, SmokeResult
-from radar.core.usecases.catalyst_strategy import CatalystStrategyReport, CatalystStrategyRunResult
+from radar.core.usecases.catalyst_valuation_report import (
+    CatalystValuationReport,
+    CatalystValuationReportRunResult,
+)
 
 
 def test_query_reads_messages_from_config_database(tmp_path):
@@ -199,33 +202,34 @@ def test_market_smoke_command_invokes_usecase(monkeypatch, tmp_path):
     ]
 
 
-def test_catalyst_strategy_command_invokes_usecase(monkeypatch, tmp_path):
+def test_catalyst_valuation_report_command_invokes_usecase(monkeypatch, tmp_path):
     config_dir = _config_dir(tmp_path)
     calls: list[dict] = []
 
     def fake_run(config, **kwargs):
         calls.append({"database": config.database_path, **kwargs})
         generated_at = datetime.fromisoformat("2026-06-28T10:00:00")
-        report = CatalystStrategyReport(
+        report = CatalystValuationReport(
             generated_at=generated_at,
             start_time=datetime.fromisoformat("2026-06-28T09:00:00"),
             end_time=datetime.fromisoformat("2026-06-28T10:00:00"),
             total_feed_items=2,
+            total_candidate_stocks=1,
             total_stocks=1,
         )
-        return CatalystStrategyRunResult(
+        return CatalystValuationReportRunResult(
             report=report,
             local_html_path=tmp_path / "report.html",
         )
 
-    monkeypatch.setattr("radar.cli.catalyst_strategy.run_catalyst_strategy_report", fake_run)
+    monkeypatch.setattr("radar.cli.catalyst_valuation_report.run_catalyst_valuation_report", fake_run)
 
     result = CliRunner().invoke(
         main,
         [
             "--config-dir",
             str(config_dir),
-            "catalyst-strategy",
+            "catalyst-valuation-report",
             "run",
             "--start",
             "2026-06-28 09:00:00",
@@ -233,8 +237,6 @@ def test_catalyst_strategy_command_invokes_usecase(monkeypatch, tmp_path):
             "2026-06-28 10:00:00",
             "--max-stocks",
             "5",
-            "--llm-concurrency",
-            "2",
         ],
     )
 
@@ -242,18 +244,17 @@ def test_catalyst_strategy_command_invokes_usecase(monkeypatch, tmp_path):
     assert "stocks=1 feed_items=2" in result.output
     assert calls[0]["database"] == tmp_path / "radar.sqlite3"
     assert calls[0]["max_stocks"] == 5
-    assert calls[0]["llm_concurrency"] == 2
     assert calls[0]["publish"] is False
     assert calls[0]["notify"] is False
 
 
-def test_catalyst_strategy_command_requires_publish_for_notify(tmp_path):
+def test_catalyst_valuation_report_command_requires_publish_for_notify(tmp_path):
     result = CliRunner().invoke(
         main,
         [
             "--config-dir",
             str(_config_dir(tmp_path)),
-            "catalyst-strategy",
+            "catalyst-valuation-report",
             "run",
             "--notify",
         ],

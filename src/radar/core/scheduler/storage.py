@@ -31,7 +31,7 @@ def ensure_default_schedules(database: Path, *, now: datetime | None = None) -> 
                 (schedule.schedule_id,),
             ).fetchone()
             if existing is not None:
-                _sync_catalyst_strategy_default(conn, schedule, existing, current_text, current)
+                _sync_catalyst_valuation_report_default(conn, schedule, existing, current_text, current)
                 continue
             next_tick = _default_next_tick(schedule, current)
             conn.execute(
@@ -258,23 +258,30 @@ def _delete_retired_schedules(conn: sqlite3.Connection) -> None:
     _delete_retired_schedules_by_job_keys(conn)
 
 
-def _sync_catalyst_strategy_default(
+def _sync_catalyst_valuation_report_default(
     conn: sqlite3.Connection,
     default_schedule,
     row: sqlite3.Row,
     current_text: str,
     current: datetime,
 ) -> None:
-    if default_schedule.schedule_id != "catalyst-strategy-hourly":
+    if default_schedule.schedule_id != "catalyst-valuation-report-hourly":
         return
 
     updates: list[str] = []
     params: list[object] = []
     request = _load_json(row["request_json"], {})
-    if request.get("notify") is False:
-        request["notify"] = True
+    if "llm_concurrency" in request:
+        request.pop("llm_concurrency", None)
         updates.append("request_json = ?")
         params.append(_json(request))
+    if request.get("notify") is False:
+        request["notify"] = True
+        if updates and updates[-1] == "request_json = ?":
+            params[-1] = _json(request)
+        else:
+            updates.append("request_json = ?")
+            params.append(_json(request))
 
     if row["created_at"] == row["updated_at"] and bool(row["enabled"]) != default_schedule.enabled:
         updates.append("enabled = ?")

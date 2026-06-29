@@ -1,6 +1,6 @@
 import {
   startAnalystBacktestJob,
-  startCatalystStrategyJob,
+  startCatalystValuationReportJob,
   startIngestWechatJob,
   startMarketStockRefreshJob,
   startThsConceptRefreshJob,
@@ -55,17 +55,16 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
     const items = await startThsConceptRefreshJob({ force });
     return derivedJobs(kind, force ? "THS 概念全量" : "THS 概念增量", items);
   }
-  if (kind === "catalystStrategy") {
-    const items = await startCatalystStrategyJob({
+  if (kind === "catalystValuationReport") {
+    const items = await startCatalystValuationReportJob({
       start_time: window.start_time,
       end_time: window.end_time,
       limit: 200,
       max_stocks: 12,
-      llm_concurrency: 3,
       publish: true,
       notify: true,
     });
-    return derivedJobs(kind, "催化策略", items);
+    return derivedJobs(kind, "催化估值线索", items);
   }
   throw new Error(`未知作业类型：${kind}`);
 }

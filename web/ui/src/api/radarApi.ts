@@ -17,7 +17,7 @@ import type {
   AuthStatus,
   CatalystFeedPage,
   CatalystFeedQuery,
-  CatalystStrategyJobRequest,
+  CatalystValuationReportJobRequest,
   CatalystTermLibrary,
   DerivedJobItem,
   IngestJobItem,
@@ -472,8 +472,8 @@ export async function startThsConceptRefreshJob(request: ThsConceptRefreshReques
   return data.items;
 }
 
-export async function startCatalystStrategyJob(request: CatalystStrategyJobRequest): Promise<DerivedJobItem[]> {
-  const response = await apiFetch("/api/catalyst-strategy/jobs", {
+export async function startCatalystValuationReportJob(request: CatalystValuationReportJobRequest): Promise<DerivedJobItem[]> {
+  const response = await apiFetch("/api/catalyst-valuation-report/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

@@ -6,13 +6,13 @@ from pathlib import Path
 from radar.core.channel import BarkMessage, push_bark
 from radar.core.cloud import upload_aly
 from radar.core.config import RadarConfig
-from radar.core.usecases.catalyst_strategy.models import CatalystStrategyReport
-from radar.core.usecases.catalyst_strategy.render import render_report_html
+from radar.core.usecases.catalyst_valuation_report.models import CatalystValuationReport
+from radar.core.usecases.catalyst_valuation_report.render import render_report_html
 
 
 def write_report_html(
     config: RadarConfig,
-    report: CatalystStrategyReport,
+    report: CatalystValuationReport,
     *,
     output_path: Path | None = None,
 ) -> Path:
@@ -23,16 +23,16 @@ def write_report_html(
 
 
 def publish_report_html(config: RadarConfig, local_path: Path, *, generated_at: datetime) -> str:
-    remote_path = f"catalyst-strategy/{generated_at:%Y%m%d-%H%M%S}.html"
+    remote_path = f"catalyst-valuation-report/{generated_at:%Y%m%d-%H%M%S}.html"
     return upload_aly(config, local_path, remote_path).url
 
 
-def notify_report(config: RadarConfig, report: CatalystStrategyReport, url: str) -> None:
+def notify_report(config: RadarConfig, report: CatalystValuationReport, url: str) -> None:
     top_names = "、".join(item.stock_name for item in report.stocks[:3]) or "暂无标的"
     push_bark(
         config,
         BarkMessage(
-            title="Radar 催化词策略报告",
+            title="Radar 催化估值线索报告",
             subtitle=f"{report.total_stocks} 个标的",
             body=f"{top_names}\n{url}",
             url=url,
@@ -43,4 +43,4 @@ def notify_report(config: RadarConfig, report: CatalystStrategyReport, url: str)
 
 
 def _default_output_path(config: RadarConfig, generated_at: datetime) -> Path:
-    return config.data_dir / "catalyst_strategy" / f"{generated_at:%Y%m%d-%H%M%S}.html"
+    return config.data_dir / "catalyst_valuation_report" / f"{generated_at:%Y%m%d-%H%M%S}.html"

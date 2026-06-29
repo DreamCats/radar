@@ -5,7 +5,7 @@ import type { RunItem } from "../types";
 type JobRunKind =
   | "ingest"
   | "analystBacktest"
-  | "catalystStrategy"
+  | "catalystValuationReport"
   | "marketStockRefresh"
   | "thsConceptRefresh";
 
@@ -112,8 +112,8 @@ function jobMetrics(kind: JobRunKind, run?: RunItem): string[] {
   if (kind === "thsConceptRefresh") {
     return thsConceptRefreshMetrics(run);
   }
-  if (kind === "catalystStrategy") {
-    return catalystStrategyMetrics(run);
+  if (kind === "catalystValuationReport") {
+    return catalystValuationReportMetrics(run);
   }
   return [];
 }
@@ -215,16 +215,22 @@ function thsConceptRefreshMetrics(run?: RunItem): string[] {
   ].filter(Boolean);
 }
 
-function catalystStrategyMetrics(run?: RunItem): string[] {
+function catalystValuationReportMetrics(run?: RunItem): string[] {
   const metadata = run?.metadata ?? {};
   const feedItems = run?.raw_count ?? numberValue(metadata.total_feed_items);
+  const candidateStocks = numberValue(metadata.total_candidate_stocks);
   const stocks = run?.stored_count ?? numberValue(metadata.total_stocks);
-  return [
-    `线索 ${feedItems} 条`,
-    `标的 ${stocks}`,
-    textValue(metadata.published_url) ? "已上传" : "本地报告",
-    durationText(run),
-  ].filter(Boolean);
+  const metrics = [`线索 ${feedItems} 条`];
+  if (candidateStocks !== undefined) {
+    metrics.push(`候选 ${candidateStocks}`);
+  }
+  metrics.push(`保留 ${stocks}`);
+  metrics.push(textValue(metadata.published_url) ? "已上传" : "本地报告");
+  const duration = durationText(run);
+  if (duration) {
+    metrics.push(duration);
+  }
+  return metrics;
 }
 
 function detailText(run?: RunItem): string {
@@ -281,8 +287,8 @@ function kindTitle(kind: JobRunKind): string {
   if (kind === "thsConceptRefresh") {
     return "THS 概念";
   }
-  if (kind === "catalystStrategy") {
-    return "催化策略";
+  if (kind === "catalystValuationReport") {
+    return "催化估值线索";
   }
   return "作业";
 }

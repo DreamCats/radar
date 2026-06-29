@@ -6,7 +6,8 @@ from types import SimpleNamespace
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
-from radar.core.storage import connect, migrate_message_db, start_run
+from radar.core.storage import connect, migrate, migrate_message_db, start_run
+from radar.core.storage.message_migrations import MESSAGE_MIGRATIONS
 from radar.web.server.app import create_app
 from radar.web.server.schemas import DerivedJobItem
 
@@ -22,7 +23,7 @@ def test_schedules_endpoint_seeds_defaults(tmp_path):
         "wechat-ingest-incremental",
         "market-stock-refresh-morning",
         "analyst-backtest-close",
-        "catalyst-strategy-hourly",
+        "catalyst-valuation-report-hourly",
     ]
     assert items[0]["window_preset"] == "yesterday_1500_to_now"
     assert _find(items, "wechat-ingest-incremental")["enabled"] is False
@@ -30,7 +31,7 @@ def test_schedules_endpoint_seeds_defaults(tmp_path):
     market_schedule = _find(items, "market-stock-refresh-morning")
     assert market_schedule["enabled"] is True
     assert market_schedule["cadence"] == {"time": "08:30", "weekdays_only": False}
-    catalyst_schedule = _find(items, "catalyst-strategy-hourly")
+    catalyst_schedule = _find(items, "catalyst-valuation-report-hourly")
     assert catalyst_schedule["enabled"] is False
     assert catalyst_schedule["window_preset"] == "last_1h"
     assert catalyst_schedule["cadence"] == {
@@ -41,6 +42,7 @@ def test_schedules_endpoint_seeds_defaults(tmp_path):
     }
     assert catalyst_schedule["request"]["publish"] is True
     assert catalyst_schedule["request"]["notify"] is True
+    assert "llm_concurrency" not in catalyst_schedule["request"]
 
 
 def test_schedules_endpoint_syncs_existing_catalyst_default(tmp_path):
@@ -55,7 +57,7 @@ def test_schedules_endpoint_syncs_existing_catalyst_default(tmp_path):
                 cadence_json, window_preset, request_json, catch_up_policy,
                 max_lag_minutes, next_tick_at, sort_order, created_at, updated_at
             ) VALUES (
-                'catalyst-strategy-hourly', 'catalyst_strategy', '催化策略报告', 1,
+                'catalyst-valuation-report-hourly', 'catalyst_valuation_report', '催化估值线索报告', 1,
                 'Asia/Shanghai', 'interval',
                 '{"active_end":"22:00","active_start":"08:00","minutes":60,"offset_minutes":0}',
                 'last_1h',
@@ -70,9 +72,73 @@ def test_schedules_endpoint_syncs_existing_catalyst_default(tmp_path):
     response = TestClient(create_app(config)).get("/api/schedules")
 
     assert response.status_code == 200
-    catalyst_schedule = _find(response.json()["items"], "catalyst-strategy-hourly")
+    catalyst_schedule = _find(response.json()["items"], "catalyst-valuation-report-hourly")
     assert catalyst_schedule["enabled"] is False
     assert catalyst_schedule["request"]["notify"] is True
+    assert "llm_concurrency" not in catalyst_schedule["request"]
+
+
+def test_message_migration_renames_catalyst_valuation_report_identifiers(tmp_path):
+    config = _config(tmp_path)
+    current = "2026-06-28T20:00:00"
+    with closing(connect(config.database_path)) as conn:
+        migrate(conn, MESSAGE_MIGRATIONS[:1])
+        conn.execute(
+            """
+            INSERT INTO job_schedules (
+                schedule_id, job_key, title, enabled, timezone, cadence_kind,
+                cadence_json, window_preset, request_json, catch_up_policy,
+                max_lag_minutes, next_tick_at, sort_order, created_at, updated_at
+            ) VALUES (
+                'catalyst-strategy-hourly', 'catalyst_strategy', '旧催化策略', 1,
+                'Asia/Shanghai', 'interval',
+                '{"active_end":"22:00","active_start":"08:00","minutes":60,"offset_minutes":0}',
+                'last_1h',
+                '{"limit":200,"llm_concurrency":3,"max_stocks":12,"notify":true,"publish":true}',
+                'latest_only', 60, ?, 30, ?, ?
+            )
+            """,
+            (current, current, current),
+        )
+        conn.execute(
+            """
+            INSERT INTO job_schedule_ticks (
+                tick_id, schedule_id, planned_at, status, run_ids_json,
+                request_json, created_at, updated_at
+            ) VALUES (
+                'tick-catalyst', 'catalyst-strategy-hourly', ?, 'succeeded', '["run-catalyst"]',
+                '{"limit":200,"llm_concurrency":3,"max_stocks":12}', ?, ?
+            )
+            """,
+            (current, current, current),
+        )
+        conn.execute(
+            """
+            INSERT INTO runs (
+                run_id, kind, target, started_at, finished_at, status,
+                raw_count, stored_count, filtered_count, metadata_json
+            ) VALUES (
+                'run-catalyst', 'catalyst_strategy_report', 'manual', ?, ?, 'succeeded',
+                1, 1, 0, '{"job_key":"catalyst_strategy","run_kind":"catalyst_strategy_report"}'
+            )
+            """,
+            (current, current),
+        )
+        conn.commit()
+
+        migrate_message_db(conn)
+
+        schedule = conn.execute("SELECT * FROM job_schedules").fetchone()
+        tick = conn.execute("SELECT * FROM job_schedule_ticks").fetchone()
+        run = conn.execute("SELECT * FROM runs").fetchone()
+
+    assert schedule["schedule_id"] == "catalyst-valuation-report-hourly"
+    assert schedule["job_key"] == "catalyst_valuation_report"
+    assert "llm_concurrency" not in schedule["request_json"]
+    assert tick["schedule_id"] == "catalyst-valuation-report-hourly"
+    assert "llm_concurrency" not in tick["request_json"]
+    assert run["kind"] == "catalyst_valuation_report"
+    assert "catalyst_strategy" not in run["metadata_json"]
 
 
 def test_schedules_endpoint_removes_retired_defaults(tmp_path):
@@ -120,12 +186,41 @@ def test_schedules_endpoint_removes_retired_defaults(tmp_path):
         )
         conn.execute(
             """
+            INSERT INTO job_schedules (
+                schedule_id, job_key, title, enabled, timezone, cadence_kind,
+                cadence_json, window_preset, request_json, catch_up_policy,
+                max_lag_minutes, next_tick_at, sort_order, created_at, updated_at
+            ) VALUES (?, ?, ?, 0, 'Asia/Shanghai', 'interval', ?, 'last_1h', ?,
+                'latest_only', 60, ?, 30, ?, ?)
+            """,
+            (
+                "catalyst-strategy-hourly",
+                "catalyst_strategy",
+                "催化策略报告",
+                '{"minutes": 60}',
+                '{"limit":200,"llm_concurrency":3,"max_stocks":12,"notify":true,"publish":true}',
+                current,
+                current,
+                current,
+            ),
+        )
+        conn.execute(
+            """
             INSERT INTO job_schedule_ticks (
                 tick_id, schedule_id, planned_at, status, run_ids_json,
                 request_json, created_at, updated_at
             ) VALUES (?, ?, ?, 'running', '[]', '{}', ?, ?)
             """,
             ("tick-retired", "message-classify-incremental", current, current, current),
+        )
+        conn.execute(
+            """
+            INSERT INTO job_schedule_ticks (
+                tick_id, schedule_id, planned_at, status, run_ids_json,
+                request_json, created_at, updated_at
+            ) VALUES (?, ?, ?, 'running', '[]', '{}', ?, ?)
+            """,
+            ("tick-old-catalyst", "catalyst-strategy-hourly", current, current, current),
         )
         conn.commit()
 
@@ -137,20 +232,28 @@ def test_schedules_endpoint_removes_retired_defaults(tmp_path):
         "wechat-ingest-incremental",
         "market-stock-refresh-morning",
         "analyst-backtest-close",
-        "catalyst-strategy-hourly",
+        "catalyst-valuation-report-hourly",
     ]
     with closing(connect(config.database_path)) as conn:
         schedules_count = conn.execute(
             """
             SELECT COUNT(*) FROM job_schedules
-            WHERE schedule_id IN ('message-classify-incremental', 'market-anchor-close')
-               OR job_key IN ('message_classify', 'market_anchor_update')
+            WHERE schedule_id IN (
+                'message-classify-incremental',
+                'market-anchor-close',
+                'catalyst-strategy-hourly'
+            )
+               OR job_key IN ('message_classify', 'market_anchor_update', 'catalyst_strategy')
             """
         ).fetchone()[0]
         ticks_count = conn.execute(
             """
             SELECT COUNT(*) FROM job_schedule_ticks
-            WHERE schedule_id IN ('message-classify-incremental', 'market-anchor-close')
+            WHERE schedule_id IN (
+                'message-classify-incremental',
+                'market-anchor-close',
+                'catalyst-strategy-hourly'
+            )
             """
         ).fetchone()[0]
     assert schedules_count == 0
@@ -219,7 +322,7 @@ def test_schedule_run_now_submits_market_stock_refresh(monkeypatch, tmp_path):
     assert captured["force"] is True
 
 
-def test_schedule_run_now_submits_catalyst_strategy(monkeypatch, tmp_path):
+def test_schedule_run_now_submits_catalyst_valuation_report(monkeypatch, tmp_path):
     config = _config(tmp_path)
     captured: dict[str, object] = {}
 
@@ -230,10 +333,10 @@ def test_schedule_run_now_submits_catalyst_strategy(monkeypatch, tmp_path):
         captured["end_time"] = request.end_time
         return SimpleNamespace(run_id="run-catalyst", reused_existing=False)
 
-    monkeypatch.setattr("radar.web.server.schedule_jobs.submit_catalyst_strategy_job", fake_submit)
+    monkeypatch.setattr("radar.web.server.schedule_jobs.submit_catalyst_valuation_report_job", fake_submit)
 
     client = TestClient(create_app(config))
-    response = client.post("/api/schedules/catalyst-strategy-hourly/run-now")
+    response = client.post("/api/schedules/catalyst-valuation-report-hourly/run-now")
 
     assert response.status_code == 200
     item = response.json()["item"]
@@ -246,29 +349,28 @@ def test_schedule_run_now_submits_catalyst_strategy(monkeypatch, tmp_path):
     assert captured["end_time"] > captured["start_time"]
 
 
-def test_catalyst_strategy_job_endpoint_submits(monkeypatch, tmp_path):
+def test_catalyst_valuation_report_job_endpoint_submits(monkeypatch, tmp_path):
     captured: dict[str, object] = {}
 
     def fake_submit(config, request):
         captured["publish"] = request.publish
         captured["notify"] = request.notify
         return DerivedJobItem(
-            job_type="catalyst_strategy",
+            job_type="catalyst_valuation_report",
             run_id="run-catalyst-manual",
             reused_existing=False,
             status="running",
         )
 
-    monkeypatch.setattr("radar.web.server.routers.catalyst_strategy.submit_catalyst_strategy_job", fake_submit)
+    monkeypatch.setattr("radar.web.server.routers.catalyst_valuation_report.submit_catalyst_valuation_report_job", fake_submit)
 
     response = TestClient(create_app(_config(tmp_path))).post(
-        "/api/catalyst-strategy/jobs",
+        "/api/catalyst-valuation-report/jobs",
         json={
             "start_time": "2026-06-28T19:00:00",
             "end_time": "2026-06-28T20:00:00",
             "limit": 200,
             "max_stocks": 12,
-            "llm_concurrency": 3,
             "publish": True,
             "notify": True,
         },
@@ -276,7 +378,7 @@ def test_catalyst_strategy_job_endpoint_submits(monkeypatch, tmp_path):
 
     assert response.status_code == 200
     item = response.json()["items"][0]
-    assert item["job_type"] == "catalyst_strategy"
+    assert item["job_type"] == "catalyst_valuation_report"
     assert item["run_id"] == "run-catalyst-manual"
     assert captured == {"publish": True, "notify": True}
 
