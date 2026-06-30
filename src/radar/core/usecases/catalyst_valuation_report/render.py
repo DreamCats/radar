@@ -90,6 +90,25 @@ def render_report_html(report: CatalystValuationReport) -> str:
   </section>
 </main>
 <script>
+async function copyText(text) {{
+  if (navigator.clipboard?.writeText) {{
+    await navigator.clipboard.writeText(text);
+    return;
+  }}
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.top = "-1000px";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  const copied = document.execCommand("copy");
+  document.body.removeChild(textarea);
+  if (!copied) throw new Error("复制失败");
+}}
+
 document.addEventListener("click", async (event) => {{
   const viewButton = event.target.closest("[data-view-evidence]");
   if (viewButton) {{
@@ -109,9 +128,14 @@ document.addEventListener("click", async (event) => {{
   const block = button.closest(".evidence");
   const text = block?.querySelector(".evidence-full")?.textContent || "";
   if (!text) return;
-  await navigator.clipboard.writeText(text);
   const oldText = button.textContent;
-  button.textContent = "已复制";
+  try {{
+    await copyText(text);
+    button.textContent = "已复制";
+  }} catch (error) {{
+    console.warn("复制失败", error);
+    button.textContent = "复制失败";
+  }}
   window.setTimeout(() => {{ button.textContent = oldText; }}, 1200);
 }});
 </script>

@@ -55,6 +55,9 @@ def test_catalyst_valuation_report_filters_non_numeric_noise(monkeypatch, tmp_pa
     assert "data-view-evidence" in html
     assert 'class="evidence-preview"' in html
     assert 'class="evidence-full" hidden' in html
+    assert "navigator.clipboard?.writeText" in html
+    assert 'document.execCommand("copy")' in html
+    assert "await copyText(text)" in html
     assert result.published_url is None
     assert result.bark_sent is False
 
