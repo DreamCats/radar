@@ -185,6 +185,27 @@ def test_valuation_rule_accepts_business_percent_but_rejects_market_percent():
     )
 
 
+def test_valuation_rule_accepts_e_as_yi_money_unit():
+    match = match_valuation_evidence(
+        "胜宏科技 新签订单 500e，产能继续释放。",
+        stock_name="胜宏科技",
+        ts_code="300476.SZ",
+        stock_mentions_count=1,
+    )
+
+    assert match is not None
+    assert match.numbers == ["500e"]
+    assert (
+        match_valuation_evidence(
+            "胜宏科技 技术参数 1e9，客户验证通过。",
+            stock_name="胜宏科技",
+            ts_code="300476.SZ",
+            stock_mentions_count=1,
+        )
+        is None
+    )
+
+
 def test_valuation_rule_rejects_market_size_and_value_ratio_noise():
     assert (
         match_valuation_evidence(

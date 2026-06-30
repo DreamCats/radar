@@ -8,10 +8,11 @@ from radar.core.usecases.catalyst_valuation_report.models import (
     CatalystValuationStockContext,
 )
 
+# 群消息里常用 e/E 表示“亿”，但不能把 1e9、1e-3 这类科学计数法吞成金额。
 _MONEY_PATTERN = re.compile(
     r"(?<![A-Za-z0-9])"
     r"(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千万]+)\s*"
-    r"(?:万亿|亿元|亿|千万|万元|百万|万美元|亿美元|人民币|美元|美金|元)"
+    r"(?:万亿|亿元|亿|千万|万元|百万|万美元|亿美元|人民币|美元|美金|元|[eE](?![A-Za-z0-9]|[+-]\d))"
     r"(?:\s*/\s*(?:吨|台|套|片|颗|件|公斤|kg|g|w|kw|mw|gw|kwh|mwh|gwh|平|平方米|亩))?",
     re.IGNORECASE,
 )
