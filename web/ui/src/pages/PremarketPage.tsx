@@ -61,8 +61,9 @@ export function PremarketPage() {
         end_time: `${nextWindow.endDate}T${nextWindow.endTime}:00`,
         limit: 30,
       });
-      setResult(data);
-      if (!findPremarketConcept(data, selectedCode)) {
+      const normalizedData = normalizePremarketResult(data);
+      setResult(normalizedData);
+      if (!findPremarketConcept(normalizedData, selectedCode)) {
         setSelectedCode(null);
         setDetailOpen(false);
       }
@@ -184,6 +185,9 @@ function ConceptRankPanel(props: {
   onSelect: (concept: PremarketConceptRank) => void;
 }) {
   const summary = props.result?.summary;
+  const topConcepts = props.result?.top_concepts ?? [];
+  const bottomConcepts = props.result?.bottom_concepts ?? [];
+  const velocityConcepts = props.result?.velocity_concepts ?? [];
   return (
     <section className={props.loading ? "premarket-rank-panel content-panel panel is-refreshing" : "premarket-rank-panel content-panel panel"}>
       <PanelTitle
@@ -199,7 +203,7 @@ function ConceptRankPanel(props: {
         <Metric label="催化" value={summary?.catalyst_items ?? 0} />
         <Metric label="个股" value={summary?.stock_mentions ?? 0} />
       </div>
-      {props.result && props.result.top_concepts.length === 0 ? (
+      {props.result && topConcepts.length === 0 ? (
         <div className="premarket-board-region" aria-busy={props.loading}>
           <div className="premarket-empty">当前窗口没有可排名概念</div>
         </div>
@@ -209,7 +213,7 @@ function ConceptRankPanel(props: {
             title="正 Top10"
             meta="强势概念"
             mode="score"
-            concepts={props.result?.top_concepts ?? []}
+            concepts={topConcepts}
             selectedCode={props.selectedCode}
             onSelect={props.onSelect}
           />
@@ -217,7 +221,7 @@ function ConceptRankPanel(props: {
             title="倒 Top10"
             meta="弱覆盖 / 长尾"
             mode="score"
-            concepts={props.result?.bottom_concepts ?? []}
+            concepts={bottomConcepts}
             selectedCode={props.selectedCode}
             onSelect={props.onSelect}
           />
@@ -225,7 +229,7 @@ function ConceptRankPanel(props: {
             title="变化速度 Top10"
             meta="后半 - 前半"
             mode="velocity"
-            concepts={props.result?.velocity_concepts ?? []}
+            concepts={velocityConcepts}
             selectedCode={props.selectedCode}
             onSelect={props.onSelect}
           />
@@ -390,6 +394,31 @@ function findPremarketConcept(result: PremarketSignalResult | null, code: string
       (item) => item.concept_code === code,
     ) ?? null
   );
+}
+
+function normalizePremarketResult(data: PremarketSignalResult): PremarketSignalResult {
+  const concepts = normalizeConcepts(data.concepts);
+  return {
+    ...data,
+    concepts,
+    top_concepts: normalizeConcepts(data.top_concepts, concepts.slice(0, 10)),
+    bottom_concepts: normalizeConcepts(data.bottom_concepts, concepts.slice(-10).reverse()),
+    velocity_concepts: normalizeConcepts(data.velocity_concepts),
+    concentration: Array.isArray(data.concentration) ? data.concentration : [],
+    time_buckets: Array.isArray(data.time_buckets) ? data.time_buckets : [],
+  };
+}
+
+function normalizeConcepts(value: PremarketConceptRank[] | undefined, fallback: PremarketConceptRank[] = []) {
+  if (!Array.isArray(value)) {
+    return fallback;
+  }
+  return value.map((concept) => ({
+    ...concept,
+    top_stocks: Array.isArray(concept.top_stocks) ? concept.top_stocks : [],
+    catalyst_terms: Array.isArray(concept.catalyst_terms) ? concept.catalyst_terms : [],
+    evidence: Array.isArray(concept.evidence) ? concept.evidence : [],
+  }));
 }
 
 function signedNumber(value: number) {
