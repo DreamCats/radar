@@ -55,6 +55,9 @@ export function PremarketPage() {
   async function loadSignals(nextWindow: WindowForm) {
     setLoading(true);
     setError(null);
+    setResult(null);
+    setSelectedCode(null);
+    setDetailOpen(false);
     try {
       const data = await fetchPremarketSignal({
         start_time: `${nextWindow.startDate}T${nextWindow.startTime}:00`,
