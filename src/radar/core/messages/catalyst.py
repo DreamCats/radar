@@ -26,6 +26,7 @@ from radar.core.messages.catalyst_models import (
 
 
 _CLUSTER_GAP_SECONDS = 30
+_ROUGH_FILTER_MIN_WINDOW_SECONDS = 6 * 60 * 60
 
 
 @dataclass(frozen=True)
@@ -163,7 +164,7 @@ def list_catalyst_feed(
         raise ValueError("start_time 不能晚于 end_time")
 
     selected_category_ids = set(filters.category_ids)
-    rows = _query_candidate_messages(conn, filters)
+    rows = _query_candidate_messages(conn, library, filters)
     stock_mentions = _stock_mentions_by_message_id(conn, [row["message_id"] for row in rows])
     accumulators: dict[str, _CatalystAccumulator] = {}
 
@@ -221,27 +222,59 @@ def _read_terms(path: Path) -> CatalystTermLibrary:
 
 def _query_candidate_messages(
     conn: sqlite3.Connection,
+    library: CatalystTermLibrary,
     filters: CatalystFeedFilters,
 ) -> list[sqlite3.Row]:
-    where = ["m.message_time >= ?", "m.message_time <= ?"]
-    params: list[object] = [filters.start_time.isoformat(), filters.end_time.isoformat()]
-    if filters.source:
-        where.append("m.source = ?")
-        params.append(filters.source)
-    if filters.group_name:
-        if filters.source == "个人消息":
-            where.append("m.sender = ?")
-            params.append(filters.group_name)
-        elif filters.source == "个人群":
-            where.append("m.group_name = ?")
-            params.append(filters.group_name)
-        else:
-            where.append(
-                "((m.source = '个人群' AND m.group_name = ?) OR "
-                "(m.source = '个人消息' AND m.sender = ?))"
-            )
-            params.extend([filters.group_name, filters.group_name])
+    if (filters.end_time - filters.start_time).total_seconds() < _ROUGH_FILTER_MIN_WINDOW_SECONDS:
+        return _query_window_messages(conn, filters)
 
+    seed_where, seed_params = _candidate_base_conditions("m", filters)
+    term_where, term_params = _rough_term_conditions("m", library)
+    if not term_where:
+        return []
+    seed_where.append("(" + " OR ".join(term_where) + ")")
+
+    candidate_where, candidate_params = _candidate_base_conditions("c", filters)
+    gap_before = f"-{_CLUSTER_GAP_SECONDS} seconds"
+    gap_after = f"+{_CLUSTER_GAP_SECONDS} seconds"
+    params = [*seed_params, *term_params, gap_before, gap_after, *candidate_params]
+
+    return conn.execute(
+        f"""
+        WITH seed AS (
+            SELECT
+                m.source,
+                m.sender,
+                COALESCE(m.group_name, '') AS conversation_name,
+                m.message_time
+            FROM messages m
+            WHERE {" AND ".join(seed_where)}
+        ),
+        candidate_ids AS (
+            SELECT DISTINCT c.message_id
+            FROM messages c
+            JOIN seed s
+              ON c.source = s.source
+             AND c.sender = s.sender
+             AND COALESCE(c.group_name, '') = s.conversation_name
+             AND c.message_time >= strftime('%Y-%m-%dT%H:%M:%S', s.message_time, ?)
+             AND c.message_time <= strftime('%Y-%m-%dT%H:%M:%S', s.message_time, ?)
+            WHERE {" AND ".join(candidate_where)}
+        )
+        SELECT m.*
+        FROM messages m
+        JOIN candidate_ids ids ON ids.message_id = m.message_id
+        ORDER BY m.message_time ASC, m.message_id ASC
+        """,
+        params,
+    ).fetchall()
+
+
+def _query_window_messages(
+    conn: sqlite3.Connection,
+    filters: CatalystFeedFilters,
+) -> list[sqlite3.Row]:
+    where, params = _candidate_base_conditions("m", filters)
     return conn.execute(
         f"""
         SELECT m.*
@@ -251,6 +284,76 @@ def _query_candidate_messages(
         """,
         params,
     ).fetchall()
+
+
+def _candidate_base_conditions(alias: str, filters: CatalystFeedFilters) -> tuple[list[str], list[object]]:
+    where = [f"{alias}.message_time >= ?", f"{alias}.message_time <= ?"]
+    params: list[object] = [filters.start_time.isoformat(), filters.end_time.isoformat()]
+    if filters.source:
+        where.append(f"{alias}.source = ?")
+        params.append(filters.source)
+    if filters.group_name:
+        if filters.source == "个人消息":
+            where.append(f"{alias}.sender = ?")
+            params.append(filters.group_name)
+        elif filters.source == "个人群":
+            where.append(f"{alias}.group_name = ?")
+            params.append(filters.group_name)
+        else:
+            where.append(
+                f"(({alias}.source = '个人群' AND {alias}.group_name = ?) OR "
+                f"({alias}.source = '个人消息' AND {alias}.sender = ?))"
+            )
+            params.extend([filters.group_name, filters.group_name])
+    return where, params
+
+
+def _rough_term_conditions(alias: str, library: CatalystTermLibrary) -> tuple[list[str], list[object]]:
+    long_terms: list[str] = []
+    short_terms: list[str] = []
+    for term in _unique_terms(library):
+        if len(term) >= 3:
+            long_terms.append(term)
+        else:
+            short_terms.append(term)
+
+    conditions: list[str] = []
+    params: list[object] = []
+    if long_terms:
+        conditions.append(
+            f"{alias}.message_id IN (SELECT message_id FROM messages_fts WHERE messages_fts MATCH ?)"
+        )
+        params.append(_fts_or_query(long_terms))
+    for term in short_terms:
+        conditions.append(f"{alias}.raw_content LIKE ? ESCAPE '\\'")
+        params.append(_like_pattern(term))
+    return conditions, params
+
+
+def _unique_terms(library: CatalystTermLibrary) -> list[str]:
+    terms: list[str] = []
+    seen: set[str] = set()
+    for category in library.categories:
+        for term in category.terms:
+            cleaned = term.strip()
+            if not cleaned or cleaned in seen:
+                continue
+            seen.add(cleaned)
+            terms.append(cleaned)
+    return terms
+
+
+def _fts_or_query(terms: list[str]) -> str:
+    quoted_terms = []
+    for term in terms:
+        escaped = term.replace('"', '""')
+        quoted_terms.append(f'"{escaped}"')
+    return " OR ".join(quoted_terms)
+
+
+def _like_pattern(value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
 
 
 def _match_terms(content: str, categories: list[CatalystCategory]) -> list[CatalystTermHit]:

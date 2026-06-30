@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 import sqlite3
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 from radar.core.tushare.stock_master import load_stock_master
@@ -48,8 +49,9 @@ class StockMatcher:
         self.by_name: dict[str, list[Stock]] = {}
         for stock in stocks:
             self.by_name.setdefault(stock.name, []).append(stock)
-        names = sorted((re.escape(name) for name in self.by_name), key=len, reverse=True)
-        self.name_pattern = re.compile("|".join(names)) if names else None
+        self.names_by_first_char: dict[str, list[str]] = {}
+        for name in sorted(self.by_name, key=len, reverse=True):
+            self.names_by_first_char.setdefault(name[0], []).append(name)
 
     def detect(self, text: str, *, strict: bool = True) -> list[Stock]:
         matched: dict[str, Stock] = {}
@@ -62,13 +64,25 @@ class StockMatcher:
             stock = self.by_ts_code.get(ts_code.upper())
             if stock:
                 matched[stock.ts_code] = stock
-        if self.name_pattern:
-            for match in self.name_pattern.finditer(text):
-                name = match.group(0)
-                for stock in self.by_name.get(name, []):
-                    if not strict or has_stock_context(text, stock):
-                        matched[stock.ts_code] = stock
+        for name in self._iter_name_matches(text):
+            for stock in self.by_name.get(name, []):
+                if not strict or has_stock_context(text, stock):
+                    matched[stock.ts_code] = stock
         return list(matched.values())
+
+    def _iter_name_matches(self, text: str) -> Iterator[str]:
+        index = 0
+        while index < len(text):
+            matched_name = None
+            for name in self.names_by_first_char.get(text[index], []):
+                if text.startswith(name, index):
+                    matched_name = name
+                    break
+            if matched_name is None:
+                index += 1
+                continue
+            yield matched_name
+            index += len(matched_name)
 
 
 def load_stocks(conn: sqlite3.Connection) -> list[Stock]:
