@@ -1,6 +1,6 @@
 """SQLite storage, migrations, and run record helpers."""
 
-from radar.core.storage.db import applied_migrations, migrate, migrate_market_db, migrate_message_db
+from radar.core.storage.db import applied_migrations, migrate, migrate_market_db, migrate_message_db, migrate_report_db
 from radar.core.storage.runs import (
     RunRecord,
     RunStatus,
@@ -45,6 +45,7 @@ __all__ = [
     "migrate",
     "migrate_market_db",
     "migrate_message_db",
+    "migrate_report_db",
     "record_fetch_window",
     "start_run",
     "update_run_progress",

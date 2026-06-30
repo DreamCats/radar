@@ -17,7 +17,10 @@ import type {
   AuthStatus,
   CatalystFeedPage,
   CatalystFeedQuery,
+  CatalystValuationReportArchiveDetail,
+  CatalystValuationReportArchiveItem,
   CatalystValuationReportJobRequest,
+  CatalystValuationReportNotifyResponse,
   CatalystTermLibrary,
   DerivedJobItem,
   IngestJobItem,
@@ -42,24 +45,28 @@ import type {
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
 export const AUTH_EXPIRED_EVENT = "radar:auth-expired";
+const AUTH_TOKEN_STORAGE_KEY = "radar.authToken";
 
 export async function fetchAuthStatus(): Promise<AuthStatus> {
   return getJson("/api/auth/status");
 }
 
-export async function login(username: string, password: string): Promise<AuthStatus> {
+export async function login(token: string): Promise<AuthStatus> {
   const response = await apiFetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ token }),
   });
   if (!response.ok) {
     throw new Error(await errorText(response));
   }
-  return (await response.json()) as AuthStatus;
+  const status = (await response.json()) as AuthStatus;
+  writeAuthToken(token);
+  return status;
 }
 
 export async function logout(): Promise<AuthStatus> {
+  clearAuthToken();
   const response = await apiFetch("/api/auth/logout", { method: "POST" });
   if (!response.ok) {
     throw new Error(await errorText(response));
@@ -542,6 +549,35 @@ export async function startCatalystValuationReportJob(request: CatalystValuation
   return data.items;
 }
 
+export async function fetchCatalystValuationReports(query: {
+  start_time?: string;
+  end_time?: string;
+  granularity_minutes?: number;
+  limit?: number;
+} = {}): Promise<CatalystValuationReportArchiveItem[]> {
+  const data = await getJson<{ items: CatalystValuationReportArchiveItem[] }>(
+    `/api/catalyst-valuation-reports?${params({ limit: 50, ...query })}`,
+  );
+  return data.items;
+}
+
+export async function fetchCatalystValuationReport(reportId: string): Promise<CatalystValuationReportArchiveDetail> {
+  const data = await getJson<{ item: CatalystValuationReportArchiveDetail }>(
+    `/api/catalyst-valuation-reports/${encodeURIComponent(reportId)}`,
+  );
+  return data.item;
+}
+
+export async function sendCatalystValuationReportBark(reportId: string): Promise<CatalystValuationReportNotifyResponse> {
+  const response = await apiFetch(`/api/catalyst-valuation-reports/${encodeURIComponent(reportId)}/bark`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  return (await response.json()) as CatalystValuationReportNotifyResponse;
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const response = await apiFetch(path);
   if (!response.ok) {
@@ -551,11 +587,41 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const response = await fetch(`${apiBase}${path}`, { ...init, credentials: "include" });
+  const headers = new Headers(init.headers);
+  const token = readAuthToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  const response = await fetch(`${apiBase}${path}`, { ...init, headers, credentials: "omit" });
   if (response.status === 401 && !path.startsWith("/api/auth/")) {
+    clearAuthToken();
     window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, { detail: { path } }));
   }
   return response;
+}
+
+function readAuthToken(): string | null {
+  try {
+    return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeAuthToken(token: string): void {
+  try {
+    window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  } catch {
+    // localStorage may be unavailable in private or embedded contexts; current request still succeeds.
+  }
+}
+
+function clearAuthToken(): void {
+  try {
+    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures; the next request will still be rejected by the server if no valid token is sent.
+  }
 }
 
 function params(query: Record<string, unknown>): string {

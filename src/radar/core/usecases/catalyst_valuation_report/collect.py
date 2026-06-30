@@ -19,7 +19,7 @@ def collect_catalyst_valuation_contexts(
     start_time: datetime,
     end_time: datetime,
     limit: int = 200,
-    max_stocks: int = 12,
+    max_stocks: int | None = None,
 ) -> tuple[list[CatalystValuationStockContext], int, int]:
     conn = connect(config.database_path)
     try:
@@ -76,7 +76,9 @@ def collect_catalyst_valuation_contexts(
         reverse=True,
     )
     filtered_contexts = filter_contexts_by_valuation_evidence(contexts)
-    return filtered_contexts[:max_stocks], page.summary.total_items, len(contexts)
+    if max_stocks is not None:
+        filtered_contexts = filtered_contexts[:max_stocks]
+    return filtered_contexts, page.summary.total_items, len(contexts)
 
 
 collect_catalyst_stock_contexts = collect_catalyst_valuation_contexts

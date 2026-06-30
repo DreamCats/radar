@@ -66,7 +66,7 @@ export function configHints(kind: JobTemplateKey): string[] {
     return ["重拉 ths_index", "重拉全部 ths_member", "替换 tushare_cache"];
   }
   if (kind === "catalystValuationReport") {
-    return ["催化词筛选", "估值数字门槛", "原文证据 HTML", "发 Bark"];
+    return ["催化词筛选", "估值数字门槛", "原文证据 HTML", "手动 Bark"];
   }
   return [];
 }

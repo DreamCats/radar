@@ -7,6 +7,11 @@ from pydantic import BaseModel, Field
 
 from radar.core.models import MessageSource, RawMessage
 from radar.core.scheduler import ScheduleRecord, ScheduleTickRecord
+from radar.core.storage.report_store import (
+    CatalystValuationReportArchiveDetail,
+    CatalystValuationReportArchiveItem,
+    ReportNotificationRecord,
+)
 from radar.core.storage import RunRecord
 from radar.core.usecases.analyst_mentions import (
     DEFAULT_BENCHMARK_TS_CODE,
@@ -60,8 +65,7 @@ class IndustryChainDetailResponse(BaseModel):
 
 
 class AuthLoginRequest(BaseModel):
-    username: str = Field(min_length=1, max_length=128)
-    password: str = Field(min_length=1, max_length=256)
+    token: str = Field(min_length=1, max_length=512)
 
 
 class MessagePageResponse(BaseModel):
@@ -215,7 +219,7 @@ class CatalystValuationReportJobRequest(BaseModel):
     start_time: datetime
     end_time: datetime
     limit: int = Field(default=200, ge=1, le=200)
-    max_stocks: int = Field(default=12, ge=1, le=50)
+    max_stocks: int | None = Field(default=None, ge=1)
     publish: bool = True
     notify: bool = False
 
@@ -234,6 +238,19 @@ class DerivedJobItem(BaseModel):
 
 class DerivedJobResponse(BaseModel):
     items: list[DerivedJobItem]
+
+
+class CatalystValuationReportListResponse(BaseModel):
+    items: list[CatalystValuationReportArchiveItem]
+
+
+class CatalystValuationReportDetailResponse(BaseModel):
+    item: CatalystValuationReportArchiveDetail
+
+
+class CatalystValuationReportNotifyResponse(BaseModel):
+    item: CatalystValuationReportArchiveDetail
+    notification: ReportNotificationRecord
 
 
 class AnalystMentionSummaryResponse(AnalystMentionSummaryResult):

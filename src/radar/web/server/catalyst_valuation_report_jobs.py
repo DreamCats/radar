@@ -6,6 +6,7 @@ from threading import Lock
 
 from radar.core.config import RadarConfig
 from radar.core.storage import fail_run, fail_stale_runs, finish_run, get_running_run, start_run
+from radar.core.storage.report_store import save_catalyst_valuation_report
 from radar.core.usecases.catalyst_valuation_report import run_catalyst_valuation_report
 from radar.web.server.schemas import CatalystValuationReportJobRequest, DerivedJobItem
 
@@ -67,6 +68,13 @@ def _run_catalyst_valuation_report_job(config: RadarConfig, request: CatalystVal
         status = "skipped" if report.total_stocks == 0 else "succeeded"
         if result.bark_error and status == "succeeded":
             status = "partial_failed"
+        archived = save_catalyst_valuation_report(
+            config.reports_database_path,
+            request=_metadata(request),
+            result=result,
+            run_id=run_id,
+            status=status,
+        )
         finish_run(
             config.database_path,
             run_id,
@@ -83,6 +91,7 @@ def _run_catalyst_valuation_report_job(config: RadarConfig, request: CatalystVal
                 "total_stocks": report.total_stocks,
                 "local_html_path": str(result.local_html_path),
                 "published_url": result.published_url,
+                "report_id": archived.report_id,
                 "bark_sent": result.bark_sent,
                 "bark_error": result.bark_error,
             },
@@ -98,4 +107,4 @@ def _target(request: CatalystValuationReportJobRequest) -> str:
 
 
 def _metadata(request: CatalystValuationReportJobRequest) -> dict[str, object]:
-    return request.model_dump(mode="json")
+    return request.model_dump(mode="json", exclude_none=True)

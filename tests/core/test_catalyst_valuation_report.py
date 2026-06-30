@@ -92,6 +92,42 @@ def test_catalyst_valuation_report_requires_stock_local_numbers_for_multi_stock(
     assert [item.stock_name for item in result.report.stocks] == ["胜宏科技"]
 
 
+def test_catalyst_valuation_report_default_does_not_cap_stocks(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    _save_terms(config)
+    _insert_messages(
+        config,
+        [
+            _message("m1", "2026-06-28T09:30:00", "胜宏科技 新签订单 10 亿。"),
+            _message("m2", "2026-06-28T09:35:00", "测试二 新签订单 20 亿。"),
+            _message("m3", "2026-06-28T09:40:00", "测试三 新签订单 30 亿。"),
+        ],
+    )
+    monkeypatch.setattr(
+        "radar.core.usecases.catalyst_valuation_report.collect.load_catalyst_stock_detector",
+        lambda _config: _detector,
+    )
+
+    result = run_catalyst_valuation_report(
+        config,
+        start_time=datetime.fromisoformat("2026-06-28T09:00:00"),
+        end_time=datetime.fromisoformat("2026-06-28T10:00:00"),
+        publish=False,
+        notify=False,
+    )
+    capped = run_catalyst_valuation_report(
+        config,
+        start_time=datetime.fromisoformat("2026-06-28T09:00:00"),
+        end_time=datetime.fromisoformat("2026-06-28T10:00:00"),
+        max_stocks=2,
+        publish=False,
+        notify=False,
+    )
+
+    assert result.report.total_stocks == 3
+    assert capped.report.total_stocks == 2
+
+
 def test_catalyst_valuation_report_skips_publish_and_notify_when_empty(monkeypatch, tmp_path):
     config = _config(tmp_path)
     publish_calls: list[object] = []

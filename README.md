@@ -83,6 +83,8 @@ web/ui/
 # ~/.config/radar/config.yaml
 storage:
   data_dir: ~/.config/radar/data
+  # 可选；不配置时默认是 ~/.config/radar/data/reports.sqlite3。
+  reports_database: ~/.config/radar/data/reports.sqlite3
 
 wechat:
   timeout: 30
@@ -126,7 +128,6 @@ web:
   auth:
     # 个人部署时开启；未开启时 dashboard 保持免登录。
     enabled: true
-    session_hours: 24
 ```
 
 `market.api_url` 可以填 Tushare 直连地址，也可以填远端代理地址；兼容旧配置名 `market.tushare_api_url`。
@@ -156,10 +157,7 @@ market:
     token: YOUR_TUSHARE_TOKEN
 web:
   auth:
-    username: maifeng
-    password: CHANGE_ME
-    # 可选；不填时用 password 派生 cookie 签名密钥。
-    session_secret: CHANGE_ME_TOO
+    token: CHANGE_ME
 ```
 
 也可以临时覆盖：
@@ -169,7 +167,8 @@ RADAR_CONFIG_DIR=/path/to/config uv run radar doctor
 RADAR_DATA_DIR=/path/to/data uv run radar query --limit 5
 RADAR_WECHAT_BASE_URL=https://example.invalid/wechat uv run radar doctor
 RADAR_TUSHARE_TOKEN=YOUR_TUSHARE_TOKEN uv run radar doctor
-RADAR_WEB_AUTH_USERNAME=maifeng RADAR_WEB_AUTH_PASSWORD=CHANGE_ME uv run radar dashboard
+RADAR_WEB_AUTH_TOKEN=CHANGE_ME uv run radar dashboard
+RADAR_REPORTS_DATABASE=/path/to/reports.sqlite3 uv run radar dashboard
 ```
 
 ## 常用命令
@@ -251,6 +250,20 @@ scripts/dashboard start -- --port 8001 --ui-port 5174
 uv run radar dashboard --port 8001 --ui-port 5174
 ```
 
+催化估值线索报告会归档到独立 `reports.sqlite3`，dashboard 的“估值线索”tab 可回看每次生成的结构化数据和 HTML，并可手动发送 Bark。开启 `web.auth.enabled` 后，外部 API 也使用同一个固定 token：
+
+```bash
+curl -H "Authorization: Bearer $RADAR_WEB_AUTH_TOKEN" \
+  "http://127.0.0.1:8000/api/external/catalyst-valuation-reports?granularity_minutes=60&limit=20"
+```
+
+详情接口返回 `report` 结构化数据、`rendered_html` 和上传后的 `published_url`：
+
+```bash
+curl -H "Authorization: Bearer $RADAR_WEB_AUTH_TOKEN" \
+  "http://127.0.0.1:8000/api/external/catalyst-valuation-reports/<report_id>"
+```
+
 如果输出里带下一页游标，直接复制继续翻页：
 
 ```bash
@@ -264,6 +277,7 @@ uv run radar query --cursor-time "2026-06-03T10:00:00" --cursor-id "message-id" 
 ```text
 ~/.config/radar/data/radar.sqlite3
 ~/.config/radar/data/market.sqlite3
+~/.config/radar/data/reports.sqlite3
 ```
 
 消息库 `radar.sqlite3`：
@@ -279,6 +293,12 @@ uv run radar query --cursor-time "2026-06-03T10:00:00" --cursor-id "message-id" 
 - `schema_migrations`：行情库 schema 版本记录。
 - `tushare_cache`：Tushare 短期 KV 缓存表。
 - `tushare_history`：Tushare 低风险历史行缓存表。
+
+报告库 `reports.sqlite3`：
+
+- `schema_migrations`：报告库 schema 版本记录。
+- `catalyst_valuation_reports`：催化估值线索报告归档，包含窗口、HTML、上传 URL 和结构化 report JSON。
+- `report_notifications`：手动 Bark 等报告通知记录。
 
 `stored=0` 不一定表示没有拉到数据；它通常表示拉回来的消息已经按 `message_id` 去重存在。`skipped>0` 才表示窗口缓存命中，没有请求 API。
 

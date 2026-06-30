@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from radar.core.config import RadarConfig, load_config
-from radar.web.server.auth import auth_required, current_username
+from radar.web.server.auth import auth_required, request_authenticated
 from radar.web.server.routers import (
     auth,
     backtest,
@@ -89,10 +89,10 @@ def _install_auth_middleware(app: FastAPI) -> None:
             return await call_next(request)
         if _is_public_path(request.url.path) or not auth_required(config):
             return await call_next(request)
-        if current_username(config, request) is not None:
+        if request_authenticated(config, request):
             return await call_next(request)
-        return JSONResponse({"detail": "请先登录"}, status_code=401)
+        return JSONResponse({"detail": "缺少或无效的访问密钥"}, status_code=401)
 
 
 def _is_public_path(path: str) -> bool:
-    return path in {"/", "/api/health"} or path.startswith("/api/auth/")
+    return path == "/" or path.startswith("/api/auth/")

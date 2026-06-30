@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   BarChart3,
   Database,
+  FileText,
   LogOut,
   Menu,
   MessageCircle,
@@ -23,12 +24,14 @@ import { IndustryChainPage } from "./pages/IndustryChainPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PremarketPage } from "./pages/PremarketPage";
 import { SchedulePage } from "./pages/SchedulePage";
+import { ValuationCluesPage } from "./pages/ValuationCluesPage";
 import { WechatPage } from "./pages/WechatPage";
 import type { AuthStatus } from "./types";
 
 type TabKey =
   | "wechat"
   | "catalyst"
+  | "valuation-clues"
   | "premarket"
   | "industry-chain"
   | "analyst"
@@ -38,6 +41,7 @@ type TabKey =
 const NAV_ITEMS = [
   { key: "wechat", label: "微信", icon: MessageCircle },
   { key: "catalyst", label: "催化词", icon: Tags },
+  { key: "valuation-clues", label: "估值线索", icon: FileText },
   { key: "premarket", label: "盘前预测", icon: Radar },
   { key: "industry-chain", label: "产业链", icon: Network },
   { key: "analyst", label: "分析师", icon: UserRoundCheck },
@@ -80,7 +84,7 @@ export function App() {
   useEffect(() => {
     function handleAuthExpired() {
       setAuth({ auth_required: true, authenticated: false, username: null });
-      setAuthError("登录已过期，请重新登录。");
+      setAuthError("密钥无效，请重新输入。");
       setMobileNavOpen(false);
     }
     window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
@@ -113,8 +117,8 @@ export function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileNavOpen]);
 
-  async function handleLogin(username: string, password: string) {
-    const next = await login(username, password);
+  async function handleLogin(token: string) {
+    const next = await login(token);
     setAuth(next);
     setAuthError(null);
   }
@@ -196,6 +200,7 @@ export function App() {
           <div className="page-motion">
             {tab === "wechat" && <WechatPage />}
             {tab === "catalyst" && <CatalystPage />}
+            {tab === "valuation-clues" && <ValuationCluesPage />}
             {tab === "premarket" && <PremarketPage />}
             {tab === "industry-chain" && <IndustryChainPage />}
             {tab === "analyst" && <AnalystPage />}

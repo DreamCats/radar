@@ -19,14 +19,19 @@ BUILTIN_CHAT_SKILLS_DIR = Path(__file__).resolve().parent / "skills"
 class StorageConfig(BaseModel):
     data_dir: Path = Field(default_factory=lambda: DEFAULT_CONFIG_DIR / "data")
     database: Path | None = None
+    reports_database: Path | None = None
 
     @model_validator(mode="after")
     def normalize_paths(self) -> "StorageConfig":
         self.data_dir = self.data_dir.expanduser()
         if self.database is not None:
             self.database = self.database.expanduser()
+        if self.reports_database is not None:
+            self.reports_database = self.reports_database.expanduser()
         if self.database is None:
             self.database = self.data_dir / "radar.sqlite3"
+        if self.reports_database is None:
+            self.reports_database = self.data_dir / "reports.sqlite3"
         return self
 
 
@@ -105,7 +110,6 @@ class ChatConfig(BaseModel):
 
 class WebAuthConfig(BaseModel):
     enabled: bool = False
-    session_hours: int = Field(default=24, ge=1, le=24 * 30)
 
 
 class WebConfig(BaseModel):
@@ -212,9 +216,7 @@ class CloudSecrets(BaseModel):
 
 
 class WebAuthSecret(BaseModel):
-    username: str | None = None
-    password: str | None = None
-    session_secret: str | None = None
+    token: str | None = None
 
 
 class WebSecrets(BaseModel):
@@ -276,6 +278,10 @@ class RadarConfig(BaseModel):
         return self.market.database or self.storage.data_dir / "market.sqlite3"
 
     @property
+    def reports_database_path(self) -> Path:
+        return self.storage.reports_database or self.storage.data_dir / "reports.sqlite3"
+
+    @property
     def chat_skill_paths(self) -> list[Path]:
         paths = self.chat.skills.paths or [Path("skills")]
         resolved_paths = [path if path.is_absolute() else self.config_dir / path for path in paths]
@@ -328,6 +334,7 @@ def _apply_env_overrides(config: RadarConfig) -> RadarConfig:
     if data_dir:
         config.storage.data_dir = Path(data_dir).expanduser()
         config.storage.database = config.storage.data_dir / "radar.sqlite3"
+        config.storage.reports_database = config.storage.data_dir / "reports.sqlite3"
         if config.market.database is None:
             config.market.database = config.storage.data_dir / "market.sqlite3"
 
@@ -353,6 +360,10 @@ def _apply_env_overrides(config: RadarConfig) -> RadarConfig:
     market_database = os.getenv("RADAR_MARKET_DATABASE")
     if market_database:
         config.market.database = Path(market_database).expanduser()
+
+    reports_database = os.getenv("RADAR_REPORTS_DATABASE")
+    if reports_database:
+        config.storage.reports_database = Path(reports_database).expanduser()
 
     _apply_channel_overrides(config)
     _apply_brave_search_overrides(config)
@@ -433,14 +444,8 @@ def _apply_web_auth_overrides(config: RadarConfig) -> None:
     if enabled is not None:
         config.web.auth.enabled = enabled.lower() in {"1", "true", "yes", "on"}
 
-    username = os.getenv("RADAR_WEB_AUTH_USERNAME")
-    password = os.getenv("RADAR_WEB_AUTH_PASSWORD")
-    session_secret = os.getenv("RADAR_WEB_AUTH_SESSION_SECRET")
-    if username:
-        config.secrets.web.auth.username = username
-    if password:
-        config.secrets.web.auth.password = password
-    if session_secret:
-        config.secrets.web.auth.session_secret = session_secret
-    if username and password and enabled is None:
+    token = os.getenv("RADAR_WEB_AUTH_TOKEN") or os.getenv("RADAR_API_TOKEN")
+    if token:
+        config.secrets.web.auth.token = token
+    if token and enabled is None:
         config.web.auth.enabled = True

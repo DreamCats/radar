@@ -89,7 +89,7 @@ def prepare_schedule_job(schedule: ScheduleRecord, *, now: datetime) -> Prepared
 
     return PreparedScheduleJob(
         request_model=request,
-        request_payload=request.model_dump(mode="json"),
+        request_payload=request.model_dump(mode="json", exclude_none=True),
     )
 
 

@@ -66,7 +66,7 @@ DEFAULT_SCHEDULES: tuple[DefaultSchedule, ...] = (
         cadence_kind="interval",
         cadence={"minutes": 60, "offset_minutes": 0, "active_start": "08:00", "active_end": "22:00"},
         window_preset="last_1h",
-        request={"limit": 200, "max_stocks": 12, "publish": True, "notify": True},
+        request={"limit": 200, "publish": True, "notify": False},
         max_lag_minutes=60,
         sort_order=30,
     ),

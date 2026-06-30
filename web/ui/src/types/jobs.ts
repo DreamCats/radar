@@ -55,7 +55,7 @@ export type CatalystValuationReportJobRequest = {
   start_time: string;
   end_time: string;
   limit: number;
-  max_stocks: number;
+  max_stocks?: number | null;
   publish: boolean;
   notify: boolean;
 };

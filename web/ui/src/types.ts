@@ -132,6 +132,99 @@ export type CatalystFeedQuery = {
   limit?: number;
 };
 
+export type CatalystValuationEvidence = {
+  message_id: string;
+  source: MessageSource;
+  sender: string;
+  group_name?: string | null;
+  message_time: string;
+  latest_message_time: string;
+  content: string;
+  matched_terms: string[];
+  valuation_terms: string[];
+  valuation_numbers: string[];
+  stock_mentions_count: number;
+  duplicate_count: number;
+};
+
+export type CatalystValuationStockContext = {
+  stock_key: string;
+  ts_code?: string | null;
+  stock_name: string;
+  first_message_time: string;
+  latest_message_time: string;
+  evidence: CatalystValuationEvidence[];
+};
+
+export type CatalystValuationReportData = {
+  generated_at: string;
+  start_time: string;
+  end_time: string;
+  total_feed_items: number;
+  total_candidate_stocks: number;
+  total_stocks: number;
+  stocks: CatalystValuationStockContext[];
+};
+
+export type CatalystValuationReportStockSummary = {
+  stock_key: string;
+  ts_code?: string | null;
+  stock_name: string;
+  evidence_count: number;
+  latest_message_time: string;
+};
+
+export type ReportNotificationRecord = {
+  notification_id: string;
+  report_id: string;
+  channel: string;
+  status: "succeeded" | "failed";
+  sent_at: string;
+  error_message?: string | null;
+  created_at: string;
+};
+
+export type CatalystValuationReportArchiveItem = {
+  report_id: string;
+  run_id?: string | null;
+  kind: string;
+  status: "succeeded" | "skipped" | "partial_failed" | "failed";
+  generated_at: string;
+  start_time: string;
+  end_time: string;
+  granularity_minutes?: number | null;
+  local_html_path: string;
+  published_url?: string | null;
+  total_feed_items: number;
+  total_candidate_stocks: number;
+  total_stocks: number;
+  bark_sent_at?: string | null;
+  bark_error?: string | null;
+  top_stocks: CatalystValuationReportStockSummary[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type CatalystValuationReportArchiveDetail = CatalystValuationReportArchiveItem & {
+  request: Record<string, unknown>;
+  report: CatalystValuationReportData;
+  rendered_html: string;
+  notifications: ReportNotificationRecord[];
+};
+
+export type CatalystValuationReportListResponse = {
+  items: CatalystValuationReportArchiveItem[];
+};
+
+export type CatalystValuationReportDetailResponse = {
+  item: CatalystValuationReportArchiveDetail;
+};
+
+export type CatalystValuationReportNotifyResponse = {
+  item: CatalystValuationReportArchiveDetail;
+  notification: ReportNotificationRecord;
+};
+
 export type PremarketSignalQuery = {
   start_time: string;
   end_time: string;

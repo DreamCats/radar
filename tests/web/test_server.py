@@ -298,23 +298,21 @@ def test_auth_disabled_by_default(tmp_path):
     }
 
 
-def test_auth_enabled_gates_api_and_uses_cookie(tmp_path):
+def test_auth_enabled_gates_api_and_uses_bearer_token(tmp_path):
     config = _config(
         tmp_path,
         web={"auth": {"enabled": True}},
         secrets={
             "web": {
                 "auth": {
-                    "username": "maifeng",
-                    "password": "secret",
-                    "session_secret": "test-secret",
+                    "token": "secret",
                 }
             }
         },
     )
     client = TestClient(create_app(config))
 
-    assert client.get("/api/health").status_code == 200
+    assert client.get("/api/health").status_code == 401
     assert client.get("/api/runs").status_code == 401
     preflight_response = client.options(
         "/api/ingest/wechat/jobs",
@@ -326,22 +324,24 @@ def test_auth_enabled_gates_api_and_uses_cookie(tmp_path):
     )
     assert preflight_response.status_code == 200
     assert preflight_response.headers["access-control-allow-origin"] == "http://localhost:5173"
-    assert client.post("/api/auth/login", json={"username": "maifeng", "password": "bad"}).status_code == 401
+    assert client.post("/api/auth/login", json={"token": "bad"}).status_code == 401
 
     login_response = client.post(
         "/api/auth/login",
-        json={"username": "maifeng", "password": "secret"},
+        json={"token": "secret"},
     )
     assert login_response.status_code == 200
     assert login_response.json()["authenticated"] is True
 
-    assert client.get("/api/runs").status_code == 200
+    assert client.get("/api/runs").status_code == 401
+    auth_headers = {"Authorization": "Bearer secret"}
+    assert client.get("/api/health", headers=auth_headers).status_code == 200
+    assert client.get("/api/runs", headers=auth_headers).status_code == 200
 
     logout_response = client.post("/api/auth/logout")
     assert logout_response.status_code == 200
     assert logout_response.json()["authenticated"] is False
     assert client.get("/api/runs").status_code == 401
-
 
 def test_chat_turn_endpoint_creates_session_with_context(tmp_path, monkeypatch):
     from radar.core.chat.events import ChatMessage

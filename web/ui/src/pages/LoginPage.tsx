@@ -4,12 +4,11 @@ import { motion, useReducedMotion } from "motion/react";
 
 type LoginPageProps = {
   error?: string | null;
-  onLogin: (username: string, password: string) => Promise<void>;
+  onLogin: (token: string) => Promise<void>;
 };
 
 export function LoginPage({ error, onLogin }: LoginPageProps) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const shouldReduceMotion = useReducedMotion();
@@ -19,7 +18,7 @@ export function LoginPage({ error, onLogin }: LoginPageProps) {
     setLocalError(null);
     setSubmitting(true);
     try {
-      await onLogin(username.trim(), password);
+      await onLogin(token.trim());
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : "登录失败");
     } finally {
@@ -41,34 +40,26 @@ export function LoginPage({ error, onLogin }: LoginPageProps) {
         <div className="login-heading">
           <p className="eyebrow">Private Workspace</p>
           <h1>radar</h1>
-          <p>个人投研工作台</p>
+          <p>输入访问密钥</p>
         </div>
         <form className="login-form" onSubmit={submit}>
           <label className="login-field">
-            <span>账号</span>
-            <input
-              autoComplete="username"
-              autoFocus
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-            />
-          </label>
-          <label className="login-field">
-            <span>密码</span>
+            <span>密钥</span>
             <div className="login-password">
               <LockKeyhole size={15} />
               <input
                 autoComplete="current-password"
+                autoFocus
                 type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                value={token}
+                onChange={(event) => setToken(event.target.value)}
               />
             </div>
           </label>
           {(localError || error) && <p className="login-error">{localError || error}</p>}
           <button className="primary-button login-submit" type="submit" disabled={submitting}>
             <LogIn size={15} />
-            {submitting ? "登录中" : "登录"}
+            {submitting ? "校验中" : "进入"}
           </button>
         </form>
       </motion.div>

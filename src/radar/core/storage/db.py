@@ -6,6 +6,7 @@ from collections.abc import Sequence
 
 from radar.core.storage.market_migrations import MARKET_MIGRATIONS
 from radar.core.storage.message_migrations import MESSAGE_MIGRATIONS
+from radar.core.storage.report_migrations import REPORT_MIGRATIONS
 
 Migration = tuple[str, str]
 _MIGRATION_LOCK = threading.Lock()
@@ -40,6 +41,12 @@ def migrate_market_db(conn: sqlite3.Connection) -> None:
     """迁移行情库；market.sqlite3 独立记录自己的 schema 版本。"""
 
     migrate(conn, MARKET_MIGRATIONS)
+
+
+def migrate_report_db(conn: sqlite3.Connection) -> None:
+    """迁移报告库；报告归档不耦合原始消息库。"""
+
+    migrate(conn, REPORT_MIGRATIONS)
 
 
 def migrate(conn: sqlite3.Connection, migrations: Sequence[Migration]) -> None:

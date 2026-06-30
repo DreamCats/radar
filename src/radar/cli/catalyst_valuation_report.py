@@ -22,7 +22,7 @@ def catalyst_valuation_report() -> None:
 @click.option("--end", "end_text", help="结束时间，默认当前时间。")
 @click.option("--hours", type=click.IntRange(1, 168), default=24, show_default=True, help="未传 start 时回看小时数。")
 @click.option("--limit", type=click.IntRange(1, 200), default=200, show_default=True, help="读取的催化词条目上限。")
-@click.option("--max-stocks", type=click.IntRange(1, 50), default=12, show_default=True, help="最多分析标的数。")
+@click.option("--max-stocks", type=click.IntRange(1), default=None, help="最多分析标的数；默认不截断。")
 @click.option("--output", "output_path", type=click.Path(path_type=Path, dir_okay=False), help="本地 HTML 输出路径。")
 @click.option("--publish", is_flag=True, help="上传 HTML 到 Aly。")
 @click.option("--notify", is_flag=True, help="上传后发送 Bark 通知；必须同时传 --publish。")
@@ -34,7 +34,7 @@ def run_command(
     end_text: str | None,
     hours: int,
     limit: int,
-    max_stocks: int,
+    max_stocks: int | None,
     output_path: Path | None,
     publish: bool,
     notify: bool,

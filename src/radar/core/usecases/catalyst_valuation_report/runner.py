@@ -24,7 +24,7 @@ def run_catalyst_valuation_report(
     end_time: datetime | None = None,
     hours: int = 24,
     limit: int = 200,
-    max_stocks: int = 12,
+    max_stocks: int | None = None,
     output_path: Path | None = None,
     publish: bool = False,
     notify: bool = False,

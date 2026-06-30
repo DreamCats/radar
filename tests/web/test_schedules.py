@@ -9,9 +9,12 @@ from fastapi.testclient import TestClient
 from radar.core.config import RadarConfig
 from radar.core.storage import connect, get_run, migrate, migrate_message_db, start_run
 from radar.core.storage.message_migrations import MESSAGE_MIGRATIONS
+from radar.core.storage.report_store import get_catalyst_valuation_report, save_catalyst_valuation_report
 from radar.core.usecases.catalyst_valuation_report.models import (
+    CatalystValuationEvidence,
     CatalystValuationReport,
     CatalystValuationReportRunResult,
+    CatalystValuationStockContext,
 )
 from radar.web.server.app import create_app
 from radar.web.server.catalyst_valuation_report_jobs import (
@@ -50,7 +53,8 @@ def test_schedules_endpoint_seeds_defaults(tmp_path):
         "active_end": "22:00",
     }
     assert catalyst_schedule["request"]["publish"] is True
-    assert catalyst_schedule["request"]["notify"] is True
+    assert catalyst_schedule["request"]["notify"] is False
+    assert "max_stocks" not in catalyst_schedule["request"]
     assert "llm_concurrency" not in catalyst_schedule["request"]
 
 
@@ -83,7 +87,8 @@ def test_schedules_endpoint_syncs_existing_catalyst_default(tmp_path):
     assert response.status_code == 200
     catalyst_schedule = _find(response.json()["items"], "catalyst-valuation-report-hourly")
     assert catalyst_schedule["enabled"] is False
-    assert catalyst_schedule["request"]["notify"] is True
+    assert catalyst_schedule["request"]["notify"] is False
+    assert "max_stocks" not in catalyst_schedule["request"]
     assert "llm_concurrency" not in catalyst_schedule["request"]
 
 
@@ -338,6 +343,7 @@ def test_schedule_run_now_submits_catalyst_valuation_report(monkeypatch, tmp_pat
     def fake_submit(config, request):
         captured["publish"] = request.publish
         captured["notify"] = request.notify
+        captured["max_stocks"] = request.max_stocks
         captured["start_time"] = request.start_time
         captured["end_time"] = request.end_time
         return SimpleNamespace(run_id="run-catalyst", reused_existing=False)
@@ -352,9 +358,11 @@ def test_schedule_run_now_submits_catalyst_valuation_report(monkeypatch, tmp_pat
     assert item["status"] == "submitted"
     assert item["run_ids"] == ["run-catalyst"]
     assert item["request"]["publish"] is True
-    assert item["request"]["notify"] is True
+    assert item["request"]["notify"] is False
+    assert "max_stocks" not in item["request"]
     assert captured["publish"] is True
-    assert captured["notify"] is True
+    assert captured["notify"] is False
+    assert captured["max_stocks"] is None
     assert captured["end_time"] > captured["start_time"]
 
 
@@ -364,6 +372,7 @@ def test_catalyst_valuation_report_job_endpoint_submits(monkeypatch, tmp_path):
     def fake_submit(config, request):
         captured["publish"] = request.publish
         captured["notify"] = request.notify
+        captured["max_stocks"] = request.max_stocks
         return DerivedJobItem(
             job_type="catalyst_valuation_report",
             run_id="run-catalyst-manual",
@@ -379,7 +388,6 @@ def test_catalyst_valuation_report_job_endpoint_submits(monkeypatch, tmp_path):
             "start_time": "2026-06-28T19:00:00",
             "end_time": "2026-06-28T20:00:00",
             "limit": 200,
-            "max_stocks": 12,
             "publish": True,
             "notify": True,
         },
@@ -389,7 +397,7 @@ def test_catalyst_valuation_report_job_endpoint_submits(monkeypatch, tmp_path):
     item = response.json()["items"][0]
     assert item["job_type"] == "catalyst_valuation_report"
     assert item["run_id"] == "run-catalyst-manual"
-    assert captured == {"publish": True, "notify": True}
+    assert captured == {"publish": True, "notify": True, "max_stocks": None}
 
 
 def test_catalyst_valuation_report_job_records_bark_error_as_partial_failed(monkeypatch, tmp_path):
@@ -438,8 +446,86 @@ def test_catalyst_valuation_report_job_records_bark_error_as_partial_failed(monk
     assert run.filtered_count == 99
     assert run.error_message == "Bark 通知失败: 调用 Bark 超时"
     assert run.metadata["published_url"] == "https://example.com/report.html"
+    assert run.metadata["report_id"]
     assert run.metadata["bark_sent"] is False
     assert run.metadata["bark_error"] == "调用 Bark 超时"
+    archived = get_catalyst_valuation_report(config.reports_database_path, run.metadata["report_id"])
+    assert archived is not None
+    assert archived.status == "partial_failed"
+    assert archived.bark_error == "调用 Bark 超时"
+
+
+def test_catalyst_valuation_report_archive_endpoints_send_bark(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    start_time = datetime.fromisoformat("2026-06-28T09:00:00")
+    end_time = datetime.fromisoformat("2026-06-28T10:00:00")
+    report = CatalystValuationReport(
+        generated_at=end_time,
+        start_time=start_time,
+        end_time=end_time,
+        total_feed_items=5,
+        total_candidate_stocks=2,
+        total_stocks=1,
+        stocks=[
+            CatalystValuationStockContext(
+                stock_key="300476.SZ",
+                ts_code="300476.SZ",
+                stock_name="胜宏科技",
+                first_message_time=datetime.fromisoformat("2026-06-28T09:30:00"),
+                latest_message_time=datetime.fromisoformat("2026-06-28T09:40:00"),
+                evidence=[
+                    CatalystValuationEvidence(
+                        message_id="m1",
+                        source="个人群",
+                        sender="tester",
+                        group_name="东财策略",
+                        message_time=datetime.fromisoformat("2026-06-28T09:30:00"),
+                        latest_message_time=datetime.fromisoformat("2026-06-28T09:40:00"),
+                        content="胜宏科技 新签订单 10 亿。",
+                        matched_terms=["新签订单"],
+                        valuation_terms=["订单"],
+                        valuation_numbers=["10 亿"],
+                    )
+                ],
+            )
+        ],
+    )
+    saved = save_catalyst_valuation_report(
+        config.reports_database_path,
+        request={"limit": 200, "publish": True, "notify": False},
+        result=CatalystValuationReportRunResult(
+            report=report,
+            local_html_path=tmp_path / "report.html",
+            published_url="https://example.com/report.html",
+        ),
+        run_id="run-archive",
+        status="succeeded",
+    )
+    notify_calls: list[str] = []
+
+    def fake_notify(config, report, url):
+        notify_calls.append(url)
+
+    monkeypatch.setattr("radar.web.server.routers.catalyst_valuation_report.notify_report", fake_notify)
+
+    client = TestClient(create_app(config))
+    list_response = client.get(
+        "/api/catalyst-valuation-reports",
+        params={"granularity_minutes": 60},
+    )
+    detail_response = client.get(f"/api/external/catalyst-valuation-reports/{saved.report_id}")
+    bark_response = client.post(f"/api/catalyst-valuation-reports/{saved.report_id}/bark")
+
+    assert list_response.status_code == 200
+    assert list_response.json()["items"][0]["report_id"] == saved.report_id
+    assert list_response.json()["items"][0]["top_stocks"][0]["stock_name"] == "胜宏科技"
+    assert detail_response.status_code == 200
+    assert detail_response.json()["item"]["report"]["stocks"][0]["stock_name"] == "胜宏科技"
+    assert detail_response.json()["item"]["rendered_html"].startswith("<!doctype html>")
+    assert bark_response.status_code == 200
+    assert notify_calls == ["https://example.com/report.html"]
+    assert bark_response.json()["item"]["bark_sent_at"] is not None
+    assert bark_response.json()["notification"]["status"] == "succeeded"
 
 
 def test_schedule_run_now_skips_when_same_job_running(monkeypatch, tmp_path):

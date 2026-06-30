@@ -60,9 +60,8 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
       start_time: window.start_time,
       end_time: window.end_time,
       limit: 200,
-      max_stocks: 12,
       publish: true,
-      notify: true,
+      notify: false,
     });
     return derivedJobs(kind, "催化估值线索", items);
   }
