@@ -22,6 +22,7 @@ from radar.core.tushare.market_data import (
 )
 from radar.core.tushare.realtime import get_realtime_daily_quote
 from radar.core.tushare.resolver import resolve_stock
+from radar.core.tushare.ths_concepts import THS_INDEX_FIELDS, THS_MEMBER_FIELDS, refresh_ths_concepts
 
 
 def test_resolve_provider_uses_market_secret(tmp_path: Path):
@@ -170,6 +171,49 @@ def test_kv_cache_key_includes_param_order_and_fields(tmp_path: Path):
     assert cache.get(db, "stock_basic", {"a": 1, "b": 2}, fields="ts_code") == rows
     assert cache.get(db, "stock_basic", {"a": 1, "b": 2}, fields="name") is None
     assert cache.get(db, "stock_basic", {"a": 1, "b": 2}, fields="ts_code", ttl=0) is None
+
+
+def test_refresh_ths_concepts_replaces_stale_member_snapshot(monkeypatch, tmp_path: Path):
+    config = _config(tmp_path)
+    db = config.market_database_path
+    cache.put(db, "ths_index", {"exchange": "A", "type": "N"}, [{"ts_code": "OLD.TI", "name": "旧概念"}], fields=THS_INDEX_FIELDS)
+    cache.put(
+        db,
+        "ths_member",
+        {"ts_code": "OLD.TI"},
+        [{"ts_code": "OLD.TI", "con_code": "000001.SZ", "con_name": "旧成员"}],
+        fields=THS_MEMBER_FIELDS,
+    )
+    calls = []
+
+    def fake_post(provider, api_name, params, fields):
+        calls.append((api_name, params, fields))
+        if api_name == "ths_index":
+            return [{"ts_code": "885001.TI", "name": "AI概念"}]
+        if api_name == "ths_member":
+            return [{"ts_code": params["ts_code"], "con_code": "300001.SZ", "con_name": "新成员"}]
+        raise AssertionError(f"unexpected api: {api_name}")
+
+    monkeypatch.setattr("radar.core.tushare.client.post_tushare", fake_post)
+
+    result = refresh_ths_concepts(config, force=False)
+
+    assert result.force is True
+    assert result.concept_count == 1
+    assert result.refreshed_member_count == 1
+    assert result.skipped_member_count == 0
+    assert result.member_row_count == 1
+    assert cache.get(db, "ths_member", {"ts_code": "OLD.TI"}, fields=THS_MEMBER_FIELDS) is None
+    assert cache.get(db, "ths_index", {"exchange": "A", "type": "N"}, fields=THS_INDEX_FIELDS) == [
+        {"ts_code": "885001.TI", "name": "AI概念"}
+    ]
+    assert cache.get(db, "ths_member", {"ts_code": "885001.TI"}, fields=THS_MEMBER_FIELDS) == [
+        {"ts_code": "885001.TI", "con_code": "300001.SZ", "con_name": "新成员"}
+    ]
+    assert calls == [
+        ("ths_index", {"exchange": "A", "type": "N"}, THS_INDEX_FIELDS),
+        ("ths_member", {"ts_code": "885001.TI"}, THS_MEMBER_FIELDS),
+    ]
 
 
 def test_realtime_daily_quote_uses_short_cache_ttl():

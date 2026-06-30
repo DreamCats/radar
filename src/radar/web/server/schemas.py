@@ -208,7 +208,7 @@ class MarketStockRefreshRequest(BaseModel):
 
 
 class ThsConceptRefreshRequest(BaseModel):
-    force: bool = False
+    force: bool = True
 
 
 class CatalystValuationReportJobRequest(BaseModel):

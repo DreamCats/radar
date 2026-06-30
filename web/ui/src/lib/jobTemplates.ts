@@ -21,7 +21,7 @@ const ALL_JOB_TEMPLATES = [
   {
     key: "thsConceptRefresh",
     title: "THS 概念数据",
-    meta: "增量补缺",
+    meta: "全量重建",
     serves: "盘前预测概念映射",
     icon: Tags,
   },
@@ -63,7 +63,7 @@ export function configHints(kind: JobTemplateKey): string[] {
     return ["刷新 stocks 主数据表", "Tushare stock_basic", "L/D/P 全量替换"];
   }
   if (kind === "thsConceptRefresh") {
-    return ["刷新 ths_index", "增量补 ths_member", "写入 tushare_cache"];
+    return ["重拉 ths_index", "重拉全部 ths_member", "替换 tushare_cache"];
   }
   if (kind === "catalystValuationReport") {
     return ["催化词筛选", "估值数字门槛", "原文证据 HTML", "发 Bark"];

@@ -52,8 +52,8 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
     return derivedJobs(kind, "A股股票主数据", items);
   }
   if (kind === "thsConceptRefresh") {
-    const items = await startThsConceptRefreshJob({ force });
-    return derivedJobs(kind, force ? "THS 概念全量" : "THS 概念增量", items);
+    const items = await startThsConceptRefreshJob({ force: true });
+    return derivedJobs(kind, "THS 概念全量", items);
   }
   if (kind === "catalystValuationReport") {
     const items = await startCatalystValuationReportJob({

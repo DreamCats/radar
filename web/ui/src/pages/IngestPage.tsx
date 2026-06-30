@@ -55,7 +55,7 @@ export function IngestPage() {
   const validWindow = Boolean(startValue && endValue) && startValue <= endValue;
   const usesTimeWindow = selectedJob !== "marketStockRefresh" && selectedJob !== "thsConceptRefresh";
   const usesSource = selectedJob !== "marketStockRefresh" && selectedJob !== "thsConceptRefresh" && selectedJob !== "catalystValuationReport";
-  const usesForce = selectedJob !== "catalystValuationReport";
+  const usesForce = selectedJob !== "catalystValuationReport" && selectedJob !== "thsConceptRefresh";
   const canSubmit = usesTimeWindow ? validWindow : true;
   const selectedTemplate = JOB_TEMPLATES.find((item) => item.key === selectedJob) ?? JOB_TEMPLATES[0];
   const rows = runs
@@ -380,7 +380,7 @@ function forceLabel(kind: JobTemplateKey): string {
     return "全量刷新";
   }
   if (kind === "thsConceptRefresh") {
-    return "强制重刷全部成员";
+    return "全量重建";
   }
   return "强制重跑";
 }

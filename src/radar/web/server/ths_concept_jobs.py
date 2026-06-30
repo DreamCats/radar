@@ -18,7 +18,7 @@ from radar.web.server.job_locks import WRITE_JOB_LOCK
 from radar.web.server.schemas import DerivedJobItem, ThsConceptRefreshRequest
 
 THS_CONCEPT_REFRESH_RUN_KIND = "market_ths_concept_refresh"
-THS_CONCEPT_REFRESH_TARGET = "ths_concepts:incremental"
+THS_CONCEPT_REFRESH_TARGET = "ths_concepts:full"
 STALE_AFTER = timedelta(hours=4)
 
 _EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="radar-ths-concepts")
@@ -26,6 +26,7 @@ _SUBMIT_LOCK = Lock()
 
 
 def submit_ths_concept_refresh_job(config: RadarConfig, request: ThsConceptRefreshRequest) -> DerivedJobItem:
+    request = request.model_copy(update={"force": True})
     with _SUBMIT_LOCK:
         mark_stale_ths_concept_refresh_runs(config)
         running = get_running_run(
@@ -92,4 +93,4 @@ def _run_ths_concept_refresh_job(config: RadarConfig, request: ThsConceptRefresh
 
 
 def _metadata(request: ThsConceptRefreshRequest) -> dict[str, object]:
-    return request.model_dump(mode="json") | {"mode": "force" if request.force else "incremental"}
+    return request.model_dump(mode="json") | {"mode": "full"}
