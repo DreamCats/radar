@@ -44,10 +44,11 @@ const NAV_ITEMS = [
   { key: "schedule", label: "定时", icon: Timer },
   { key: "ingest", label: "作业", icon: Database },
 ] satisfies Array<{ key: TabKey; label: string; icon: typeof MessageCircle }>;
+const HIDDEN_NAV_KEYS = new Set<TabKey>(["industry-chain"]);
+const VISIBLE_NAV_ITEMS = NAV_ITEMS.filter((item) => !HIDDEN_NAV_KEYS.has(item.key));
 
 const TAB_STORAGE_KEY = "radar.activeTab";
-const TAB_KEYS = new Set<TabKey>(NAV_ITEMS.map((item) => item.key));
-const VISIBLE_NAV_ITEMS = NAV_ITEMS;
+const TAB_KEYS = new Set<TabKey>(VISIBLE_NAV_ITEMS.map((item) => item.key));
 const MOBILE_NAV_QUERY = "(max-width: 720px)";
 const MOBILE_NAV_EDGE_WIDTH = 32;
 const MOBILE_NAV_SWIPE_DISTANCE = 56;
