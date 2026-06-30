@@ -200,7 +200,9 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   width: min(980px, calc(100vw - 40px));
+  max-width: 100vw;
   height: min(82dvh, 780px);
+  min-width: 0;
   min-height: 380px;
   box-shadow: 0 22px 70px rgb(0 0 0 / 0.42);
   animation: catalyst-modal-in 180ms var(--motion-ease) both;
@@ -210,14 +212,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
   border-bottom: 1px solid var(--color-hairline);
   padding: 12px;
 }
+.valuation-drawer-head > div:first-child {
+  min-width: 0;
+}
 .valuation-drawer-head h2 {
   margin-top: 3px;
+  overflow-wrap: anywhere;
 }
 .valuation-drawer-actions {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 6px;
 }
@@ -250,7 +258,9 @@
   align-content: start;
   gap: 12px;
   min-height: 0;
-  overflow: auto;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
   padding: 12px;
 }
@@ -258,27 +268,33 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+  min-width: 0;
 }
 .valuation-report-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
   color: var(--color-ink-tertiary);
   font-size: 12px;
 }
 .valuation-report-meta span {
+  max-width: 100%;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
   background: var(--color-surface-2);
   padding: 3px 8px;
+  overflow-wrap: anywhere;
 }
 .valuation-stock-list {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 .valuation-stock-section {
   display: grid;
   gap: 10px;
+  min-width: 0;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-md);
   background: var(--color-surface-2);
@@ -289,12 +305,17 @@
   align-items: start;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
+}
+.valuation-stock-section > header > div {
+  min-width: 0;
 }
 .valuation-stock-section h3 {
   margin: 0;
   color: var(--color-ink);
   font-size: 16px;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 .valuation-stock-section header span,
 .valuation-stock-section header em {
@@ -306,14 +327,17 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
 }
 .valuation-chip {
+  max-width: 100%;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-pill);
   background: var(--color-surface-1);
   color: var(--color-ink-muted);
   padding: 3px 8px;
   font-size: 11px;
+  overflow-wrap: anywhere;
 }
 .valuation-chip.number {
   border-color: color-mix(in srgb, var(--color-signal-hot) 40%, var(--color-hairline));
@@ -322,8 +346,10 @@
 .valuation-evidence-list {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 .valuation-evidence {
+  min-width: 0;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-md);
   background: var(--color-surface-1);
@@ -339,7 +365,11 @@
   font-size: 12px;
 }
 .valuation-evidence header strong {
+  min-width: 0;
+  overflow: hidden;
   color: var(--color-ink-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .valuation-evidence header span {
   min-width: 0;
@@ -352,6 +382,7 @@
   white-space: nowrap;
 }
 .valuation-evidence pre {
+  max-width: 100%;
   margin: 0;
   color: var(--color-ink);
   font-family: inherit;
@@ -457,12 +488,19 @@
   }
   .valuation-drawer {
     width: 100%;
+    max-width: 100%;
     height: min(86dvh, 760px);
     min-height: 360px;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
   .valuation-drawer-head {
     align-items: start;
+  }
+  .valuation-evidence header {
+    flex-wrap: wrap;
+  }
+  .valuation-evidence header time {
+    margin-left: 0;
   }
   .valuation-drawer-actions {
     gap: 4px;
