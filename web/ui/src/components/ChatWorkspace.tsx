@@ -18,6 +18,7 @@ type ChatWorkspaceProps = {
 
 export function ChatWorkspace(props: ChatWorkspaceProps) {
   const controller = props.controller;
+  const historyActionLabel = controller.historyOpen ? "收起历史对话" : "打开历史对话";
   const bodyClassName = [
     "chat-launcher-body",
     controller.historyOpen ? "with-history" : "",
@@ -29,7 +30,7 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
     <div className="chat-workspace">
       <header className="chat-launcher-head">
         {props.onClose ? (
-          <button className="icon-btn chat-launcher-back" type="button" aria-label="返回上一页" onClick={props.onClose}>
+          <button className="icon-btn chat-launcher-back" type="button" aria-label="返回上一页" title="返回上一页" onClick={props.onClose}>
             <ArrowLeft size={17} />
           </button>
         ) : null}
@@ -70,14 +71,21 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
           </div>
         </div>
         <div className="chat-launcher-actions">
-          <button className="icon-btn" type="button" aria-label="历史对话" onClick={() => controller.setHistoryOpen((value) => !value)}>
+          <button
+            className={`icon-btn chat-launcher-action${controller.historyOpen ? " is-active" : ""}`}
+            type="button"
+            aria-label={historyActionLabel}
+            aria-pressed={controller.historyOpen}
+            title={historyActionLabel}
+            onClick={() => controller.setHistoryOpen((value) => !value)}
+          >
             <History size={16} />
           </button>
-          <button className="icon-btn" type="button" aria-label="新对话" onClick={controller.startNewSession}>
+          <button className="icon-btn chat-launcher-action" type="button" aria-label="新建对话" title="新建对话" onClick={controller.startNewSession}>
             <Plus size={16} />
           </button>
           {props.onClose ? (
-            <button className="icon-btn chat-launcher-close" type="button" aria-label="关闭" onClick={props.onClose}>
+            <button className="icon-btn chat-launcher-action chat-launcher-close" type="button" aria-label="关闭聊天" title="关闭聊天" onClick={props.onClose}>
               <X size={16} />
             </button>
           ) : null}
