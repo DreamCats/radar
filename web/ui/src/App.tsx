@@ -4,6 +4,7 @@ import {
   Database,
   FileText,
   LogOut,
+  ListTodo,
   Menu,
   MessageCircle,
   Network,
@@ -24,6 +25,7 @@ import { IndustryChainPage } from "./pages/IndustryChainPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PremarketPage } from "./pages/PremarketPage";
 import { SchedulePage } from "./pages/SchedulePage";
+import { TasksPage } from "./pages/TasksPage";
 import { ValuationCluesPage } from "./pages/ValuationCluesPage";
 import { WechatPage } from "./pages/WechatPage";
 import type { AuthStatus } from "./types";
@@ -35,6 +37,7 @@ type TabKey =
   | "premarket"
   | "industry-chain"
   | "analyst"
+  | "tasks"
   | "schedule"
   | "ingest";
 
@@ -45,8 +48,9 @@ const NAV_ITEMS = [
   { key: "premarket", label: "盘前预测", icon: Radar },
   { key: "industry-chain", label: "产业链", icon: Network },
   { key: "analyst", label: "分析师", icon: UserRoundCheck },
+  { key: "tasks", label: "任务", icon: ListTodo },
   { key: "schedule", label: "定时", icon: Timer },
-  { key: "ingest", label: "作业", icon: Database },
+  { key: "ingest", label: "入库", icon: Database },
 ] satisfies Array<{ key: TabKey; label: string; icon: typeof MessageCircle }>;
 const HIDDEN_NAV_KEYS = new Set<TabKey>(["industry-chain"]);
 const VISIBLE_NAV_ITEMS = NAV_ITEMS.filter((item) => !HIDDEN_NAV_KEYS.has(item.key));
@@ -204,6 +208,7 @@ export function App() {
             {tab === "premarket" && <PremarketPage />}
             {tab === "industry-chain" && <IndustryChainPage />}
             {tab === "analyst" && <AnalystPage />}
+            {tab === "tasks" && <TasksPage />}
             {tab === "schedule" && <SchedulePage />}
             {tab === "ingest" && <IngestPage />}
           </div>

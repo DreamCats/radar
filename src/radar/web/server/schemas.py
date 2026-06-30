@@ -334,9 +334,12 @@ class ChatRunResponse(BaseModel):
     status: Literal["running", "completed", "failed", "cancelled"]
     created_at: str
     updated_at: str
+    display_title: str | None = None
+    display_subtitle: str | None = None
     last_seq: int = 0
     cancel_requested: bool = False
     error: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ChatRunStartResponse(BaseModel):
@@ -345,3 +348,7 @@ class ChatRunStartResponse(BaseModel):
 
 class ChatActiveRunResponse(BaseModel):
     run: ChatRunResponse | None = None
+
+
+class ChatRunListResponse(BaseModel):
+    items: list[ChatRunResponse]

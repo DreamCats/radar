@@ -35,6 +35,7 @@ from radar.web.server.schemas import (
     ChatModelOptionResponse,
     ChatModelOptionsResponse,
     ChatMessageResponse,
+    ChatRunListResponse,
     ChatRunResponse,
     ChatRunStartResponse,
     ChatSessionDetailResponse,
@@ -222,6 +223,12 @@ def create_chat_run(
     return ChatRunStartResponse(run=_chat_run_response(run))
 
 
+@router.get("/chat/runs", response_model=ChatRunListResponse)
+def chat_runs(config: RadarConfig = Depends(get_config), limit: int = 50) -> ChatRunListResponse:
+    items = ChatRunStore.from_config(config).list_runs()
+    return ChatRunListResponse(items=[_chat_run_response(run) for run in items[: max(1, min(limit, 100))]])
+
+
 @router.get("/chat/runs/active", response_model=ChatActiveRunResponse)
 def active_chat_run(
     session_id: str | None = None,
@@ -240,6 +247,17 @@ def active_chat_run(
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     return ChatActiveRunResponse(run=_chat_run_response(run) if run else None)
+
+
+@router.get("/chat/runs/{run_id}", response_model=ChatRunStartResponse)
+def chat_run_detail(run_id: str, config: RadarConfig = Depends(get_config)) -> ChatRunStartResponse:
+    try:
+        run = ChatRunStore.from_config(config).get_run(run_id)
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return ChatRunStartResponse(run=_chat_run_response(run))
 
 
 @router.get("/chat/runs/{run_id}/stream")
@@ -359,7 +377,117 @@ def _session_response(session: ChatSession, messages: list[ChatMessage], *, even
 
 
 def _chat_run_response(run: ChatRun) -> ChatRunResponse:
-    return ChatRunResponse(**run.model_dump(exclude={"metadata", "request"}))
+    payload = run.model_dump(exclude={"request"})
+    payload["display_title"] = _chat_run_display_title(run)
+    payload["display_subtitle"] = _chat_run_display_subtitle(run)
+    return ChatRunResponse(**payload)
+
+
+def _chat_run_display_title(run: ChatRun) -> str:
+    context = _chat_run_context(run)
+    title = _text(run.metadata.get("title")) or _text(context.get("title"))
+    surface = _text(run.metadata.get("surface")) or _text(context.get("surface"))
+    entity_id = _text(run.metadata.get("entity_id")) or _text(context.get("entity_id"))
+    stock = _text(run.metadata.get("stock_summary")) or _context_field(context, "标的")
+    conversation = _text(run.metadata.get("conversation")) or _context_field(context, "会话")
+    if surface == "催化词" and title == "原文证据":
+        if stock and stock != "无":
+            return f"{_compact_text(stock, 28)} · 原文证据"
+        if conversation:
+            return f"{_compact_text(conversation, 28)} · 原文证据"
+    if surface == "微信会话" and title == "微信会话":
+        task_title = _wechat_task_title(_text(run.request.get("content")))
+        if entity_id == "wechat:list":
+            return task_title or "微信消息线索扫描"
+        if conversation:
+            return f"{_compact_text(conversation, 24)} · {task_title or '会话分析'}"
+        return task_title or title
+    return title or "AI 任务"
+
+
+def _chat_run_display_subtitle(run: ChatRun) -> str:
+    context = _chat_run_context(run)
+    surface = _text(run.metadata.get("surface")) or _text(context.get("surface")) or "chat"
+    subtitle = _text(run.metadata.get("subtitle")) or _text(context.get("subtitle"))
+    conversation = _text(run.metadata.get("conversation")) or _context_field(context, "会话")
+    sender = _text(run.metadata.get("sender")) or _context_field(context, "发送人")
+    terms = _text(run.metadata.get("matched_terms")) or _context_field(context, "命中词")
+    if surface == "催化词":
+        parts = [surface]
+        if conversation:
+            parts.append(_compact_text(conversation, 18))
+        elif sender:
+            parts.append(_compact_text(sender, 18))
+        if terms and terms != "无":
+            parts.append(_compact_text(terms, 30))
+        elif subtitle:
+            parts.append(_compact_text(subtitle, 30))
+        return " · ".join(parts)
+    entity_id = _text(run.metadata.get("entity_id")) or _text(context.get("entity_id"))
+    parts = [surface]
+    if subtitle:
+        parts.append(_compact_text(subtitle, 48))
+    elif entity_id and not _looks_like_hash(entity_id):
+        parts.append(_compact_text(entity_id, 48))
+    return " · ".join(parts)
+
+
+def _chat_run_context(run: ChatRun) -> dict[str, Any]:
+    context = run.request.get("context")
+    if isinstance(context, dict):
+        return context
+    llm_content = run.request.get("llm_content")
+    if not isinstance(llm_content, str):
+        return {}
+    marker = "\n\n页面上下文：\n"
+    if marker not in llm_content:
+        return {}
+    raw = llm_content.split(marker, 1)[1]
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _context_field(context: dict[str, Any], label: str) -> str:
+    fields = context.get("fields")
+    if not isinstance(fields, list):
+        return ""
+    for field in fields:
+        if not isinstance(field, dict) or field.get("label") != label:
+            continue
+        return _text(field.get("value"))
+    return ""
+
+
+def _text(value: Any) -> str:
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _compact_text(value: str, limit: int) -> str:
+    text = " ".join(value.split())
+    return text if len(text) <= limit else f"{text[:limit]}..."
+
+
+def _wechat_task_title(content: str) -> str:
+    if not content:
+        return ""
+    if "过滤当前微信消息噪音" in content or "排除噪音" in content:
+        return "微信消息噪音排查"
+    if "反复出现的股票、行业和主题" in content or "高频主题" in content:
+        return "微信高频主题扫描"
+    if "最值得继续研究" in content or "3 条线索" in content:
+        return "微信消息线索扫描"
+    if "投资线索" in content:
+        return "微信会话投资线索"
+    if "总结这个会话" in content:
+        return "微信会话研究摘要"
+    return _compact_text(content, 24)
+
+
+def _looks_like_hash(value: str) -> bool:
+    return len(value) >= 24 and all(char in "0123456789abcdefABCDEF" for char in value)
 
 
 def _run_metadata(request: ChatTurnRequest) -> dict[str, Any]:
@@ -368,10 +496,22 @@ def _run_metadata(request: ChatTurnRequest) -> dict[str, Any]:
         metadata.setdefault("title", request.title)
     surface = request.context.get("surface")
     entity_id = request.context.get("entity_id")
+    subtitle = request.context.get("subtitle")
     if isinstance(surface, str):
         metadata.setdefault("surface", surface)
     if isinstance(entity_id, str):
         metadata.setdefault("entity_id", entity_id)
+    if isinstance(subtitle, str):
+        metadata.setdefault("subtitle", subtitle)
+    for label, key in (
+        ("会话", "conversation"),
+        ("发送人", "sender"),
+        ("命中词", "matched_terms"),
+        ("标的", "stock_summary"),
+    ):
+        value = _context_field(request.context, label)
+        if value:
+            metadata.setdefault(key, value)
     return metadata
 
 

@@ -8,6 +8,8 @@ from radar.core.config import RadarConfig
 from radar.core.messages import CatalystFeedFilters, CatalystFeedItem, load_catalyst_terms, list_catalyst_feed
 from radar.core.models import MessageSource
 from radar.core.storage import connect, init_db
+from radar.core.storage.report_store import CatalystValuationReportArchiveDetail, get_catalyst_valuation_report
+from radar.core.usecases.catalyst_valuation_report.models import CatalystValuationEvidence, CatalystValuationStockContext
 from radar.core.usecases.catalyst_stocks import load_catalyst_stock_detector
 
 _SOURCE_MAP: dict[str, MessageSource | None] = {
@@ -24,7 +26,11 @@ class RadarCatalystTools:
         self.config = config
 
     def tools(self) -> list[ChatTool]:
-        return [self.scan_catalysts_tool(), self.list_catalyst_terms_tool()]
+        return [
+            self.scan_catalysts_tool(),
+            self.list_catalyst_terms_tool(),
+            self.get_catalyst_valuation_report_tool(),
+        ]
 
     def scan_catalysts_tool(self) -> ChatTool:
         return ChatTool(
@@ -55,6 +61,27 @@ class RadarCatalystTools:
             description="只读当前催化词词库，返回标签、颜色和关键词；不修改配置。",
             input_schema=_object_schema({}),
             handler=self.list_catalyst_terms,
+        )
+
+    def get_catalyst_valuation_report_tool(self) -> ChatTool:
+        return ChatTool(
+            name="radar_get_catalyst_valuation_report",
+            description=(
+                "按 report_id 从本地报告库读取 Radar 催化估值线索报告。"
+                "返回结构化窗口、标的、原文证据、估值数字和报告 URL；默认不返回 HTML。"
+                "适合估值线索空间测算，不需要请求公网报告 URL。"
+            ),
+            input_schema=_object_schema(
+                {
+                    "report_id": {"type": "string"},
+                    "max_stocks": {"type": "integer", "minimum": 1, "maximum": 80},
+                    "max_evidence_per_stock": {"type": "integer", "minimum": 1, "maximum": 30},
+                    "include_rendered_html": {"type": "boolean"},
+                    "max_html_chars": {"type": "integer", "minimum": 1000, "maximum": 100000},
+                },
+                required=["report_id"],
+            ),
+            handler=self.get_catalyst_valuation_report,
         )
 
     def scan_catalysts(self, args: dict[str, Any]) -> dict[str, Any]:
@@ -94,6 +121,21 @@ class RadarCatalystTools:
     def list_catalyst_terms(self, args: dict[str, Any]) -> dict[str, Any]:
         library = load_catalyst_terms(self.config)
         return library.model_dump(mode="json")
+
+    def get_catalyst_valuation_report(self, args: dict[str, Any]) -> dict[str, Any]:
+        report_id = str(args["report_id"]).strip()
+        if not report_id:
+            raise ValueError("report_id 不能为空")
+        detail = get_catalyst_valuation_report(self.config.reports_database_path, report_id)
+        if detail is None:
+            return {"found": False, "report_id": report_id}
+        return _valuation_report_summary(
+            detail,
+            max_stocks=_bounded_int(args.get("max_stocks"), default=50, maximum=80),
+            max_evidence_per_stock=_bounded_int(args.get("max_evidence_per_stock"), default=12, maximum=30),
+            include_rendered_html=bool(args.get("include_rendered_html", False)),
+            max_html_chars=_bounded_int(args.get("max_html_chars"), default=20000, maximum=100000),
+        )
 
 
 def _item_summary(item: CatalystFeedItem) -> dict[str, Any]:
@@ -135,6 +177,79 @@ def _item_summary(item: CatalystFeedItem) -> dict[str, Any]:
             }
             for source in item.duplicate_sources[:8]
         ],
+    }
+
+
+def _valuation_report_summary(
+    detail: CatalystValuationReportArchiveDetail,
+    *,
+    max_stocks: int,
+    max_evidence_per_stock: int,
+    include_rendered_html: bool,
+    max_html_chars: int,
+) -> dict[str, Any]:
+    report = detail.report
+    result: dict[str, Any] = {
+        "found": True,
+        "report_id": detail.report_id,
+        "run_id": detail.run_id,
+        "kind": detail.kind,
+        "status": detail.status,
+        "generated_at": detail.generated_at.isoformat(),
+        "window": {
+            "start_time": detail.start_time.isoformat(),
+            "end_time": detail.end_time.isoformat(),
+            "granularity_minutes": detail.granularity_minutes,
+        },
+        "published_url": detail.published_url,
+        "local_html_path": detail.local_html_path,
+        "totals": {
+            "feed_items": report.total_feed_items,
+            "candidate_stocks": report.total_candidate_stocks,
+            "stocks": report.total_stocks,
+        },
+        "request": detail.request,
+        "stocks": [_valuation_stock_summary(stock, max_evidence_per_stock) for stock in report.stocks[:max_stocks]],
+        "stock_count_returned": min(len(report.stocks), max_stocks),
+        "stock_count_truncated": len(report.stocks) > max_stocks,
+    }
+    if include_rendered_html:
+        result["rendered_html"] = _clip(detail.rendered_html, max_html_chars)
+        result["rendered_html_length"] = len(detail.rendered_html)
+        result["rendered_html_truncated"] = len(detail.rendered_html) > max_html_chars
+    return result
+
+
+def _valuation_stock_summary(stock: CatalystValuationStockContext, max_evidence: int) -> dict[str, Any]:
+    return {
+        "stock_key": stock.stock_key,
+        "ts_code": stock.ts_code,
+        "stock_name": stock.stock_name,
+        "first_message_time": stock.first_message_time.isoformat(),
+        "latest_message_time": stock.latest_message_time.isoformat(),
+        "evidence_count": len(stock.evidence),
+        "evidence_count_returned": min(len(stock.evidence), max_evidence),
+        "evidence_count_truncated": len(stock.evidence) > max_evidence,
+        "evidence": [_valuation_evidence_summary(evidence) for evidence in stock.evidence[:max_evidence]],
+    }
+
+
+def _valuation_evidence_summary(evidence: CatalystValuationEvidence) -> dict[str, Any]:
+    return {
+        "message_id": evidence.message_id,
+        "source": evidence.source,
+        "sender": evidence.sender,
+        "group_name": evidence.group_name,
+        "message_time": evidence.message_time.isoformat(),
+        "latest_message_time": evidence.latest_message_time.isoformat(),
+        "content": _clip(evidence.content, 1200),
+        "content_length": len(evidence.content),
+        "content_truncated": len(evidence.content) > 1200,
+        "matched_terms": evidence.matched_terms,
+        "valuation_terms": evidence.valuation_terms,
+        "valuation_numbers": evidence.valuation_numbers,
+        "stock_mentions_count": evidence.stock_mentions_count,
+        "duplicate_count": evidence.duplicate_count,
     }
 
 

@@ -2,6 +2,7 @@ import { GripVertical, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
+import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import type { CatalystCategory, CatalystTermLibrary } from "../types";
 
 type TermInputs = Record<string, string>;
@@ -19,6 +20,7 @@ export function CatalystTermManager(props: {
   const [termInputs, setTermInputs] = useState<TermInputs>({});
   const [draggingTerm, setDraggingTerm] = useState<DraggingTerm | null>(null);
   const draggingTermRef = useRef<DraggingTerm | null>(null);
+  const swipeClose = useSwipeToCloseSheet(props.onClose);
   const totalTerms = useMemo(
     () => draft.categories.reduce((total, category) => total + category.terms.length, 0),
     [draft.categories],
@@ -175,7 +177,7 @@ export function CatalystTermManager(props: {
         aria-label="催化词词库管理"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <header className="catalyst-manager-head">
+        <header className="catalyst-manager-head" {...swipeClose}>
           <div>
             <h2>词库管理</h2>
             <span>{draft.categories.length} 个标签 · {totalTerms} 个词</span>

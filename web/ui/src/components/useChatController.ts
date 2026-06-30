@@ -4,16 +4,13 @@ import {
   cancelChatRun,
   continueChatTurn,
   createChatRun,
-  deleteChatSession,
   fetchActiveChatRun,
+  fetchChatRun,
   fetchChatModelOptions,
   fetchChatSession,
-  fetchChatSessions,
   streamChatRun,
 } from "../api/radarApi";
-import { formatChatTranscript } from "../lib/chatTranscript";
-import { copyText } from "../lib/clipboard";
-import type { ChatMessageItem, ChatModelOption, ChatSessionItem } from "../types";
+import type { ChatMessageItem, ChatModelOption } from "../types";
 import {
   MODEL_THINKING_STATUS,
   type ActiveChatRunRecord,
@@ -41,12 +38,8 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
   const [draft, setDraft] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
-  const [sessions, setSessions] = useState<ChatSessionItem[]>([]);
   const [modelOptions, setModelOptions] = useState<ChatModelOption[]>([]);
   const [selectedProviderName, setSelectedProviderName] = useState<string | null>(null);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [loadingSessions, setLoadingSessions] = useState(false);
-  const [sessionAction, setSessionAction] = useState<{ label: string; sessionId: string } | null>(null);
   const [canContinue, setCanContinue] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,10 +77,9 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     }
     setBottomFollowMode(true);
     setHasNewMessagesBelow(false);
-    void restoreActiveRun();
-    void refreshSessions();
+    void restoreInitialTarget();
     void refreshModelOptions();
-  }, [active]);
+  }, [active, props.initialDraft, props.initialRunId, props.initialSessionId, props.skipActiveRunRestore, props.surface, props.entityId]);
 
   useEffect(() => {
     return () => {
@@ -292,7 +284,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       clearIdleTimer();
       abortControllerRef.current = null;
       setSending(false);
-      void refreshSessions();
     }
   }
 
@@ -392,13 +383,15 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
         entity_id: props.entityId,
         title: props.title,
         subtitle: props.subtitle,
-        fields: visibleContext,
+        fields: visibleContext.map(({ label, value }) => ({ label, value })),
         evidence: props.evidence ?? [],
       },
       metadata: {
         surface: props.surface,
         entity_id: props.entityId,
         title: props.title,
+        subtitle: props.subtitle,
+        ...metadataFromContextFields(visibleContext),
         chat_provider_name: selectedProviderName,
         chat_model: selectedModelOption?.model,
       },
@@ -466,7 +459,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       clearIdleTimer();
       abortControllerRef.current = null;
       setSending(false);
-      void refreshSessions();
     }
   }
 
@@ -492,18 +484,6 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     writeSelectedProviderName(providerName);
   }
 
-  async function refreshSessions() {
-    setLoadingSessions(true);
-    try {
-      const data = await fetchChatSessions();
-      setSessions(data.items);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "读取历史失败");
-    } finally {
-      setLoadingSessions(false);
-    }
-  }
-
   async function refreshModelOptions() {
     try {
       const data = await fetchChatModelOptions();
@@ -517,6 +497,79 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "读取模型配置失败");
+    }
+  }
+
+  async function restoreInitialTarget() {
+    if (props.initialRunId) {
+      await restoreRun(props.initialRunId);
+      return;
+    }
+    if (props.initialSessionId) {
+      await restoreSession(props.initialSessionId);
+      return;
+    }
+    if (props.skipActiveRunRestore) {
+      resetDraftSessionState(props.initialDraft ?? "");
+      return;
+    }
+    await restoreActiveRun();
+  }
+
+  async function restoreRun(runId: string) {
+    try {
+      const data = await fetchChatRun(runId);
+      const run = data.run;
+      if (run.status !== "running" || run.cancel_requested) {
+        await restoreSession(run.session_id);
+        return;
+      }
+      if (activeRunRef.current?.runId === run.run_id) {
+        return;
+      }
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      const surface = metadataString(run.metadata.surface) || props.surface;
+      const entityId = metadataString(run.metadata.entity_id) || props.entityId;
+      const record: ActiveChatRunRecord = {
+        runId: run.run_id,
+        sessionId: run.session_id,
+        assistantDraftId: `assistant-stream-${Date.now()}`,
+        lastSeq: 0,
+        surface,
+        entityId,
+        createdAt: run.created_at,
+      };
+      abortControllerRef.current = controller;
+      activeRunRef.current = record;
+      writeActiveChatRun(record);
+      setBottomFollowMode(true);
+      setHasNewMessagesBelow(false);
+      setSessionId(record.sessionId);
+      writeActiveSessionId(record.sessionId);
+      setSending(true);
+      setCanContinue(false);
+      setError(null);
+      setMessages([
+        {
+          message_id: record.assistantDraftId,
+          role: "assistant",
+          content: "",
+          created_at: new Date().toISOString(),
+          metadata: { streaming: true, resumed: true, status: "正在同步后台进度" },
+        },
+      ]);
+      await subscribeToRun(record, { controller, afterSeq: 0 });
+      await recoverCompletedTurn(record.sessionId, record.assistantDraftId);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
+      setError(err instanceof Error ? err.message : "打开任务失败");
+    } finally {
+      clearIdleTimer();
+      abortControllerRef.current = null;
+      setSending(false);
     }
   }
 
@@ -580,12 +633,10 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       clearIdleTimer();
       abortControllerRef.current = null;
       setSending(false);
-      void refreshSessions();
     }
   }
 
   async function restoreSession(nextSessionId: string) {
-    setSessionAction({ sessionId: nextSessionId, label: "打开中" });
     try {
       if (activeRunRef.current && activeRunRef.current.sessionId !== nextSessionId) {
         abortControllerRef.current?.abort();
@@ -600,13 +651,10 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
       setMessages(data.messages);
       setCanContinue(data.session.can_continue);
       writeActiveSessionId(data.session.session_id);
-      setHistoryOpen(false);
       setError(null);
     } catch (err) {
       clearActiveSessionId();
       setError(err instanceof Error ? err.message : "恢复对话失败");
-    } finally {
-      setSessionAction((current) => (current?.sessionId === nextSessionId ? null : current));
     }
   }
 
@@ -659,74 +707,24 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     setDraft("");
     setCanContinue(false);
     setError(null);
-    setHistoryOpen(false);
+  }
+
+  function resetDraftSessionState(nextDraft: string) {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    activeRunRef.current = null;
+    setSessionId(null);
+    setMessages([]);
+    setDraft(nextDraft);
+    setCanContinue(false);
+    setError(null);
+    setSending(false);
   }
 
   function startNewSession() {
     setBottomFollowMode(true);
     setHasNewMessagesBelow(false);
     resetSessionState();
-  }
-
-  async function copySessionId(nextSessionId: string) {
-    setSessionAction({ sessionId: nextSessionId, label: "复制中" });
-    try {
-      await copyText(nextSessionId);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "复制失败");
-    } finally {
-      setSessionAction((current) => (current?.sessionId === nextSessionId ? null : current));
-    }
-  }
-
-  async function copySessionTitle(session: ChatSessionItem) {
-    setSessionAction({ sessionId: session.session_id, label: "复制中" });
-    try {
-      await copyText(session.title?.trim() || "未命名对话");
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "复制失败");
-    } finally {
-      setSessionAction((current) => (current?.sessionId === session.session_id ? null : current));
-    }
-  }
-
-  async function copySessionContent(nextSessionId: string) {
-    setSessionAction({ sessionId: nextSessionId, label: "复制内容中" });
-    try {
-      const data = await fetchChatSession(nextSessionId);
-      await copyText(formatChatTranscript(data));
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "复制内容失败");
-    } finally {
-      setSessionAction((current) => (current?.sessionId === nextSessionId ? null : current));
-    }
-  }
-
-  async function removeSession(nextSessionId: string) {
-    setSessionAction({ sessionId: nextSessionId, label: "删除中" });
-    try {
-      if (nextSessionId === sessionId) {
-        resetSessionState();
-      }
-      await deleteChatSession(nextSessionId);
-      if (nextSessionId === sessionId) {
-        clearActiveSessionId();
-        setBottomFollowMode(true);
-        setHasNewMessagesBelow(false);
-        setSessionId(null);
-        setMessages([]);
-        setCanContinue(false);
-      }
-      await refreshSessions();
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "删除对话失败");
-    } finally {
-      setSessionAction((current) => (current?.sessionId === nextSessionId ? null : current));
-    }
   }
 
   return {
@@ -737,28 +735,17 @@ export function useChatController(props: ChatSurfaceProps, active: boolean): Cha
     error,
     hasNewMessagesBelow,
     composerHidden,
-    historyOpen,
-    loadingSessions,
     messageListRef,
     messages,
     messagesEndRef,
     modelOptions,
     selectedProviderName,
-    sessionAction,
     sending,
-    sessions,
     visibleContext,
     changeProvider,
     continueTurn,
-    copySessionContent,
-    copySessionId,
-    copySessionTitle,
     jumpToLatestMessage,
-    refreshSessions,
-    removeSession,
-    restoreSession,
     setDraft,
-    setHistoryOpen,
     startNewSession,
     stopStreaming,
     submitTurn,
@@ -796,6 +783,28 @@ function normalizeChatErrorMessage(message: string, fallback: string): string {
 
 function hasVisibleAssistantAnswer(messages: ChatMessageItem[]): boolean {
   return messages.some((message) => message.role === "assistant" && Boolean(message.content.trim()));
+}
+
+function metadataString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function metadataFromContextFields(fields: ChatSurfaceProps["context"]): Record<string, string> {
+  const mapping: Record<string, string> = {
+    会话: "conversation",
+    发送人: "sender",
+    命中词: "matched_terms",
+    标的: "stock_summary",
+  };
+  const metadata: Record<string, string> = {};
+  for (const field of fields) {
+    const key = mapping[field.label];
+    const value = field.value === undefined || field.value === null ? "" : `${field.value}`.trim();
+    if (key && value) {
+      metadata[key] = value;
+    }
+  }
+  return metadata;
 }
 
 function waitForChatRunReconnect(signal: AbortSignal): Promise<void> {

@@ -1,7 +1,8 @@
-import { ArrowLeft, History, Plus, X } from "lucide-react";
+import { ArrowLeft, Check, Copy, Plus, X } from "lucide-react";
+import { useState } from "react";
 
+import { copyText } from "../lib/clipboard";
 import { ChatComposer } from "./ChatComposer";
-import { ChatHistoryPanel } from "./ChatHistoryPanel";
 import { ChatMessageList } from "./ChatMessageList";
 import type { ChatController } from "./chatTypes";
 
@@ -18,13 +19,15 @@ type ChatWorkspaceProps = {
 
 export function ChatWorkspace(props: ChatWorkspaceProps) {
   const controller = props.controller;
-  const historyActionLabel = controller.historyOpen ? "收起历史对话" : "打开历史对话";
-  const bodyClassName = [
-    "chat-launcher-body",
-    controller.historyOpen ? "with-history" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const [copiedContextKey, setCopiedContextKey] = useState<string | null>(null);
+
+  async function copyContextValue(key: string, value: string) {
+    await copyText(value);
+    setCopiedContextKey(key);
+    window.setTimeout(() => {
+      setCopiedContextKey((current) => (current === key ? null : current));
+    }, 1200);
+  }
 
   return (
     <div className="chat-workspace">
@@ -48,9 +51,22 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
               </summary>
               <div className="chat-context-grid">
                 {controller.visibleContext.map((item) => (
-                  <article key={item.label}>
+                  <article className={item.copyValue !== undefined && item.copyValue !== null ? "is-copyable" : ""} key={item.label}>
                     <span>{item.label}</span>
-                    <strong>{item.value}</strong>
+                    <div className="chat-context-value">
+                      <strong>{item.value}</strong>
+                      {item.copyValue !== undefined && item.copyValue !== null ? (
+                        <button
+                          className={copiedContextKey === item.label ? "chat-context-copy is-copied" : "chat-context-copy"}
+                          type="button"
+                          aria-label={item.copyLabel ?? `复制${item.label}`}
+                          title={copiedContextKey === item.label ? "已复制" : item.copyLabel ?? `复制${item.label}`}
+                          onClick={() => void copyContextValue(item.label, `${item.copyValue}`)}
+                        >
+                          {copiedContextKey === item.label ? <Check size={12} /> : <Copy size={12} />}
+                        </button>
+                      ) : null}
+                    </div>
                   </article>
                 ))}
               </div>
@@ -71,16 +87,6 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
           </div>
         </div>
         <div className="chat-launcher-actions">
-          <button
-            className={`icon-btn chat-launcher-action${controller.historyOpen ? " is-active" : ""}`}
-            type="button"
-            aria-label={historyActionLabel}
-            aria-pressed={controller.historyOpen}
-            title={historyActionLabel}
-            onClick={() => controller.setHistoryOpen((value) => !value)}
-          >
-            <History size={16} />
-          </button>
           <button className="icon-btn chat-launcher-action" type="button" aria-label="新建对话" title="新建对话" onClick={controller.startNewSession}>
             <Plus size={16} />
           </button>
@@ -91,31 +97,7 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
           ) : null}
         </div>
       </header>
-      <div className={bodyClassName}>
-        {controller.historyOpen ? (
-          <div className="chat-history-layer">
-            <button
-              className="chat-history-mobile-scrim"
-              type="button"
-              aria-label="关闭历史对话"
-              onClick={() => controller.setHistoryOpen(false)}
-            />
-            <ChatHistoryPanel
-              activeSessionId={controller.activeSessionId}
-              loading={controller.loadingSessions}
-              sessionAction={controller.sessionAction}
-              sessions={controller.sessions}
-              onClose={() => controller.setHistoryOpen(false)}
-              onNewSession={controller.startNewSession}
-              onCopySessionContent={(nextSessionId) => void controller.copySessionContent(nextSessionId)}
-              onCopySessionId={(nextSessionId) => void controller.copySessionId(nextSessionId)}
-              onCopySessionTitle={(session) => void controller.copySessionTitle(session)}
-              onDeleteSession={(nextSessionId) => void controller.removeSession(nextSessionId)}
-              onRefresh={() => void controller.refreshSessions()}
-              onRestore={(nextSessionId) => void controller.restoreSession(nextSessionId)}
-            />
-          </div>
-        ) : null}
+      <div className="chat-launcher-body">
         <div className="chat-main-panel">
           <ChatMessageList
             activeSessionId={controller.activeSessionId}

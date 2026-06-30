@@ -50,7 +50,7 @@ def test_schedules_endpoint_seeds_defaults(tmp_path):
         "minutes": 60,
         "offset_minutes": 0,
         "active_start": "08:00",
-        "active_end": "22:00",
+        "active_end": "23:00",
     }
     assert catalyst_schedule["request"]["publish"] is True
     assert catalyst_schedule["request"]["notify"] is False
@@ -87,6 +87,12 @@ def test_schedules_endpoint_syncs_existing_catalyst_default(tmp_path):
     assert response.status_code == 200
     catalyst_schedule = _find(response.json()["items"], "catalyst-valuation-report-hourly")
     assert catalyst_schedule["enabled"] is False
+    assert catalyst_schedule["cadence"] == {
+        "active_end": "23:00",
+        "active_start": "08:00",
+        "minutes": 60,
+        "offset_minutes": 0,
+    }
     assert catalyst_schedule["request"]["notify"] is False
     assert "max_stocks" not in catalyst_schedule["request"]
     assert "llm_concurrency" not in catalyst_schedule["request"]

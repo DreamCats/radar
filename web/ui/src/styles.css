@@ -93,6 +93,12 @@ select {
   background: var(--color-surface-1);
 }
 
+@media (max-width: 760px) {
+  [data-swipe-close-sheet="true"] {
+    touch-action: pan-y;
+  }
+}
+
 .topbar {
   display: flex;
   align-items: center;

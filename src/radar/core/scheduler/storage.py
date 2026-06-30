@@ -270,6 +270,13 @@ def _sync_catalyst_valuation_report_default(
 
     updates: list[str] = []
     params: list[object] = []
+    cadence = _load_json(row["cadence_json"], {})
+    if cadence == {"active_end": "22:00", "active_start": "08:00", "minutes": 60, "offset_minutes": 0}:
+        updates.append("cadence_json = ?")
+        params.append(_json(default_schedule.cadence))
+        updates.append("next_tick_at = ?")
+        params.append(_default_next_tick(default_schedule, current).isoformat())
+
     request = _load_json(row["request_json"], {})
     if "llm_concurrency" in request:
         request.pop("llm_concurrency", None)

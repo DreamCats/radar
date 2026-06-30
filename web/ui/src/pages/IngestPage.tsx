@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Play, Square } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
@@ -49,6 +49,7 @@ export function IngestPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [canceling, setCanceling] = useState(false);
+  const submittingRef = useRef(false);
 
   const startValue = toLocalIso(range.startDate, range.startTime);
   const endValue = toLocalIso(range.endDate, range.endTime);
@@ -128,24 +129,27 @@ export function IngestPage() {
   }
 
   async function submitSelectedJob() {
+    if (submittingRef.current || !canSubmit) {
+      return;
+    }
+    const submitParams = {
+      kind: selectedJob,
+      source,
+      force,
+      range,
+      window: { start_time: startValue, end_time: endValue },
+    };
+    submittingRef.current = true;
     setSubmitting(true);
     setError(null);
     try {
-      const start_time = startValue;
-      const end_time = endValue;
-      const newJobs = await startJob({
-        kind: selectedJob,
-        source,
-        force,
-        range,
-        window: { start_time, end_time },
-      });
+      const newJobs = await startJob(submitParams);
       setTrackedJobs((current) => mergeTrackedJobs(newJobs, current));
-      setSubmitting(false);
-      void refreshRunsAndResults({ quiet: true });
+      await refreshRunsAndResults({ quiet: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "作业提交失败");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }
@@ -285,54 +289,52 @@ export function IngestPage() {
         </aside>
 
         <section className="content-panel job-config-panel">
-          <AnimatePresence initial={false} mode="wait">
-            <motion.div
-              animate={jobMotion.animate}
-              className="job-config-motion"
-              exit={jobMotion.exit}
-              initial={jobMotion.initial}
-              key={selectedJob}
-              transition={jobMotion.transition}
-            >
-              <div className="ingest-card-head">
-                <PanelTitle title={selectedTemplate.title} meta={`${selectedTemplate.meta} · ${selectedTemplate.serves}`} />
-              </div>
-              <div className={configGridClass}>
-                {usesSource && (
-                  <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
-                )}
-                {usesTimeWindow && <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />}
-                {usesTimeWindow && <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />}
-                {usesForce && (
-                  <label className="toggle-field">
-                    <input
-                      checked={selectedJob === "marketStockRefresh" ? true : force}
-                      disabled={selectedJob === "marketStockRefresh"}
-                      type="checkbox"
-                      onChange={(event) => setForce(event.target.checked)}
-                    />
-                    <span>{forceLabel(selectedJob)}</span>
-                  </label>
-                )}
-                <button
-                  className={submitButtonClass}
-                  type="button"
-                  disabled={submitting || canceling || (!selectedHasRunning && !canSubmit)}
-                  onClick={handlePrimaryAction}
-                >
-                  {selectedHasRunning ? <Square size={16} /> : <Play size={16} />}
-                  {canceling ? "终止中" : submitting ? "提交中" : selectedHasRunning ? "终止任务" : "开始执行"}
-                </button>
-              </div>
-              {usesTimeWindow && !validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}
-              {error && <p className="error-line">{error}</p>}
-              <div className="job-config-hints">
-                {configHints(selectedJob).map((item) => (
-                  <span key={item}>{item}</span>
-                ))}
-              </div>
-            </motion.div>
-          </AnimatePresence>
+          <motion.div
+            animate={jobMotion.animate}
+            className="job-config-motion"
+            exit={jobMotion.exit}
+            initial={jobMotion.initial}
+            key={selectedJob}
+            transition={jobMotion.transition}
+          >
+            <div className="ingest-card-head">
+              <PanelTitle title={selectedTemplate.title} meta={`${selectedTemplate.meta} · ${selectedTemplate.serves}`} />
+            </div>
+            <div className={configGridClass}>
+              {usesSource && (
+                <SelectField label="来源" value={source} onChange={(value) => setSource(value as IngestSource)} options={SOURCE_OPTIONS} />
+              )}
+              {usesTimeWindow && <DateField label="开始" value={startValue} onChange={(value) => updateDateTime("start", value)} />}
+              {usesTimeWindow && <DateField label="结束" value={endValue} onChange={(value) => updateDateTime("end", value)} />}
+              {usesForce && (
+                <label className="toggle-field">
+                  <input
+                    checked={selectedJob === "marketStockRefresh" ? true : force}
+                    disabled={selectedJob === "marketStockRefresh"}
+                    type="checkbox"
+                    onChange={(event) => setForce(event.target.checked)}
+                  />
+                  <span>{forceLabel(selectedJob)}</span>
+                </label>
+              )}
+              <button
+                className={submitButtonClass}
+                type="button"
+                disabled={submitting || canceling || (!selectedHasRunning && !canSubmit)}
+                onClick={handlePrimaryAction}
+              >
+                {selectedHasRunning ? <Square size={16} /> : <Play size={16} />}
+                {canceling ? "终止中" : submitting ? "提交中" : selectedHasRunning ? "终止任务" : "开始执行"}
+              </button>
+            </div>
+            {usesTimeWindow && !validWindow && <p className="error-line">请选择有效的开始和结束时间。</p>}
+            {error && <p className="error-line">{error}</p>}
+            <div className="job-config-hints">
+              {configHints(selectedJob).map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+          </motion.div>
         </section>
 
         <aside className="content-panel job-queue-panel">

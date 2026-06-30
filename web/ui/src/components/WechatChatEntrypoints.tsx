@@ -48,7 +48,7 @@ export function WechatListChatLauncher(props: {
 }) {
   return (
     <ChatLauncher
-      title="微信会话"
+      title="微信消息线索扫描"
       subtitle={`${props.conversations.length} 个会话${props.canNext ? " · 可继续翻页" : ""}`}
       surface="微信会话"
       entityId="wechat:list"

@@ -6,7 +6,6 @@ import "@xyflow/react/dist/style.css";
 import "./motion.css";
 import "./chat.css";
 import "./chat-composer.css";
-import "./chat-history.css";
 import "./chat-markdown.css";
 import "./ambient.css";
 import "./analyst.css";
@@ -21,6 +20,7 @@ import "./loading.css";
 import "./premarket.css";
 import "./premarket-boards.css";
 import "./schedule.css";
+import "./tasks.css";
 import "./valuation-clues.css";
 import "./wechat.css";
 

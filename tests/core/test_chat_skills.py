@@ -51,7 +51,9 @@ description: 股票行情研究
     names = [skill.name for skill in skills]
 
     assert names.index("investment-valuation") < names.index("market_research")
+    assert "catalyst-valuation-upside" in names
     assert skill_by_name["investment-valuation"].source_path.is_relative_to(BUILTIN_CHAT_SKILLS_DIR)
+    assert skill_by_name["catalyst-valuation-upside"].source_path.is_relative_to(BUILTIN_CHAT_SKILLS_DIR)
 
 
 def test_chat_agent_injects_skill_catalog_without_full_skill_body(tmp_path, monkeypatch):

@@ -547,9 +547,12 @@ export type ChatRunItem = {
   status: "running" | "completed" | "failed" | "cancelled";
   created_at: string;
   updated_at: string;
+  display_title?: string | null;
+  display_subtitle?: string | null;
   last_seq: number;
   cancel_requested: boolean;
   error?: string | null;
+  metadata: Record<string, unknown>;
 };
 
 export type ChatRunResponse = {
@@ -558,6 +561,10 @@ export type ChatRunResponse = {
 
 export type ChatActiveRunResponse = {
   run?: ChatRunItem | null;
+};
+
+export type ChatRunListResponse = {
+  items: ChatRunItem[];
 };
 
 export type ChatSessionItem = {
@@ -569,10 +576,6 @@ export type ChatSessionItem = {
   message_count: number;
   preview: string;
   can_continue: boolean;
-};
-
-export type ChatSessionList = {
-  items: ChatSessionItem[];
 };
 
 export type ChatSessionDetail = {

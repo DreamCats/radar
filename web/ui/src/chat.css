@@ -238,8 +238,8 @@
 .chat-launcher-reference details[open] .chat-evidence-list {
   position: absolute;
   top: calc(100% + 7px);
-  left: 0;
-  width: min(360px, calc(100vw - 64px));
+  right: 0;
+  width: min(320px, calc(100vw - 48px));
   border: 1px solid var(--color-hairline-strong);
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-surface-1) 96%, black);
@@ -269,11 +269,70 @@
   padding: 8px;
 }
 
+.chat-context-grid article.is-copyable {
+  grid-column: 1 / -1;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 8px 9px;
+}
+
+.chat-context-grid article.is-copyable > span {
+  align-self: center;
+}
+
 .chat-context-grid strong {
   overflow-wrap: anywhere;
   color: var(--color-ink-muted);
   font-size: 13px;
   font-weight: 600;
+}
+
+.chat-context-value {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  gap: 6px;
+  align-items: center;
+}
+
+.chat-context-grid article.is-copyable .chat-context-value {
+  grid-template-columns: minmax(0, 1fr) 26px;
+}
+
+.chat-context-grid article.is-copyable strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-context-copy {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-subtle);
+  background: var(--color-canvas);
+  cursor: pointer;
+}
+
+.chat-context-copy:hover,
+.chat-context-copy:focus-visible {
+  border-color: var(--color-hairline-strong);
+  color: var(--color-ink);
+  background: var(--color-surface-2);
+}
+
+.chat-context-copy:focus-visible {
+  outline: 2px solid rgba(94, 106, 210, 0.45);
+  outline-offset: 2px;
+}
+
+.chat-context-copy.is-copied {
+  border-color: rgba(39, 166, 68, 0.45);
+  color: var(--color-market-up);
+  background: var(--color-market-up-soft);
 }
 
 .chat-evidence-list {

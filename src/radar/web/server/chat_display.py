@@ -12,6 +12,7 @@ _TOOL_LABELS = {
     "radar_get_message_context": "消息上下文",
     "radar_get_realtime_quote": "实时行情",
     "radar_get_stock_price_history": "行情数据",
+    "radar_get_catalyst_valuation_report": "估值线索报告",
     "radar_list_catalyst_terms": "催化词词库",
     "radar_list_conversations": "会话列表",
     "radar_message_overview": "消息总览",

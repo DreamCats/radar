@@ -11,6 +11,7 @@ import { CatalystDetailDrawer, CatalystTermChip, highlightCatalystText } from ".
 import { CatalystTermManager } from "../components/CatalystTermManager";
 import { formatTime } from "../lib/datetime";
 import { buildPresetRange, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
+import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import type {
   CatalystCategory,
   CatalystFeedItem,
@@ -518,6 +519,7 @@ function MobileCategorySheet(props: {
   onClose: () => void;
   onSelect: (categoryId: string | null) => void;
 }) {
+  const swipeClose = useSwipeToCloseSheet(props.onClose);
   return (
     <div
       className="catalyst-mobile-category-sheet-backdrop"
@@ -529,7 +531,7 @@ function MobileCategorySheet(props: {
       }}
     >
       <aside className="catalyst-mobile-category-sheet panel" role="dialog" aria-modal="true" aria-label="选择催化词标签">
-        <header>
+        <header {...swipeClose}>
           <div>
             <strong>标签</strong>
             <span>选择一个维度筛选 feed</span>
@@ -574,6 +576,7 @@ function MobileTermSheet(props: {
   onClose: () => void;
   onSelectTerm: (categoryId: string, term: string) => void;
 }) {
+  const swipeClose = useSwipeToCloseSheet(props.onClose);
   return (
     <div
       className="catalyst-mobile-term-sheet-backdrop"
@@ -585,7 +588,7 @@ function MobileTermSheet(props: {
       }}
     >
       <aside className="catalyst-mobile-term-sheet panel" role="dialog" aria-modal="true" aria-label={`${props.category.name}关键词`}>
-        <header>
+        <header {...swipeClose}>
           <div>
             <strong>{props.category.name}</strong>
             <span>{props.count} 条线索</span>

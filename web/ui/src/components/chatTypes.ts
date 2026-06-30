@@ -1,10 +1,12 @@
 import type { RefObject } from "react";
 
-import type { ChatMessageItem, ChatModelOption, ChatSessionItem } from "../types";
+import type { ChatMessageItem, ChatModelOption } from "../types";
 
 export type ChatContextItem = {
   label: string;
   value?: string | number | null;
+  copyValue?: string | number | null;
+  copyLabel?: string;
 };
 
 export type ChatSurfaceProps = {
@@ -14,6 +16,10 @@ export type ChatSurfaceProps = {
   entityId: string;
   context: ChatContextItem[];
   evidence?: string[];
+  initialDraft?: string | null;
+  initialRunId?: string | null;
+  initialSessionId?: string | null;
+  skipActiveRunRestore?: boolean;
 };
 
 export type ChatController = {
@@ -24,28 +30,17 @@ export type ChatController = {
   error: string | null;
   hasNewMessagesBelow: boolean;
   composerHidden: boolean;
-  historyOpen: boolean;
-  loadingSessions: boolean;
   messageListRef: RefObject<HTMLDivElement | null>;
   messages: ChatMessageItem[];
   messagesEndRef: RefObject<HTMLDivElement | null>;
   modelOptions: ChatModelOption[];
   selectedProviderName: string | null;
-  sessionAction: { label: string; sessionId: string } | null;
   sending: boolean;
-  sessions: ChatSessionItem[];
   visibleContext: ChatContextItem[];
   changeProvider: (providerName: string | null) => void;
   continueTurn: () => Promise<void>;
-  copySessionContent: (nextSessionId: string) => Promise<void>;
-  copySessionId: (nextSessionId: string) => Promise<void>;
-  copySessionTitle: (session: ChatSessionItem) => Promise<void>;
   jumpToLatestMessage: () => void;
-  refreshSessions: () => Promise<void>;
-  removeSession: (nextSessionId: string) => Promise<void>;
-  restoreSession: (nextSessionId: string) => Promise<void>;
   setDraft: (value: string) => void;
-  setHistoryOpen: (value: boolean | ((current: boolean) => boolean)) => void;
   startNewSession: () => void;
   stopStreaming: () => void;
   submitTurn: () => Promise<void>;

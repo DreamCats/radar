@@ -5,6 +5,7 @@ import { Clock3, Database, Info, RefreshCw, UserRoundCheck, X } from "lucide-rea
 import { fetchAnalystBacktestMessageEvidence, fetchAnalystBacktestSummary, fetchRuns } from "../api/radarApi";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { formatTime } from "../lib/datetime";
+import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import type {
   AnalystBacktestEvidenceItem,
   AnalystBacktestMessageEvidence,
@@ -128,6 +129,8 @@ export function AnalystPage() {
     setDetailSheetOpen(false);
     setSelectedEvidence(null);
   }
+
+  const detailSheetSwipe = useSwipeToCloseSheet(closeDetailSheet);
 
   return (
     <section className="analyst-page">
@@ -258,7 +261,7 @@ export function AnalystPage() {
           <section className={detailSheetOpen ? "analyst-detail-panel sheet-open" : "analyst-detail-panel"}>
             {selectedRow ? (
               <>
-                <div className="analyst-detail-head">
+                <div className="analyst-detail-head" {...detailSheetSwipe}>
                   <div>
                     <span className="analyst-kicker">当前分析师</span>
                     <h2>{selectedRow.analyst_display_name}</h2>
@@ -375,10 +378,11 @@ function EvidenceList(props: {
 }
 
 function EvidenceDrawer(props: { evidence: AnalystBacktestMessageEvidenceItem; window: number; onClose: () => void }) {
+  const swipeClose = useSwipeToCloseSheet(props.onClose);
   return createPortal(
     <div className="analyst-drawer-backdrop" role="presentation" onClick={props.onClose}>
       <aside className="analyst-drawer" role="dialog" aria-modal="true" aria-label="原文证据详情" onClick={(event) => event.stopPropagation()}>
-        <div className="analyst-drawer-head">
+        <div className="analyst-drawer-head" {...swipeClose}>
           <div>
             <span className="analyst-kicker">原文证据</span>
             <h3>{formatTime(props.evidence.message_time)}</h3>

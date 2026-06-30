@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -584,6 +585,88 @@ def test_chat_run_endpoint_streams_replayable_events(tmp_path, monkeypatch):
     assert "event: session" not in replayed.text
     assert "event: assistant_candidate_delta" in replayed.text
     assert "event: assistant_candidate_commit" in replayed.text
+
+
+def test_chat_runs_endpoint_lists_run_records_with_metadata(tmp_path):
+    from radar.core.chat import ChatRunStore, ChatSessionStore
+
+    config = _config(tmp_path)
+    session = ChatSessionStore.from_config(config).create_session(title="估值推演")
+    run = ChatRunStore.from_config(config).create_run(
+        session.session_id,
+        metadata={"surface": "valuation", "entity_id": "002371.SZ", "title": "估值推演"},
+        request={"content": "看一下估值"},
+    )
+    client = TestClient(create_app(config))
+
+    listed = client.get("/api/chat/runs")
+    detail = client.get(f"/api/chat/runs/{run.run_id}")
+
+    assert listed.status_code == 200
+    item = listed.json()["items"][0]
+    assert item["run_id"] == run.run_id
+    assert item["session_id"] == session.session_id
+    assert item["display_title"] == "估值推演"
+    assert item["display_subtitle"] == "valuation · 002371.SZ"
+    assert item["metadata"] == {"surface": "valuation", "entity_id": "002371.SZ", "title": "估值推演"}
+    assert "request" not in item
+    assert detail.status_code == 200
+    assert detail.json()["run"]["metadata"]["title"] == "估值推演"
+
+
+def test_chat_runs_endpoint_derives_catalyst_display_from_stored_context(tmp_path):
+    from radar.core.chat import ChatRunStore, ChatSessionStore
+
+    config = _config(tmp_path)
+    session = ChatSessionStore.from_config(config).create_session(title="原文证据")
+    context = {
+        "surface": "催化词",
+        "entity_id": "7d22d1ab6d6e7283c2aaed934761fd7c54b03c70",
+        "title": "原文证据",
+        "subtitle": "国联民生计算机魔都汇 · 2026-06-24 14:47:44",
+        "fields": [
+            {"label": "会话", "value": "国联民生计算机魔都汇"},
+            {"label": "发送人", "value": "陈安宇@国联民生计算机"},
+            {"label": "命中词", "value": "机构传播 / 强推、产能 / 兑现"},
+            {"label": "标的", "value": "云天励飞 688343.SH"},
+        ],
+    }
+    run = ChatRunStore.from_config(config).create_run(
+        session.session_id,
+        metadata={"surface": "催化词", "entity_id": context["entity_id"], "title": "原文证据"},
+        request={"llm_content": f"查询市场证明\n\n页面上下文：\n{json.dumps(context, ensure_ascii=False)}"},
+    )
+    client = TestClient(create_app(config))
+
+    item = client.get(f"/api/chat/runs/{run.run_id}").json()["run"]
+
+    assert item["display_title"] == "云天励飞 688343.SH · 原文证据"
+    assert item["display_subtitle"] == "催化词 · 国联民生计算机魔都汇 · 机构传播 / 强推、产能 / 兑现"
+
+
+def test_chat_runs_endpoint_derives_wechat_list_display_from_request_content(tmp_path):
+    from radar.core.chat import ChatRunStore, ChatSessionStore
+
+    config = _config(tmp_path)
+    session = ChatSessionStore.from_config(config).create_session(title="微信会话")
+    run = ChatRunStore.from_config(config).create_run(
+        session.session_id,
+        metadata={
+            "surface": "微信会话",
+            "entity_id": "wechat:list",
+            "title": "微信会话",
+            "subtitle": "40 个会话 · 可继续翻页",
+        },
+        request={
+            "content": "先浏览最近微信会话列表，再按需要调用 radar_list_conversations / radar_search_messages，找出当前消息流里最值得继续研究的 3 条线索；每条都区分原文证据、推断和待验证项。"
+        },
+    )
+    client = TestClient(create_app(config))
+
+    item = client.get(f"/api/chat/runs/{run.run_id}").json()["run"]
+
+    assert item["display_title"] == "微信消息线索扫描"
+    assert item["display_subtitle"] == "微信会话 · 40 个会话 · 可继续翻页"
 
 
 def test_chat_run_stream_restarts_running_run_from_sqlite(tmp_path, monkeypatch):

@@ -331,12 +331,13 @@ def test_chat_system_prompt_layers_surface_rules():
     wechat_prompt = build_chat_system_prompt("微信会话")
     catalyst_prompt = build_chat_system_prompt("催化词")
     stock_prompt = build_chat_system_prompt("个股深挖")
+    valuation_prompt = build_chat_system_prompt("估值线索")
 
     assert common_prompt == COMMON_CHAT_SYSTEM_PROMPT
     assert DEFAULT_CHAT_SYSTEM_PROMPT == COMMON_CHAT_SYSTEM_PROMPT
     assert "只做研究辅助和证据整理" in common_prompt
     assert "默认不输出买入、卖出、持有、仓位、目标价" in common_prompt
-    assert "加载 investment-valuation skill 时" in common_prompt
+    assert "加载 investment-valuation / catalyst-valuation-upside skill 时" in common_prompt
     assert "投资价值排序" in common_prompt
     assert "证据完整度、跟踪优先级" in common_prompt
     assert "多次调用 radar_search_messages / radar_get_conversation_window 和 radar_search_web" in common_prompt
@@ -347,6 +348,8 @@ def test_chat_system_prompt_layers_surface_rules():
     assert "不要写 `##标题` 或 `-内容`" in common_prompt
     assert "短计划 -> 查证据/数据 -> 判断新增信息是否会改变结论或是否还缺关键证据" in common_prompt
     assert "不要为了显得忙而重复调用同一个工具和同一组参数" in common_prompt
+    assert "catalyst-valuation-upside skill" in valuation_prompt
+    assert "radar_get_catalyst_valuation_report 读取本地结构化报告，再补当前市值" in valuation_prompt
     assert "过程说明只写一句短句" in common_prompt
     assert "最终正文用“结论：”" in common_prompt
     assert "已确认的事实" in common_prompt
@@ -602,6 +605,7 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     assert "radar_stock_evidence_chart" not in tool_names
     assert "radar_scan_catalysts" in tool_names
     assert "radar_list_catalyst_terms" in tool_names
+    assert "radar_get_catalyst_valuation_report" in tool_names
     assert "radar_stock_evidence_chain" not in tool_names
     assert "radar_backtest_summary" not in tool_names
     assert "radar_analyst_backtest_summary" in tool_names

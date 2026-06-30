@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { copyText } from "../lib/clipboard";
 import { formatTime } from "../lib/datetime";
+import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import type { CatalystEvidenceMessage, CatalystFeedItem, CatalystStockMention, CatalystTermHit } from "../types";
 import { ChatLauncher } from "./ChatLauncher";
 
@@ -17,6 +18,7 @@ const catalystEvidenceQuickPrompts = [
 
 export function CatalystDetailDrawer({ item, onClose }: { item: CatalystFeedItem; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
+  const swipeClose = useSwipeToCloseSheet(onClose);
   const chatContext = useMemo(() => buildCatalystChatContext(item), [item]);
   const chatEvidence = useMemo(() => buildCatalystChatEvidence(item), [item]);
 
@@ -64,14 +66,14 @@ export function CatalystDetailDrawer({ item, onClose }: { item: CatalystFeedItem
       }}
     >
       <aside className="catalyst-detail-panel catalyst-detail-drawer content-panel panel" role="dialog" aria-modal="true">
-        <header className="catalyst-detail-head">
+        <header className="catalyst-detail-head" {...swipeClose}>
           <div>
             <h2>原文证据</h2>
             <span>最早 {formatTime(item.first_message_time)} · 最新 {formatTime(item.latest_message_time)}</span>
           </div>
           <div className="catalyst-detail-actions">
             <ChatLauncher
-              title="原文证据"
+              title={catalystChatTitle(item)}
               subtitle={`${conversationLabel(item)} · ${formatTime(item.first_message_time)}`}
               surface="催化词"
               entityId={item.key}
@@ -261,6 +263,14 @@ function buildCatalystChatEvidence(item: CatalystFeedItem) {
 
 function conversationLabel(item: CatalystFeedItem) {
   return item.source === "个人群" ? item.group_name || "未命名群" : item.sender;
+}
+
+function catalystChatTitle(item: CatalystFeedItem) {
+  const stocks = stockSummary(item);
+  if (stocks && stocks !== "无") {
+    return `${stocks} · 原文证据`;
+  }
+  return `${conversationLabel(item)} · 原文证据`;
 }
 
 function termSummary(item: CatalystFeedItem) {

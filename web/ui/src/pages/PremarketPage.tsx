@@ -7,6 +7,7 @@ import { PageLoadingState } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
 import { formatTime } from "../lib/datetime";
 import { panelMotionState } from "../lib/motion";
+import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import type { PremarketConceptRank, PremarketSignalQuery, PremarketSignalResult, PremarketStockRank } from "../types";
 
 type WindowForm = {
@@ -363,6 +364,7 @@ function ConceptDetailDrawer(props: {
   onClose: () => void;
 }) {
   const [showAllStocks, setShowAllStocks] = useState(false);
+  const swipeClose = useSwipeToCloseSheet(props.onClose);
   const visibleStocks = props.concept.top_stocks.slice(0, showAllStocks ? undefined : COLLAPSED_STOCK_LIMIT);
   const hiddenStockCount = Math.max(0, props.concept.top_stocks.length - visibleStocks.length);
 
@@ -379,15 +381,17 @@ function ConceptDetailDrawer(props: {
         aria-label={`${props.concept.concept_name} 详情`}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <PanelTitle
-          title={props.concept.concept_name}
-          meta={`${sourceName(props.concept.source)} ${props.concept.concept_code}`}
-          titleExtra={<span className="premarket-score-pill">score {props.concept.score}</span>}
-        >
-          <button className="mini-button premarket-detail-close" type="button" aria-label="关闭详情" onClick={props.onClose}>
-            <X size={15} />
-          </button>
-        </PanelTitle>
+        <div className="premarket-detail-head" {...swipeClose}>
+          <PanelTitle
+            title={props.concept.concept_name}
+            meta={`${sourceName(props.concept.source)} ${props.concept.concept_code}`}
+            titleExtra={<span className="premarket-score-pill">score {props.concept.score}</span>}
+          >
+            <button className="mini-button premarket-detail-close" type="button" aria-label="关闭详情" onClick={props.onClose}>
+              <X size={15} />
+            </button>
+          </PanelTitle>
+        </div>
         <div className="premarket-detail-body">
           <div className="premarket-detail-metrics">
             <Metric label="个股" value={props.concept.stock_count} />

@@ -7,9 +7,10 @@ import type {
   ChatActiveRunResponse,
   ChatMessageItem,
   ChatModelOptions,
+  ChatRunItem,
+  ChatRunListResponse,
   ChatRunResponse,
   ChatSessionDetail,
-  ChatSessionList,
   ChatStreamEvent,
   ChatToolMessageDetail,
   ChatTurnRequest,
@@ -195,25 +196,12 @@ export async function sendChatTurn(request: ChatTurnRequest): Promise<ChatTurnRe
   return (await response.json()) as ChatTurnResponse;
 }
 
-export async function fetchChatSessions(limit = 50): Promise<ChatSessionList> {
-  return getJson(`/api/chat/sessions?${params({ limit })}`);
-}
-
 export async function fetchChatSession(sessionId: string): Promise<ChatSessionDetail> {
   return getJson(`/api/chat/sessions/${encodeURIComponent(sessionId)}`);
 }
 
 export async function fetchChatToolMessage(sessionId: string, messageId: string): Promise<ChatToolMessageDetail> {
   return getJson(`/api/chat/sessions/${encodeURIComponent(sessionId)}/tool-messages/${encodeURIComponent(messageId)}`);
-}
-
-export async function deleteChatSession(sessionId: string): Promise<void> {
-  const response = await apiFetch(`/api/chat/sessions/${encodeURIComponent(sessionId)}`, {
-    method: "DELETE",
-  });
-  if (!response.ok) {
-    throw new Error(await errorText(response));
-  }
 }
 
 export async function fetchChatModelOptions(): Promise<ChatModelOptions> {
@@ -230,6 +218,15 @@ export async function createChatRun(request: ChatTurnRequest): Promise<ChatRunRe
     throw new Error(await errorText(response));
   }
   return (await response.json()) as ChatRunResponse;
+}
+
+export async function fetchChatRuns(limit = 50): Promise<ChatRunItem[]> {
+  const data = await getJson<ChatRunListResponse>(`/api/chat/runs?${params({ limit })}`);
+  return data.items;
+}
+
+export async function fetchChatRun(runId: string): Promise<ChatRunResponse> {
+  return getJson(`/api/chat/runs/${encodeURIComponent(runId)}`);
 }
 
 export async function fetchActiveChatRun(query: {

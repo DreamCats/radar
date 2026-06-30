@@ -7,6 +7,13 @@ from radar.core.config import RadarConfig
 from radar.core.messages import CatalystCategory, CatalystTermLibrary, load_catalyst_terms, save_catalyst_terms
 from radar.core.models import RawMessage
 from radar.core.storage import connect, init_db, upsert_messages
+from radar.core.storage.report_store import save_catalyst_valuation_report
+from radar.core.usecases.catalyst_valuation_report.models import (
+    CatalystValuationEvidence,
+    CatalystValuationReport,
+    CatalystValuationReportRunResult,
+    CatalystValuationStockContext,
+)
 
 
 def test_builtin_catalyst_tools_read_terms_and_scan_local_database(tmp_path):
@@ -66,6 +73,39 @@ def test_default_catalyst_terms_exclude_low_signal_meeting_terms(tmp_path):
     assert {"调研", "会议", "路演", "1v1", "一对一", "董秘", "IR", "继续推荐", "弹性"}.isdisjoint(terms)
 
 
+def test_builtin_catalyst_tool_reads_valuation_report_by_id(tmp_path):
+    config = RadarConfig(config_dir=tmp_path, storage={"data_dir": tmp_path / "data"})
+    saved = save_catalyst_valuation_report(
+        config.reports_database_path,
+        request={"limit": 200, "publish": True},
+        result=_valuation_result(tmp_path),
+        run_id="run-cvr",
+        status="succeeded",
+    )
+    agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
+
+    result = agent.tools.get("radar_get_catalyst_valuation_report").execute(
+        {
+            "report_id": saved.report_id,
+            "max_stocks": 1,
+            "max_evidence_per_stock": 1,
+            "include_rendered_html": True,
+            "max_html_chars": 1200,
+        }
+    )
+    missing = agent.tools.get("radar_get_catalyst_valuation_report").execute({"report_id": "missing"})
+
+    assert result["found"] is True
+    assert result["report_id"] == saved.report_id
+    assert result["run_id"] == "run-cvr"
+    assert result["published_url"] == "https://example.com/report.html"
+    assert result["totals"] == {"feed_items": 5, "candidate_stocks": 2, "stocks": 1}
+    assert result["stocks"][0]["stock_name"] == "胜宏科技"
+    assert result["stocks"][0]["evidence"][0]["valuation_numbers"] == ["10 亿"]
+    assert "Radar 催化估值线索报告" in result["rendered_html"]
+    assert missing == {"found": False, "report_id": "missing"}
+
+
 def _message(message_id: str, message_time: str, group_name: str, content: str) -> RawMessage:
     return RawMessage(
         message_id=message_id,
@@ -76,4 +116,44 @@ def _message(message_id: str, message_time: str, group_name: str, content: str) 
         group_name=group_name,
         fetch_time=datetime.fromisoformat("2026-06-23T10:00:00"),
         fetch_window="20260623090000-20260623110000",
+    )
+
+
+def _valuation_result(tmp_path) -> CatalystValuationReportRunResult:
+    start_time = datetime.fromisoformat("2026-06-28T09:00:00")
+    end_time = datetime.fromisoformat("2026-06-28T10:00:00")
+    return CatalystValuationReportRunResult(
+        report=CatalystValuationReport(
+            generated_at=end_time,
+            start_time=start_time,
+            end_time=end_time,
+            total_feed_items=5,
+            total_candidate_stocks=2,
+            total_stocks=1,
+            stocks=[
+                CatalystValuationStockContext(
+                    stock_key="300476.SZ",
+                    ts_code="300476.SZ",
+                    stock_name="胜宏科技",
+                    first_message_time=datetime.fromisoformat("2026-06-28T09:30:00"),
+                    latest_message_time=datetime.fromisoformat("2026-06-28T09:40:00"),
+                    evidence=[
+                        CatalystValuationEvidence(
+                            message_id="m-cvr-1",
+                            source="个人群",
+                            sender="tester",
+                            group_name="东财策略",
+                            message_time=datetime.fromisoformat("2026-06-28T09:30:00"),
+                            latest_message_time=datetime.fromisoformat("2026-06-28T09:40:00"),
+                            content="胜宏科技 新签订单 10 亿。",
+                            matched_terms=["新签订单"],
+                            valuation_terms=["订单"],
+                            valuation_numbers=["10 亿"],
+                        )
+                    ],
+                )
+            ],
+        ),
+        local_html_path=tmp_path / "report.html",
+        published_url="https://example.com/report.html",
     )
