@@ -33,6 +33,7 @@ import type {
   MarketStockRefreshRequest,
   RunItem,
   PremarketSignalQuery,
+  PremarketConceptRank,
   PremarketSignalResult,
   ScheduleItem,
   ScheduleTickItem,
@@ -134,6 +135,35 @@ export async function fetchPremarketSignal(query: PremarketSignalQuery): Promise
     velocity_concepts: Array.isArray(data.velocity_concepts) ? data.velocity_concepts.length : null,
     messages_scanned: data.summary?.messages_scanned ?? null,
     catalyst_items: data.summary?.catalyst_items ?? null,
+  });
+  return data;
+}
+
+export async function fetchPremarketConceptDetail(
+  query: PremarketSignalQuery,
+  conceptCode: string,
+): Promise<PremarketConceptRank> {
+  const startedAt = performance.now();
+  const path = `/api/premarket/signals/concepts/${encodeURIComponent(conceptCode)}?${params(query)}`;
+  console.info("[premarket] detail:start", { ...query, concept_code: conceptCode });
+  const response = await apiFetch(path);
+  console.info("[premarket] detail:response", {
+    status: response.status,
+    ok: response.ok,
+    elapsed_ms: Math.round(performance.now() - startedAt),
+    content_type: response.headers.get("content-type"),
+    content_length: response.headers.get("content-length"),
+    content_encoding: response.headers.get("content-encoding"),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as PremarketConceptRank;
+  console.info("[premarket] detail:done", {
+    elapsed_ms: Math.round(performance.now() - startedAt),
+    concept_code: data.concept_code,
+    stocks: Array.isArray(data.top_stocks) ? data.top_stocks.length : null,
+    evidence: Array.isArray(data.evidence) ? data.evidence.length : null,
   });
   return data;
 }

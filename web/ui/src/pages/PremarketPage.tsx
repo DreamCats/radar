@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, Search, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
-import { fetchPremarketSignal } from "../api/radarApi";
+import { fetchPremarketConceptDetail, fetchPremarketSignal } from "../api/radarApi";
 import { PageLoadingState } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
 import { formatTime } from "../lib/datetime";
 import { panelMotionState } from "../lib/motion";
-import type { PremarketConceptRank, PremarketSignalResult, PremarketStockRank } from "../types";
+import type { PremarketConceptRank, PremarketSignalQuery, PremarketSignalResult, PremarketStockRank } from "../types";
 
 type WindowForm = {
   startDate: string;
@@ -38,37 +38,76 @@ export function PremarketPage() {
   const [windowForm, setWindowForm] = useState<WindowForm>(() => defaultWindow());
   const [windowPreset, setWindowPreset] = useState<string>(DEFAULT_WINDOW_PRESET);
   const [result, setResult] = useState<PremarketSignalResult | null>(null);
+  const [activeQuery, setActiveQuery] = useState<PremarketSignalQuery | null>(null);
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [detailConcept, setDetailConcept] = useState<PremarketConceptRank | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const motionState = panelMotionState(shouldReduceMotion);
 
   const selectedConcept = useMemo(() => {
+    if (detailConcept?.concept_code === selectedCode) {
+      return detailConcept;
+    }
     return findPremarketConcept(result, selectedCode);
-  }, [result, selectedCode]);
+  }, [detailConcept, result, selectedCode]);
 
   useEffect(() => {
     void loadSignals(windowForm);
   }, []);
 
+  useEffect(() => {
+    if (!detailOpen || !selectedCode || !result || !activeQuery) {
+      return;
+    }
+    const concept = findPremarketConcept(result, selectedCode);
+    if (!concept) {
+      return;
+    }
+    let cancelled = false;
+    setDetailConcept(normalizeConcept(concept));
+    setDetailLoading(true);
+    setDetailError(null);
+    void fetchPremarketConceptDetail(activeQuery, selectedCode)
+      .then((data) => {
+        if (!cancelled) {
+          setDetailConcept(normalizeConcept(data));
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error("[premarket] detail:error", err);
+          setDetailError(err instanceof Error ? err.message : "详情加载失败");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setDetailLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeQuery, detailOpen, result, selectedCode]);
+
   async function loadSignals(nextWindow: WindowForm) {
     const startedAt = performance.now();
-    console.info("[premarket] load:start", {
-      start_time: `${nextWindow.startDate}T${nextWindow.startTime}:00`,
-      end_time: `${nextWindow.endDate}T${nextWindow.endTime}:00`,
-    });
+    const query = buildSignalQuery(nextWindow);
+    console.info("[premarket] load:start", query);
     setLoading(true);
     setError(null);
     setResult(null);
+    setActiveQuery(query);
     setSelectedCode(null);
+    setDetailConcept(null);
     setDetailOpen(false);
+    setDetailLoading(false);
+    setDetailError(null);
     try {
-      const data = await fetchPremarketSignal({
-        start_time: `${nextWindow.startDate}T${nextWindow.startTime}:00`,
-        end_time: `${nextWindow.endDate}T${nextWindow.endTime}:00`,
-        limit: 30,
-      });
+      const data = await fetchPremarketSignal(query);
       const normalizedData = normalizePremarketResult(data);
       console.info("[premarket] load:data", {
         elapsed_ms: Math.round(performance.now() - startedAt),
@@ -87,8 +126,12 @@ export function PremarketPage() {
     } catch (err) {
       console.error("[premarket] load:error", err);
       setResult(null);
+      setActiveQuery(null);
       setSelectedCode(null);
+      setDetailConcept(null);
       setDetailOpen(false);
+      setDetailLoading(false);
+      setDetailError(null);
       setError(err instanceof Error ? err.message : "查询失败");
     } finally {
       console.info("[premarket] load:finally", { elapsed_ms: Math.round(performance.now() - startedAt) });
@@ -191,7 +234,12 @@ export function PremarketPage() {
         </motion.div>
       )}
       {detailOpen && selectedConcept && (
-        <ConceptDetailDrawer concept={selectedConcept} onClose={() => setDetailOpen(false)} />
+        <ConceptDetailDrawer
+          concept={selectedConcept}
+          loading={detailLoading}
+          error={detailError}
+          onClose={() => setDetailOpen(false)}
+        />
       )}
     </section>
   );
@@ -308,7 +356,12 @@ function ConceptBoard(props: {
   );
 }
 
-function ConceptDetailDrawer(props: { concept: PremarketConceptRank; onClose: () => void }) {
+function ConceptDetailDrawer(props: {
+  concept: PremarketConceptRank;
+  loading: boolean;
+  error: string | null;
+  onClose: () => void;
+}) {
   const [showAllStocks, setShowAllStocks] = useState(false);
   const visibleStocks = props.concept.top_stocks.slice(0, showAllStocks ? undefined : COLLAPSED_STOCK_LIMIT);
   const hiddenStockCount = Math.max(0, props.concept.top_stocks.length - visibleStocks.length);
@@ -346,6 +399,10 @@ function ConceptDetailDrawer(props: { concept: PremarketConceptRank; onClose: ()
             {visibleStocks.map((stock) => (
               <StockRow key={`${stock.ts_code ?? ""}-${stock.stock_name}`} stock={stock} />
             ))}
+            {props.loading && <div className="premarket-empty compact">详情加载中</div>}
+            {!props.loading && props.concept.top_stocks.length === 0 && (
+              <div className="premarket-empty compact">暂无个股明细</div>
+            )}
           </div>
           {props.concept.top_stocks.length > COLLAPSED_STOCK_LIMIT && (
             <button className="premarket-stock-toggle" type="button" onClick={() => setShowAllStocks((value) => !value)}>
@@ -354,6 +411,7 @@ function ConceptDetailDrawer(props: { concept: PremarketConceptRank; onClose: ()
             </button>
           )}
           <div className="premarket-evidence-list">
+            {props.error && <div className="premarket-empty compact">{props.error}</div>}
             {props.concept.evidence.map((item) => (
               <article className="premarket-evidence" key={item.message_id}>
                 <header>
@@ -369,6 +427,14 @@ function ConceptDetailDrawer(props: { concept: PremarketConceptRank; onClose: ()
       </section>
     </div>
   );
+}
+
+function buildSignalQuery(window: WindowForm): PremarketSignalQuery {
+  return {
+    start_time: `${window.startDate}T${window.startTime}:00`,
+    end_time: `${window.endDate}T${window.endTime}:00`,
+    limit: 30,
+  };
 }
 
 function Metric(props: { label: string; value: number }) {
@@ -428,16 +494,20 @@ function normalizePremarketResult(data: PremarketSignalResult): PremarketSignalR
   };
 }
 
-function normalizeConcepts(value: PremarketConceptRank[] | undefined, fallback: PremarketConceptRank[] = []) {
-  if (!Array.isArray(value)) {
-    return fallback;
-  }
-  return value.map((concept) => ({
+function normalizeConcept(concept: PremarketConceptRank): PremarketConceptRank {
+  return {
     ...concept,
     top_stocks: Array.isArray(concept.top_stocks) ? concept.top_stocks : [],
     catalyst_terms: Array.isArray(concept.catalyst_terms) ? concept.catalyst_terms : [],
     evidence: Array.isArray(concept.evidence) ? concept.evidence : [],
-  }));
+  };
+}
+
+function normalizeConcepts(value: PremarketConceptRank[] | undefined, fallback: PremarketConceptRank[] = []) {
+  if (!Array.isArray(value)) {
+    return fallback;
+  }
+  return value.map(normalizeConcept);
 }
 
 function signedNumber(value: number) {

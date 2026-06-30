@@ -10,6 +10,7 @@ from time import sleep
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
+from radar.core.messages import CatalystStockMention, CatalystTermHit
 from radar.core.models import RawMessage
 from radar.core.storage import finish_run, get_run, start_run
 from radar.core.storage import connect, init_db, upsert_messages
@@ -21,6 +22,14 @@ from radar.core.usecases.analyst_mentions import (
     AnalystMentionMessageEvidenceResult,
     AnalystMentionSummaryResult,
     AnalystMentionSummaryRow,
+)
+from radar.core.usecases.premarket_signal import (
+    PremarketConceptRank,
+    PremarketEvidence,
+    PremarketSignalQuery,
+    PremarketSignalResult,
+    PremarketSignalSummary,
+    PremarketStockRank,
 )
 from radar.web.server.app import create_app
 
@@ -138,6 +147,67 @@ def test_catalyst_feed_endpoint_returns_deduped_matches(tmp_path):
     assert data["items"][0]["duplicate_count"] == 2
     assert data["items"][0]["matched_terms"][0]["term"] == "新签订单"
     assert data["items"][0]["stock_mentions"][0]["ts_code"] == "300503.SZ"
+
+
+def test_premarket_signals_returns_slim_payload_and_lazy_detail(monkeypatch, tmp_path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    _init_empty_db(config)
+    calls: list[PremarketSignalQuery] = []
+
+    def fake_build(*args, query: PremarketSignalQuery, **kwargs) -> PremarketSignalResult:
+        calls.append(query)
+        return _premarket_result(query)
+
+    monkeypatch.setattr("radar.web.server.routers.premarket.build_premarket_signal", fake_build)
+
+    client = TestClient(create_app(config))
+    params = {
+        "start_time": "2026-06-30T07:00:00",
+        "end_time": "2026-06-30T09:25:00",
+        "limit": 30,
+    }
+    response = client.get("/api/premarket/signals", params=params)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["top_concepts"][0]["concept_code"] == "C001"
+    assert data["top_concepts"][0]["top_stocks"] == []
+    assert data["top_concepts"][0]["catalyst_terms"] == []
+    assert data["top_concepts"][0]["evidence"] == []
+
+    detail_response = client.get("/api/premarket/signals/concepts/C001", params=params)
+
+    assert detail_response.status_code == 200
+    detail = detail_response.json()
+    assert detail["top_stocks"][0]["stock_name"] == "样本股份"
+    assert detail["evidence"][0]["raw_content"] == "样本股份 新签订单"
+    assert len(calls) == 1
+
+
+def test_premarket_signals_full_returns_precompressed_json(monkeypatch, tmp_path):
+    config = _config(tmp_path, config_dir=tmp_path / "config")
+    _init_empty_db(config)
+
+    def fake_build(*args, query: PremarketSignalQuery, **kwargs) -> PremarketSignalResult:
+        return _premarket_result(query)
+
+    monkeypatch.setattr("radar.web.server.routers.premarket.build_premarket_signal", fake_build)
+
+    client = TestClient(create_app(config))
+    response = client.get(
+        "/api/premarket/signals/full",
+        params={
+            "start_time": "2026-06-30T07:00:00",
+            "end_time": "2026-06-30T09:25:00",
+            "limit": 30,
+        },
+        headers={"Accept-Encoding": "gzip"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-encoding"] == "gzip"
+    assert int(response.headers["content-length"]) > 0
+    assert response.json()["top_concepts"][0]["top_stocks"][0]["stock_name"] == "样本股份"
 
 
 def test_messages_overview_endpoint_returns_aggregates(tmp_path):
@@ -1331,6 +1401,77 @@ def _config(tmp_path, **overrides) -> RadarConfig:
             "database": tmp_path / "radar.sqlite3",
         },
         **overrides,
+    )
+
+
+def _init_empty_db(config: RadarConfig) -> None:
+    conn = connect(config.database_path)
+    try:
+        init_db(conn)
+    finally:
+        conn.close()
+
+
+def _premarket_result(query: PremarketSignalQuery) -> PremarketSignalResult:
+    term = CatalystTermHit(
+        category_id="order_customer",
+        category_name="订单 / 客户",
+        color="#5e6ad2",
+        term="新签订单",
+    )
+    stock = PremarketStockRank(
+        ts_code="300001.SZ",
+        stock_name="样本股份",
+        mention_count=3,
+        person_count=2,
+        message_count=2,
+        first_time=query.start_time,
+        latest_time=query.end_time,
+        catalyst_terms=[term],
+    )
+    evidence = PremarketEvidence(
+        message_id="m-premarket-1",
+        source="个人群",
+        sender="tester",
+        group_name="测试群",
+        message_time=query.start_time,
+        raw_content="样本股份 新签订单",
+        matched_terms=[term],
+        stock_mentions=[CatalystStockMention(ts_code="300001.SZ", stock_name="样本股份")],
+    )
+    concept = PremarketConceptRank(
+        concept_code="C001",
+        concept_name="样本概念",
+        source="ths",
+        score=12.5,
+        velocity_score=1.0,
+        early_mention_count=1,
+        late_mention_count=2,
+        stock_count=1,
+        mention_count=3,
+        person_count=2,
+        message_count=2,
+        top_stocks=[stock],
+        catalyst_terms=[term],
+        evidence=[evidence],
+    )
+    return PremarketSignalResult(
+        query=query,
+        summary=PremarketSignalSummary(
+            start_time=query.start_time,
+            end_time=query.end_time,
+            messages_scanned=8,
+            catalyst_items=2,
+            stock_mentions=3,
+            dedup_person_stock_mentions=2,
+            concept_source="ths",
+            concept_count=1,
+            ranked_concept_count=1,
+        ),
+        concepts=[concept],
+        top_concepts=[concept],
+        bottom_concepts=[concept],
+        velocity_concepts=[concept],
     )
 
 

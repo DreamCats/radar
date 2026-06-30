@@ -249,6 +249,37 @@ def build_premarket_signal(
     )
 
 
+def slim_premarket_signal(result: PremarketSignalResult) -> PremarketSignalResult:
+    return result.model_copy(
+        update={
+            "concepts": [_slim_concept(concept) for concept in result.concepts],
+            "top_concepts": [_slim_concept(concept) for concept in result.top_concepts],
+            "bottom_concepts": [_slim_concept(concept) for concept in result.bottom_concepts],
+            "velocity_concepts": [_slim_concept(concept) for concept in result.velocity_concepts],
+        }
+    )
+
+
+def find_premarket_concept(result: PremarketSignalResult, concept_code: str) -> PremarketConceptRank | None:
+    seen: set[str] = set()
+    for concept in [
+        *result.top_concepts,
+        *result.bottom_concepts,
+        *result.velocity_concepts,
+        *result.concepts,
+    ]:
+        if concept.concept_code in seen:
+            continue
+        seen.add(concept.concept_code)
+        if concept.concept_code == concept_code:
+            return concept
+    return None
+
+
+def _slim_concept(concept: PremarketConceptRank) -> PremarketConceptRank:
+    return concept.model_copy(update={"top_stocks": [], "catalyst_terms": [], "evidence": []})
+
+
 def _collect_catalyst_items(
     conn: sqlite3.Connection,
     *,
