@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from radar.core.channel import BarkError
 from radar.core.config import RadarConfig
 from radar.core.usecases.catalyst_valuation_report.collect import collect_catalyst_valuation_contexts
 from radar.core.usecases.catalyst_valuation_report.models import (
@@ -50,13 +51,20 @@ def run_catalyst_valuation_report(
     should_publish = publish and report.total_stocks > 0
     should_notify = notify and report.total_stocks > 0
     url = publish_report_html(config, local_path, generated_at=report.generated_at) if should_publish else None
+    bark_sent = False
+    bark_error = None
     if should_notify:
         if not url:
             raise ValueError("notify=true 需要同时 publish=true，确保 Bark 可以打开公网 URL")
-        notify_report(config, report, url)
+        try:
+            notify_report(config, report, url)
+            bark_sent = True
+        except BarkError as exc:
+            bark_error = str(exc)[:1000]
     return CatalystValuationReportRunResult(
         report=report,
         local_html_path=local_path,
         published_url=url,
-        bark_sent=should_notify,
+        bark_sent=bark_sent,
+        bark_error=bark_error,
     )

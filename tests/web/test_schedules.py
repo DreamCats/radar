@@ -1,15 +1,24 @@
 from __future__ import annotations
 
 from contextlib import closing
+from datetime import datetime
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
 from radar.core.config import RadarConfig
-from radar.core.storage import connect, migrate, migrate_message_db, start_run
+from radar.core.storage import connect, get_run, migrate, migrate_message_db, start_run
 from radar.core.storage.message_migrations import MESSAGE_MIGRATIONS
+from radar.core.usecases.catalyst_valuation_report.models import (
+    CatalystValuationReport,
+    CatalystValuationReportRunResult,
+)
 from radar.web.server.app import create_app
-from radar.web.server.schemas import DerivedJobItem
+from radar.web.server.catalyst_valuation_report_jobs import (
+    CATALYST_VALUATION_REPORT_RUN_KIND,
+    _run_catalyst_valuation_report_job,
+)
+from radar.web.server.schemas import CatalystValuationReportJobRequest, DerivedJobItem
 
 
 def test_schedules_endpoint_seeds_defaults(tmp_path):
@@ -381,6 +390,56 @@ def test_catalyst_valuation_report_job_endpoint_submits(monkeypatch, tmp_path):
     assert item["job_type"] == "catalyst_valuation_report"
     assert item["run_id"] == "run-catalyst-manual"
     assert captured == {"publish": True, "notify": True}
+
+
+def test_catalyst_valuation_report_job_records_bark_error_as_partial_failed(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    start_time = datetime.fromisoformat("2026-06-28T09:00:00")
+    end_time = datetime.fromisoformat("2026-06-28T10:00:00")
+    report = CatalystValuationReport(
+        generated_at=end_time,
+        start_time=start_time,
+        end_time=end_time,
+        total_feed_items=25,
+        total_candidate_stocks=102,
+        total_stocks=3,
+    )
+    result = CatalystValuationReportRunResult(
+        report=report,
+        local_html_path=tmp_path / "report.html",
+        published_url="https://example.com/report.html",
+        bark_sent=False,
+        bark_error="调用 Bark 超时",
+    )
+    run_id = start_run(
+        config.database_path,
+        kind=CATALYST_VALUATION_REPORT_RUN_KIND,
+        target="test-target",
+    )
+    request = CatalystValuationReportJobRequest(
+        start_time=start_time,
+        end_time=end_time,
+        publish=True,
+        notify=True,
+    )
+
+    monkeypatch.setattr(
+        "radar.web.server.catalyst_valuation_report_jobs.run_catalyst_valuation_report",
+        lambda *args, **kwargs: result,
+    )
+
+    _run_catalyst_valuation_report_job(config, request, run_id)
+
+    run = get_run(config.database_path, run_id)
+    assert run is not None
+    assert run.status == "partial_failed"
+    assert run.raw_count == 25
+    assert run.stored_count == 3
+    assert run.filtered_count == 99
+    assert run.error_message == "Bark 通知失败: 调用 Bark 超时"
+    assert run.metadata["published_url"] == "https://example.com/report.html"
+    assert run.metadata["bark_sent"] is False
+    assert run.metadata["bark_error"] == "调用 Bark 超时"
 
 
 def test_schedule_run_now_skips_when_same_job_running(monkeypatch, tmp_path):

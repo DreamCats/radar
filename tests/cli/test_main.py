@@ -248,6 +248,46 @@ def test_catalyst_valuation_report_command_invokes_usecase(monkeypatch, tmp_path
     assert calls[0]["notify"] is False
 
 
+def test_catalyst_valuation_report_command_reports_bark_error(monkeypatch, tmp_path):
+    config_dir = _config_dir(tmp_path)
+
+    def fake_run(config, **kwargs):
+        generated_at = datetime.fromisoformat("2026-06-28T10:00:00")
+        report = CatalystValuationReport(
+            generated_at=generated_at,
+            start_time=datetime.fromisoformat("2026-06-28T09:00:00"),
+            end_time=datetime.fromisoformat("2026-06-28T10:00:00"),
+            total_feed_items=2,
+            total_candidate_stocks=1,
+            total_stocks=1,
+        )
+        return CatalystValuationReportRunResult(
+            report=report,
+            local_html_path=tmp_path / "report.html",
+            published_url="https://example.com/report.html",
+            bark_sent=False,
+            bark_error="调用 Bark 超时",
+        )
+
+    monkeypatch.setattr("radar.cli.catalyst_valuation_report.run_catalyst_valuation_report", fake_run)
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "--config-dir",
+            str(config_dir),
+            "catalyst-valuation-report",
+            "run",
+            "--publish",
+            "--notify",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "url=https://example.com/report.html" in result.output
+    assert "bark=failed error=调用 Bark 超时" in result.output
+
+
 def test_catalyst_valuation_report_command_requires_publish_for_notify(tmp_path):
     result = CliRunner().invoke(
         main,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Any, Literal
 
 import httpx
@@ -13,6 +14,7 @@ BARK_CONFIG_HINT = (
     "并在 config.yaml 设置 channel.bark.enabled=true、channel.bark.secret_ref=<name>"
 )
 BarkLevel = Literal["critical", "active", "timeSensitive", "passive"]
+_RETRY_DELAYS = (1.0, 3.0)
 
 
 class BarkError(RuntimeError):
@@ -138,29 +140,56 @@ def _post_json(
     body: dict[str, Any],
 ) -> dict[str, Any]:
     url = f"{channel.base_url}{path}"
-    try:
-        with httpx.Client(timeout=channel.timeout) as client:
-            response = client.post(
-                url,
-                json=body,
-                headers={"Content-Type": "application/json; charset=utf-8"},
-            )
-            response.raise_for_status()
-    except httpx.HTTPStatusError as exc:
-        raise BarkApiError(
-            f"Bark API 返回错误: status={exc.response.status_code} url={_safe_url(url)}"
-        ) from exc
-    except httpx.TimeoutException as exc:
-        raise BarkHttpError(
-            f"调用 Bark 超时: url={_safe_url(url)} timeout={channel.timeout}s"
-        ) from exc
-    except httpx.HTTPError as exc:
-        raise BarkHttpError(f"调用 Bark 失败: url={_safe_url(url)} error={exc}") from exc
+    timeout = _httpx_timeout(channel.timeout)
+    retry_count = len(_RETRY_DELAYS)
+    attempt = 0
+    while True:
+        try:
+            with httpx.Client(timeout=timeout) as client:
+                response = client.post(
+                    url,
+                    json=body,
+                    headers={"Content-Type": "application/json; charset=utf-8"},
+                )
+                response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise BarkApiError(
+                f"Bark API 返回错误: status={exc.response.status_code} url={_safe_url(url)}"
+            ) from exc
+        except httpx.TimeoutException as exc:
+            if attempt < retry_count:
+                time.sleep(_RETRY_DELAYS[attempt])
+                attempt += 1
+                continue
+            raise BarkHttpError(
+                f"调用 Bark 超时: url={_safe_url(url)} timeout={channel.timeout}s"
+            ) from exc
+        except httpx.NetworkError as exc:
+            if attempt < retry_count:
+                time.sleep(_RETRY_DELAYS[attempt])
+                attempt += 1
+                continue
+            raise BarkHttpError(f"调用 Bark 失败: url={_safe_url(url)} error={exc}") from exc
+        except httpx.HTTPError as exc:
+            raise BarkHttpError(f"调用 Bark 失败: url={_safe_url(url)} error={exc}") from exc
+        break
 
     data = response.json()
     if not isinstance(data, dict):
         raise BarkApiError("Bark 返回不是 JSON object")
     return data
+
+
+def _httpx_timeout(timeout: float) -> httpx.Timeout:
+    value = max(float(timeout), 0.1)
+    short_timeout = min(3.0, value)
+    return httpx.Timeout(
+        value,
+        connect=short_timeout,
+        write=short_timeout,
+        pool=short_timeout,
+        read=min(8.0, value),
+    )
 
 
 def _put_optional(body: dict[str, Any], key: str, value: object) -> None:

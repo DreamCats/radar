@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from radar.core.channel import BarkHttpError
 from radar.core.config import RadarConfig
 from radar.core.messages import CatalystCategory, CatalystStockMention, CatalystTermLibrary, save_catalyst_terms
 from radar.core.models import RawMessage
@@ -120,6 +121,50 @@ def test_catalyst_valuation_report_skips_publish_and_notify_when_empty(monkeypat
     assert result.local_html_path.exists()
     assert publish_calls == []
     assert notify_calls == []
+
+
+def test_catalyst_valuation_report_keeps_report_when_bark_fails(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    context = CatalystValuationStockContext(
+        stock_key="300476.SZ",
+        ts_code="300476.SZ",
+        stock_name="胜宏科技",
+        first_message_time=datetime.fromisoformat("2026-06-28T09:30:00"),
+        latest_message_time=datetime.fromisoformat("2026-06-28T09:30:00"),
+        evidence=[],
+    )
+
+    def fake_notify(*args, **kwargs):
+        raise BarkHttpError("调用 Bark 超时")
+
+    monkeypatch.setattr(
+        "radar.core.usecases.catalyst_valuation_report.runner.collect_catalyst_valuation_contexts",
+        lambda config, *, start_time, end_time, limit, max_stocks: ([context], 4, 3),
+    )
+    monkeypatch.setattr(
+        "radar.core.usecases.catalyst_valuation_report.runner.publish_report_html",
+        lambda *args, **kwargs: "https://example.com/report.html",
+    )
+    monkeypatch.setattr(
+        "radar.core.usecases.catalyst_valuation_report.runner.notify_report",
+        fake_notify,
+    )
+
+    result = run_catalyst_valuation_report(
+        config,
+        start_time=datetime.fromisoformat("2026-06-28T09:00:00"),
+        end_time=datetime.fromisoformat("2026-06-28T10:00:00"),
+        publish=True,
+        notify=True,
+    )
+
+    assert result.report.total_feed_items == 4
+    assert result.report.total_candidate_stocks == 3
+    assert result.report.total_stocks == 1
+    assert result.local_html_path.exists()
+    assert result.published_url == "https://example.com/report.html"
+    assert result.bark_sent is False
+    assert result.bark_error == "调用 Bark 超时"
 
 
 def test_valuation_rule_accepts_business_percent_but_rejects_market_percent():

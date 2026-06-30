@@ -64,13 +64,17 @@ def _run_catalyst_valuation_report_job(config: RadarConfig, request: CatalystVal
             notify=request.notify,
         )
         report = result.report
+        status = "skipped" if report.total_stocks == 0 else "succeeded"
+        if result.bark_error and status == "succeeded":
+            status = "partial_failed"
         finish_run(
             config.database_path,
             run_id,
-            status="skipped" if report.total_stocks == 0 else "succeeded",
+            status=status,
             raw_count=report.total_feed_items,
             stored_count=report.total_stocks,
             filtered_count=max(report.total_candidate_stocks - report.total_stocks, 0),
+            error_message=f"Bark 通知失败: {result.bark_error}" if result.bark_error else None,
             metadata=_metadata(request)
             | {
                 "stage": "完成",
@@ -80,6 +84,7 @@ def _run_catalyst_valuation_report_job(config: RadarConfig, request: CatalystVal
                 "local_html_path": str(result.local_html_path),
                 "published_url": result.published_url,
                 "bark_sent": result.bark_sent,
+                "bark_error": result.bark_error,
             },
         )
     except BaseException as exc:

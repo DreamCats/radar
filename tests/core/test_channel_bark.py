@@ -6,6 +6,7 @@ import pytest
 from radar.core.channel import (
     BarkApiError,
     BarkConfigError,
+    BarkHttpError,
     BarkMessage,
     push_bark,
     resolve_bark_channel,
@@ -61,7 +62,10 @@ def test_push_bark_posts_json(monkeypatch, tmp_path):
     )
 
     assert captured["url"] == "https://api.day.app/push"
-    assert captured["timeout"] == 8
+    assert captured["timeout"].connect == 3
+    assert captured["timeout"].read == 8
+    assert captured["timeout"].write == 3
+    assert captured["timeout"].pool == 3
     assert captured["headers"]["Content-Type"] == "application/json; charset=utf-8"
     assert captured["json"] == {
         "device_key": "bark-key",
@@ -126,6 +130,73 @@ def test_push_bark_posts_device_keys_for_multiple_devices(monkeypatch, tmp_path)
         "body": "多设备",
         "device_keys": ["bark-key-a", "bark-key-b", "bark-key-c"],
     }
+
+
+def test_push_bark_retries_timeout_errors(monkeypatch, tmp_path):
+    attempts = 0
+    sleeps: list[float] = []
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self):
+            return {"code": 200, "message": "success"}
+
+    class FakeClient:
+        def __init__(self, *, timeout):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def post(self, url, *, json, headers):
+            nonlocal attempts
+            attempts += 1
+            if attempts < 3:
+                raise httpx.ReadTimeout("slow")
+            return FakeResponse()
+
+    monkeypatch.setattr("radar.core.channel.bark.httpx.Client", FakeClient)
+    monkeypatch.setattr("radar.core.channel.bark.time.sleep", lambda seconds: sleeps.append(seconds))
+
+    result = push_bark(_config(tmp_path), BarkMessage(body="测试"))
+
+    assert result.code == 200
+    assert attempts == 3
+    assert sleeps == [1.0, 3.0]
+
+
+def test_push_bark_fails_after_retry_budget(monkeypatch, tmp_path):
+    attempts = 0
+    sleeps: list[float] = []
+
+    class FakeClient:
+        def __init__(self, *, timeout):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def post(self, url, *, json, headers):
+            nonlocal attempts
+            attempts += 1
+            raise httpx.ReadTimeout("slow")
+
+    monkeypatch.setattr("radar.core.channel.bark.httpx.Client", FakeClient)
+    monkeypatch.setattr("radar.core.channel.bark.time.sleep", lambda seconds: sleeps.append(seconds))
+
+    with pytest.raises(BarkHttpError, match="调用 Bark 超时"):
+        push_bark(_config(tmp_path), BarkMessage(body="测试"))
+
+    assert attempts == 3
+    assert sleeps == [1.0, 3.0]
 
 
 def test_push_bark_rejects_empty_body(tmp_path):

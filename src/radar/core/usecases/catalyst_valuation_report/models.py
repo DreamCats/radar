@@ -47,6 +47,7 @@ class CatalystValuationReportRunResult(BaseModel):
     local_html_path: Path
     published_url: str | None = None
     bark_sent: bool = False
+    bark_error: str | None = None
 
 
 CatalystStockContext = CatalystValuationStockContext

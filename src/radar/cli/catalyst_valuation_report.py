@@ -76,3 +76,5 @@ def _echo_result(result: CatalystValuationReportRunResult, *, output_format: str
         click.echo(f"url={result.published_url}")
     if result.bark_sent:
         click.echo("bark=sent")
+    elif result.bark_error:
+        click.echo(f"bark=failed error={result.bark_error}")
