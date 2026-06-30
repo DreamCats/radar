@@ -9,7 +9,14 @@
 }
 
 .premarket-control-bar {
-  grid-template-columns: auto minmax(140px, 0.9fr) minmax(110px, 0.6fr) minmax(110px, 0.6fr) auto auto;
+  grid-template-columns:
+    auto
+    minmax(132px, 0.8fr)
+    minmax(96px, 0.48fr)
+    minmax(132px, 0.8fr)
+    minmax(96px, 0.48fr)
+    auto
+    auto;
   align-items: end;
   min-width: 0;
   animation: catalyst-panel-in 180ms var(--motion-ease) both;
@@ -377,11 +384,8 @@
     flex: 1 1 0;
   }
 
-  .premarket-control-bar .field:first-of-type {
-    grid-column: 1 / -1;
-  }
-
   .premarket-control-bar .field {
+    grid-column: span 2;
     gap: 4px;
   }
 

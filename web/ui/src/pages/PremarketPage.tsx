@@ -10,8 +10,9 @@ import { panelMotionState } from "../lib/motion";
 import type { PremarketConceptRank, PremarketSignalResult, PremarketStockRank } from "../types";
 
 type WindowForm = {
-  date: string;
+  startDate: string;
   startTime: string;
+  endDate: string;
   endTime: string;
 };
 
@@ -22,11 +23,15 @@ const QUICK_WINDOWS = [
 ] as const;
 const COLLAPSED_STOCK_LIMIT = 20;
 
-const defaultWindow = (): WindowForm => ({
-  date: localDateString(new Date()),
-  startTime: "07:00",
-  endTime: "09:25",
-});
+const defaultWindow = (): WindowForm => {
+  const now = new Date();
+  return {
+    startDate: localDateString(now),
+    startTime: "07:00",
+    endDate: localDateString(now),
+    endTime: "09:25",
+  };
+};
 
 export function PremarketPage() {
   const shouldReduceMotion = useReducedMotion();
@@ -52,8 +57,8 @@ export function PremarketPage() {
     setError(null);
     try {
       const data = await fetchPremarketSignal({
-        start_time: `${nextWindow.date}T${nextWindow.startTime}:00`,
-        end_time: `${nextWindow.date}T${nextWindow.endTime}:00`,
+        start_time: `${nextWindow.startDate}T${nextWindow.startTime}:00`,
+        end_time: `${nextWindow.endDate}T${nextWindow.endTime}:00`,
         limit: 30,
       });
       setResult(data);
@@ -62,6 +67,9 @@ export function PremarketPage() {
         setDetailOpen(false);
       }
     } catch (err) {
+      setResult(null);
+      setSelectedCode(null);
+      setDetailOpen(false);
       setError(err instanceof Error ? err.message : "查询失败");
     } finally {
       setLoading(false);
@@ -75,11 +83,7 @@ export function PremarketPage() {
   function applyQuickWindow(preset: (typeof QUICK_WINDOWS)[number]) {
     const now = new Date();
     setWindowPreset(preset.key);
-    setWindowForm({
-      date: localDateString(now),
-      startTime: preset.startTime,
-      endTime: preset.endTime === "now" ? localTimeString(now) : preset.endTime,
-    });
+    setWindowForm(buildQuickWindow(preset, now));
   }
 
   function updateWindow(value: Partial<WindowForm>) {
@@ -103,11 +107,11 @@ export function PremarketPage() {
           ))}
         </div>
         <label className="field">
-          <span>日期</span>
+          <span>开始日期</span>
           <input
             type="date"
-            value={windowForm.date}
-            onChange={(event) => updateWindow({ date: event.target.value })}
+            value={windowForm.startDate}
+            onChange={(event) => updateWindow({ startDate: event.target.value })}
           />
         </label>
         <label className="field">
@@ -116,6 +120,14 @@ export function PremarketPage() {
             type="time"
             value={windowForm.startTime}
             onChange={(event) => updateWindow({ startTime: event.target.value })}
+          />
+        </label>
+        <label className="field">
+          <span>结束日期</span>
+          <input
+            type="date"
+            value={windowForm.endDate}
+            onChange={(event) => updateWindow({ endDate: event.target.value })}
           />
         </label>
         <label className="field">
@@ -382,6 +394,31 @@ function findPremarketConcept(result: PremarketSignalResult | null, code: string
 
 function signedNumber(value: number) {
   return value > 0 ? `+${value}` : value;
+}
+
+function buildQuickWindow(preset: (typeof QUICK_WINDOWS)[number], now: Date): WindowForm {
+  const start = dateWithTime(now, preset.startTime);
+  const end = preset.endTime === "now" ? now : dateWithTime(now, preset.endTime);
+  if (preset.key === "after_close" && end <= start) {
+    moveToPreviousWeekday(start);
+  }
+  return {
+    startDate: localDateString(start),
+    startTime: preset.startTime,
+    endDate: localDateString(end),
+    endTime: localTimeString(end),
+  };
+}
+
+function dateWithTime(base: Date, clock: string): Date {
+  const [hours, minutes] = clock.split(":").map((value) => Number.parseInt(value, 10));
+  return new Date(base.getFullYear(), base.getMonth(), base.getDate(), hours, minutes);
+}
+
+function moveToPreviousWeekday(date: Date) {
+  do {
+    date.setDate(date.getDate() - 1);
+  } while (date.getDay() === 0 || date.getDay() === 6);
 }
 
 function localDateString(date: Date) {
