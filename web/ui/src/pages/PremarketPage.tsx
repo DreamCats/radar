@@ -53,6 +53,11 @@ export function PremarketPage() {
   }, []);
 
   async function loadSignals(nextWindow: WindowForm) {
+    const startedAt = performance.now();
+    console.info("[premarket] load:start", {
+      start_time: `${nextWindow.startDate}T${nextWindow.startTime}:00`,
+      end_time: `${nextWindow.endDate}T${nextWindow.endTime}:00`,
+    });
     setLoading(true);
     setError(null);
     setResult(null);
@@ -65,17 +70,28 @@ export function PremarketPage() {
         limit: 30,
       });
       const normalizedData = normalizePremarketResult(data);
+      console.info("[premarket] load:data", {
+        elapsed_ms: Math.round(performance.now() - startedAt),
+        concepts: normalizedData.concepts.length,
+        top_concepts: normalizedData.top_concepts.length,
+        bottom_concepts: normalizedData.bottom_concepts.length,
+        velocity_concepts: normalizedData.velocity_concepts.length,
+        messages_scanned: normalizedData.summary.messages_scanned,
+        catalyst_items: normalizedData.summary.catalyst_items,
+      });
       setResult(normalizedData);
       if (!findPremarketConcept(normalizedData, selectedCode)) {
         setSelectedCode(null);
         setDetailOpen(false);
       }
     } catch (err) {
+      console.error("[premarket] load:error", err);
       setResult(null);
       setSelectedCode(null);
       setDetailOpen(false);
       setError(err instanceof Error ? err.message : "查询失败");
     } finally {
+      console.info("[premarket] load:finally", { elapsed_ms: Math.round(performance.now() - startedAt) });
       setLoading(false);
     }
   }

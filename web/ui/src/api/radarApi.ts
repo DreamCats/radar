@@ -108,7 +108,34 @@ export async function fetchCatalystFeed(query: CatalystFeedQuery): Promise<Catal
 }
 
 export async function fetchPremarketSignal(query: PremarketSignalQuery): Promise<PremarketSignalResult> {
-  return getJson(`/api/premarket/signals?${params(query)}`);
+  const startedAt = performance.now();
+  const path = `/api/premarket/signals?${params(query)}`;
+  console.info("[premarket] fetch:start", query);
+  const response = await apiFetch(path);
+  console.info("[premarket] fetch:response", {
+    status: response.status,
+    ok: response.ok,
+    elapsed_ms: Math.round(performance.now() - startedAt),
+    content_type: response.headers.get("content-type"),
+    content_length: response.headers.get("content-length"),
+    content_encoding: response.headers.get("content-encoding"),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  console.info("[premarket] json:start", { elapsed_ms: Math.round(performance.now() - startedAt) });
+  const data = (await response.json()) as PremarketSignalResult;
+  console.info("[premarket] json:done", {
+    elapsed_ms: Math.round(performance.now() - startedAt),
+    keys: Object.keys(data),
+    concepts: Array.isArray(data.concepts) ? data.concepts.length : null,
+    top_concepts: Array.isArray(data.top_concepts) ? data.top_concepts.length : null,
+    bottom_concepts: Array.isArray(data.bottom_concepts) ? data.bottom_concepts.length : null,
+    velocity_concepts: Array.isArray(data.velocity_concepts) ? data.velocity_concepts.length : null,
+    messages_scanned: data.summary?.messages_scanned ?? null,
+    catalyst_items: data.summary?.catalyst_items ?? null,
+  });
+  return data;
 }
 
 export async function fetchIndustryChains(): Promise<IndustryChainList> {
