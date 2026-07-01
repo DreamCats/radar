@@ -54,6 +54,12 @@ description: 股票行情研究
     assert "catalyst-valuation-upside" in names
     assert skill_by_name["investment-valuation"].source_path.is_relative_to(BUILTIN_CHAT_SKILLS_DIR)
     assert skill_by_name["catalyst-valuation-upside"].source_path.is_relative_to(BUILTIN_CHAT_SKILLS_DIR)
+    assert "不要写“待补”后结束" in skill_by_name["catalyst-valuation-upside"].instructions
+    assert "反推测算" in skill_by_name["catalyst-valuation-upside"].instructions
+    assert "radar_get_stock_financials" in skill_by_name["catalyst-valuation-upside"].instructions
+    assert "radar_get_stock_forecast_or_segments" in skill_by_name["catalyst-valuation-upside"].instructions
+    assert "radar_search_stock_disclosures" in skill_by_name["catalyst-valuation-upside"].instructions
+    assert "报告原文转述" in skill_by_name["catalyst-valuation-upside"].instructions
 
 
 def test_chat_agent_injects_skill_catalog_without_full_skill_body(tmp_path, monkeypatch):

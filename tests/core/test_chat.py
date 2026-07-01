@@ -350,6 +350,14 @@ def test_chat_system_prompt_layers_surface_rules():
     assert "不要为了显得忙而重复调用同一个工具和同一组参数" in common_prompt
     assert "catalyst-valuation-upside skill" in valuation_prompt
     assert "radar_get_catalyst_valuation_report 读取本地结构化报告，再补当前市值" in valuation_prompt
+    assert "radar_get_stock_financials" in valuation_prompt
+    assert "radar_get_stock_forecast_or_segments" in valuation_prompt
+    assert "radar_search_stock_disclosures" in valuation_prompt
+    assert "每个标的都要给出状态" in valuation_prompt
+    assert "不要输出“待补”半成品" in valuation_prompt
+    assert "反推当前市值隐含的利润、收入、订单或估值倍数要求" in valuation_prompt
+    assert "报告原文转述" in valuation_prompt
+    assert "线索假设" in valuation_prompt
     assert "过程说明只写一句短句" in common_prompt
     assert "最终正文用“结论：”" in common_prompt
     assert "已确认的事实" in common_prompt
@@ -595,6 +603,8 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     assert "radar_get_conversation_window" in tool_names
     assert "radar_get_realtime_quote" in tool_names
     assert "radar_get_stock_price_history" in tool_names
+    assert "radar_get_stock_financials" in tool_names
+    assert "radar_get_stock_forecast_or_segments" in tool_names
     assert "radar_get_realtime_daily_quote" not in tool_names
     assert "radar_get_stock_moneyflow" in tool_names
     assert "radar_get_stock_technical_factors" in tool_names
@@ -604,6 +614,7 @@ def test_chat_agent_registers_builtin_radar_tools(tmp_path):
     assert "radar_theme_candidates" not in tool_names
     assert "radar_stock_evidence_chart" not in tool_names
     assert "radar_scan_catalysts" in tool_names
+    assert "radar_search_stock_disclosures" in tool_names
     assert "radar_list_catalyst_terms" in tool_names
     assert "radar_get_catalyst_valuation_report" in tool_names
     assert "radar_stock_evidence_chain" not in tool_names
@@ -675,6 +686,82 @@ def test_builtin_tushare_tool_is_whitelisted(tmp_path, monkeypatch):
     assert captured["api_name"] == "daily"
     assert captured["params"] == {"ts_code": "600519.SH", "start_date": "20260601", "end_date": "20260603"}
     assert "close" in captured["fields"]
+
+
+def test_builtin_tushare_financial_tools_call_controlled_apis(tmp_path, monkeypatch):
+    config = RadarConfig(storage={"data_dir": tmp_path})
+    calls = []
+
+    monkeypatch.setattr("radar.core.chat.tushare_tools.resolve_stock", lambda config, value: "600233.SH")
+
+    def fake_tushare_call(config, api_name, params, fields):
+        calls.append({"api_name": api_name, "params": params, "fields": fields})
+        return [{"api_name": api_name, "end_date": "20260630"}]
+
+    monkeypatch.setattr("radar.core.chat.tushare_tools.tushare_call", fake_tushare_call)
+
+    agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
+    result = agent.tools.get("radar_get_stock_financials").execute(
+        {
+            "stock": "圆通速递",
+            "api_names": ["income", "fina_indicator"],
+            "start_date": "20260101",
+            "end_date": "20260701",
+            "period": "20260630",
+            "limit": 1,
+        }
+    )
+
+    assert result["ts_code"] == "600233.SH"
+    assert result["period"] == "20260630"
+    assert set(result["items"]) == {"income", "fina_indicator"}
+    assert [call["api_name"] for call in calls] == ["income", "fina_indicator"]
+    assert calls[0]["params"] == {
+        "ts_code": "600233.SH",
+        "start_date": "20260101",
+        "end_date": "20260701",
+        "period": "20260630",
+    }
+    assert "n_income_attr_p" in calls[0]["fields"]
+    assert "roe_dt" in calls[1]["fields"]
+
+
+def test_builtin_tushare_forecast_and_segments_tool_calls_expected_apis(tmp_path, monkeypatch):
+    config = RadarConfig(storage={"data_dir": tmp_path})
+    calls = []
+
+    monkeypatch.setattr("radar.core.chat.tushare_tools.resolve_stock", lambda config, value: "688376.SH")
+
+    def fake_tushare_call(config, api_name, params, fields):
+        calls.append({"api_name": api_name, "params": params, "fields": fields})
+        return [{"api_name": api_name}]
+
+    monkeypatch.setattr("radar.core.chat.tushare_tools.tushare_call", fake_tushare_call)
+
+    agent = ChatAgent(config, store=ChatSessionStore(tmp_path / "chat"))
+    result = agent.tools.get("radar_get_stock_forecast_or_segments").execute(
+        {
+            "stock": "美埃科技",
+            "include": ["forecast", "segments"],
+            "start_date": "20260101",
+            "end_date": "20260701",
+            "segment_type": "I",
+            "limit": 2,
+        }
+    )
+
+    assert result["ts_code"] == "688376.SH"
+    assert result["segment_type"] == "I"
+    assert set(result["items"]) == {"forecast", "segments"}
+    assert [call["api_name"] for call in calls] == ["forecast", "fina_mainbz"]
+    assert calls[1]["params"] == {
+        "ts_code": "688376.SH",
+        "start_date": "20260101",
+        "end_date": "20260701",
+        "type": "I",
+    }
+    assert "net_profit_min" in calls[0]["fields"]
+    assert "bz_sales" in calls[1]["fields"]
 
 
 def test_chat_agent_records_unknown_tool_as_error(tmp_path, monkeypatch):
