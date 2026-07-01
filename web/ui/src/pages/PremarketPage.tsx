@@ -7,6 +7,7 @@ import { PageLoadingState } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
 import { formatTime } from "../lib/datetime";
 import { panelMotionState } from "../lib/motion";
+import { useEscapeToClose } from "../lib/useEscapeToClose";
 import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import type { PremarketConceptRank, PremarketSignalQuery, PremarketSignalResult, PremarketStockRank } from "../types";
 
@@ -365,6 +366,7 @@ function ConceptDetailDrawer(props: {
 }) {
   const [showAllStocks, setShowAllStocks] = useState(false);
   const swipeClose = useSwipeToCloseSheet(props.onClose);
+  useEscapeToClose(props.onClose);
   const visibleStocks = props.concept.top_stocks.slice(0, showAllStocks ? undefined : COLLAPSED_STOCK_LIMIT);
   const hiddenStockCount = Math.max(0, props.concept.top_stocks.length - visibleStocks.length);
 

@@ -672,12 +672,12 @@
   word-break: keep-all;
 }
 
-.chat-reading-modal .drawer-markdown-percent-up {
+.chat-reading-modal .drawer-markdown-content .drawer-markdown-percent-up {
   color: var(--color-price-up);
   font-weight: 700;
 }
 
-.chat-reading-modal .drawer-markdown-percent-down {
+.chat-reading-modal .drawer-markdown-content .drawer-markdown-percent-down {
   color: var(--color-price-down);
   font-weight: 700;
 }
@@ -720,8 +720,8 @@
 }
 
 .chat-reading-modal .drawer-markdown-content table {
-  width: 100%;
-  min-width: 360px;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   background: color-mix(in srgb, var(--color-surface-2) 76%, transparent);
   font-size: 13px;
@@ -739,6 +739,13 @@
   color: var(--color-ink);
   background: color-mix(in srgb, var(--color-surface-3) 72%, transparent);
   font-weight: 700;
+}
+
+.chat-reading-modal .drawer-markdown-content th,
+.chat-reading-modal .drawer-markdown-content td:first-child {
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .chat-reading-modal .drawer-markdown-content tr:last-child td {

@@ -5,6 +5,7 @@ import { Clock3, Database, Info, RefreshCw, UserRoundCheck, X } from "lucide-rea
 import { fetchAnalystBacktestMessageEvidence, fetchAnalystBacktestSummary, fetchRuns } from "../api/radarApi";
 import { PageLoadingState, PageRefreshProgress } from "../components/PageLoadingState";
 import { formatTime } from "../lib/datetime";
+import { useEscapeToClose } from "../lib/useEscapeToClose";
 import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import type {
   AnalystBacktestEvidenceItem,
@@ -131,6 +132,7 @@ export function AnalystPage() {
   }
 
   const detailSheetSwipe = useSwipeToCloseSheet(closeDetailSheet);
+  useEscapeToClose(closeDetailSheet, { enabled: detailSheetOpen && !selectedEvidence });
 
   return (
     <section className="analyst-page">
@@ -379,6 +381,7 @@ function EvidenceList(props: {
 
 function EvidenceDrawer(props: { evidence: AnalystBacktestMessageEvidenceItem; window: number; onClose: () => void }) {
   const swipeClose = useSwipeToCloseSheet(props.onClose);
+  useEscapeToClose(props.onClose);
   return createPortal(
     <div className="analyst-drawer-backdrop" role="presentation" onClick={props.onClose}>
       <aside className="analyst-drawer" role="dialog" aria-modal="true" aria-label="原文证据详情" onClick={(event) => event.stopPropagation()}>

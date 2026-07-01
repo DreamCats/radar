@@ -11,6 +11,7 @@ import { CatalystDetailDrawer, CatalystTermChip, highlightCatalystText } from ".
 import { CatalystTermManager } from "../components/CatalystTermManager";
 import { formatTime } from "../lib/datetime";
 import { buildPresetRange, toLocalIso, type LocalRange, type RangePreset } from "../lib/timeRange";
+import { useEscapeToClose } from "../lib/useEscapeToClose";
 import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import type {
   CatalystCategory,
@@ -520,6 +521,7 @@ function MobileCategorySheet(props: {
   onSelect: (categoryId: string | null) => void;
 }) {
   const swipeClose = useSwipeToCloseSheet(props.onClose);
+  useEscapeToClose(props.onClose);
   return (
     <div
       className="catalyst-mobile-category-sheet-backdrop"
@@ -577,6 +579,7 @@ function MobileTermSheet(props: {
   onSelectTerm: (categoryId: string, term: string) => void;
 }) {
   const swipeClose = useSwipeToCloseSheet(props.onClose);
+  useEscapeToClose(props.onClose);
   return (
     <div
       className="catalyst-mobile-term-sheet-backdrop"

@@ -7,6 +7,7 @@ import { fetchChatRuns } from "../api/radarApi";
 import { ChatWorkspace } from "../components/ChatWorkspace";
 import { useChatController } from "../components/useChatController";
 import { formatTime } from "../lib/datetime";
+import { useEscapeToClose } from "../lib/useEscapeToClose";
 import type { ChatRunItem } from "../types";
 
 type TaskListItem = {
@@ -122,6 +123,7 @@ function TaskChatDrawer(props: { run: ChatRunItem; onClose: () => void }) {
     },
     true,
   );
+  useEscapeToClose(props.onClose, { ignoreWhenSelector: ".chat-reading-modal-shell" });
 
   const overlay = (
     <AnimatePresence>

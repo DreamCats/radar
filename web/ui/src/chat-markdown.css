@@ -461,12 +461,12 @@
   font-weight: 700;
 }
 
-.markdown-percent-up {
+.markdown-content .markdown-percent-up {
   color: var(--color-price-up);
   font-weight: 700;
 }
 
-.markdown-percent-down {
+.markdown-content .markdown-percent-down {
   color: var(--color-price-down);
   font-weight: 700;
 }
@@ -504,8 +504,8 @@
 }
 
 .markdown-content table {
-  width: 100%;
-  min-width: 360px;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   background: color-mix(in srgb, var(--color-surface-2) 78%, transparent);
   white-space: normal;
@@ -524,6 +524,13 @@
   font-size: 12px;
   font-weight: 700;
   background: color-mix(in srgb, var(--color-surface-3) 72%, transparent);
+}
+
+.markdown-content th,
+.markdown-content td:first-child {
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .markdown-content td:not(:first-child),
@@ -704,12 +711,12 @@
   font-weight: inherit;
 }
 
-.chat-workspace .drawer-markdown-percent-up {
+.chat-workspace .drawer-markdown-content .drawer-markdown-percent-up {
   color: var(--color-price-up);
   font-weight: 700;
 }
 
-.chat-workspace .drawer-markdown-percent-down {
+.chat-workspace .drawer-markdown-content .drawer-markdown-percent-down {
   color: var(--color-price-down);
   font-weight: 700;
 }
@@ -739,8 +746,8 @@
 }
 
 .chat-workspace .drawer-markdown-content table {
-  width: 100%;
-  min-width: 360px;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   background: color-mix(in srgb, var(--color-surface-2) 78%, transparent);
   white-space: normal;
@@ -759,6 +766,13 @@
   font-size: 12px;
   font-weight: 700;
   background: color-mix(in srgb, var(--color-surface-3) 72%, transparent);
+}
+
+.chat-workspace .drawer-markdown-content th,
+.chat-workspace .drawer-markdown-content td:first-child {
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .chat-workspace .drawer-markdown-content td:not(:first-child),

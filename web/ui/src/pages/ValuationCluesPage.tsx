@@ -13,6 +13,7 @@ import { useChatController } from "../components/useChatController";
 import { PageLoadingState } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
 import { formatTime } from "../lib/datetime";
+import { useEscapeToClose } from "../lib/useEscapeToClose";
 import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import type {
   CatalystValuationEvidence,
@@ -63,19 +64,6 @@ export function ValuationCluesPage() {
   useEffect(() => {
     void loadReports();
   }, [granularity]);
-
-  useEffect(() => {
-    if (!selectedId) {
-      return;
-    }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !event.isComposing) {
-        setSelectedId(null);
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedId]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -271,6 +259,7 @@ function ReportDrawer(props: {
 }) {
   const item = props.detail ?? props.fallbackItem;
   const swipeClose = useSwipeToCloseSheet(props.onClose);
+  useEscapeToClose(props.onClose, { ignoreWhenSelector: ".chat-launcher-shell" });
   return (
     <div className="valuation-drawer-backdrop" role="presentation" onMouseDown={(event) => {
       if (event.target === event.currentTarget) {
@@ -342,6 +331,7 @@ function ReportUpsideChatDrawer(props: { draft: UpsideChatDraft; onClose: () => 
     },
     true,
   );
+  useEscapeToClose(props.onClose, { ignoreWhenSelector: ".chat-reading-modal-shell" });
 
   const overlay = (
     <AnimatePresence>

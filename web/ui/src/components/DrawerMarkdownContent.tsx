@@ -184,7 +184,13 @@ function renderInlineMarkdown(text: string): ReactNode[] {
     }
     const token = match[0];
     if (token.startsWith("**")) {
-      nodes.push(<strong key={match.index}>{token.slice(2, -2)}</strong>);
+      const strongText = token.slice(2, -2);
+      const className = signedPercentClassName(strongText.trim(), "drawer-markdown-percent-up", "drawer-markdown-percent-down");
+      nodes.push(
+        <strong className={className} key={match.index}>
+          {strongText}
+        </strong>,
+      );
     } else if (token.startsWith("`")) {
       nodes.push(<code key={match.index}>{token.slice(1, -1)}</code>);
     } else if (isSignedPercent(token.trim())) {
@@ -233,4 +239,11 @@ function isSignedPercent(token: string): boolean {
 
 function isNumberToken(token: string): boolean {
   return /^[+\-−]?\d+(?:\.\d+)?%?$/.test(token);
+}
+
+function signedPercentClassName(token: string, upClassName: string, downClassName: string): string | undefined {
+  if (!isSignedPercent(token)) {
+    return undefined;
+  }
+  return token.startsWith("+") ? upClassName : downClassName;
 }

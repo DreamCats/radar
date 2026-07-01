@@ -2,6 +2,7 @@ import { GripVertical, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
+import { useEscapeToClose } from "../lib/useEscapeToClose";
 import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import type { CatalystCategory, CatalystTermLibrary } from "../types";
 
@@ -21,6 +22,7 @@ export function CatalystTermManager(props: {
   const [draggingTerm, setDraggingTerm] = useState<DraggingTerm | null>(null);
   const draggingTermRef = useRef<DraggingTerm | null>(null);
   const swipeClose = useSwipeToCloseSheet(props.onClose);
+  useEscapeToClose(props.onClose);
   const totalTerms = useMemo(
     () => draft.categories.reduce((total, category) => total + category.terms.length, 0),
     [draft.categories],
