@@ -163,8 +163,8 @@ export function ChatMessageList(props: ChatMessageListProps) {
       >
         {props.messages.length === 0 && props.emptyState === "overview" ? (
           <div className="chat-empty-state">
-            <strong>本地消息已就绪</strong>
-            <span>等待一个股票、产业链或消息线索。</span>
+            <strong>还没有开始对话</strong>
+            <span>可以直接提问，也可以点下方快捷动作把当前上下文带进去。</span>
           </div>
         ) : null}
         <AnimatePresence initial={false}>

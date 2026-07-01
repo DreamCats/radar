@@ -94,6 +94,11 @@ select {
 }
 
 @media (max-width: 760px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
   [data-swipe-close-sheet="true"] {
     touch-action: pan-y;
   }

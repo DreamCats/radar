@@ -286,13 +286,13 @@
   }
 
   .chat-composer textarea {
-    min-height: 76px;
-    padding: 11px 12px 50px;
+    min-height: 68px;
+    padding: 10px 12px 44px;
   }
 
   .chat-composer-actions {
-    right: 12px;
-    bottom: 12px;
+    right: 10px;
+    bottom: 10px;
   }
 
   .chat-model-trigger {

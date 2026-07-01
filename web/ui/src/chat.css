@@ -374,11 +374,11 @@
   width: min(100%, 420px);
   place-self: center;
   gap: 6px;
-  border: 1px solid var(--color-hairline);
+  border: 1px solid color-mix(in srgb, var(--color-hairline) 82%, transparent);
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--color-surface-2) 46%, transparent);
+  background: color-mix(in srgb, var(--color-surface-2) 62%, transparent);
   color: var(--color-ink-subtle);
-  padding: 18px;
+  padding: 18px 20px;
   text-align: center;
 }
 
@@ -1022,15 +1022,15 @@
   }
 
   .chat-workspace .chat-composer textarea {
-    height: 74px;
-    min-height: 74px;
+    height: 68px;
+    min-height: 68px;
     font-size: 16px;
-    padding: 9px 12px 46px;
+    padding: 9px 12px 42px;
   }
 
   .chat-workspace .chat-composer .chat-composer-actions {
-    right: 12px;
-    bottom: 12px;
+    right: 10px;
+    bottom: 10px;
     gap: 6px;
   }
 

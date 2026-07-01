@@ -84,7 +84,7 @@ export function WechatThreadHeader(props: {
 }) {
   return (
     <div className="wechat-thread-head">
-      <button className="mini-button wechat-thread-back" type="button" onClick={props.onBack} aria-label="返回会话列表">
+      <button className="mini-button wechat-thread-back" type="button" onClick={props.onBack} aria-label="返回会话列表" title="返回会话列表">
         <ChevronLeft size={15} />
       </button>
       <Avatar name={props.conversation.title} />

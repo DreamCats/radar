@@ -105,6 +105,7 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
             endRef={controller.messagesEndRef}
             listRef={controller.messageListRef}
             markdownSurface="drawer"
+            emptyState="overview"
             showJumpToBottom={!controller.autoFollowBottom && controller.hasNewMessagesBelow}
             onJumpToBottom={controller.jumpToLatestMessage}
             onScrollStateChange={controller.updateMessageScrollState}

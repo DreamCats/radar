@@ -222,7 +222,7 @@ export function WechatPage() {
   }
 
   return (
-    <section className="wechat-page">
+    <section className={mobileThreadOpen ? "wechat-page mobile-thread-open" : "wechat-page"}>
       <WechatFilters
         groupNames={groupNames}
         groupNamesLoading={groupNamesLoading}

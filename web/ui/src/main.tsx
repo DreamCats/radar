@@ -22,6 +22,7 @@ import "./premarket-boards.css";
 import "./schedule.css";
 import "./tasks.css";
 import "./valuation-clues.css";
+import "./catalyst.css";
 import "./wechat.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
