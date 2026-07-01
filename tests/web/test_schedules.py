@@ -54,7 +54,7 @@ def test_schedules_endpoint_seeds_defaults(tmp_path):
     }
     assert catalyst_schedule["request"]["publish"] is True
     assert catalyst_schedule["request"]["notify"] is False
-    assert "max_stocks" not in catalyst_schedule["request"]
+    assert catalyst_schedule["request"]["max_stocks"] == 20
     assert "llm_concurrency" not in catalyst_schedule["request"]
 
 
@@ -94,7 +94,7 @@ def test_schedules_endpoint_syncs_existing_catalyst_default(tmp_path):
         "offset_minutes": 0,
     }
     assert catalyst_schedule["request"]["notify"] is False
-    assert "max_stocks" not in catalyst_schedule["request"]
+    assert catalyst_schedule["request"]["max_stocks"] == 12
     assert "llm_concurrency" not in catalyst_schedule["request"]
 
 
@@ -155,6 +155,7 @@ def test_message_migration_renames_catalyst_valuation_report_identifiers(tmp_pat
     assert schedule["schedule_id"] == "catalyst-valuation-report-hourly"
     assert schedule["job_key"] == "catalyst_valuation_report"
     assert "llm_concurrency" not in schedule["request_json"]
+    assert '"max_stocks":12' in schedule["request_json"]
     assert tick["schedule_id"] == "catalyst-valuation-report-hourly"
     assert "llm_concurrency" not in tick["request_json"]
     assert run["kind"] == "catalyst_valuation_report"
@@ -365,10 +366,10 @@ def test_schedule_run_now_submits_catalyst_valuation_report(monkeypatch, tmp_pat
     assert item["run_ids"] == ["run-catalyst"]
     assert item["request"]["publish"] is True
     assert item["request"]["notify"] is False
-    assert "max_stocks" not in item["request"]
+    assert item["request"]["max_stocks"] == 20
     assert captured["publish"] is True
     assert captured["notify"] is False
-    assert captured["max_stocks"] is None
+    assert captured["max_stocks"] == 20
     assert captured["end_time"] > captured["start_time"]
 
 

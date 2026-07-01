@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+DEFAULT_CATALYST_VALUATION_REPORT_MAX_STOCKS = 20
+
 
 @dataclass(frozen=True)
 class DefaultSchedule:
@@ -66,7 +68,12 @@ DEFAULT_SCHEDULES: tuple[DefaultSchedule, ...] = (
         cadence_kind="interval",
         cadence={"minutes": 60, "offset_minutes": 0, "active_start": "08:00", "active_end": "23:00"},
         window_preset="last_1h",
-        request={"limit": 200, "publish": True, "notify": False},
+        request={
+            "limit": 200,
+            "max_stocks": DEFAULT_CATALYST_VALUATION_REPORT_MAX_STOCKS,
+            "publish": True,
+            "notify": False,
+        },
         max_lag_minutes=60,
         sort_order=30,
     ),

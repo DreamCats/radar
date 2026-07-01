@@ -13,21 +13,29 @@ _MONEY_PATTERN = re.compile(
     r"(?<![A-Za-z0-9])"
     r"(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千万]+)\s*"
     r"(?:万亿|亿元|亿|千万|万元|百万|万美元|亿美元|人民币|美元|美金|元|[eE](?![A-Za-z0-9]|[+-]\d))"
-    r"(?:\s*/\s*(?:吨|台|套|片|颗|件|公斤|kg|g|w|kw|mw|gw|kwh|mwh|gwh|平|平方米|亩))?",
+    r"(?:\s*/\s*(?:吨|台|套|片|颗|件|公斤|kg|gwh|mwh|kwh|gw|mw|kw|w|平方米|平|亩))?",
     re.IGNORECASE,
 )
 _QUANTITY_PATTERN = re.compile(
     r"(?<![A-Za-z0-9])"
     r"(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千万]+)\s*"
-    r"(?:万吨|吨|万台|台|万套|套|万片|片|万颗|颗|万件|件|公斤|kg|g|"
-    r"gw|mw|kw|w|gwh|mwh|kwh|亩|平方米|平|条线|条)",
+    r"(?:万吨|万台|万套|万片|万颗|万件|吨|台|套|片|颗|件|公斤|kg|"
+    r"gwh|mwh|kwh|gw|mw|kw|w|平方米|平|亩|条线)",
     re.IGNORECASE,
 )
 _PERCENT_PATTERN = re.compile(r"(?<![A-Za-z0-9])\d+(?:\.\d+)?\s*%")
 _MULTIPLE_PATTERN = re.compile(r"(?<![A-Za-z0-9])\d+(?:\.\d+)?\s*(?:倍|x|X)")
-_CLAUSE_BOUNDARY_PATTERN = re.compile(r"[。！？!?；;\n\r]")
+_MULTI_STOCK_WINDOW_BOUNDARY_PATTERN = re.compile(r"[。！？!?；;\n\r#【、]")
+_MULTI_STOCK_ROLE_TAIL_PATTERN = re.compile(
+    r"^(?:等|及|和|与)?(?:头部|核心|下游|终端|海外|国内|主要)?(?:客户|供应商|股东)"
+    r"|^(?:已)?(?:取得对公司控制权|对公司|合资设立|共同设立|合作设立)"
+)
+_LEADING_SOURCE_BRACKET_PATTERN = re.compile(r"[【\[]([^】\]]{1,32})[】\]]")
+_SOURCE_ROLE_TAIL_PATTERN = re.compile(r"^([\u4e00-\u9fffA-Za-z0-9]{2,12})(?:董事长|董秘|高管|专家|交流|电话会|调研|纪要|路演)")
+_SOURCE_ROLE_GENERIC_SUBJECTS = {"公司", "本次", "今日", "会议", "电话", "专家", "高管", "董秘", "董事长"}
 
 _VALUE_TERMS = (
+    "首单",
     "订单",
     "合同",
     "中标",
@@ -104,6 +112,42 @@ _WEAK_RATIO_TERMS = (
     "环节",
 )
 
+_PRICE_ONLY_TERMS = {
+    "ASP",
+    "价格",
+    "单价",
+    "涨价",
+    "提价",
+}
+
+_OPERATING_ANCHOR_TERMS = {
+    "首单",
+    "订单",
+    "合同",
+    "中标",
+    "签约",
+    "采购",
+    "招标",
+    "收入",
+    "营收",
+    "利润",
+    "净利",
+    "盈利",
+    "业绩",
+    "产能",
+    "产量",
+    "销量",
+    "出货",
+    "交付",
+    "装机",
+    "排产",
+    "满产",
+    "产线",
+}
+
+_PLAIN_YUAN_PATTERN = re.compile(r"^(?:\d+(?:\.\d+)?|[一二三四五六七八九十百千万]+)\s*元$")
+_TINY_COUNT_PATTERN = re.compile(r"^(?:1(?:\.0+)?|一)\s*(?:台|套|片|颗|件)$")
+
 
 @dataclass(frozen=True)
 class ValuationEvidenceMatch:
@@ -147,20 +191,69 @@ def filter_contexts_by_valuation_evidence(
                         "valuation_numbers": match.numbers,
                     }
                 )
-            )
+        )
         if not evidence:
             continue
-        kept.append(
-            context.model_copy(
-                update={
-                    "evidence": evidence,
-                    "first_message_time": min(item.message_time for item in evidence),
-                    "latest_message_time": max(item.latest_message_time for item in evidence),
-                }
-            )
+        evidence.sort(key=_evidence_sort_key, reverse=True)
+        next_context = context.model_copy(
+            update={
+                "evidence": evidence,
+                "first_message_time": min(item.message_time for item in evidence),
+                "latest_message_time": max(item.latest_message_time for item in evidence),
+            }
         )
-    kept.sort(key=lambda item: (item.latest_message_time, len(item.evidence), item.stock_key), reverse=True)
+        if not _is_reportable_stock_context(next_context):
+            continue
+        kept.append(next_context)
+    kept.sort(key=_stock_context_sort_key, reverse=True)
     return kept
+
+
+def _is_reportable_stock_context(context: CatalystValuationStockContext) -> bool:
+    return _has_direct_anchor(context) or _has_operating_anchor(context)
+
+
+def _stock_context_sort_key(context: CatalystValuationStockContext) -> tuple[object, ...]:
+    numbers = _unique(number for item in context.evidence for number in item.valuation_numbers)
+    return (
+        _has_direct_operating_anchor(context),
+        _has_operating_anchor(context),
+        _has_direct_anchor(context),
+        len(context.evidence) >= 2,
+        len(context.evidence),
+        len(numbers),
+        context.latest_message_time,
+        context.stock_key,
+    )
+
+
+def _evidence_sort_key(item: CatalystValuationEvidence) -> tuple[object, ...]:
+    return (
+        _has_operating_terms(item.valuation_terms),
+        item.stock_mentions_count <= 1,
+        len(item.valuation_numbers),
+        item.latest_message_time,
+        item.message_id,
+    )
+
+
+def _has_direct_operating_anchor(context: CatalystValuationStockContext) -> bool:
+    return any(
+        item.stock_mentions_count <= 1 and _has_operating_terms(item.valuation_terms)
+        for item in context.evidence
+    )
+
+
+def _has_direct_anchor(context: CatalystValuationStockContext) -> bool:
+    return any(item.stock_mentions_count <= 1 for item in context.evidence)
+
+
+def _has_operating_anchor(context: CatalystValuationStockContext) -> bool:
+    return any(_has_operating_terms(item.valuation_terms) for item in context.evidence)
+
+
+def _has_operating_terms(terms: list[str]) -> bool:
+    return any(term in _OPERATING_ANCHOR_TERMS for term in terms)
 
 
 def match_valuation_evidence(
@@ -170,6 +263,8 @@ def match_valuation_evidence(
     ts_code: str | None,
     stock_mentions_count: int,
 ) -> ValuationEvidenceMatch | None:
+    if _is_source_role_mention(content, stock_name):
+        return None
     if stock_mentions_count <= 1:
         return _match_text(content)
 
@@ -198,6 +293,8 @@ def _match_text(text: str) -> ValuationEvidenceMatch | None:
     numbers = _unique([*money, *quantity, *percent, *multiple])
     if not numbers:
         return None
+    if _is_weak_numeric_anchor(terms, money=money, quantity=quantity, percent=percent, multiple=multiple):
+        return None
     return ValuationEvidenceMatch(terms=terms, numbers=numbers)
 
 
@@ -208,22 +305,44 @@ def _stock_windows(content: str, *, stock_name: str, ts_code: str | None) -> lis
     windows: list[str] = []
     for token in _unique(token for token in tokens if token):
         for match in re.finditer(re.escape(token), content, re.IGNORECASE):
-            start, end = _clause_bounds(content, match.start(), match.end())
-            windows.append(content[start:end])
+            start, end = _multi_stock_window_bounds(content, match.start(), match.end())
+            window = content[start:end]
+            if _is_multi_stock_role_window(window, token):
+                continue
+            windows.append(window)
     return windows
 
 
-def _clause_bounds(content: str, start_index: int, end_index: int) -> tuple[int, int]:
-    start = 0
-    for match in _CLAUSE_BOUNDARY_PATTERN.finditer(content, 0, start_index):
-        start = match.end()
-
-    next_boundary = _CLAUSE_BOUNDARY_PATTERN.search(content, end_index)
+def _multi_stock_window_bounds(content: str, start_index: int, end_index: int) -> tuple[int, int]:
+    next_boundary = _MULTI_STOCK_WINDOW_BOUNDARY_PATTERN.search(content, end_index)
     end = next_boundary.start() if next_boundary else len(content)
-    if end - start > 280:
-        start = max(start, start_index - 80)
+    if end - start_index > 280:
         end = min(end, end_index + 180)
-    return start, end
+    return start_index, end
+
+
+def _is_multi_stock_role_window(window: str, token: str) -> bool:
+    text = window.lstrip()
+    if not text.lower().startswith(token.lower()):
+        return False
+    tail = text[len(token) :].lstrip("】])）:： ")
+    return bool(_MULTI_STOCK_ROLE_TAIL_PATTERN.match(tail[:32]))
+
+
+def _is_source_role_mention(content: str, stock_name: str) -> bool:
+    name = stock_name.strip()
+    if not name:
+        return False
+    match = _LEADING_SOURCE_BRACKET_PATTERN.search(content[:48])
+    if match is None or name not in match.group(1):
+        return False
+    if name in content[match.end() :]:
+        return False
+    tail = content[match.end() : match.end() + 48].lstrip(" ：:｜|-—")
+    subject_match = _SOURCE_ROLE_TAIL_PATTERN.match(tail)
+    if subject_match is None:
+        return False
+    return subject_match.group(1) not in _SOURCE_ROLE_GENERIC_SUBJECTS
 
 
 def _matched_terms(text: str) -> list[str]:
@@ -235,12 +354,21 @@ def _usable_money_numbers(text: str) -> list[str]:
     for match in _MONEY_PATTERN.finditer(text):
         if _near_market_size_term(text, match.start(), match.end()):
             continue
-        values.append(match.group(0))
+        value = match.group(0)
+        if _is_plain_yuan_price(value):
+            continue
+        values.append(value)
     return _unique(values)
 
 
 def _usable_quantity_numbers(text: str) -> list[str]:
-    return _unique(match.group(0) for match in _QUANTITY_PATTERN.finditer(text))
+    values: list[str] = []
+    for match in _QUANTITY_PATTERN.finditer(text):
+        value = match.group(0)
+        if _is_tiny_count(value):
+            continue
+        values.append(value)
+    return _unique(values)
 
 
 def _usable_percent_numbers(text: str) -> list[str]:
@@ -254,6 +382,34 @@ def _usable_percent_numbers(text: str) -> list[str]:
 
 def _usable_multiple_numbers(text: str) -> list[str]:
     return _unique(match.group(0) for match in _MULTIPLE_PATTERN.finditer(text))
+
+
+def _is_weak_numeric_anchor(
+    terms: list[str],
+    *,
+    money: list[str],
+    quantity: list[str],
+    percent: list[str],
+    multiple: list[str],
+) -> bool:
+    term_set = set(terms)
+    if term_set and term_set <= _PRICE_ONLY_TERMS:
+        return True
+    if percent and not money and not quantity and not multiple:
+        return True
+    if multiple and not money and not quantity and not percent:
+        return True
+    if money and not quantity and not percent and not multiple:
+        return all(_is_plain_yuan_price(value) for value in money)
+    return False
+
+
+def _is_plain_yuan_price(value: str) -> bool:
+    return bool(_PLAIN_YUAN_PATTERN.fullmatch(value.strip()))
+
+
+def _is_tiny_count(value: str) -> bool:
+    return bool(_TINY_COUNT_PATTERN.fullmatch(value.strip()))
 
 
 def _near_market_size_term(text: str, start: int, end: int) -> bool:

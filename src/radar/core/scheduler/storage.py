@@ -282,13 +282,6 @@ def _sync_catalyst_valuation_report_default(
         request.pop("llm_concurrency", None)
         updates.append("request_json = ?")
         params.append(_json(request))
-    if request.get("max_stocks") == 12:
-        request.pop("max_stocks", None)
-        if updates and updates[-1] == "request_json = ?":
-            params[-1] = _json(request)
-        else:
-            updates.append("request_json = ?")
-            params.append(_json(request))
 
     if row["created_at"] == row["updated_at"] and bool(row["enabled"]) != default_schedule.enabled:
         updates.append("enabled = ?")

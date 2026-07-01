@@ -14,7 +14,10 @@ from radar.core.usecases.catalyst_valuation_report.models import (
     CatalystValuationStockContext,
 )
 from radar.core.usecases.catalyst_valuation_report.render import render_report_html
-from radar.core.usecases.catalyst_valuation_report.rules import match_valuation_evidence
+from radar.core.usecases.catalyst_valuation_report.rules import (
+    filter_contexts_by_valuation_evidence,
+    match_valuation_evidence,
+)
 
 
 def test_catalyst_valuation_report_filters_non_numeric_noise(monkeypatch, tmp_path):
@@ -128,6 +131,48 @@ def test_catalyst_valuation_report_default_does_not_cap_stocks(monkeypatch, tmp_
     assert capped.report.total_stocks == 2
 
 
+def test_catalyst_valuation_report_filters_comparison_only_multi_stock_contexts():
+    result = filter_contexts_by_valuation_evidence(
+        [
+            _valuation_context(
+                "胜科纳米",
+                "胜科纳米近300亿市值，【苏试试验】传统主业+航天业务+宜特目前仅100亿市值。",
+                stock_mentions_count=2,
+            ),
+            _valuation_context(
+                "福赛科技",
+                "#福赛科技：首单120MW落地，正式接单交付，年底目标单周2000台。#晋拓股份：订单超1e。",
+                stock_mentions_count=2,
+            ),
+        ]
+    )
+
+    assert [item.stock_name for item in result] == ["福赛科技"]
+    assert result[0].evidence[0].valuation_numbers == ["120MW", "2000台"]
+
+
+def test_catalyst_valuation_report_sorts_before_report_json():
+    result = filter_contexts_by_valuation_evidence(
+        [
+            _valuation_context("市值票", "市值票 目标150亿市值。", message_time="2026-06-28T09:50:00"),
+            _valuation_context("订单票", "订单票 新签订单10亿。", message_time="2026-06-28T09:40:00"),
+            _valuation_context(
+                "重复票",
+                ["重复票 新签订单5亿。", "重复票 新增合同6亿。"],
+                message_time="2026-06-28T09:20:00",
+            ),
+            _valuation_context(
+                "混合票",
+                ["混合票 目标150亿市值。", "混合票 新签订单8亿。"],
+                message_time="2026-06-28T09:10:00",
+            ),
+        ]
+    )
+
+    assert [item.stock_name for item in result] == ["重复票", "混合票", "订单票", "市值票"]
+    assert result[1].evidence[0].valuation_numbers == ["8亿"]
+
+
 def test_catalyst_valuation_report_skips_publish_and_notify_when_empty(monkeypatch, tmp_path):
     config = _config(tmp_path)
     publish_calls: list[object] = []
@@ -206,13 +251,24 @@ def test_catalyst_valuation_report_keeps_report_when_bark_fails(monkeypatch, tmp
     assert result.bark_error == "调用 Bark 超时"
 
 
-def test_valuation_rule_accepts_business_percent_but_rejects_market_percent():
-    assert match_valuation_evidence(
-        "行动教育 合同负债增长 45%，毛利率 78%。",
+def test_valuation_rule_rejects_percent_only_but_keeps_percent_with_money_anchor():
+    assert (
+        match_valuation_evidence(
+            "行动教育 合同负债增长 45%，毛利率 78%。",
+            stock_name="行动教育",
+            ts_code="605098.SH",
+            stock_mentions_count=1,
+        )
+        is None
+    )
+    anchored = match_valuation_evidence(
+        "行动教育 新签合同 10亿元，毛利率 78%。",
         stock_name="行动教育",
         ts_code="605098.SH",
         stock_mentions_count=1,
     )
+    assert anchored is not None
+    assert anchored.numbers == ["10亿元", "78%"]
     assert (
         match_valuation_evidence(
             "行动教育 大涨 10%，成交额放量。",
@@ -222,6 +278,185 @@ def test_valuation_rule_accepts_business_percent_but_rejects_market_percent():
         )
         is None
     )
+
+
+def test_valuation_rule_rejects_price_only_and_multiple_only_noise():
+    assert (
+        match_valuation_evidence(
+            "永安期货 最新股价16.48元，价格表现强势。",
+            stock_name="永安期货",
+            ts_code="600927.SH",
+            stock_mentions_count=1,
+        )
+        is None
+    )
+    assert (
+        match_valuation_evidence(
+            "中国人寿 估值0.4倍，PB分位较低。",
+            stock_name="中国人寿",
+            ts_code="601628.SH",
+            stock_mentions_count=1,
+        )
+        is None
+    )
+    assert (
+        match_valuation_evidence(
+            "卓创资讯 产品价格4.9万元/吨，价格继续上涨。",
+            stock_name="卓创资讯",
+            ts_code="301299.SZ",
+            stock_mentions_count=1,
+        )
+        is None
+    )
+    assert (
+        match_valuation_evidence(
+            "华海诚科 产品价格37.91元，功率4kw。",
+            stock_name="华海诚科",
+            ts_code="688535.SH",
+            stock_mentions_count=1,
+        )
+        is None
+    )
+    assert (
+        match_valuation_evidence(
+            "银轮股份 收入主要增长动能来自三条增长曲线。",
+            stock_name="银轮股份",
+            ts_code="002126.SZ",
+            stock_mentions_count=1,
+        )
+        is None
+    )
+    anchored = match_valuation_evidence(
+        "正帆科技 净利2e，给40倍估值。",
+        stock_name="正帆科技",
+        ts_code="688596.SH",
+        stock_mentions_count=1,
+    )
+    assert anchored is not None
+    assert anchored.numbers == ["2e", "40倍"]
+
+
+def test_valuation_rule_filters_low_quality_numbers_from_mixed_evidence():
+    financial = match_valuation_evidence(
+        "瑞联新材 2026Q1营收3.79亿元，EPS 2.9元，毛利率53.35%，给20倍PE。",
+        stock_name="瑞联新材",
+        ts_code="688550.SH",
+        stock_mentions_count=1,
+    )
+    assert financial is not None
+    assert financial.numbers == ["3.79亿元", "53.35%", "20倍"]
+
+    spec = match_valuation_evidence(
+        "唯特偶 800G/1.6T出货大幅增加，3.2G主要用T8，订单金额1000万元。",
+        stock_name="唯特偶",
+        ts_code="301319.SZ",
+        stock_mentions_count=1,
+    )
+    assert spec is not None
+    assert spec.numbers == ["1000万元"]
+
+    capacity = match_valuation_evidence(
+        "长源东谷 首单120MW落地，未来储备约1GW。",
+        stock_name="长源东谷",
+        ts_code="603950.SH",
+        stock_mentions_count=1,
+    )
+    assert capacity is not None
+    assert capacity.numbers == ["120MW", "1GW"]
+
+    quantity = match_valuation_evidence(
+        "广立微 产能新增1台设备，客户后续规划235台。",
+        stock_name="广立微",
+        ts_code="301095.SZ",
+        stock_mentions_count=1,
+    )
+    assert quantity is not None
+    assert quantity.numbers == ["235台"]
+
+
+def test_valuation_rule_filters_source_role_stock_mentions():
+    assert (
+        match_valuation_evidence(
+            "🌈今日｜【中金公司】来福谐波董事长交流：2025年营收2.6e，谐波出货29w台。",
+            stock_name="中金公司",
+            ts_code="601995.SH",
+            stock_mentions_count=1,
+        )
+        is None
+    )
+
+    target = match_valuation_evidence(
+        "【华泰医药代雯团队】科伦药业点评：主业利润拐点已至，估测全年主业实现20亿利润。",
+        stock_name="科伦药业",
+        ts_code="002422.SZ",
+        stock_mentions_count=1,
+    )
+    assert target is not None
+    assert target.numbers == ["20亿"]
+
+    own_title = match_valuation_evidence(
+        "【迈为股份】董事长交流：半导体新签订单10亿，客户验证顺利。",
+        stock_name="迈为股份",
+        ts_code="300751.SZ",
+        stock_mentions_count=1,
+    )
+    assert own_title is not None
+    assert own_title.numbers == ["10亿"]
+
+
+def test_valuation_rule_requires_local_window_for_multi_stock_fanout():
+    assert (
+        match_valuation_evidence(
+            "应流股份未来燃机交付量有望提升到10亿元以上，此外建议关注上海电气、东方电气。",
+            stock_name="上海电气",
+            ts_code="601727.SH",
+            stock_mentions_count=3,
+        )
+        is None
+    )
+    assert (
+        match_valuation_evidence(
+            "光刻胶产能500吨/年，已供货中芯国际、长电科技。",
+            stock_name="中芯国际",
+            ts_code="688981.SH",
+            stock_mentions_count=2,
+        )
+        is None
+    )
+    assert (
+        match_valuation_evidence(
+            "子公司已成功进入京东方和沃格光电等头部客户，27年对应收入超10亿。",
+            stock_name="沃格光电",
+            ts_code="603773.SH",
+            stock_mentions_count=2,
+        )
+        is None
+    )
+    assert (
+        match_valuation_evidence(
+            "紫光国微与宁德时代合资设立车规级MCU公司，汽车安全芯片累计出货突破千万颗。",
+            stock_name="宁德时代",
+            ts_code="300750.SZ",
+            stock_mentions_count=2,
+        )
+        is None
+    )
+    match = match_valuation_evidence(
+        "胜科纳米近300亿市值，【苏试试验】传统主业+航天业务+宜特目前仅100亿市值。",
+        stock_name="苏试试验",
+        ts_code="300416.SZ",
+        stock_mentions_count=2,
+    )
+    assert match is not None
+    assert match.numbers == ["100亿"]
+    local_item = match_valuation_evidence(
+        "#福赛科技：塑料件正式接单交付，年底目标单周2000台。#晋拓股份：订单超1e。",
+        stock_name="福赛科技",
+        ts_code="301529.SZ",
+        stock_mentions_count=2,
+    )
+    assert local_item is not None
+    assert local_item.numbers == ["2000台"]
 
 
 def test_valuation_rule_accepts_e_as_yi_money_unit():
@@ -326,6 +561,36 @@ def _insert_messages(config: RadarConfig, messages: list[RawMessage]) -> None:
         upsert_messages(conn, messages)
     finally:
         conn.close()
+
+
+def _valuation_context(
+    stock_name: str,
+    contents: str | list[str],
+    *,
+    message_time: str = "2026-06-28T09:30:00",
+    stock_mentions_count: int = 1,
+) -> CatalystValuationStockContext:
+    content_items = [contents] if isinstance(contents, str) else contents
+    evidence = [
+        CatalystValuationEvidence(
+            message_id=f"evidence-{index}",
+            source="个人群",
+            sender="tester",
+            group_name="东财策略",
+            message_time=datetime.fromisoformat(message_time),
+            latest_message_time=datetime.fromisoformat(message_time),
+            content=content,
+            stock_mentions_count=stock_mentions_count,
+        )
+        for index, content in enumerate(content_items, start=1)
+    ]
+    return CatalystValuationStockContext(
+        stock_key=stock_name,
+        stock_name=stock_name,
+        first_message_time=min(item.message_time for item in evidence),
+        latest_message_time=max(item.latest_message_time for item in evidence),
+        evidence=evidence,
+    )
 
 
 def _detector(text: str) -> list[CatalystStockMention]:
