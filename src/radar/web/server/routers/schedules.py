@@ -10,11 +10,13 @@ from radar.core.scheduler import (
     list_schedules,
     scheduler_now,
     set_schedule_enabled,
+    update_schedule_request,
 )
 from radar.web.server.deps import get_config
 from radar.web.server.scheduler import run_schedule_now
 from radar.web.server.schemas import (
     ScheduleListResponse,
+    ScheduleRequestUpdate,
     ScheduleRunNowResponse,
     ScheduleTickListResponse,
 )
@@ -44,6 +46,27 @@ def disable_schedule(schedule_id: str, config: RadarConfig = Depends(get_config)
     return ScheduleListResponse(items=list_schedules(config.database_path))
 
 
+@router.patch("/schedules/{schedule_id}/request", response_model=ScheduleListResponse)
+def update_request(
+    schedule_id: str,
+    request: ScheduleRequestUpdate,
+    config: RadarConfig = Depends(get_config),
+) -> ScheduleListResponse:
+    schedule = get_schedule(config.database_path, schedule_id)
+    if schedule is None:
+        raise HTTPException(status_code=404, detail="schedule 不存在")
+    next_request = _normalize_schedule_request(schedule.job_key, {**schedule.request, **request.request})
+    updated = update_schedule_request(
+        config.database_path,
+        schedule_id,
+        request=next_request,
+        now=scheduler_now(),
+    )
+    if updated is None:
+        raise HTTPException(status_code=404, detail="schedule 不存在")
+    return ScheduleListResponse(items=list_schedules(config.database_path))
+
+
 @router.post("/schedules/{schedule_id}/run-now", response_model=ScheduleRunNowResponse)
 def run_now(schedule_id: str, config: RadarConfig = Depends(get_config)) -> ScheduleRunNowResponse:
     schedule = get_schedule(config.database_path, schedule_id)
@@ -60,4 +83,17 @@ def ticks(
 ) -> ScheduleTickListResponse:
     if get_schedule(config.database_path, schedule_id) is None:
         raise HTTPException(status_code=404, detail="schedule 不存在")
-    return ScheduleTickListResponse(items=list_schedule_ticks(config.database_path, schedule_id=schedule_id, limit=limit))
+    return ScheduleTickListResponse(
+        items=list_schedule_ticks(config.database_path, schedule_id=schedule_id, limit=limit)
+    )
+
+
+def _normalize_schedule_request(job_key: str, request: dict[str, object]) -> dict[str, object]:
+    if job_key != "catalyst_valuation_report":
+        return request
+    next_request = dict(request)
+    publish = bool(next_request.get("publish", False))
+    notify = bool(next_request.get("notify", False))
+    if notify and not publish:
+        next_request["publish"] = True
+    return next_request

@@ -413,6 +413,57 @@ def test_chat_agent_streams_and_persists_final_message(tmp_path, monkeypatch):
     assert messages[-1].content == "先看"
 
 
+def test_chat_agent_repairs_empty_stream_final_answer(tmp_path, monkeypatch):
+    config = RadarConfig()
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+    calls = []
+
+    def fake_stream_chat_response(config, messages, **kwargs):
+        calls.append({"messages": messages, "tools": kwargs["tools"]})
+        if len(calls) == 1:
+            yield LlmReasoningDelta(content="我已经想清楚了。")
+            yield LlmChatDone(response=LlmChatResponse(content="", tool_calls=[], stop_reason="end_turn"))
+            return
+        assert kwargs["tools"] == []
+        assert "没有输出可见的最终正文" in messages[-1]["content"]
+        yield LlmChatDelta(content="结论：补上正文")
+        yield LlmChatDone(response=LlmChatResponse(content="", tool_calls=[], stop_reason="end_turn"))
+
+    monkeypatch.setattr("radar.core.chat.agent.stream_chat_response", fake_stream_chat_response)
+
+    events = list(ChatAgent(config, store=store).stream_turn(session.session_id, "这个任务怎么看？"))
+    messages = store.load_messages(session.session_id)
+
+    assert [message.role for message in messages] == ["user", "assistant"]
+    assert messages[-1].content == "结论：补上正文"
+    assert messages[-1].metadata["llm_response"]["stop_reason"] == "end_turn"
+    assert [event.content for event in events if event.type == "assistant_candidate_commit"] == ["结论：补上正文"]
+    assert len(calls) == 2
+
+
+def test_chat_agent_fails_when_repaired_stream_answer_is_empty(tmp_path, monkeypatch):
+    config = RadarConfig()
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+
+    def fake_stream_chat_response(config, messages, **kwargs):
+        yield LlmReasoningDelta(content="只有思考。")
+        yield LlmChatDone(response=LlmChatResponse(content="", tool_calls=[], stop_reason="max_tokens"))
+
+    monkeypatch.setattr("radar.core.chat.agent.stream_chat_response", fake_stream_chat_response)
+
+    try:
+        list(ChatAgent(config, store=store).stream_turn(session.session_id, "这个任务怎么看？"))
+    except RuntimeError as error:
+        assert "模型结束但没有输出最终正文，stop_reason=max_tokens" in str(error)
+    else:
+        raise AssertionError("empty final answer should fail after repair")
+
+    assert [message.role for message in store.load_messages(session.session_id)] == ["user"]
+    assert store.load_events(session.session_id)[-1].type == "turn_failed"
+
+
 def test_chat_agent_stream_separates_progress_and_final_deltas(tmp_path, monkeypatch):
     config = RadarConfig(config_dir=tmp_path)
     store = ChatSessionStore(tmp_path / "chat")
@@ -448,6 +499,29 @@ def test_chat_agent_stream_separates_progress_and_final_deltas(tmp_path, monkeyp
     assert [event.content for event in events if event.type == "assistant_candidate_discard"] == ["我先查数据。"]
     assert [event.content for event in events if event.type == "assistant_candidate_commit"] == ["结论：完成"]
     assert [event.message.content for event in events if event.type == "assistant_message"][-1] == "结论：完成"
+
+
+def test_chat_agent_repairs_empty_sync_final_answer(tmp_path, monkeypatch):
+    config = RadarConfig()
+    store = ChatSessionStore(tmp_path / "chat")
+    session = store.create_session()
+    calls = []
+
+    def fake_chat_response(config, messages, **kwargs):
+        calls.append({"messages": messages, "tools": kwargs["tools"]})
+        if len(calls) == 1:
+            return LlmChatResponse(content="", tool_calls=[], stop_reason="end_turn")
+        assert kwargs["tools"] == []
+        assert "没有输出可见的最终正文" in messages[-1]["content"]
+        return LlmChatResponse(content="结论：同步补偿成功", tool_calls=[], stop_reason="end_turn")
+
+    monkeypatch.setattr("radar.core.chat.agent.chat_response", fake_chat_response)
+
+    result = ChatAgent(config, store=store).run_turn(session.session_id, "这个任务怎么看？")
+
+    assert result.assistant_message.content == "结论：同步补偿成功"
+    assert [message.role for message in store.load_messages(session.session_id)] == ["user", "assistant"]
+    assert len(calls) == 2
 
 
 def test_chat_agent_executes_extension_tool_and_continues(tmp_path, monkeypatch):

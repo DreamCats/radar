@@ -32,6 +32,14 @@ chat:
     default_cwd: ~/Work/radar
     timeout_seconds: 10
     max_output_chars: 2000
+llm:
+  default_provider: kimi-anthropic
+  providers:
+    xiaomi-anthropic:
+      protocol: anthropic
+      secret_ref: xiaomi
+      model: mimo-v2.5
+      disable_thinking: true
 channel:
   bark:
     enabled: true
@@ -88,6 +96,8 @@ cloud:
     assert "~" not in str(config.chat.shell.default_cwd)
     assert config.chat.shell.timeout_seconds == 10
     assert config.chat.shell.max_output_chars == 2000
+    assert config.llm.default_provider == "kimi-anthropic"
+    assert config.llm.providers["xiaomi-anthropic"].disable_thinking is True
     assert config.channel.bark.enabled is True
     assert config.channel.bark.secret_ref == "bark_main"
     assert config.channel.bark.base_url == "https://example.invalid/bark"

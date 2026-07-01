@@ -226,6 +226,11 @@ function catalystValuationReportMetrics(run?: RunItem): string[] {
   }
   metrics.push(`保留 ${stocks}`);
   metrics.push(textValue(metadata.published_url) ? "已上传" : "本地报告");
+  if (textValue(metadata.auto_upside_chat_run_id)) {
+    metrics.push("已发起测算");
+  } else if (metadata.auto_upside === true) {
+    metrics.push("待发起测算");
+  }
   const duration = durationText(run);
   if (duration) {
     metrics.push(duration);

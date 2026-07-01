@@ -62,6 +62,7 @@ export async function startJob(params: StartJobParams): Promise<TrackedJob[]> {
       limit: 200,
       publish: true,
       notify: false,
+      auto_upside: false,
     });
     return derivedJobs(kind, "催化估值线索", items);
   }

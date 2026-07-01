@@ -4,6 +4,7 @@ from radar.core.config import RadarConfig, RadarSecrets
 from radar.core.llm import (
     LlmChatDelta,
     LlmChatDone,
+    LlmChatResponse,
     LlmReasoningDelta,
     LlmToolCallDelta,
     LlmToolCallDone,
@@ -33,13 +34,34 @@ def test_resolve_provider_uses_task_routing_and_secret():
     assert provider.api_key == "anthropic-key"
 
 
+def test_resolve_provider_preserves_disable_thinking_flag():
+    config = RadarConfig(
+        llm={
+            "providers": {
+                "xiaomi": {
+                    "protocol": "anthropic",
+                    "secret_ref": "xiaomi_secret",
+                    "model": "mimo-v2.5",
+                    "disable_thinking": True,
+                }
+            }
+        },
+        secrets=RadarSecrets(
+            llm={"xiaomi_secret": {"base_url": "https://llm.example", "api_key": "key"}}
+        ),
+    )
+
+    _, provider = resolve_provider(config, provider_name="xiaomi")
+
+    assert provider.disable_thinking is True
+
+
 def test_chat_dispatches_openai_provider(monkeypatch):
     config = _config()
     calls = []
 
     def fake_chat_openai_response(provider, messages, model, temperature, max_tokens, disable_thinking, tools):
         calls.append((provider, messages, model, temperature, max_tokens, disable_thinking, tools))
-        from radar.core.llm import LlmChatResponse
 
         return LlmChatResponse(content=f"{provider.name}:{messages[0]['content']}", tool_calls=[])
 
@@ -404,6 +426,8 @@ def test_anthropic_client_streams_text_and_parses_tool_calls(monkeypatch):
                         'data: {"type":"content_block_delta","index":1,'
                         '"delta":{"type":"input_json_delta","partial_json":"{\\"query\\":\\"AI\\"}"}}'
                     ),
+                    'event: message_delta',
+                    'data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":42}}',
                     'event: message_stop',
                     'data: {"type":"message_stop"}',
                 ]
@@ -446,6 +470,8 @@ def test_anthropic_client_streams_text_and_parses_tool_calls(monkeypatch):
     assert [(event.index, event.tool_call.name) for event in completed] == [(1, "search_messages")]
     done = [event for event in events if isinstance(event, LlmChatDone)][0]
     assert done.response.content == "先看"
+    assert done.response.stop_reason == "tool_use"
+    assert done.response.usage == {"output_tokens": 42}
     assert done.response.tool_calls[0].call_id == "toolu-1"
     assert done.response.tool_calls[0].arguments == {"query": "AI"}
 

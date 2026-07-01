@@ -200,6 +200,11 @@ export type CatalystValuationReportArchiveItem = {
   total_stocks: number;
   bark_sent_at?: string | null;
   bark_error?: string | null;
+  upside_chat_run_id?: string | null;
+  upside_chat_session_id?: string | null;
+  upside_chat_status?: "running" | "completed" | "failed" | "cancelled" | null;
+  upside_chat_updated_at?: string | null;
+  upside_chat_error?: string | null;
   top_stocks: CatalystValuationReportStockSummary[];
   created_at: string;
   updated_at: string;

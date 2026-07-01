@@ -222,6 +222,11 @@ class CatalystValuationReportJobRequest(BaseModel):
     max_stocks: int | None = Field(default=None, ge=1)
     publish: bool = True
     notify: bool = False
+    auto_upside: bool = False
+
+
+class ScheduleRequestUpdate(BaseModel):
+    request: dict[str, Any] = Field(default_factory=dict)
 
 
 class DerivedJobItem(BaseModel):

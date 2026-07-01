@@ -91,6 +91,11 @@
   padding: 11px 12px;
   text-align: left;
   cursor: pointer;
+  appearance: none;
+}
+.valuation-report-row:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 68%, white);
+  outline-offset: 2px;
 }
 .valuation-report-row:hover,
 .valuation-report-row.active {
@@ -183,6 +188,43 @@
 }
 .valuation-status-pill.status-skipped {
   color: var(--color-ink-tertiary);
+}
+.valuation-upside-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-1);
+  color: var(--color-ink-muted);
+  padding: 0 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+button.valuation-upside-pill {
+  cursor: pointer;
+}
+button.valuation-upside-pill:hover {
+  border-color: color-mix(in srgb, var(--color-primary-hover) 42%, var(--color-hairline-strong));
+  color: var(--color-ink);
+}
+.valuation-upside-pill.idle {
+  color: var(--color-ink-tertiary);
+}
+.valuation-upside-pill.status-running {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 40%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+.valuation-upside-pill.status-completed {
+  border-color: color-mix(in srgb, var(--color-market-up) 34%, var(--color-hairline));
+  color: var(--color-market-up);
+}
+.valuation-upside-pill.status-failed,
+.valuation-upside-pill.status-cancelled {
+  border-color: color-mix(in srgb, var(--color-market-down) 42%, var(--color-hairline));
+  background: var(--color-market-down-soft);
+  color: color-mix(in srgb, var(--color-market-down) 72%, white);
 }
 .valuation-drawer-backdrop {
   position: fixed;

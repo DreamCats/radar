@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from radar.core.chat.agent import ChatTurnStreamEvent
@@ -51,6 +52,8 @@ def stream_continue_turn(
     tool_messages: list[ChatMessage] = []
     try:
         tool_round = 0
+        repaired_final_answer = False
+        skill_selection = agent._select_skills(user_message.content)
         while True:
             if max_tool_rounds is not None and tool_round > max_tool_rounds:
                 raise RuntimeError(f"工具调用超过最大轮数: {max_tool_rounds}")
@@ -61,7 +64,7 @@ def stream_continue_turn(
                 session_id,
                 content_overrides=None,
                 system_prompt=system_prompt,
-                skill_selection=agent._select_skills(user_message.content),
+                skill_selection=skill_selection,
                 allowed_tool_names=allowed_tool_names,
                 provider_name=provider_name,
                 model=model,
@@ -89,7 +92,26 @@ def stream_continue_turn(
                 response = LlmChatResponse(content="", tool_calls=[])
             candidate_content = "".join(candidate_chunks)
             confirmed_content = response.content or candidate_content
-            if confirmed_content and (candidate_content or not tool_stream_started):
+            if confirmed_content != response.content:
+                response = replace(response, content=confirmed_content)
+            repair_content = ""
+            if not response.tool_calls:
+                response, repair_content = yield from agent._stream_repair_empty_final_response(
+                    session_id,
+                    response,
+                    content_overrides=None,
+                    system_prompt=system_prompt,
+                    skill_selection=skill_selection,
+                    provider_name=provider_name,
+                    model=model,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    already_repaired=repaired_final_answer,
+                )
+                repaired_final_answer = True
+                if repair_content:
+                    confirmed_content = repair_content
+            if confirmed_content and not repair_content and (candidate_content or not tool_stream_started):
                 yield ChatTurnStreamEvent(
                     type="assistant_candidate_discard" if tool_stream_started or response.tool_calls else "assistant_candidate_commit",
                     content=confirmed_content,
@@ -99,7 +121,6 @@ def stream_continue_turn(
                 session_id,
                 response,
                 llm_metadata=llm_metadata,
-                user_content=user_message.content,
             )
             yield ChatTurnStreamEvent(type="assistant_message", message=assistant_message)
             if not response.tool_calls:

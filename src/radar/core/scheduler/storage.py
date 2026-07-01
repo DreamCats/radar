@@ -123,6 +123,28 @@ def set_schedule_enabled(
     return get_schedule(database, schedule_id)
 
 
+def update_schedule_request(
+    database: Path,
+    schedule_id: str,
+    *,
+    request: dict[str, Any],
+    now: datetime | None = None,
+) -> ScheduleRecord | None:
+    current = now or scheduler_now()
+    if get_schedule(database, schedule_id) is None:
+        return None
+    with _connect(database) as conn:
+        conn.execute(
+            """
+            UPDATE job_schedules
+            SET request_json = ?, updated_at = ?
+            WHERE schedule_id = ?
+            """,
+            (_json(request), current.isoformat(), schedule_id),
+        )
+    return get_schedule(database, schedule_id)
+
+
 def update_schedule_after_tick(
     database: Path,
     schedule: ScheduleRecord,
@@ -278,8 +300,17 @@ def _sync_catalyst_valuation_report_default(
         params.append(_default_next_tick(default_schedule, current).isoformat())
 
     request = _load_json(row["request_json"], {})
+    request_changed = False
     if "llm_concurrency" in request:
         request.pop("llm_concurrency", None)
+        request_changed = True
+
+    if row["created_at"] == row["updated_at"] and "auto_upside" not in request:
+        request["auto_upside"] = bool(default_schedule.request.get("auto_upside", False))
+        request["notify"] = bool(default_schedule.request.get("notify", request.get("notify", False)))
+        request_changed = True
+
+    if request_changed:
         updates.append("request_json = ?")
         params.append(_json(request))
 

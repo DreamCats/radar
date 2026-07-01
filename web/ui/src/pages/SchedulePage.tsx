@@ -8,6 +8,7 @@ import {
   fetchSchedules,
   fetchScheduleTicks,
   runScheduleNow,
+  updateScheduleRequest,
 } from "../api/radarApi";
 import { JobRunCard } from "../components/JobRunCard";
 import { PanelTitle } from "../components/PanelTitle";
@@ -15,6 +16,7 @@ import { trackedJobFromRun } from "../lib/jobRuns";
 import type { RunItem, ScheduleItem, ScheduleTickItem } from "../types";
 
 const RECENT_RUN_LIMIT = 80;
+type CatalystScheduleOption = "publish" | "notify" | "auto_upside";
 
 export function SchedulePage() {
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
@@ -24,6 +26,7 @@ export function SchedulePage() {
   const [loading, setLoading] = useState(false);
   const [ticksLoading, setTicksLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [requestAction, setRequestAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const selected = useMemo(
@@ -107,6 +110,28 @@ export function SchedulePage() {
     }
   }
 
+  async function toggleCatalystOption(schedule: ScheduleItem, option: CatalystScheduleOption) {
+    const actionKey = `${schedule.schedule_id}:${option}`;
+    setRequestAction(actionKey);
+    setError(null);
+    try {
+      const current = Boolean(schedule.request[option]);
+      const nextRequest = { ...schedule.request, [option]: !current };
+      if (option === "publish" && current) {
+        nextRequest.notify = false;
+      }
+      if (option === "notify" && !current) {
+        nextRequest.publish = true;
+      }
+      const nextItems = await updateScheduleRequest(schedule.schedule_id, nextRequest);
+      setSchedules(nextItems);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "更新任务开关失败");
+    } finally {
+      setRequestAction(null);
+    }
+  }
+
   return (
     <section className="schedule-page">
       <div className="schedule-header">
@@ -170,6 +195,13 @@ export function SchedulePage() {
                   立即运行
                 </button>
               </div>
+              {selected.job_key === "catalyst_valuation_report" && (
+                <ScheduleRequestSwitches
+                  disabledKey={requestAction}
+                  onToggle={(option) => void toggleCatalystOption(selected, option)}
+                  schedule={selected}
+                />
+              )}
               <div className="schedule-tags">
                 {requestTags(selected).map((tag) => (
                   <span key={tag}>{tag}</span>
@@ -213,6 +245,42 @@ export function SchedulePage() {
         </aside>
       </div>
     </section>
+  );
+}
+
+function ScheduleRequestSwitches(props: {
+  disabledKey: string | null;
+  onToggle: (option: CatalystScheduleOption) => void;
+  schedule: ScheduleItem;
+}) {
+  const options: Array<{ key: CatalystScheduleOption; label: string }> = [
+    { key: "publish", label: "生成 HTML" },
+    { key: "notify", label: "Bark 通知" },
+    { key: "auto_upside", label: "自动测算" },
+  ];
+  return (
+    <div className="schedule-switch-grid" aria-label="催化估值线索报告开关">
+      {options.map((option) => {
+        const checked = Boolean(props.schedule.request[option.key]);
+        const disabled = props.disabledKey === `${props.schedule.schedule_id}:${option.key}`;
+        return (
+          <button
+            aria-checked={checked}
+            className={checked ? "schedule-switch on" : "schedule-switch"}
+            disabled={disabled}
+            key={option.key}
+            onClick={() => props.onToggle(option.key)}
+            role="switch"
+            type="button"
+          >
+            <span className="schedule-switch-track">
+              <span />
+            </span>
+            <strong>{option.label}</strong>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -271,6 +339,9 @@ function requestTags(schedule: ScheduleItem): string[] {
   }
   if (typeof schedule.request.notify === "boolean") {
     tags.push(`notify=${String(schedule.request.notify)}`);
+  }
+  if (typeof schedule.request.auto_upside === "boolean") {
+    tags.push(`auto_upside=${String(schedule.request.auto_upside)}`);
   }
   return tags;
 }

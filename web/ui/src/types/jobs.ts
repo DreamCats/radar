@@ -58,6 +58,7 @@ export type CatalystValuationReportJobRequest = {
   max_stocks?: number | null;
   publish: boolean;
   notify: boolean;
+  auto_upside?: boolean;
 };
 
 export type DerivedJobItem = {
@@ -84,6 +85,10 @@ export type ScheduleItem = {
   sort_order: number;
   created_at: string;
   updated_at: string;
+};
+
+export type ScheduleRequestUpdate = {
+  request: Record<string, unknown>;
 };
 
 export type ScheduleTickItem = {

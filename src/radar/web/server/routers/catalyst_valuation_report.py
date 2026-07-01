@@ -5,8 +5,11 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from radar.core.channel import BarkError
+from radar.core.chat import ChatRun, ChatRunStore
 from radar.core.config import RadarConfig
 from radar.core.storage.report_store import (
+    CatalystValuationReportArchiveDetail,
+    CatalystValuationReportArchiveItem,
     get_catalyst_valuation_report,
     list_catalyst_valuation_reports,
     record_report_notification,
@@ -92,7 +95,10 @@ def send_report_bark(
     updated = get_catalyst_valuation_report(config.reports_database_path, report_id)
     if updated is None:
         raise HTTPException(status_code=404, detail="报告不存在")
-    return CatalystValuationReportNotifyResponse(item=updated, notification=notification)
+    return CatalystValuationReportNotifyResponse(
+        item=_enrich_report_upside_runs(config, [updated])[0],
+        notification=notification,
+    )
 
 
 @router.get("/external/catalyst-valuation-reports", response_model=CatalystValuationReportListResponse)
@@ -137,11 +143,67 @@ def _list_report_archives(
         granularity_minutes=granularity_minutes,
         limit=limit,
     )
-    return CatalystValuationReportListResponse(items=items)
+    return CatalystValuationReportListResponse(items=_enrich_report_upside_runs(config, items))
 
 
 def _get_report_archive(config: RadarConfig, report_id: str) -> CatalystValuationReportDetailResponse:
     detail = get_catalyst_valuation_report(config.reports_database_path, report_id)
     if detail is None:
         raise HTTPException(status_code=404, detail="报告不存在")
-    return CatalystValuationReportDetailResponse(item=detail)
+    return CatalystValuationReportDetailResponse(item=_enrich_report_upside_runs(config, [detail])[0])
+
+
+def _enrich_report_upside_runs(
+    config: RadarConfig,
+    items: list[CatalystValuationReportArchiveItem],
+) -> list[CatalystValuationReportArchiveItem]:
+    if not items:
+        return items
+    report_ids = {item.report_id for item in items}
+    runs_by_report = _latest_upside_runs_by_report(config, report_ids)
+    enriched: list[CatalystValuationReportArchiveItem] = []
+    for item in items:
+        run = runs_by_report.get(item.report_id)
+        if run is None:
+            enriched.append(item)
+            continue
+        enriched.append(
+            item.model_copy(
+                update={
+                    "upside_chat_run_id": run.run_id,
+                    "upside_chat_session_id": run.session_id,
+                    "upside_chat_status": run.status,
+                    "upside_chat_updated_at": datetime.fromisoformat(run.updated_at),
+                    "upside_chat_error": run.error,
+                }
+            )
+        )
+    return enriched
+
+
+def _latest_upside_runs_by_report(config: RadarConfig, report_ids: set[str]) -> dict[str, ChatRun]:
+    if not report_ids:
+        return {}
+    result: dict[str, ChatRun] = {}
+    try:
+        runs = ChatRunStore.from_config(config).list_runs()
+    except Exception:
+        return result
+    for run in runs:
+        report_id = _upside_report_id(run)
+        if report_id is None or report_id not in report_ids or report_id in result:
+            continue
+        result[report_id] = run
+    return result
+
+
+def _upside_report_id(run: ChatRun) -> str | None:
+    source_report_id = run.metadata.get("source_report_id")
+    if isinstance(source_report_id, str) and source_report_id:
+        return source_report_id
+    if run.metadata.get("surface") != "估值线索":
+        return None
+    if run.metadata.get("title") != "估值线索空间测算":
+        return None
+    entity_id = run.metadata.get("entity_id")
+    return entity_id if isinstance(entity_id, str) and entity_id else None

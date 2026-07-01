@@ -68,12 +68,14 @@ def chat_openai_response(
 
     message = _first_message(data)
     if not message:
-        return LlmChatResponse(content="", tool_calls=[])
+        return LlmChatResponse(content="", tool_calls=[], stop_reason=_first_finish_reason(data), usage=_usage(data))
 
     content = message.get("content")
     return LlmChatResponse(
         content=content if isinstance(content, str) else "",
         tool_calls=_parse_tool_calls(message),
+        stop_reason=_first_finish_reason(data),
+        usage=_usage(data),
     )
 
 
@@ -95,6 +97,7 @@ def stream_chat_openai_response(
     content_parts: list[str] = []
     tool_call_parts: dict[int, dict[str, str]] = {}
     started_tool_call_indexes: set[int] = set()
+    stop_reason: str | None = None
 
     with httpx.Client(timeout=provider.timeout) as client:
         with client.stream(
@@ -111,6 +114,7 @@ def stream_chat_openai_response(
                 if chunk == "[DONE]":
                     break
                 delta = _first_delta(chunk)
+                stop_reason = _first_finish_reason(chunk) or stop_reason
                 if delta is None:
                     continue
                 reasoning = delta.get("reasoning_content") or delta.get("reasoning")
@@ -130,6 +134,7 @@ def stream_chat_openai_response(
         LlmChatResponse(
             content="".join(content_parts),
             tool_calls=[tool_call for _, tool_call in tool_call_items],
+            stop_reason=stop_reason,
         )
     )
 
@@ -262,6 +267,22 @@ def _first_message(data: object) -> dict | None:
     if not isinstance(message, dict):
         return None
     return message
+
+
+def _first_finish_reason(data: object) -> str | None:
+    choices = data.get("choices") if isinstance(data, dict) else None
+    if not choices or not isinstance(choices, list):
+        return None
+    first = choices[0]
+    if not isinstance(first, dict):
+        return None
+    finish_reason = first.get("finish_reason")
+    return finish_reason if isinstance(finish_reason, str) and finish_reason else None
+
+
+def _usage(data: object) -> dict[str, object] | None:
+    usage = data.get("usage") if isinstance(data, dict) else None
+    return usage if isinstance(usage, dict) else None
 
 
 def _parse_tool_calls(message: dict) -> list[LlmToolCall]:

@@ -70,6 +70,7 @@ class LlmProviderConfig(BaseModel):
     max_tokens: int | None = None
     temperature: float | None = None
     headers: dict[str, str] = Field(default_factory=dict)
+    disable_thinking: bool = False
 
 
 class LlmConfig(BaseModel):

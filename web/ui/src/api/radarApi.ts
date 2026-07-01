@@ -415,6 +415,19 @@ export async function disableSchedule(scheduleId: string): Promise<ScheduleItem[
   return data.items;
 }
 
+export async function updateScheduleRequest(scheduleId: string, request: Record<string, unknown>): Promise<ScheduleItem[]> {
+  const response = await apiFetch(`/api/schedules/${encodeURIComponent(scheduleId)}/request`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ request }),
+  });
+  if (!response.ok) {
+    throw new Error(await errorText(response));
+  }
+  const data = (await response.json()) as { items: ScheduleItem[] };
+  return data.items;
+}
+
 export async function runScheduleNow(scheduleId: string): Promise<ScheduleTickItem> {
   const response = await apiFetch(`/api/schedules/${encodeURIComponent(scheduleId)}/run-now`, { method: "POST" });
   if (!response.ok) {

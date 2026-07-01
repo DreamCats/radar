@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterator
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import date
 from typing import Any
 
@@ -27,6 +27,11 @@ from radar.core.llm import (
     chat_response,
     resolve_provider,
     stream_chat_response,
+)
+
+FINAL_ANSWER_REPAIR_PROMPT = (
+    "上一次模型响应没有输出可见的最终正文。请基于以上用户问题、已执行工具结果和已有上下文，"
+    "直接输出最终答复正文。不要调用工具，不要只输出思考过程。"
 )
 
 
@@ -109,6 +114,7 @@ class ChatAgent:
             metadata={"llm": llm_metadata, "skills": skill_selection.names},
         )
         self.store.append_message(session_id, user_message)
+        content_overrides = {user_message.message_id: llm_content} if llm_content else None
 
         turn_started = self._append_event(
             session_id,
@@ -124,12 +130,13 @@ class ChatAgent:
         tool_messages: list[ChatMessage] = []
         try:
             tool_round = 0
+            repaired_final_answer = False
             while True:
                 if max_tool_rounds is not None and tool_round > max_tool_rounds:
                     raise RuntimeError(f"工具调用超过最大轮数: {max_tool_rounds}")
                 response = self._request_llm(
                     session_id,
-                    content_overrides={user_message.message_id: llm_content} if llm_content else None,
+                    content_overrides=content_overrides,
                     system_prompt=system_prompt,
                     skill_selection=skill_selection,
                     allowed_tool_names=allowed_tool_names,
@@ -139,6 +146,19 @@ class ChatAgent:
                     max_tokens=max_tokens,
                 )
                 if not response.tool_calls:
+                    response = self._repair_empty_final_response(
+                        session_id,
+                        response,
+                        content_overrides=content_overrides,
+                        system_prompt=system_prompt,
+                        skill_selection=skill_selection,
+                        provider_name=provider_name,
+                        model=model,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        already_repaired=repaired_final_answer,
+                    )
+                    repaired_final_answer = True
                     assistant_message = self._append_assistant_message(
                         session_id,
                         response,
@@ -231,6 +251,7 @@ class ChatAgent:
             metadata={"llm": llm_metadata, "skills": skill_selection.names},
         )
         self.store.append_message(session_id, user_message)
+        content_overrides = {user_message.message_id: llm_content} if llm_content else None
         yield ChatTurnStreamEvent(type="user_message", message=user_message)
 
         turn_started = self._append_event(
@@ -247,6 +268,7 @@ class ChatAgent:
         tool_messages: list[ChatMessage] = []
         try:
             tool_round = 0
+            repaired_final_answer = False
             while True:
                 if max_tool_rounds is not None and tool_round > max_tool_rounds:
                     raise RuntimeError(f"工具调用超过最大轮数: {max_tool_rounds}")
@@ -255,7 +277,7 @@ class ChatAgent:
                 tool_stream_started = False
                 for stream_event in self._request_llm_stream(
                     session_id,
-                    content_overrides={user_message.message_id: llm_content} if llm_content else None,
+                    content_overrides=content_overrides,
                     system_prompt=system_prompt,
                     skill_selection=skill_selection,
                     allowed_tool_names=allowed_tool_names,
@@ -285,7 +307,26 @@ class ChatAgent:
                     response = LlmChatResponse(content="", tool_calls=[])
                 candidate_content = "".join(candidate_chunks)
                 confirmed_content = response.content or candidate_content
-                if confirmed_content and (candidate_content or not tool_stream_started):
+                if confirmed_content != response.content:
+                    response = replace(response, content=confirmed_content)
+                repair_content = ""
+                if not response.tool_calls:
+                    response, repair_content = yield from self._stream_repair_empty_final_response(
+                        session_id,
+                        response,
+                        content_overrides=content_overrides,
+                        system_prompt=system_prompt,
+                        skill_selection=skill_selection,
+                        provider_name=provider_name,
+                        model=model,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        already_repaired=repaired_final_answer,
+                    )
+                    repaired_final_answer = True
+                    if repair_content:
+                        confirmed_content = repair_content
+                if confirmed_content and not repair_content and (candidate_content or not tool_stream_started):
                     yield ChatTurnStreamEvent(
                         type="assistant_candidate_discard" if tool_stream_started or response.tool_calls else "assistant_candidate_commit",
                         content=confirmed_content,
@@ -359,6 +400,7 @@ class ChatAgent:
         model: str | None,
         temperature: float | None,
         max_tokens: int | None,
+        extra_messages: list[dict[str, str]] | None = None,
     ) -> LlmChatResponse:
         return chat_response(
             self.config,
@@ -367,6 +409,7 @@ class ChatAgent:
                 system_prompt,
                 skill_prompt=self.skills.render_catalog_prompt(),
                 content_overrides=content_overrides,
+                extra_messages=extra_messages,
             ),
             provider_name=provider_name,
             task="chat",
@@ -389,6 +432,7 @@ class ChatAgent:
         model: str | None,
         temperature: float | None,
         max_tokens: int | None,
+        extra_messages: list[dict[str, str]] | None = None,
     ):
         yield from stream_chat_response(
             self.config,
@@ -397,6 +441,7 @@ class ChatAgent:
                 system_prompt,
                 skill_prompt=self.skills.render_catalog_prompt(),
                 content_overrides=content_overrides,
+                extra_messages=extra_messages,
             ),
             provider_name=provider_name,
             task="chat",
@@ -406,6 +451,104 @@ class ChatAgent:
             tools=self._llm_tool_specs(allowed_tool_names),
             enable_thinking=True,
         )
+
+    def _repair_empty_final_response(
+        self,
+        session_id: str,
+        response: LlmChatResponse,
+        *,
+        content_overrides: dict[str, str] | None,
+        system_prompt: str | None,
+        skill_selection: ChatSkillSelection,
+        provider_name: str | None,
+        model: str | None,
+        temperature: float | None,
+        max_tokens: int | None,
+        already_repaired: bool,
+    ) -> LlmChatResponse:
+        if not _is_empty_final_response(response):
+            return response
+        if already_repaired:
+            raise RuntimeError(_empty_final_response_error(response))
+        repaired = self._request_llm(
+            session_id,
+            content_overrides=content_overrides,
+            system_prompt=system_prompt,
+            skill_selection=skill_selection,
+            allowed_tool_names=set(),
+            provider_name=provider_name,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            extra_messages=[{"role": "user", "content": FINAL_ANSWER_REPAIR_PROMPT}],
+        )
+        if _is_empty_final_response(repaired):
+            raise RuntimeError(_empty_final_response_error(repaired))
+        return repaired
+
+    def _stream_repair_empty_final_response(
+        self,
+        session_id: str,
+        response: LlmChatResponse,
+        *,
+        content_overrides: dict[str, str] | None,
+        system_prompt: str | None,
+        skill_selection: ChatSkillSelection,
+        provider_name: str | None,
+        model: str | None,
+        temperature: float | None,
+        max_tokens: int | None,
+        already_repaired: bool,
+    ) -> Iterator[ChatTurnStreamEvent | tuple[LlmChatResponse, str]]:
+        if not _is_empty_final_response(response):
+            return response, ""
+        if already_repaired:
+            raise RuntimeError(_empty_final_response_error(response))
+
+        repaired_response: LlmChatResponse | None = None
+        candidate_chunks: list[str] = []
+        tool_stream_started = False
+        for stream_event in self._request_llm_stream(
+            session_id,
+            content_overrides=content_overrides,
+            system_prompt=system_prompt,
+            skill_selection=skill_selection,
+            allowed_tool_names=set(),
+            provider_name=provider_name,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            extra_messages=[{"role": "user", "content": FINAL_ANSWER_REPAIR_PROMPT}],
+        ):
+            if isinstance(stream_event, LlmChatDone):
+                repaired_response = stream_event.response
+            elif isinstance(stream_event, LlmReasoningDelta):
+                yield ChatTurnStreamEvent(type="assistant_reasoning_delta", content=stream_event.content)
+            elif isinstance(stream_event, (LlmToolCallStarted, LlmToolCallDelta, LlmToolCallDone)):
+                if not tool_stream_started:
+                    tool_stream_started = True
+                    candidate_content = "".join(candidate_chunks)
+                    candidate_chunks.clear()
+                    if candidate_content:
+                        yield ChatTurnStreamEvent(type="assistant_candidate_discard", content=candidate_content)
+            elif stream_event.content:
+                if tool_stream_started:
+                    yield ChatTurnStreamEvent(type="assistant_progress_delta", content=stream_event.content)
+                else:
+                    candidate_chunks.append(stream_event.content)
+                    yield ChatTurnStreamEvent(type="assistant_candidate_delta", content=stream_event.content)
+
+        if repaired_response is None:
+            repaired_response = LlmChatResponse(content="", tool_calls=[])
+        candidate_content = "".join(candidate_chunks)
+        confirmed_content = repaired_response.content or candidate_content
+        if confirmed_content != repaired_response.content:
+            repaired_response = replace(repaired_response, content=confirmed_content)
+        if _is_empty_final_response(repaired_response):
+            raise RuntimeError(_empty_final_response_error(repaired_response))
+        if confirmed_content and (candidate_content or not tool_stream_started):
+            yield ChatTurnStreamEvent(type="assistant_candidate_commit", content=confirmed_content)
+        return repaired_response, confirmed_content
 
     def _append_assistant_message(
         self,
@@ -418,6 +561,13 @@ class ChatAgent:
             "tool_calls": [asdict(call) for call in response.tool_calls],
             "llm": llm_metadata,
         }
+        response_metadata: dict[str, Any] = {}
+        if response.stop_reason:
+            response_metadata["stop_reason"] = response.stop_reason
+        if response.usage is not None:
+            response_metadata["usage"] = response.usage
+        if response_metadata:
+            metadata["llm_response"] = response_metadata
         assistant_message = ChatMessage(
             message_id=new_id(),
             role="assistant",
@@ -492,6 +642,7 @@ class ChatAgent:
         *,
         skill_prompt: str = "",
         content_overrides: dict[str, str] | None = None,
+        extra_messages: list[dict[str, str]] | None = None,
     ) -> list[dict[str, str]]:
         messages: list[dict[str, str]] = []
         resolved_system_prompt = system_prompt or DEFAULT_CHAT_SYSTEM_PROMPT
@@ -513,6 +664,8 @@ class ChatAgent:
             elif message.role == "tool":
                 tool_name = message.metadata.get("tool_name", "unknown")
                 messages.append({"role": "user", "content": f"工具 {tool_name} 返回：{message.content}"})
+        if extra_messages:
+            messages.extend(extra_messages)
         return messages
 
     def _select_skills(self, text: str) -> ChatSkillSelection:
@@ -542,3 +695,12 @@ class ChatAgent:
 
 def _today_prompt_date() -> str:
     return date.today().isoformat()
+
+
+def _is_empty_final_response(response: LlmChatResponse) -> bool:
+    return not response.tool_calls and not response.content.strip()
+
+
+def _empty_final_response_error(response: LlmChatResponse) -> str:
+    detail = f"，stop_reason={response.stop_reason}" if response.stop_reason else ""
+    return f"模型结束但没有输出最终正文{detail}"

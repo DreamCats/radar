@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Bell, Calculator, Check, Copy, ExternalLink, Loader2, RefreshCw, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { createPortal } from "react-dom";
@@ -42,6 +42,18 @@ type UpsideChatDraft = {
   draft: string;
 };
 
+type UpsideChatRunTarget = {
+  title: string;
+  subtitle: string;
+  surface: string;
+  entityId: string;
+  runId: string;
+  sessionId: string;
+  status: NonNullable<CatalystValuationReportArchiveItem["upside_chat_status"]>;
+  updatedAt?: string | null;
+  error?: string | null;
+};
+
 export function ValuationCluesPage() {
   const [granularity, setGranularity] = useState<number>(60);
   const [items, setItems] = useState<CatalystValuationReportArchiveItem[]>([]);
@@ -55,6 +67,7 @@ export function ValuationCluesPage() {
   const [barkLoading, setBarkLoading] = useState(false);
   const [barkError, setBarkError] = useState<string | null>(null);
   const [upsideDraft, setUpsideDraft] = useState<UpsideChatDraft | null>(null);
+  const [upsideRun, setUpsideRun] = useState<UpsideChatRunTarget | null>(null);
 
   const selectedItem = useMemo(
     () => items.find((item) => item.report_id === selectedId) ?? null,
@@ -79,6 +92,9 @@ export function ValuationCluesPage() {
       .then((next) => {
         if (!cancelled) {
           setDetail(next);
+          setItems((current) =>
+            current.map((item) => (item.report_id === next.report_id ? { ...item, ...upsideFields(next) } : item)),
+          );
         }
       })
       .catch((err) => {
@@ -143,6 +159,7 @@ export function ValuationCluesPage() {
                 bark_sent_at: response.item.bark_sent_at,
                 bark_error: response.item.bark_error,
                 updated_at: response.item.updated_at,
+                ...upsideFields(response.item),
               }
             : item,
         ),
@@ -159,6 +176,13 @@ export function ValuationCluesPage() {
       return;
     }
     setUpsideDraft(buildUpsideChatDraft(detail));
+  }
+
+  function openUpsideRun(item: CatalystValuationReportArchiveItem) {
+    const target = buildUpsideRunTarget(item);
+    if (target) {
+      setUpsideRun(target);
+    }
   }
 
   return (
@@ -190,34 +214,22 @@ export function ValuationCluesPage() {
 
       {error && <p className="valuation-error">{error}</p>}
 
-      <section className={loading ? "valuation-list-panel content-panel is-refreshing" : "valuation-list-panel content-panel"}>
+      <section
+        className={loading ? "valuation-list-panel content-panel is-refreshing" : "valuation-list-panel content-panel"}
+      >
         <PanelTitle title="催化估值线索" meta={`${items.length} 份归档报告`} />
         {loading && items.length === 0 ? (
           <PageLoadingState label="读取报告归档" variant="strategy" />
         ) : (
           <div className="valuation-report-list">
             {items.map((item) => (
-              <button
-                className={item.report_id === selectedId ? "valuation-report-row active" : "valuation-report-row"}
+              <ReportRow
+                active={item.report_id === selectedId}
+                item={item}
                 key={item.report_id}
-                type="button"
-                onClick={() => setSelectedId(item.report_id)}
-              >
-                <span className="valuation-row-main">
-                  <strong>{formatWindowTitle(item)}</strong>
-                  <em>{formatWindowMeta(item)}</em>
-                  <span>{stockLine(item)}</span>
-                </span>
-                <span className="valuation-row-metrics">
-                  <Metric value={item.total_stocks} label="标的" />
-                  <Metric value={item.total_candidate_stocks} label="候选" />
-                  <Metric value={item.total_feed_items} label="条目" />
-                </span>
-                <span className="valuation-row-state">
-                  <StatusPill item={item} />
-                  {item.published_url && <ExternalLink size={14} aria-hidden="true" />}
-                </span>
-              </button>
+                onOpenUpsideRun={openUpsideRun}
+                onSelect={() => setSelectedId(item.report_id)}
+              />
             ))}
             {!loading && items.length === 0 && <p className="empty-line">当前没有归档报告</p>}
           </div>
@@ -237,10 +249,56 @@ export function ValuationCluesPage() {
           onCopy={() => void copyReport()}
           onSendBark={() => void sendBark()}
           onOpenUpside={openUpsideTask}
+          onOpenUpsideRun={openUpsideRun}
         />
       )}
       {upsideDraft ? <ReportUpsideChatDrawer draft={upsideDraft} onClose={() => setUpsideDraft(null)} /> : null}
+      {upsideRun ? <ReportUpsideRunDrawer run={upsideRun} onClose={() => setUpsideRun(null)} /> : null}
     </section>
+  );
+}
+
+function ReportRow(props: {
+  active: boolean;
+  item: CatalystValuationReportArchiveItem;
+  onOpenUpsideRun: (item: CatalystValuationReportArchiveItem) => void;
+  onSelect: () => void;
+}) {
+  function onKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    props.onSelect();
+  }
+
+  return (
+    <article
+      className={props.active ? "valuation-report-row active" : "valuation-report-row"}
+      onClick={props.onSelect}
+      onKeyDown={onKeyDown}
+      role="button"
+      tabIndex={0}
+    >
+      <span className="valuation-row-main">
+        <strong>{formatWindowTitle(props.item)}</strong>
+        <em>{formatWindowMeta(props.item)}</em>
+        <span>{stockLine(props.item)}</span>
+      </span>
+      <span className="valuation-row-metrics">
+        <Metric value={props.item.total_stocks} label="标的" />
+        <Metric value={props.item.total_candidate_stocks} label="候选" />
+        <Metric value={props.item.total_feed_items} label="条目" />
+      </span>
+      <span className="valuation-row-state">
+        <StatusPill item={props.item} />
+        <UpsideStatusAction item={props.item} onOpen={props.onOpenUpsideRun} />
+        {props.item.published_url && <ExternalLink size={14} aria-hidden="true" />}
+      </span>
+    </article>
   );
 }
 
@@ -255,9 +313,12 @@ function ReportDrawer(props: {
   onClose: () => void;
   onCopy: () => void;
   onOpenUpside: () => void;
+  onOpenUpsideRun: (item: CatalystValuationReportArchiveItem) => void;
   onSendBark: () => void;
 }) {
   const item = props.detail ?? props.fallbackItem;
+  const upsideRun = item ? buildUpsideRunTarget(item) : null;
+  const upsideActionLabel = upsideRun && item ? upsideActionText(item) : "空间测算";
   const swipeClose = useSwipeToCloseSheet(props.onClose);
   useEscapeToClose(props.onClose, { ignoreWhenSelector: ".chat-launcher-shell" });
   return (
@@ -276,13 +337,13 @@ function ReportDrawer(props: {
             <button
               className="valuation-icon-action valuation-ai-action"
               type="button"
-              aria-label="打开空间测算"
-              title="空间测算"
-              onClick={props.onOpenUpside}
-              disabled={!props.detail}
+              aria-label={upsideRun ? "查看测算任务" : "打开空间测算"}
+              title={upsideRun ? "查看测算任务" : "空间测算"}
+              onClick={() => (upsideRun && item ? props.onOpenUpsideRun(item) : props.onOpenUpside())}
+              disabled={!upsideRun && !props.detail}
             >
               <Calculator size={16} />
-              <span>空间测算</span>
+              <span>{upsideActionLabel}</span>
             </button>
             <button className="valuation-icon-action" type="button" aria-label="复制报告" onClick={props.onCopy} disabled={!props.detail}>
               {props.copyState === "copied" ? <Check size={16} /> : <Copy size={16} />}
@@ -315,6 +376,76 @@ function ReportDrawer(props: {
       </aside>
     </div>
   );
+}
+
+function ReportUpsideRunDrawer(props: { run: UpsideChatRunTarget; onClose: () => void }) {
+  const subtitle = `${props.run.subtitle} · ${upsideRunStatusText(props.run.status)}`;
+  const controller = useChatController(
+    {
+      title: props.run.title,
+      subtitle,
+      surface: props.run.surface,
+      entityId: props.run.entityId,
+      context: [
+        { label: "Run", value: compactId(props.run.runId), copyValue: props.run.runId, copyLabel: "复制 run id" },
+        {
+          label: "Session",
+          value: compactId(props.run.sessionId),
+          copyValue: props.run.sessionId,
+          copyLabel: "复制 session id",
+        },
+        { label: "状态", value: upsideRunStatusText(props.run.status) },
+        { label: "报告", value: props.run.entityId },
+      ],
+      initialRunId: props.run.runId,
+      initialSessionId: props.run.sessionId,
+    },
+    true,
+  );
+  useEscapeToClose(props.onClose, { ignoreWhenSelector: ".chat-reading-modal-shell" });
+
+  const overlay = (
+    <AnimatePresence>
+      <motion.div
+        className="chat-launcher-shell"
+        role="dialog"
+        aria-modal="true"
+        aria-label={props.run.title}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.16 }}
+      >
+        <motion.button
+          className="chat-launcher-scrim"
+          type="button"
+          aria-label="关闭对话"
+          onClick={props.onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+        <motion.aside
+          className="chat-launcher-panel"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+        >
+          <ChatWorkspace
+            controller={controller}
+            title={props.run.title}
+            subtitle={subtitle}
+            surface={props.run.surface}
+            entityId={props.run.entityId}
+            onClose={props.onClose}
+          />
+        </motion.aside>
+      </motion.div>
+    </AnimatePresence>
+  );
+
+  return createPortal(overlay, document.body);
 }
 
 function ReportUpsideChatDrawer(props: { draft: UpsideChatDraft; onClose: () => void }) {
@@ -391,6 +522,7 @@ function ReportDetail({ detail }: { detail: CatalystValuationReportArchiveDetail
         <span>{statusText(detail)}</span>
         <span>{detail.published_url ? "HTML 已上传" : "本地 HTML"}</span>
         <span>{detail.bark_sent_at ? `Bark ${formatTime(detail.bark_sent_at)}` : "Bark 未发送"}</span>
+        <span>{upsideStatusText(detail)}</span>
       </div>
       <div className="valuation-stock-list">
         {detail.report.stocks.map((stock) => (
@@ -482,6 +614,35 @@ function StatusPill({ item }: { item: CatalystValuationReportArchiveItem }) {
   return <span className={`valuation-status-pill status-${item.status}`}>{statusText(item)}</span>;
 }
 
+function UpsideStatusAction(props: {
+  item: CatalystValuationReportArchiveItem;
+  onOpen: (item: CatalystValuationReportArchiveItem) => void;
+}) {
+  const target = buildUpsideRunTarget(props.item);
+  if (!target) {
+    return (
+      <span className="valuation-upside-pill idle">
+        <Calculator size={12} />
+        {upsideStatusText(props.item)}
+      </span>
+    );
+  }
+  return (
+    <button
+      className={`valuation-upside-pill status-${target.status}`}
+      title="查看空间测算任务"
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        props.onOpen(props.item);
+      }}
+    >
+      <Calculator size={12} />
+      {upsideActionText(props.item)}
+    </button>
+  );
+}
+
 function statusText(item: CatalystValuationReportArchiveItem): string {
   if (item.status === "partial_failed") {
     return "部分失败";
@@ -493,6 +654,48 @@ function statusText(item: CatalystValuationReportArchiveItem): string {
     return "失败";
   }
   return item.bark_sent_at ? "已 Bark" : "已生成";
+}
+
+function upsideStatusText(item: CatalystValuationReportArchiveItem): string {
+  if (item.upside_chat_status === "running") {
+    return "测算中";
+  }
+  if (item.upside_chat_status === "completed") {
+    return "测算完成";
+  }
+  if (item.upside_chat_status === "failed") {
+    return "测算失败";
+  }
+  if (item.upside_chat_status === "cancelled") {
+    return "测算停止";
+  }
+  return "未测算";
+}
+
+function upsideRunStatusText(status: NonNullable<CatalystValuationReportArchiveItem["upside_chat_status"]>): string {
+  if (status === "running") {
+    return "测算中";
+  }
+  if (status === "completed") {
+    return "测算完成";
+  }
+  if (status === "failed") {
+    return "测算失败";
+  }
+  return "测算停止";
+}
+
+function upsideActionText(item: CatalystValuationReportArchiveItem): string {
+  if (item.upside_chat_status === "running") {
+    return "继续测算";
+  }
+  if (item.upside_chat_status === "failed") {
+    return "查看失败";
+  }
+  if (item.upside_chat_status === "cancelled") {
+    return "查看停止";
+  }
+  return "查看测算";
 }
 
 function formatWindowTitle(item: CatalystValuationReportArchiveItem): string {
@@ -517,6 +720,37 @@ function stockLine(item: CatalystValuationReportArchiveItem): string {
     return "暂无标的";
   }
   return item.top_stocks.map((stock) => stock.stock_name).join("、");
+}
+
+function buildUpsideRunTarget(item: CatalystValuationReportArchiveItem): UpsideChatRunTarget | null {
+  if (!item.upside_chat_run_id || !item.upside_chat_session_id || !item.upside_chat_status) {
+    return null;
+  }
+  return {
+    title: "估值线索空间测算",
+    subtitle: `${formatWindowTitle(item)} · ${item.total_stocks} 标的`,
+    surface: "估值线索",
+    entityId: item.report_id,
+    runId: item.upside_chat_run_id,
+    sessionId: item.upside_chat_session_id,
+    status: item.upside_chat_status,
+    updatedAt: item.upside_chat_updated_at,
+    error: item.upside_chat_error,
+  };
+}
+
+function upsideFields(item: CatalystValuationReportArchiveItem): Partial<CatalystValuationReportArchiveItem> {
+  return {
+    upside_chat_run_id: item.upside_chat_run_id,
+    upside_chat_session_id: item.upside_chat_session_id,
+    upside_chat_status: item.upside_chat_status,
+    upside_chat_updated_at: item.upside_chat_updated_at,
+    upside_chat_error: item.upside_chat_error,
+  };
+}
+
+function compactId(value: string): string {
+  return value.length <= 12 ? value : `${value.slice(0, 8)}...${value.slice(-4)}`;
 }
 
 function buildCopyText(report: CatalystValuationReportData, url?: string | null): string {

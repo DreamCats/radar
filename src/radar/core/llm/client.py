@@ -28,6 +28,8 @@ class LlmToolCall:
 class LlmChatResponse:
     content: str
     tool_calls: list[LlmToolCall]
+    stop_reason: str | None = None
+    usage: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -82,6 +84,7 @@ class RuntimeLlmProvider:
     max_tokens: int | None
     temperature: float | None
     headers: dict[str, str]
+    disable_thinking: bool = False
 
 
 ChatResponseImpl = Callable[
@@ -149,6 +152,7 @@ def resolve_provider(
         max_tokens=provider.max_tokens,
         temperature=provider.temperature,
         headers=provider.headers,
+        disable_thinking=provider.disable_thinking,
     )
     return selected_name, runtime
 
@@ -197,6 +201,7 @@ def chat_response(
 
     _, provider = resolve_provider(config, provider_name=provider_name, task=task)
     impl = _chat_response_impl(provider)
+    effective_disable_thinking = disable_thinking or (provider.disable_thinking and not enable_thinking)
     if enable_thinking:
         return impl(
             provider,
@@ -204,11 +209,11 @@ def chat_response(
             model,
             temperature,
             max_tokens,
-            disable_thinking,
+            effective_disable_thinking,
             tools,
             enable_thinking=True,
         )
-    return impl(provider, messages, model, temperature, max_tokens, disable_thinking, tools)
+    return impl(provider, messages, model, temperature, max_tokens, effective_disable_thinking, tools)
 
 
 def stream_chat_response(
@@ -227,13 +232,14 @@ def stream_chat_response(
     """流式发送 LLM 聊天请求；最终以 LlmChatDone 返回完整响应。"""
 
     _, provider = resolve_provider(config, provider_name=provider_name, task=task)
+    effective_disable_thinking = disable_thinking or (provider.disable_thinking and not enable_thinking)
     yield from _chat_stream_response_impl(provider)(
         provider,
         messages,
         model,
         temperature,
         max_tokens,
-        disable_thinking,
+        effective_disable_thinking,
         tools,
         enable_thinking,
     )

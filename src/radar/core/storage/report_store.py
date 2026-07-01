@@ -20,6 +20,7 @@ from radar.core.usecases.catalyst_valuation_report.render import render_report_h
 
 REPORT_KIND_CATALYST_VALUATION = "catalyst_valuation_report"
 ReportStatus = Literal["succeeded", "skipped", "partial_failed", "failed"]
+UpsideChatRunStatus = Literal["running", "completed", "failed", "cancelled"]
 
 
 class CatalystValuationReportStockSummary(BaseModel):
@@ -56,6 +57,11 @@ class CatalystValuationReportArchiveItem(BaseModel):
     total_stocks: int
     bark_sent_at: datetime | None = None
     bark_error: str | None = None
+    upside_chat_run_id: str | None = None
+    upside_chat_session_id: str | None = None
+    upside_chat_status: UpsideChatRunStatus | None = None
+    upside_chat_updated_at: datetime | None = None
+    upside_chat_error: str | None = None
     top_stocks: list[CatalystValuationReportStockSummary] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime

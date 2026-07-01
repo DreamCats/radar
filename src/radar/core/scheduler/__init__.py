@@ -13,6 +13,7 @@ from radar.core.scheduler.storage import (
     list_schedules,
     set_schedule_enabled,
     update_schedule_after_tick,
+    update_schedule_request,
 )
 
 __all__ = [
@@ -33,4 +34,5 @@ __all__ = [
     "scheduler_now",
     "set_schedule_enabled",
     "update_schedule_after_tick",
+    "update_schedule_request",
 ]

@@ -66,7 +66,12 @@ def chat_anthropic_response(
 
     blocks = data.get("content") if isinstance(data, dict) else None
     if not isinstance(blocks, list):
-        return LlmChatResponse(content="", tool_calls=[])
+        return LlmChatResponse(
+            content="",
+            tool_calls=[],
+            stop_reason=_optional_text(data.get("stop_reason")) if isinstance(data, dict) else None,
+            usage=_optional_dict(data.get("usage")) if isinstance(data, dict) else None,
+        )
 
     parts: list[str] = []
     tool_calls: list[LlmToolCall] = []
@@ -86,7 +91,12 @@ def chat_anthropic_response(
                         arguments=raw_input if isinstance(raw_input, dict) else {},
                     )
                 )
-    return LlmChatResponse(content="".join(parts), tool_calls=tool_calls)
+    return LlmChatResponse(
+        content="".join(parts),
+        tool_calls=tool_calls,
+        stop_reason=_optional_text(data.get("stop_reason")) if isinstance(data, dict) else None,
+        usage=_optional_dict(data.get("usage")) if isinstance(data, dict) else None,
+    )
 
 
 def stream_chat_anthropic_response(
@@ -105,6 +115,8 @@ def stream_chat_anthropic_response(
     payload["stream"] = True
     content_parts: list[str] = []
     tool_call_parts: dict[int, dict[str, str]] = {}
+    stop_reason: str | None = None
+    usage: dict[str, object] | None = None
 
     with httpx.Client(timeout=provider.timeout) as client:
         with client.stream(
@@ -132,6 +144,9 @@ def stream_chat_anthropic_response(
                         yield LlmChatDelta(content=content)
                     if tool_delta is not None:
                         yield tool_delta
+                elif event_type == "message_delta":
+                    stop_reason = _stream_stop_reason(data) or stop_reason
+                    usage = _stream_usage(data) or usage
                 elif event_type == "message_stop":
                     break
 
@@ -143,6 +158,8 @@ def stream_chat_anthropic_response(
         response=LlmChatResponse(
             content="".join(content_parts),
             tool_calls=[tool_call for _, tool_call in tool_call_items],
+            stop_reason=stop_reason,
+            usage=usage,
         )
     )
 
@@ -231,6 +248,25 @@ def _parse_tool_input(raw: str) -> dict:
     except json.JSONDecodeError:
         return {}
     return parsed if isinstance(parsed, dict) else {}
+
+
+def _stream_stop_reason(data: dict) -> str | None:
+    delta = data.get("delta")
+    if not isinstance(delta, dict):
+        return None
+    return _optional_text(delta.get("stop_reason"))
+
+
+def _stream_usage(data: dict) -> dict[str, object] | None:
+    return _optional_dict(data.get("usage"))
+
+
+def _optional_text(value: object) -> str | None:
+    return value if isinstance(value, str) and value else None
+
+
+def _optional_dict(value: object) -> dict[str, object] | None:
+    return value if isinstance(value, dict) else None
 
 
 def _payload(
