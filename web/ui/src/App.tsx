@@ -61,7 +61,7 @@ const MOBILE_NAV_QUERY = "(max-width: 720px)";
 const MOBILE_NAV_EDGE_WIDTH = 32;
 const MOBILE_NAV_SWIPE_DISTANCE = 56;
 const MOBILE_NAV_VERTICAL_TOLERANCE = 1.25;
-const MOBILE_NAV_SWIPE_IGNORE_SELECTOR = ".chat-launcher-shell";
+const MOBILE_NAV_SWIPE_IGNORE_SELECTOR = ".chat-launcher-shell, [data-mobile-nav-swipe-block]";
 
 export function App() {
   const [tab, setTab] = useState<TabKey>(() => readInitialTab());

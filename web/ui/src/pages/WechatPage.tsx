@@ -7,6 +7,7 @@ import { WechatListChatLauncher, WechatThreadHeader } from "../components/Wechat
 import { Avatar, WechatFilters } from "../components/WechatControls";
 import { formatTime } from "../lib/datetime";
 import { panelMotionState } from "../lib/motion";
+import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import {
   buildSenderStats,
   displayName,
@@ -76,6 +77,13 @@ export function WechatPage() {
   const canLoadOlder = Boolean(threadCursor.time && threadCursor.id);
   const showConversationSkeleton = loading && conversations.length === 0;
   const conversationMotion = panelMotionState(shouldReduceMotion);
+  const mobileThreadSwipeBack = useSwipeToCloseSheet(closeMobileThread, {
+    direction: "right",
+    enabled: mobileThreadOpen,
+    mediaQuery: "(max-width: 760px)",
+    minDistance: 72,
+    startEdgeWidth: 48,
+  });
 
   useEffect(() => {
     void loadConversations(defaultQuery);
@@ -323,7 +331,11 @@ export function WechatPage() {
           </div>
         </aside>
 
-        <section className="wechat-thread-panel content-panel panel">
+        <section
+          className="wechat-thread-panel content-panel panel"
+          data-mobile-nav-swipe-block={mobileThreadOpen ? "true" : undefined}
+          {...mobileThreadSwipeBack}
+        >
           {selectedConversation ? (
             <>
               <WechatThreadHeader
