@@ -61,6 +61,7 @@ const MOBILE_NAV_QUERY = "(max-width: 720px)";
 const MOBILE_NAV_EDGE_WIDTH = 32;
 const MOBILE_NAV_SWIPE_DISTANCE = 56;
 const MOBILE_NAV_VERTICAL_TOLERANCE = 1.25;
+const MOBILE_NAV_SWIPE_IGNORE_SELECTOR = ".chat-launcher-shell";
 
 export function App() {
   const [tab, setTab] = useState<TabKey>(() => readInitialTab());
@@ -379,6 +380,10 @@ function useMobileNavSwipe(enabled: boolean, mobileNavOpen: boolean, setMobileNa
         gesture = null;
         return;
       }
+      if (isMobileNavSwipeIgnored(event.target)) {
+        gesture = null;
+        return;
+      }
 
       const touch = event.touches[0];
       if (!mobileNavOpen && touch.clientX > MOBILE_NAV_EDGE_WIDTH) {
@@ -444,6 +449,10 @@ function useMobileNavSwipe(enabled: boolean, mobileNavOpen: boolean, setMobileNa
       window.removeEventListener("touchcancel", onTouchCancel);
     };
   }, [enabled, mobileNavOpen, setMobileNavOpen]);
+}
+
+function isMobileNavSwipeIgnored(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest(MOBILE_NAV_SWIPE_IGNORE_SELECTOR));
 }
 
 function readInitialTab(): TabKey {

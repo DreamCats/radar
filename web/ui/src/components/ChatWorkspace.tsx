@@ -1,7 +1,8 @@
 import { ArrowLeft, Check, Copy, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { copyText } from "../lib/clipboard";
+import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
 import { ChatComposer } from "./ChatComposer";
 import { ChatMessageList } from "./ChatMessageList";
 import type { ChatController } from "./chatTypes";
@@ -20,6 +21,16 @@ type ChatWorkspaceProps = {
 export function ChatWorkspace(props: ChatWorkspaceProps) {
   const controller = props.controller;
   const [copiedContextKey, setCopiedContextKey] = useState<string | null>(null);
+  const handleSwipeBack = useCallback(() => {
+    props.onClose?.();
+  }, [props.onClose]);
+  const swipeBack = useSwipeToCloseSheet(handleSwipeBack, {
+    direction: "right",
+    enabled: Boolean(props.onClose),
+    mediaQuery: "(max-width: 640px)",
+    minDistance: 72,
+    startEdgeWidth: 48,
+  });
 
   async function copyContextValue(key: string, value: string) {
     await copyText(value);
@@ -30,7 +41,7 @@ export function ChatWorkspace(props: ChatWorkspaceProps) {
   }
 
   return (
-    <div className="chat-workspace">
+    <div className="chat-workspace" {...swipeBack}>
       <header className="chat-launcher-head">
         {props.onClose ? (
           <button className="icon-btn chat-launcher-back" type="button" aria-label="返回上一页" title="返回上一页" onClick={props.onClose}>
