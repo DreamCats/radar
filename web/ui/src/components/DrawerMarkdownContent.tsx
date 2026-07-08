@@ -175,7 +175,7 @@ function splitMarkdownBlocks(content: string): MarkdownBlock[] {
 function renderInlineMarkdown(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const pattern =
-    /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)\s]+\)|(?:^|(?<![\d.]))[+\-−]\d+(?:\.\d+)?%|(?:^|(?<![\d.]))[+\-−]?\d+(?:\.\d+)?%?(?!\uFE0F?\u20E3))/g;
+    /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)\s]+\)|(?:^|(?<![\d.%]))[+\-−]\d+(?:\.\d+)?%|(?:^|(?<![\d.%]))[+\-−]?\d+(?:\.\d+)?%?(?!\uFE0F?\u20E3))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(text)) !== null) {
@@ -185,7 +185,7 @@ function renderInlineMarkdown(text: string): ReactNode[] {
     const token = match[0];
     if (token.startsWith("**")) {
       const strongText = token.slice(2, -2);
-      const className = signedPercentClassName(strongText.trim(), "drawer-markdown-percent-up", "drawer-markdown-percent-down");
+      const className = percentClassName(strongText.trim(), "drawer-markdown-percent-up", "drawer-markdown-percent-down");
       nodes.push(
         <strong className={className} key={match.index}>
           {strongText}
@@ -193,14 +193,14 @@ function renderInlineMarkdown(text: string): ReactNode[] {
       );
     } else if (token.startsWith("`")) {
       nodes.push(<code key={match.index}>{token.slice(1, -1)}</code>);
-    } else if (isSignedPercent(token.trim())) {
+    } else if (isPercentToken(token.trim())) {
       const leadingText = token.match(/^\s*/)?.[0] ?? "";
       const percentText = token.trim();
       if (leadingText) {
         nodes.push(leadingText);
       }
       nodes.push(
-        <span className={percentText.startsWith("+") ? "drawer-markdown-percent-up" : "drawer-markdown-percent-down"} key={match.index}>
+        <span className={percentClassName(percentText, "drawer-markdown-percent-up", "drawer-markdown-percent-down")} key={match.index}>
           {percentText}
         </span>,
       );
@@ -233,17 +233,17 @@ function renderInlineMarkdown(text: string): ReactNode[] {
   return nodes;
 }
 
-function isSignedPercent(token: string): boolean {
-  return /^[+\-−]\d+(?:\.\d+)?%$/.test(token);
+function isPercentToken(token: string): boolean {
+  return /^[+\-−]?\d+(?:\.\d+)?%$/.test(token);
 }
 
 function isNumberToken(token: string): boolean {
-  return /^[+\-−]?\d+(?:\.\d+)?%?$/.test(token);
+  return /^[+\-−]?\d+(?:\.\d+)?$/.test(token);
 }
 
-function signedPercentClassName(token: string, upClassName: string, downClassName: string): string | undefined {
-  if (!isSignedPercent(token)) {
+function percentClassName(token: string, upClassName: string, downClassName: string): string | undefined {
+  if (!isPercentToken(token)) {
     return undefined;
   }
-  return token.startsWith("+") ? upClassName : downClassName;
+  return token.startsWith("-") || token.startsWith("−") ? downClassName : upClassName;
 }
