@@ -1,6 +1,6 @@
 # 数据库和表清单
 
-本文档记录当前系统保留的本地数据库、表及用途。默认路径以 `~/.config/radar/data/` 为准；如果配置里覆盖了 `storage.database` 或 `market.database`，以配置值为准。
+本文档记录当前系统保留的本地数据库、表及用途。默认路径以 `~/.config/radar/data/` 为准；如果配置里覆盖了 `storage.database`、`storage.reports_database` 或 `market.database`，以配置值为准。
 
 ## `radar.sqlite3`：消息和作业主库
 
@@ -26,6 +26,14 @@
 | `stocks` | A 股股票主数据表，保存 `ts_code`、6 位代码、名称、上市状态；由市场主数据全量刷新作业维护。 |
 | `tushare_cache` | Tushare 非历史接口的短期 KV 缓存。股票代码/名称映射不再依赖此表。 |
 | `tushare_history` | Tushare 一维时间序列接口的行级历史缓存，例如日线、指数日线等。 |
+
+## `reports.sqlite3`：报告归档库
+
+| 表 | 用途 |
+| --- | --- |
+| `schema_migrations` | 报告库 schema 版本记录。 |
+| `catalyst_valuation_reports` | 催化估值线索报告归档，保存窗口、结构化 report JSON、渲染 HTML、本地 HTML 路径和发布 URL。 |
+| `report_notifications` | 报告通知记录，例如手动 Bark 发送状态和错误信息。 |
 
 ## `chat/runs.sqlite3`：对话运行态库
 
