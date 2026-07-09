@@ -316,7 +316,14 @@ def _sync_catalyst_valuation_report_default(
         and request.get("publish") is True
         and request.get("auto_upside") is True
         and request.get("limit") == default_schedule.request.get("limit")
-        and ("max_stocks" not in request or request.get("max_stocks") in {12, default_schedule.request.get("max_stocks")})
+        and (
+            "max_stocks" not in request
+            or request.get("max_stocks") == 12
+            or (
+                row["created_at"] == row["updated_at"]
+                and request.get("max_stocks") == default_schedule.request.get("max_stocks")
+            )
+        )
     ):
         request["notify"] = False
         request_changed = True

@@ -351,7 +351,21 @@ def test_schedule_request_update_persists_catalyst_switches(tmp_path):
     assert schedule["request"]["auto_upside"] is False
 
 
-def test_schedule_request_update_ignores_catalyst_report_notify(tmp_path):
+def test_schedule_request_update_persists_catalyst_report_notify(tmp_path):
+    client = TestClient(create_app(_config(tmp_path)))
+
+    response = client.patch(
+        "/api/schedules/catalyst-valuation-report-hourly/request",
+        json={"request": {"limit": 200, "publish": True, "notify": True, "auto_upside": True}},
+    )
+
+    assert response.status_code == 200
+    schedule = _find(response.json()["items"], "catalyst-valuation-report-hourly")
+    assert schedule["request"]["publish"] is True
+    assert schedule["request"]["notify"] is True
+
+
+def test_schedule_request_update_disables_notify_when_publish_is_disabled(tmp_path):
     client = TestClient(create_app(_config(tmp_path)))
 
     response = client.patch(
