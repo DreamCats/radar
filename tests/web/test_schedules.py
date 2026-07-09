@@ -133,6 +133,38 @@ def test_schedules_endpoint_disables_legacy_catalyst_report_bark_without_max_sto
     assert "max_stocks" not in catalyst_schedule["request"]
 
 
+def test_schedules_endpoint_preserves_user_enabled_catalyst_report_bark_without_max_stocks(tmp_path):
+    config = _config(tmp_path)
+    created_at = "2026-07-09T23:00:00"
+    updated_at = "2026-07-10T00:00:00"
+    with closing(connect(config.database_path)) as conn:
+        migrate_message_db(conn)
+        conn.execute(
+            """
+            INSERT INTO job_schedules (
+                schedule_id, job_key, title, enabled, timezone, cadence_kind,
+                cadence_json, window_preset, request_json, catch_up_policy,
+                max_lag_minutes, next_tick_at, sort_order, created_at, updated_at
+            ) VALUES (
+                'catalyst-valuation-report-hourly', 'catalyst_valuation_report', '催化估值线索报告', 1,
+                'Asia/Shanghai', 'interval',
+                '{"active_end":"23:00","active_start":"08:00","minutes":60,"offset_minutes":0}',
+                'last_1h',
+                '{"auto_upside":true,"limit":200,"notify":true,"publish":true}',
+                'latest_only', 60, ?, 30, ?, ?
+            )
+            """,
+            (updated_at, created_at, updated_at),
+        )
+        conn.commit()
+
+    response = TestClient(create_app(config)).get("/api/schedules")
+
+    assert response.status_code == 200
+    catalyst_schedule = _find(response.json()["items"], "catalyst-valuation-report-hourly")
+    assert catalyst_schedule["request"]["notify"] is True
+
+
 def test_message_migration_renames_catalyst_valuation_report_identifiers(tmp_path):
     config = _config(tmp_path)
     current = "2026-06-28T20:00:00"
