@@ -78,7 +78,7 @@ def _run_catalyst_valuation_report_job(
             limit=request.limit,
             max_stocks=request.max_stocks,
             publish=request.publish,
-            notify=request.notify,
+            notify=False,
         )
         report = result.report
         status = "skipped" if report.total_stocks == 0 else "succeeded"

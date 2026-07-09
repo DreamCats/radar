@@ -59,16 +59,33 @@ def project_completed_valuation_run(config: RadarConfig, run: ChatRun) -> Valuat
         items=items,
     )
     if measurement.parse_status == "ready" and measurement.positive_count > 0:
-        measurement = _publish_and_notify_positive_measurement(
+        measurement = _publish_positive_measurement(
             config,
             measurement,
             session_markdown=assistant_content,
             source_report_url=report_detail.published_url if report_detail else None,
         )
+        if _structured_bark_enabled(report_detail):
+            if measurement.published_url:
+                measurement = _notify_positive_measurement(config, measurement, report_url=measurement.published_url)
+            else:
+                measurement = record_valuation_notification(
+                    config.valuation_database_path,
+                    measurement_id=measurement.measurement_id,
+                    status="failed",
+                    error_message=f"估值测算报告上传失败: {measurement.publish_error or '未生成公网 URL'}"[:1000],
+                )
+        else:
+            measurement = record_valuation_notification(
+                config.valuation_database_path,
+                measurement_id=measurement.measurement_id,
+                status="skipped",
+                error_message="测算 Bark 未开启",
+            )
     return measurement
 
 
-def _publish_and_notify_positive_measurement(
+def _publish_positive_measurement(
     config: RadarConfig,
     measurement: ValuationMeasurement,
     *,
@@ -85,23 +102,21 @@ def _publish_and_notify_positive_measurement(
             )
             published_url = publish_valuation_measurement_html(config, local_path, measurement=measurement)
         except CloudUploadError as exc:
-            measurement = record_valuation_publication(
+            return record_valuation_publication(
                 config.valuation_database_path,
                 measurement_id=measurement.measurement_id,
                 error_message=str(exc)[:1000],
-            )
-            return record_valuation_notification(
-                config.valuation_database_path,
-                measurement_id=measurement.measurement_id,
-                status="failed",
-                error_message=f"估值测算报告上传失败: {exc}"[:1000],
             )
         measurement = record_valuation_publication(
             config.valuation_database_path,
             measurement_id=measurement.measurement_id,
             published_url=published_url,
         )
-    return _notify_positive_measurement(config, measurement, report_url=measurement.published_url)
+    return measurement
+
+
+def _structured_bark_enabled(report_detail) -> bool:
+    return bool(report_detail and report_detail.request.get("notify") is True)
 
 
 def _notify_positive_measurement(

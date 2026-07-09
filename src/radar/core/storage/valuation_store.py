@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from radar.core.storage.db import SQLITE_TIMEOUT_SECONDS, configure_sqlite_connection, migrate_valuation_db
 
 ValuationParseStatus = Literal["ready", "missing_message", "missing_table", "failed"]
-ValuationNotificationStatus = Literal["succeeded", "failed"]
+ValuationNotificationStatus = Literal["succeeded", "failed", "skipped"]
 
 
 class ValuationMeasurementItemInput(BaseModel):

@@ -117,12 +117,6 @@ export function SchedulePage() {
     try {
       const current = Boolean(schedule.request[option]);
       const nextRequest = { ...schedule.request, [option]: !current };
-      if (option === "publish" && current) {
-        nextRequest.notify = false;
-      }
-      if (option === "notify" && !current) {
-        nextRequest.publish = true;
-      }
       const nextItems = await updateScheduleRequest(schedule.schedule_id, nextRequest);
       setSchedules(nextItems);
     } catch (err) {
@@ -255,7 +249,7 @@ function ScheduleRequestSwitches(props: {
 }) {
   const options: Array<{ key: CatalystScheduleOption; label: string }> = [
     { key: "publish", label: "生成 HTML" },
-    { key: "notify", label: "Bark 通知" },
+    { key: "notify", label: "测算 Bark" },
     { key: "auto_upside", label: "自动测算" },
   ];
   return (
@@ -338,7 +332,7 @@ function requestTags(schedule: ScheduleItem): string[] {
     tags.push("publish=true");
   }
   if (typeof schedule.request.notify === "boolean") {
-    tags.push(`notify=${String(schedule.request.notify)}`);
+    tags.push(`measurement_bark=${String(schedule.request.notify)}`);
   }
   if (typeof schedule.request.auto_upside === "boolean") {
     tags.push(`auto_upside=${String(schedule.request.auto_upside)}`);

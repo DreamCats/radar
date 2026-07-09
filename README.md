@@ -252,7 +252,7 @@ scripts/dashboard start -- --port 8001 --ui-port 5174
 uv run radar dashboard --port 8001 --ui-port 5174
 ```
 
-催化估值线索报告会归档到独立 `reports.sqlite3`，dashboard 的“估值线索”tab 可回看每次生成的结构化数据和 HTML，并可手动发送 Bark。默认定时流程只归档、发布 HTML 并触发异步空间测算，不再发送第一阶段报告简报 Bark；空间测算 chat run 完成后会投影到独立 `valuation.sqlite3`，有正向空间标的时会先发布一份包含结构化表格和完整 session Markdown 的估值测算 HTML，再发送结构化 Bark，Bark 点击 URL 指向这份测算报告。开启 `web.auth.enabled` 后，外部 API 也使用同一个固定 token：
+催化估值线索报告会归档到独立 `reports.sqlite3`，dashboard 的“估值线索”tab 可回看每次生成的结构化数据和 HTML，并可手动发送 Bark。默认定时流程只归档、发布 HTML 并触发异步空间测算，不再发送第一阶段报告简报 Bark；空间测算 chat run 完成后会投影到独立 `valuation.sqlite3`，有正向空间标的时会先发布一份包含结构化表格和完整 session Markdown 的估值测算 HTML，再按定时任务的“测算 Bark”开关发送结构化 Bark，Bark 点击 URL 指向这份测算报告。开启 `web.auth.enabled` 后，外部 API 也使用同一个固定 token：
 
 ```bash
 curl -H "Authorization: Bearer $RADAR_WEB_AUTH_TOKEN" \

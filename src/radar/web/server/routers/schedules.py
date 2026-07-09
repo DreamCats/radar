@@ -55,11 +55,10 @@ def update_request(
     schedule = get_schedule(config.database_path, schedule_id)
     if schedule is None:
         raise HTTPException(status_code=404, detail="schedule 不存在")
-    next_request = _normalize_schedule_request(schedule.job_key, {**schedule.request, **request.request})
     updated = update_schedule_request(
         config.database_path,
         schedule_id,
-        request=next_request,
+        request={**schedule.request, **request.request},
         now=scheduler_now(),
     )
     if updated is None:
@@ -86,12 +85,3 @@ def ticks(
     return ScheduleTickListResponse(
         items=list_schedule_ticks(config.database_path, schedule_id=schedule_id, limit=limit)
     )
-
-
-def _normalize_schedule_request(job_key: str, request: dict[str, object]) -> dict[str, object]:
-    if job_key != "catalyst_valuation_report":
-        return request
-    next_request = dict(request)
-    if next_request.get("publish") is False:
-        next_request["notify"] = False
-    return next_request

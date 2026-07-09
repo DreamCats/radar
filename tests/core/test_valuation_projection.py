@@ -38,7 +38,7 @@ def test_project_completed_valuation_run_saves_items_and_sends_structured_bark(m
     config = _config(tmp_path)
     saved_report = save_catalyst_valuation_report(
         config.reports_database_path,
-        request={"limit": 200, "publish": True, "notify": False},
+        request={"limit": 200, "publish": True, "notify": True},
         result=_report_result(tmp_path),
         run_id="report-run",
         status="succeeded",
@@ -103,6 +103,49 @@ def test_project_completed_valuation_run_saves_items_and_sends_structured_bark(m
     assert saved.notification_status == "succeeded"
 
 
+def test_project_completed_valuation_run_publishes_but_skips_bark_when_notify_is_off(monkeypatch, tmp_path):
+    config = _config(tmp_path)
+    saved_report = save_catalyst_valuation_report(
+        config.reports_database_path,
+        request={"limit": 200, "publish": True, "notify": False},
+        result=_report_result(tmp_path),
+        run_id="report-run",
+        status="succeeded",
+    )
+    run = _completed_run(
+        config,
+        report_id=saved_report.report_id,
+        assistant_content="""
+## 空间测算总表
+| 排名 | 标的 | 当前市值 | 目标市值 | 剩余空间 | 状态 | 确定性 | 关键验证 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 胜宏科技 300476.SZ | 500亿 | 900亿 | 80% | 显著空间 | 高 | 订单兑现 |
+""",
+    )
+
+    monkeypatch.setattr(
+        "radar.core.valuation.report.upload_aly",
+        lambda config, local_path, remote_path: CloudUploadResult(
+            local_path=local_path,
+            remote_path=remote_path,
+            url="https://example.com/valuation-measurement.html",
+        ),
+    )
+
+    def fail_push_bark(config, message):
+        raise AssertionError("测算 Bark 未开启时不应发送 Bark")
+
+    monkeypatch.setattr("radar.core.valuation.projector.push_bark", fail_push_bark)
+
+    measurement = project_completed_valuation_run(config, run)
+
+    assert measurement is not None
+    assert measurement.positive_count == 1
+    assert measurement.published_url == "https://example.com/valuation-measurement.html"
+    assert measurement.notification_status == "skipped"
+    assert measurement.notification_error == "测算 Bark 未开启"
+
+
 def test_project_completed_valuation_run_skips_bark_without_positive_items(monkeypatch, tmp_path):
     config = _config(tmp_path)
     saved_report = save_catalyst_valuation_report(
@@ -140,7 +183,7 @@ def test_project_completed_valuation_run_records_upload_failure_without_bark(mon
     config = _config(tmp_path)
     saved_report = save_catalyst_valuation_report(
         config.reports_database_path,
-        request={"limit": 200, "publish": True, "notify": False},
+        request={"limit": 200, "publish": True, "notify": True},
         result=_report_result(tmp_path),
         run_id="report-run",
         status="succeeded",
@@ -180,7 +223,7 @@ def test_completed_chat_run_hook_projects_valuation_result(monkeypatch, tmp_path
     config = _config(tmp_path)
     saved_report = save_catalyst_valuation_report(
         config.reports_database_path,
-        request={"limit": 200, "publish": True, "notify": False},
+        request={"limit": 200, "publish": True, "notify": True},
         result=_report_result(tmp_path),
         run_id="report-run",
         status="succeeded",
