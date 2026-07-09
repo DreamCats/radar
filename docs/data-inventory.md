@@ -40,7 +40,7 @@
 | 表 | 用途 |
 | --- | --- |
 | `schema_migrations` | 估值测算库 schema 版本记录。 |
-| `valuation_measurements` | 异步空间测算完成后的结构化投影，保存来源 report/run/session、解析状态、正向标的数量和结构化 Bark 通知状态。 |
+| `valuation_measurements` | 异步空间测算完成后的结构化投影，保存来源 report/run/session、解析状态、正向标的数量、测算 HTML 发布 URL 和结构化 Bark 通知状态。 |
 | `valuation_measurement_items` | 空间测算总表的逐标的结构化行，包含当前市值、目标市值、剩余空间、状态、确定性和关键验证。 |
 
 ## `chat/runs.sqlite3`：对话运行态库

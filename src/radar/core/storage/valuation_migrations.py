@@ -57,4 +57,15 @@ VALUATION_MIGRATIONS: list[Migration] = [
             ON valuation_measurement_items(ts_code);
         """,
     ),
+    (
+        "002_valuation_measurement_publication",
+        """
+        ALTER TABLE valuation_measurements
+            ADD COLUMN published_url TEXT;
+        ALTER TABLE valuation_measurements
+            ADD COLUMN published_at TEXT;
+        ALTER TABLE valuation_measurements
+            ADD COLUMN publish_error TEXT;
+        """,
+    ),
 ]

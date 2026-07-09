@@ -4,13 +4,16 @@ from datetime import datetime, timezone
 
 from radar.core.channel import BarkError, BarkMessage, push_bark
 from radar.core.chat import ChatRun, ChatSessionStore
+from radar.core.cloud import CloudUploadError
 from radar.core.config import RadarConfig
 from radar.core.storage.report_store import get_catalyst_valuation_report
 from radar.core.storage.valuation_store import (
     ValuationMeasurement,
+    record_valuation_publication,
     record_valuation_notification,
     save_valuation_measurement,
 )
+from radar.core.valuation.report import publish_valuation_measurement_html, write_valuation_measurement_html
 from radar.core.valuation.upside_parser import parse_upside_measurement_items
 
 
@@ -56,8 +59,49 @@ def project_completed_valuation_run(config: RadarConfig, run: ChatRun) -> Valuat
         items=items,
     )
     if measurement.parse_status == "ready" and measurement.positive_count > 0:
-        measurement = _notify_positive_measurement(config, measurement, report_url=report_detail.published_url if report_detail else None)
+        measurement = _publish_and_notify_positive_measurement(
+            config,
+            measurement,
+            session_markdown=assistant_content,
+            source_report_url=report_detail.published_url if report_detail else None,
+        )
     return measurement
+
+
+def _publish_and_notify_positive_measurement(
+    config: RadarConfig,
+    measurement: ValuationMeasurement,
+    *,
+    session_markdown: str,
+    source_report_url: str | None,
+) -> ValuationMeasurement:
+    if not measurement.published_url:
+        try:
+            local_path = write_valuation_measurement_html(
+                config,
+                measurement,
+                session_markdown=session_markdown,
+                source_report_url=source_report_url,
+            )
+            published_url = publish_valuation_measurement_html(config, local_path, measurement=measurement)
+        except CloudUploadError as exc:
+            measurement = record_valuation_publication(
+                config.valuation_database_path,
+                measurement_id=measurement.measurement_id,
+                error_message=str(exc)[:1000],
+            )
+            return record_valuation_notification(
+                config.valuation_database_path,
+                measurement_id=measurement.measurement_id,
+                status="failed",
+                error_message=f"估值测算报告上传失败: {exc}"[:1000],
+            )
+        measurement = record_valuation_publication(
+            config.valuation_database_path,
+            measurement_id=measurement.measurement_id,
+            published_url=published_url,
+        )
+    return _notify_positive_measurement(config, measurement, report_url=measurement.published_url)
 
 
 def _notify_positive_measurement(
@@ -72,11 +116,11 @@ def _notify_positive_measurement(
         push_bark(
             config,
             BarkMessage(
-                title="Radar 估值测算",
-                subtitle=f"{measurement.positive_count} 个有上涨空间",
+                title=_positive_bark_title(measurement),
+                subtitle=_positive_bark_subtitle(measurement),
                 body=_positive_bark_body(measurement),
                 url=report_url,
-                group="radar",
+                group="radar-valuation",
                 level="timeSensitive",
             ),
         )
@@ -96,20 +140,59 @@ def _notify_positive_measurement(
 
 def _positive_bark_body(measurement: ValuationMeasurement) -> str:
     positives = [item for item in measurement.items if item.is_positive]
-    lines = [f"估值测算：{len(positives)} 个有上涨空间标的"]
-    for index, item in enumerate(positives[:5], start=1):
-        code = f" {item.ts_code}" if item.ts_code else ""
-        upside = f" {item.upside_text}" if item.upside_text else ""
-        status = f" {item.valuation_status}" if item.valuation_status else ""
-        confidence = f" {item.confidence}" if item.confidence else ""
-        lines.append(f"{index}. {item.name}{code}{upside}{status}{confidence}".strip())
+    if len(positives) == 1:
+        item = positives[0]
+        lines = [_item_label(item)]
         if item.key_validation:
-            lines.append(f"   验证：{item.key_validation}")
-    if len(positives) > 5:
-        lines.append(f"... 另有 {len(positives) - 5} 个")
-    if measurement.source_generated_at:
-        lines.append(f"报告：{measurement.source_generated_at:%Y-%m-%d %H:%M}")
+            lines.append(f"验证：{_compact_text(item.key_validation, 72)}")
+        return "\n".join(lines)
+    lines = []
+    for index, item in enumerate(positives[:3], start=1):
+        parts = [_item_label(item)]
+        if item.upside_text:
+            parts.append(item.upside_text)
+        if item.confidence:
+            parts.append(f"确定性{item.confidence}")
+        lines.append(f"{index}. {'｜'.join(parts)}")
+    if len(positives) > 3:
+        lines.append(f"另有 {len(positives) - 3} 个，点击查看完整测算报告")
+    else:
+        lines.append("点击查看完整测算报告")
     return "\n".join(lines)
+
+
+def _positive_bark_title(measurement: ValuationMeasurement) -> str:
+    positives = [item for item in measurement.items if item.is_positive]
+    if len(positives) == 1:
+        return f"Radar 估值测算｜{positives[0].name}"
+    return f"Radar 估值测算｜{len(positives)} 个正向"
+
+
+def _positive_bark_subtitle(measurement: ValuationMeasurement) -> str:
+    positives = [item for item in measurement.items if item.is_positive]
+    if not positives:
+        return "无正向空间"
+    first = positives[0]
+    if len(positives) == 1:
+        parts = []
+        if first.upside_text:
+            parts.append(first.upside_text)
+        if first.valuation_status:
+            parts.append(first.valuation_status)
+        if first.confidence:
+            parts.append(f"确定性{first.confidence}")
+        return " · ".join(parts) or "正向空间"
+    names = "、".join(item.name for item in positives[:3])
+    return f"{names}{' 等' if len(positives) > 3 else ''}"
+
+
+def _item_label(item) -> str:
+    return f"{item.ts_code}｜{item.name}" if item.ts_code else item.name
+
+
+def _compact_text(value: str, limit: int) -> str:
+    text = " ".join(value.split())
+    return text if len(text) <= limit else f"{text[:limit - 1]}…"
 
 
 def _latest_assistant_content(config: RadarConfig, session_id: str) -> str | None:

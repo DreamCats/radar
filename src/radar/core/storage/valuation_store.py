@@ -50,6 +50,9 @@ class ValuationMeasurement(BaseModel):
     parse_error: str | None = None
     total_items: int
     positive_count: int
+    published_url: str | None = None
+    published_at: datetime | None = None
+    publish_error: str | None = None
     notification_status: ValuationNotificationStatus | None = None
     notified_at: datetime | None = None
     notification_error: str | None = None
@@ -209,6 +212,43 @@ def record_valuation_notification(
     return measurement
 
 
+def record_valuation_publication(
+    database: Path,
+    *,
+    measurement_id: str,
+    published_url: str | None = None,
+    error_message: str | None = None,
+) -> ValuationMeasurement:
+    now = _now_text()
+    with _connect(database) as conn:
+        if published_url:
+            conn.execute(
+                """
+                UPDATE valuation_measurements
+                SET published_url = ?,
+                    published_at = ?,
+                    publish_error = NULL,
+                    updated_at = ?
+                WHERE measurement_id = ?
+                """,
+                (published_url, now, now, measurement_id),
+            )
+        else:
+            conn.execute(
+                """
+                UPDATE valuation_measurements
+                SET publish_error = ?,
+                    updated_at = ?
+                WHERE measurement_id = ?
+                """,
+                (error_message, now, measurement_id),
+            )
+    measurement = get_valuation_measurement(database, measurement_id)
+    if measurement is None:
+        raise RuntimeError(f"估值测算发布状态写入后无法读取: {measurement_id}")
+    return measurement
+
+
 def _connect(database: Path) -> sqlite3.Connection:
     database.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(database, timeout=SQLITE_TIMEOUT_SECONDS)
@@ -239,6 +279,9 @@ def _row_to_measurement(row: sqlite3.Row, item_rows: list[sqlite3.Row]) -> Valua
         parse_error=row["parse_error"],
         total_items=row["total_items"],
         positive_count=row["positive_count"],
+        published_url=row["published_url"],
+        published_at=_parse_datetime(row["published_at"]),
+        publish_error=row["publish_error"],
         notification_status=row["notification_status"],
         notified_at=_parse_datetime(row["notified_at"]),
         notification_error=row["notification_error"],
