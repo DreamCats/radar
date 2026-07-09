@@ -87,6 +87,7 @@ cloud:
     assert config.wechat.timeout == 10
     assert str(config.data_dir).endswith("data")
     assert "~" not in str(config.database_path)
+    assert config.valuation_database_path == config.data_dir / "valuation.sqlite3"
     assert config.market_database_path == config.data_dir / "market.sqlite3"
     assert config.wechat_endpoint_url("group_message") == "https://example.invalid/wechat"
     assert config.filters.group_blacklist_patterns == ["小学", "寝室"]
@@ -143,6 +144,15 @@ def test_env_overrides_tushare_token(config_dir: Path, monkeypatch):
     assert str(config.market_database_path).endswith("radar-market.sqlite3")
     assert "~" not in str(config.market_database_path)
     assert config.secrets.market["tushare_main"].token == "token-from-env"
+
+
+def test_env_overrides_valuation_database(config_dir: Path, monkeypatch):
+    monkeypatch.setenv("RADAR_VALUATION_DATABASE", "~/radar-valuation.sqlite3")
+
+    config = load_config(config_dir)
+
+    assert str(config.valuation_database_path).endswith("radar-valuation.sqlite3")
+    assert "~" not in str(config.valuation_database_path)
 
 
 def test_env_overrides_brave_search_key(config_dir: Path, monkeypatch):

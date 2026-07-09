@@ -53,7 +53,7 @@ def test_schedules_endpoint_seeds_defaults(tmp_path):
         "active_end": "23:00",
     }
     assert catalyst_schedule["request"]["publish"] is True
-    assert catalyst_schedule["request"]["notify"] is True
+    assert catalyst_schedule["request"]["notify"] is False
     assert catalyst_schedule["request"]["auto_upside"] is True
     assert catalyst_schedule["request"]["max_stocks"] == 20
     assert "llm_concurrency" not in catalyst_schedule["request"]
@@ -94,7 +94,7 @@ def test_schedules_endpoint_syncs_existing_catalyst_default(tmp_path):
         "minutes": 60,
         "offset_minutes": 0,
     }
-    assert catalyst_schedule["request"]["notify"] is True
+    assert catalyst_schedule["request"]["notify"] is False
     assert catalyst_schedule["request"]["auto_upside"] is True
     assert catalyst_schedule["request"]["max_stocks"] == 12
     assert "llm_concurrency" not in catalyst_schedule["request"]
@@ -318,7 +318,7 @@ def test_schedule_request_update_persists_catalyst_switches(tmp_path):
     assert schedule["request"]["auto_upside"] is False
 
 
-def test_schedule_request_update_enables_publish_for_notify(tmp_path):
+def test_schedule_request_update_ignores_catalyst_report_notify(tmp_path):
     client = TestClient(create_app(_config(tmp_path)))
 
     response = client.patch(
@@ -328,8 +328,8 @@ def test_schedule_request_update_enables_publish_for_notify(tmp_path):
 
     assert response.status_code == 200
     schedule = _find(response.json()["items"], "catalyst-valuation-report-hourly")
-    assert schedule["request"]["publish"] is True
-    assert schedule["request"]["notify"] is True
+    assert schedule["request"]["publish"] is False
+    assert schedule["request"]["notify"] is False
 
 
 def test_schedule_run_now_submits_existing_job(monkeypatch, tmp_path):
@@ -405,11 +405,11 @@ def test_schedule_run_now_submits_catalyst_valuation_report(monkeypatch, tmp_pat
     assert item["status"] == "submitted"
     assert item["run_ids"] == ["run-catalyst"]
     assert item["request"]["publish"] is True
-    assert item["request"]["notify"] is True
+    assert item["request"]["notify"] is False
     assert item["request"]["auto_upside"] is True
     assert item["request"]["max_stocks"] == 20
     assert captured["publish"] is True
-    assert captured["notify"] is True
+    assert captured["notify"] is False
     assert captured["auto_upside"] is True
     assert captured["max_stocks"] == 20
     assert captured["end_time"] > captured["start_time"]
@@ -533,7 +533,7 @@ def test_catalyst_valuation_report_job_starts_auto_upside_chat(monkeypatch, tmp_
         report=report,
         local_html_path=tmp_path / "report.html",
         published_url="https://example.com/report.html",
-        bark_sent=True,
+        bark_sent=False,
     )
     run_id = start_run(
         config.database_path,
@@ -544,7 +544,7 @@ def test_catalyst_valuation_report_job_starts_auto_upside_chat(monkeypatch, tmp_
         start_time=start_time,
         end_time=end_time,
         publish=True,
-        notify=True,
+        notify=False,
         auto_upside=True,
     )
     captured: dict[str, object] = {}

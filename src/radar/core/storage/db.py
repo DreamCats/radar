@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from radar.core.storage.market_migrations import MARKET_MIGRATIONS
 from radar.core.storage.message_migrations import MESSAGE_MIGRATIONS
 from radar.core.storage.report_migrations import REPORT_MIGRATIONS
+from radar.core.storage.valuation_migrations import VALUATION_MIGRATIONS
 
 Migration = tuple[str, str]
 _MIGRATION_LOCK = threading.Lock()
@@ -47,6 +48,12 @@ def migrate_report_db(conn: sqlite3.Connection) -> None:
     """迁移报告库；报告归档不耦合原始消息库。"""
 
     migrate(conn, REPORT_MIGRATIONS)
+
+
+def migrate_valuation_db(conn: sqlite3.Connection) -> None:
+    """迁移估值测算库；只保存异步研究结果投影。"""
+
+    migrate(conn, VALUATION_MIGRATIONS)
 
 
 def migrate(conn: sqlite3.Connection, migrations: Sequence[Migration]) -> None:

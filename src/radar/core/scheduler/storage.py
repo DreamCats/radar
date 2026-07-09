@@ -310,6 +310,17 @@ def _sync_catalyst_valuation_report_default(
         request["notify"] = bool(default_schedule.request.get("notify", request.get("notify", False)))
         request_changed = True
 
+    if (
+        default_schedule.request.get("notify") is False
+        and request.get("notify") is True
+        and request.get("publish") is True
+        and request.get("auto_upside") is True
+        and request.get("limit") == default_schedule.request.get("limit")
+        and request.get("max_stocks") in {12, default_schedule.request.get("max_stocks")}
+    ):
+        request["notify"] = False
+        request_changed = True
+
     if request_changed:
         updates.append("request_json = ?")
         params.append(_json(request))

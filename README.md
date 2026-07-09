@@ -85,6 +85,8 @@ storage:
   data_dir: ~/.config/radar/data
   # 可选；不配置时默认是 ~/.config/radar/data/reports.sqlite3。
   reports_database: ~/.config/radar/data/reports.sqlite3
+  # 可选；不配置时默认是 ~/.config/radar/data/valuation.sqlite3。
+  valuation_database: ~/.config/radar/data/valuation.sqlite3
 
 wechat:
   timeout: 30
@@ -250,7 +252,7 @@ scripts/dashboard start -- --port 8001 --ui-port 5174
 uv run radar dashboard --port 8001 --ui-port 5174
 ```
 
-催化估值线索报告会归档到独立 `reports.sqlite3`，dashboard 的“估值线索”tab 可回看每次生成的结构化数据和 HTML，并可手动发送 Bark。开启 `web.auth.enabled` 后，外部 API 也使用同一个固定 token：
+催化估值线索报告会归档到独立 `reports.sqlite3`，dashboard 的“估值线索”tab 可回看每次生成的结构化数据和 HTML，并可手动发送 Bark。默认定时流程只归档、发布 HTML 并触发异步空间测算，不再发送第一阶段报告简报 Bark；空间测算 chat run 完成后会投影到独立 `valuation.sqlite3`，只有解析出正向空间标的时才发送结构化 Bark。开启 `web.auth.enabled` 后，外部 API 也使用同一个固定 token：
 
 ```bash
 curl -H "Authorization: Bearer $RADAR_WEB_AUTH_TOKEN" \
@@ -278,6 +280,7 @@ uv run radar query --cursor-time "2026-06-03T10:00:00" --cursor-id "message-id" 
 ~/.config/radar/data/radar.sqlite3
 ~/.config/radar/data/market.sqlite3
 ~/.config/radar/data/reports.sqlite3
+~/.config/radar/data/valuation.sqlite3
 ```
 
 消息库 `radar.sqlite3`：
@@ -299,6 +302,12 @@ uv run radar query --cursor-time "2026-06-03T10:00:00" --cursor-id "message-id" 
 - `schema_migrations`：报告库 schema 版本记录。
 - `catalyst_valuation_reports`：催化估值线索报告归档，包含窗口、HTML、上传 URL 和结构化 report JSON。
 - `report_notifications`：手动 Bark 等报告通知记录。
+
+估值测算库 `valuation.sqlite3`：
+
+- `schema_migrations`：估值测算库 schema 版本记录。
+- `valuation_measurements`：异步空间测算完成后的结构化投影，保存来源 report/run/session、解析状态、正向标的数量和结构化 Bark 通知状态。
+- `valuation_measurement_items`：空间测算总表的逐标的结构化行。
 
 `stored=0` 不一定表示没有拉到数据；它通常表示拉回来的消息已经按 `message_id` 去重存在。`skipped>0` 才表示窗口缓存命中，没有请求 API。
 

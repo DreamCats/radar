@@ -72,7 +72,7 @@ DEFAULT_SCHEDULES: tuple[DefaultSchedule, ...] = (
             "limit": 200,
             "max_stocks": DEFAULT_CATALYST_VALUATION_REPORT_MAX_STOCKS,
             "publish": True,
-            "notify": True,
+            "notify": False,
             "auto_upside": True,
         },
         max_lag_minutes=60,

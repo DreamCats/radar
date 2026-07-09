@@ -20,6 +20,7 @@ class StorageConfig(BaseModel):
     data_dir: Path = Field(default_factory=lambda: DEFAULT_CONFIG_DIR / "data")
     database: Path | None = None
     reports_database: Path | None = None
+    valuation_database: Path | None = None
 
     @model_validator(mode="after")
     def normalize_paths(self) -> "StorageConfig":
@@ -28,10 +29,14 @@ class StorageConfig(BaseModel):
             self.database = self.database.expanduser()
         if self.reports_database is not None:
             self.reports_database = self.reports_database.expanduser()
+        if self.valuation_database is not None:
+            self.valuation_database = self.valuation_database.expanduser()
         if self.database is None:
             self.database = self.data_dir / "radar.sqlite3"
         if self.reports_database is None:
             self.reports_database = self.data_dir / "reports.sqlite3"
+        if self.valuation_database is None:
+            self.valuation_database = self.data_dir / "valuation.sqlite3"
         return self
 
 
@@ -283,6 +288,10 @@ class RadarConfig(BaseModel):
         return self.storage.reports_database or self.storage.data_dir / "reports.sqlite3"
 
     @property
+    def valuation_database_path(self) -> Path:
+        return self.storage.valuation_database or self.storage.data_dir / "valuation.sqlite3"
+
+    @property
     def chat_skill_paths(self) -> list[Path]:
         paths = self.chat.skills.paths or [Path("skills")]
         resolved_paths = [path if path.is_absolute() else self.config_dir / path for path in paths]
@@ -336,6 +345,7 @@ def _apply_env_overrides(config: RadarConfig) -> RadarConfig:
         config.storage.data_dir = Path(data_dir).expanduser()
         config.storage.database = config.storage.data_dir / "radar.sqlite3"
         config.storage.reports_database = config.storage.data_dir / "reports.sqlite3"
+        config.storage.valuation_database = config.storage.data_dir / "valuation.sqlite3"
         if config.market.database is None:
             config.market.database = config.storage.data_dir / "market.sqlite3"
 
@@ -365,6 +375,10 @@ def _apply_env_overrides(config: RadarConfig) -> RadarConfig:
     reports_database = os.getenv("RADAR_REPORTS_DATABASE")
     if reports_database:
         config.storage.reports_database = Path(reports_database).expanduser()
+
+    valuation_database = os.getenv("RADAR_VALUATION_DATABASE")
+    if valuation_database:
+        config.storage.valuation_database = Path(valuation_database).expanduser()
 
     _apply_channel_overrides(config)
     _apply_brave_search_overrides(config)

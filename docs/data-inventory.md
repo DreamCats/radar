@@ -1,6 +1,6 @@
 # 数据库和表清单
 
-本文档记录当前系统保留的本地数据库、表及用途。默认路径以 `~/.config/radar/data/` 为准；如果配置里覆盖了 `storage.database`、`storage.reports_database` 或 `market.database`，以配置值为准。
+本文档记录当前系统保留的本地数据库、表及用途。默认路径以 `~/.config/radar/data/` 为准；如果配置里覆盖了 `storage.database`、`storage.reports_database`、`storage.valuation_database` 或 `market.database`，以配置值为准。
 
 ## `radar.sqlite3`：消息和作业主库
 
@@ -34,6 +34,14 @@
 | `schema_migrations` | 报告库 schema 版本记录。 |
 | `catalyst_valuation_reports` | 催化估值线索报告归档，保存窗口、结构化 report JSON、渲染 HTML、本地 HTML 路径和发布 URL。 |
 | `report_notifications` | 报告通知记录，例如手动 Bark 发送状态和错误信息。 |
+
+## `valuation.sqlite3`：估值测算结果库
+
+| 表 | 用途 |
+| --- | --- |
+| `schema_migrations` | 估值测算库 schema 版本记录。 |
+| `valuation_measurements` | 异步空间测算完成后的结构化投影，保存来源 report/run/session、解析状态、正向标的数量和结构化 Bark 通知状态。 |
+| `valuation_measurement_items` | 空间测算总表的逐标的结构化行，包含当前市值、目标市值、剩余空间、状态、确定性和关键验证。 |
 
 ## `chat/runs.sqlite3`：对话运行态库
 

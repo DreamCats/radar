@@ -10,6 +10,7 @@ from uuid import uuid4
 from radar.core.chat import ChatAgent, ChatMessage, ChatRunEvent, ChatRunLeaseLost, ChatRunStore
 from radar.core.chat.resume import can_continue_chat_session, stream_continue_turn
 from radar.core.config import RadarConfig
+from radar.core.valuation import project_completed_valuation_run
 from radar.web.server.schemas import ChatMessageResponse
 
 _ACTIVE_WORKERS: set[str] = set()
@@ -109,7 +110,7 @@ def _execute_chat_run(*, run_id: str, config: RadarConfig, owner: str) -> None:
             store.append_event(run_id, "error", {"message": "已停止", "status_code": 499})
             store.mark_cancelled(run_id)
             return
-        store.mark_completed(run_id)
+        _mark_completed_and_project(store, run_id, config)
     except ChatRunLeaseLost:
         return
     except FileNotFoundError as error:
@@ -143,7 +144,7 @@ def _stream_for_run(agent: ChatAgent, run: Any):
             )
             return None
         if turn_state == "completed":
-            ChatRunStore.from_config(agent.config).mark_completed(run.run_id)
+            _mark_completed_and_project(ChatRunStore.from_config(agent.config), run.run_id, agent.config)
             return None
         if turn_state == "failed":
             ChatRunStore.from_config(agent.config).mark_failed(run.run_id, "上次生成失败")
@@ -215,6 +216,26 @@ def _fail_chat_run(store: ChatRunStore, run_id: str, message: str, status_code: 
         store.mark_failed(run_id, message)
     except FileNotFoundError:
         return
+
+
+def _mark_completed_and_project(store: ChatRunStore, run_id: str, config: RadarConfig) -> None:
+    run = store.mark_completed(run_id)
+    try:
+        measurement = project_completed_valuation_run(config, run)
+    except Exception as exc:
+        store.append_event(run_id, "valuation_projection", {"status": "failed", "message": str(exc)[:1000]})
+        return
+    if measurement is None:
+        return
+    store.append_event(
+        run_id,
+        "valuation_projection",
+        {
+            "status": measurement.parse_status,
+            "measurement_id": measurement.measurement_id,
+            "positive_count": measurement.positive_count,
+        },
+    )
 
 
 def _close_stream(stream: Any) -> None:

@@ -92,8 +92,5 @@ def _normalize_schedule_request(job_key: str, request: dict[str, object]) -> dic
     if job_key != "catalyst_valuation_report":
         return request
     next_request = dict(request)
-    publish = bool(next_request.get("publish", False))
-    notify = bool(next_request.get("notify", False))
-    if notify and not publish:
-        next_request["publish"] = True
+    next_request["notify"] = False
     return next_request

@@ -16,7 +16,7 @@ import { trackedJobFromRun } from "../lib/jobRuns";
 import type { RunItem, ScheduleItem, ScheduleTickItem } from "../types";
 
 const RECENT_RUN_LIMIT = 80;
-type CatalystScheduleOption = "publish" | "notify" | "auto_upside";
+type CatalystScheduleOption = "publish" | "auto_upside";
 
 export function SchedulePage() {
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
@@ -119,9 +119,6 @@ export function SchedulePage() {
       const nextRequest = { ...schedule.request, [option]: !current };
       if (option === "publish" && current) {
         nextRequest.notify = false;
-      }
-      if (option === "notify" && !current) {
-        nextRequest.publish = true;
       }
       const nextItems = await updateScheduleRequest(schedule.schedule_id, nextRequest);
       setSchedules(nextItems);
@@ -255,7 +252,6 @@ function ScheduleRequestSwitches(props: {
 }) {
   const options: Array<{ key: CatalystScheduleOption; label: string }> = [
     { key: "publish", label: "生成 HTML" },
-    { key: "notify", label: "Bark 通知" },
     { key: "auto_upside", label: "自动测算" },
   ];
   return (
@@ -336,9 +332,6 @@ function requestTags(schedule: ScheduleItem): string[] {
   }
   if (schedule.request.publish === true) {
     tags.push("publish=true");
-  }
-  if (typeof schedule.request.notify === "boolean") {
-    tags.push(`notify=${String(schedule.request.notify)}`);
   }
   if (typeof schedule.request.auto_upside === "boolean") {
     tags.push(`auto_upside=${String(schedule.request.auto_upside)}`);

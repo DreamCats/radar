@@ -1,0 +1,282 @@
+from __future__ import annotations
+
+import json
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Literal
+from urllib.parse import quote
+from uuid import uuid4
+
+from pydantic import BaseModel, Field
+
+from radar.core.storage.db import SQLITE_TIMEOUT_SECONDS, configure_sqlite_connection, migrate_valuation_db
+
+ValuationParseStatus = Literal["ready", "missing_message", "missing_table", "failed"]
+ValuationNotificationStatus = Literal["succeeded", "failed"]
+
+
+class ValuationMeasurementItemInput(BaseModel):
+    rank: int | None = None
+    ts_code: str | None = None
+    name: str
+    current_mv_text: str | None = None
+    target_mv_text: str | None = None
+    upside_text: str | None = None
+    valuation_status: str | None = None
+    confidence: str | None = None
+    key_validation: str | None = None
+    risk_flags: str | None = None
+    data_gaps: str | None = None
+    is_positive: bool = False
+    raw_row: dict[str, Any] = Field(default_factory=dict)
+
+
+class ValuationMeasurementItem(ValuationMeasurementItemInput):
+    item_id: str
+    measurement_id: str
+    row_order: int
+    created_at: datetime
+
+
+class ValuationMeasurement(BaseModel):
+    measurement_id: str
+    report_id: str
+    chat_run_id: str
+    session_id: str
+    source_generated_at: datetime | None = None
+    measured_at: datetime
+    parse_status: ValuationParseStatus
+    parse_error: str | None = None
+    total_items: int
+    positive_count: int
+    notification_status: ValuationNotificationStatus | None = None
+    notified_at: datetime | None = None
+    notification_error: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    items: list[ValuationMeasurementItem] = Field(default_factory=list)
+
+
+def save_valuation_measurement(
+    database: Path,
+    *,
+    report_id: str,
+    chat_run_id: str,
+    session_id: str,
+    source_generated_at: datetime | None,
+    measured_at: datetime | None,
+    parse_status: ValuationParseStatus,
+    parse_error: str | None,
+    items: list[ValuationMeasurementItemInput],
+) -> ValuationMeasurement:
+    now = _now_text()
+    measured = (measured_at or datetime.now(timezone.utc).astimezone()).isoformat()
+    source_generated = source_generated_at.isoformat() if source_generated_at else None
+    positive_count = sum(1 for item in items if item.is_positive)
+
+    with _connect(database) as conn:
+        row = conn.execute(
+            "SELECT measurement_id FROM valuation_measurements WHERE chat_run_id = ?",
+            (chat_run_id,),
+        ).fetchone()
+        measurement_id = str(row["measurement_id"]) if row is not None else f"vm_{uuid4().hex}"
+        conn.execute(
+            """
+            INSERT INTO valuation_measurements (
+                measurement_id, report_id, chat_run_id, session_id, source_generated_at,
+                measured_at, parse_status, parse_error, total_items, positive_count,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(chat_run_id) DO UPDATE SET
+                report_id = excluded.report_id,
+                session_id = excluded.session_id,
+                source_generated_at = excluded.source_generated_at,
+                measured_at = excluded.measured_at,
+                parse_status = excluded.parse_status,
+                parse_error = excluded.parse_error,
+                total_items = excluded.total_items,
+                positive_count = excluded.positive_count,
+                updated_at = excluded.updated_at
+            """,
+            (
+                measurement_id,
+                report_id,
+                chat_run_id,
+                session_id,
+                source_generated,
+                measured,
+                parse_status,
+                parse_error,
+                len(items),
+                positive_count,
+                now,
+                now,
+            ),
+        )
+        conn.execute("DELETE FROM valuation_measurement_items WHERE measurement_id = ?", (measurement_id,))
+        for index, item in enumerate(items, start=1):
+            conn.execute(
+                """
+                INSERT INTO valuation_measurement_items (
+                    item_id, measurement_id, row_order, rank, ts_code, name,
+                    current_mv_text, target_mv_text, upside_text, valuation_status,
+                    confidence, key_validation, risk_flags, data_gaps, is_positive,
+                    raw_row_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    f"vmi_{uuid4().hex}",
+                    measurement_id,
+                    index,
+                    item.rank,
+                    item.ts_code,
+                    item.name,
+                    item.current_mv_text,
+                    item.target_mv_text,
+                    item.upside_text,
+                    item.valuation_status,
+                    item.confidence,
+                    item.key_validation,
+                    item.risk_flags,
+                    item.data_gaps,
+                    1 if item.is_positive else 0,
+                    _json(item.raw_row),
+                    now,
+                ),
+            )
+    measurement = get_valuation_measurement(database, measurement_id)
+    if measurement is None:
+        raise RuntimeError(f"估值测算结果写入后无法读取: {measurement_id}")
+    return measurement
+
+
+def get_valuation_measurement(database: Path, measurement_id: str) -> ValuationMeasurement | None:
+    if not database.exists():
+        return None
+    with _connect_readonly(database) as conn:
+        row = conn.execute(
+            "SELECT * FROM valuation_measurements WHERE measurement_id = ?",
+            (measurement_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        item_rows = conn.execute(
+            """
+            SELECT * FROM valuation_measurement_items
+            WHERE measurement_id = ?
+            ORDER BY row_order ASC
+            """,
+            (measurement_id,),
+        ).fetchall()
+    return _row_to_measurement(row, item_rows)
+
+
+def get_valuation_measurement_by_run(database: Path, chat_run_id: str) -> ValuationMeasurement | None:
+    if not database.exists():
+        return None
+    with _connect_readonly(database) as conn:
+        row = conn.execute(
+            "SELECT measurement_id FROM valuation_measurements WHERE chat_run_id = ?",
+            (chat_run_id,),
+        ).fetchone()
+    return get_valuation_measurement(database, str(row["measurement_id"])) if row is not None else None
+
+
+def record_valuation_notification(
+    database: Path,
+    *,
+    measurement_id: str,
+    status: ValuationNotificationStatus,
+    error_message: str | None = None,
+) -> ValuationMeasurement:
+    now = _now_text()
+    with _connect(database) as conn:
+        conn.execute(
+            """
+            UPDATE valuation_measurements
+            SET notification_status = ?,
+                notified_at = ?,
+                notification_error = ?,
+                updated_at = ?
+            WHERE measurement_id = ?
+            """,
+            (status, now, error_message, now, measurement_id),
+        )
+    measurement = get_valuation_measurement(database, measurement_id)
+    if measurement is None:
+        raise RuntimeError(f"估值测算通知状态写入后无法读取: {measurement_id}")
+    return measurement
+
+
+def _connect(database: Path) -> sqlite3.Connection:
+    database.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(database, timeout=SQLITE_TIMEOUT_SECONDS)
+    conn.row_factory = sqlite3.Row
+    configure_sqlite_connection(conn)
+    migrate_valuation_db(conn)
+    return conn
+
+
+def _connect_readonly(database: Path) -> sqlite3.Connection:
+    uri_path = quote(database.resolve().as_posix(), safe="/")
+    conn = sqlite3.connect(f"file:{uri_path}?mode=ro", uri=True, timeout=SQLITE_TIMEOUT_SECONDS)
+    conn.row_factory = sqlite3.Row
+    configure_sqlite_connection(conn, enable_wal=False)
+    conn.execute("PRAGMA query_only = ON")
+    return conn
+
+
+def _row_to_measurement(row: sqlite3.Row, item_rows: list[sqlite3.Row]) -> ValuationMeasurement:
+    return ValuationMeasurement(
+        measurement_id=row["measurement_id"],
+        report_id=row["report_id"],
+        chat_run_id=row["chat_run_id"],
+        session_id=row["session_id"],
+        source_generated_at=_parse_datetime(row["source_generated_at"]),
+        measured_at=datetime.fromisoformat(row["measured_at"]),
+        parse_status=row["parse_status"],
+        parse_error=row["parse_error"],
+        total_items=row["total_items"],
+        positive_count=row["positive_count"],
+        notification_status=row["notification_status"],
+        notified_at=_parse_datetime(row["notified_at"]),
+        notification_error=row["notification_error"],
+        created_at=datetime.fromisoformat(row["created_at"]),
+        updated_at=datetime.fromisoformat(row["updated_at"]),
+        items=[_row_to_item(item_row) for item_row in item_rows],
+    )
+
+
+def _row_to_item(row: sqlite3.Row) -> ValuationMeasurementItem:
+    return ValuationMeasurementItem(
+        item_id=row["item_id"],
+        measurement_id=row["measurement_id"],
+        row_order=row["row_order"],
+        rank=row["rank"],
+        ts_code=row["ts_code"],
+        name=row["name"],
+        current_mv_text=row["current_mv_text"],
+        target_mv_text=row["target_mv_text"],
+        upside_text=row["upside_text"],
+        valuation_status=row["valuation_status"],
+        confidence=row["confidence"],
+        key_validation=row["key_validation"],
+        risk_flags=row["risk_flags"],
+        data_gaps=row["data_gaps"],
+        is_positive=bool(row["is_positive"]),
+        raw_row=json.loads(row["raw_row_json"]),
+        created_at=datetime.fromisoformat(row["created_at"]),
+    )
+
+
+def _json(data: dict[str, Any]) -> str:
+    return json.dumps(data, ensure_ascii=False, separators=(",", ":"), default=str)
+
+
+def _now_text() -> str:
+    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+
+
+def _parse_datetime(value: str | None) -> datetime | None:
+    return datetime.fromisoformat(value) if value else None
