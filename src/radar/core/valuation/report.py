@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from html import escape
 from pathlib import Path
@@ -116,6 +117,46 @@ def render_valuation_measurement_html(
       color: #d9e2ef;
     }}
     .markdown {{ background: #101319; }}
+    .markdown h3, .markdown h4 {{ margin: 18px 0 8px; letter-spacing: 0; }}
+    .markdown h3:first-child, .markdown h4:first-child {{ margin-top: 0; }}
+    .markdown h3 {{ font-size: 18px; }}
+    .markdown h4 {{ font-size: 15px; color: #dbe4f0; }}
+    .markdown p {{ margin: 10px 0; }}
+    .markdown ul, .markdown ol {{ margin: 10px 0; padding-left: 22px; }}
+    .markdown li {{ margin: 6px 0; }}
+    .markdown strong {{ color: #f8fafc; font-weight: 760; }}
+    .markdown code {{
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: #0b0d12;
+      padding: 1px 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }}
+    .markdown pre {{
+      margin: 12px 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0b0d12;
+      overflow-x: auto;
+    }}
+    .markdown pre code {{ border: 0; padding: 0; background: transparent; }}
+    .markdown-table-wrap {{
+      margin: 12px 0;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }}
+    .markdown-table-wrap table {{ min-width: 860px; }}
+    .markdown blockquote {{
+      margin: 12px 0;
+      padding: 8px 12px;
+      border-left: 3px solid var(--accent);
+      background: rgba(52, 211, 153, 0.08);
+      color: #dbe4f0;
+    }}
+    .markdown hr {{ border: 0; border-top: 1px solid var(--line); margin: 18px 0; }}
     .link {{ color: #38bdf8; text-decoration: none; }}
     .source {{ margin-top: 10px; }}
     @media (max-width: 720px) {{
@@ -162,7 +203,7 @@ def render_valuation_measurement_html(
   </section>
   <section>
     <h2>完整 Session Markdown</h2>
-    <div class="markdown"><pre>{escape(session_markdown.strip() or "暂无内容")}</pre></div>
+    <div class="markdown">{_render_markdown(session_markdown.strip() or "暂无内容")}</div>
   </section>
 </main>
 </body>
@@ -203,3 +244,144 @@ def _default_output_path(config: RadarConfig, measurement: ValuationMeasurement)
 
 def _time_text(value: datetime) -> str:
     return value.isoformat(sep=" ", timespec="minutes")
+
+
+def _render_markdown(content: str) -> str:
+    blocks: list[str] = []
+    pattern = re.compile(r"```(\w+)?\n([\s\S]*?)```")
+    last_index = 0
+    for match in pattern.finditer(content):
+        if match.start() > last_index:
+            blocks.append(_render_markdown_text(content[last_index : match.start()]))
+        code = escape(match.group(2).rstrip())
+        blocks.append(f"<pre><code>{code}</code></pre>")
+        last_index = match.end()
+    if last_index < len(content):
+        blocks.append(_render_markdown_text(content[last_index:]))
+    return "\n".join(block for block in blocks if block)
+
+
+def _render_markdown_text(content: str) -> str:
+    lines = content.splitlines()
+    nodes: list[str] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if not line.strip():
+            index += 1
+            continue
+        if _is_horizontal_rule(line):
+            nodes.append("<hr>")
+            index += 1
+            continue
+        heading = re.match(r"^(#{1,6})\s+(.+)$", line)
+        if heading:
+            tag = "h3" if len(heading.group(1)) <= 2 else "h4"
+            nodes.append(f"<{tag}>{_render_inline_markdown(heading.group(2))}</{tag}>")
+            index += 1
+            continue
+        if _is_table_header(lines, index):
+            table_html, index = _render_markdown_table(lines, index)
+            nodes.append(table_html)
+            continue
+        if re.match(r"^\s*[-*]\s+", line):
+            html, index = _render_markdown_list(lines, index, ordered=False)
+            nodes.append(html)
+            continue
+        if re.match(r"^\s*\d+\.\s+", line):
+            html, index = _render_markdown_list(lines, index, ordered=True)
+            nodes.append(html)
+            continue
+        if re.match(r"^>\s?", line):
+            quote = re.sub(r"^>\s?", "", line)
+            nodes.append(f"<blockquote>{_render_inline_markdown(quote)}</blockquote>")
+            index += 1
+            continue
+
+        paragraph = [line]
+        index += 1
+        while index < len(lines) and _continues_paragraph(lines, index):
+            paragraph.append(lines[index])
+            index += 1
+        nodes.append(f"<p>{_render_inline_markdown(' '.join(part.strip() for part in paragraph))}</p>")
+    return "\n".join(nodes)
+
+
+def _continues_paragraph(lines: list[str], index: int) -> bool:
+    line = lines[index]
+    if not line.strip():
+        return False
+    return not (
+        _is_horizontal_rule(line)
+        or re.match(r"^(#{1,6})\s+", line)
+        or re.match(r"^\s*[-*]\s+", line)
+        or re.match(r"^\s*\d+\.\s+", line)
+        or re.match(r"^>\s?", line)
+        or _is_table_header(lines, index)
+    )
+
+
+def _render_markdown_list(lines: list[str], start: int, *, ordered: bool) -> tuple[str, int]:
+    tag = "ol" if ordered else "ul"
+    pattern = r"^\s*\d+\.\s+" if ordered else r"^\s*[-*]\s+"
+    items: list[str] = []
+    index = start
+    while index < len(lines) and re.match(pattern, lines[index]):
+        item = re.sub(pattern, "", lines[index])
+        items.append(f"<li>{_render_inline_markdown(item)}</li>")
+        index += 1
+    return f"<{tag}>\n{''.join(items)}\n</{tag}>", index
+
+
+def _render_markdown_table(lines: list[str], start: int) -> tuple[str, int]:
+    headers = _parse_table_row(lines[start])
+    rows: list[list[str]] = []
+    index = start + 2
+    while index < len(lines) and _is_table_row(lines[index]):
+        rows.append(_parse_table_row(lines[index]))
+        index += 1
+    header_html = "".join(f"<th>{_render_inline_markdown(header)}</th>" for header in headers)
+    row_html = "".join(
+        "<tr>"
+        + "".join(
+            f"<td>{_render_inline_markdown(row[cell_index] if cell_index < len(row) else '')}</td>"
+            for cell_index in range(len(headers))
+        )
+        + "</tr>"
+        for row in rows
+    )
+    return (
+        "<div class=\"markdown-table-wrap\"><table>"
+        f"<thead><tr>{header_html}</tr></thead>"
+        f"<tbody>{row_html}</tbody>"
+        "</table></div>",
+        index,
+    )
+
+
+def _is_horizontal_rule(line: str) -> bool:
+    return re.match(r"^\s*-{3,}\s*$", line) is not None
+
+
+def _is_table_header(lines: list[str], index: int) -> bool:
+    return (
+        _is_table_row(lines[index])
+        and index + 1 < len(lines)
+        and re.match(r"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$", lines[index + 1])
+        is not None
+    )
+
+
+def _is_table_row(line: str) -> bool:
+    return "|" in line and len([cell for cell in line.split("|") if cell.strip()]) >= 2
+
+
+def _parse_table_row(line: str) -> list[str]:
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def _render_inline_markdown(text: str) -> str:
+    safe = escape(text)
+    safe = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", safe)
+    safe = re.sub(r"`([^`]+)`", r"<code>\1</code>", safe)
+    return safe

@@ -64,6 +64,10 @@ def test_project_completed_valuation_run_saves_items_and_sends_structured_bark(m
         assert "完整 Session Markdown" in html
         assert "来源估值线索报告" in html
         assert "胜宏科技 300476.SZ" in html
+        assert "<h3>空间测算总表</h3>" in html
+        assert '<div class="markdown-table-wrap"><table>' in html
+        assert "<th>排名</th>" in html
+        assert "| 排名 | 标的 |" not in html
         captured["remote_path"] = remote_path
         return CloudUploadResult(
             local_path=local_path,
