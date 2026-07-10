@@ -12,6 +12,7 @@ import { ChatWorkspace } from "../components/ChatWorkspace";
 import { useChatController } from "../components/useChatController";
 import { PageLoadingState } from "../components/PageLoadingState";
 import { PanelTitle } from "../components/PanelTitle";
+import { ValuationOpportunitiesView } from "../components/ValuationOpportunitiesView";
 import { formatTime } from "../lib/datetime";
 import { useEscapeToClose } from "../lib/useEscapeToClose";
 import { useSwipeToCloseSheet } from "../lib/useSwipeToCloseSheet";
@@ -21,6 +22,7 @@ import type {
   CatalystValuationReportArchiveItem,
   CatalystValuationReportData,
   CatalystValuationStockContext,
+  ValuationMeasurementOpportunitySnapshot,
 } from "../types";
 
 const GRANULARITY_OPTIONS = [
@@ -31,6 +33,7 @@ const GRANULARITY_OPTIONS = [
 const EVIDENCE_PREVIEW_LIMIT = 150;
 const UPSIDE_EVIDENCE_PER_STOCK = 3;
 const UPSIDE_EVIDENCE_TEXT_LIMIT = 520;
+type ValuationCluesView = "reports" | "opportunities";
 
 type UpsideChatDraft = {
   title: string;
@@ -55,6 +58,7 @@ type UpsideChatRunTarget = {
 };
 
 export function ValuationCluesPage() {
+  const [activeView, setActiveView] = useState<ValuationCluesView>("reports");
   const [granularity, setGranularity] = useState<number>(60);
   const [items, setItems] = useState<CatalystValuationReportArchiveItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +72,7 @@ export function ValuationCluesPage() {
   const [barkError, setBarkError] = useState<string | null>(null);
   const [upsideDraft, setUpsideDraft] = useState<UpsideChatDraft | null>(null);
   const [upsideRun, setUpsideRun] = useState<UpsideChatRunTarget | null>(null);
+  const [opportunitiesRefreshKey, setOpportunitiesRefreshKey] = useState(0);
 
   const selectedItem = useMemo(
     () => items.find((item) => item.report_id === selectedId) ?? null,
@@ -129,6 +134,14 @@ export function ValuationCluesPage() {
     }
   }
 
+  function refreshActiveView() {
+    if (activeView === "reports") {
+      void loadReports();
+      return;
+    }
+    setOpportunitiesRefreshKey((current) => current + 1);
+  }
+
   async function copyReport() {
     if (!detail) {
       return;
@@ -185,6 +198,19 @@ export function ValuationCluesPage() {
     }
   }
 
+  function openOpportunitySession(snapshot: ValuationMeasurementOpportunitySnapshot) {
+    setUpsideRun({
+      title: "估值线索空间测算",
+      subtitle: `${snapshot.name} · ${snapshot.upside_text || "测算结果"}`,
+      surface: "估值线索",
+      entityId: snapshot.report_id,
+      runId: snapshot.chat_run_id,
+      sessionId: snapshot.session_id,
+      status: "completed",
+      updatedAt: snapshot.measured_at,
+    });
+  }
+
   return (
     <section className="valuation-clues-page">
       <div className="valuation-toolbar filter-panel">
@@ -203,9 +229,9 @@ export function ValuationCluesPage() {
         <button
           className="btn btn-sm valuation-refresh"
           type="button"
-          aria-label="刷新报告"
-          onClick={() => void loadReports()}
-          disabled={loading}
+          aria-label="刷新当前视图"
+          onClick={refreshActiveView}
+          disabled={activeView === "reports" && loading}
         >
           <RefreshCw size={14} />
           <span>刷新</span>
@@ -217,10 +243,15 @@ export function ValuationCluesPage() {
       <section
         className={loading ? "valuation-list-panel content-panel is-refreshing" : "valuation-list-panel content-panel"}
       >
-        <PanelTitle title="催化估值线索" meta={`${items.length} 份归档报告`} />
-        {loading && items.length === 0 ? (
-          <PageLoadingState label="读取报告归档" variant="strategy" />
-        ) : (
+        <PanelTitle
+          title="催化估值线索"
+          meta={activeView === "reports" ? `${items.length} 份归档报告` : "按标的聚合的估值测算结果"}
+        />
+        <ValuationViewTabs activeView={activeView} onChange={setActiveView} />
+        {activeView === "reports" ? (
+          loading && items.length === 0 ? (
+            <PageLoadingState label="读取报告归档" variant="strategy" />
+          ) : (
           <div className="valuation-report-list">
             {items.map((item) => (
               <ReportRow
@@ -233,6 +264,13 @@ export function ValuationCluesPage() {
             ))}
             {!loading && items.length === 0 && <p className="empty-line">当前没有归档报告</p>}
           </div>
+          )
+        ) : (
+          <ValuationOpportunitiesView
+            refreshKey={opportunitiesRefreshKey}
+            onOpenReport={setSelectedId}
+            onOpenSession={openOpportunitySession}
+          />
         )}
       </section>
 
@@ -255,6 +293,30 @@ export function ValuationCluesPage() {
       {upsideDraft ? <ReportUpsideChatDrawer draft={upsideDraft} onClose={() => setUpsideDraft(null)} /> : null}
       {upsideRun ? <ReportUpsideRunDrawer run={upsideRun} onClose={() => setUpsideRun(null)} /> : null}
     </section>
+  );
+}
+
+function ValuationViewTabs(props: {
+  activeView: ValuationCluesView;
+  onChange: (view: ValuationCluesView) => void;
+}) {
+  return (
+    <div className="valuation-view-tabs" aria-label="估值线索视图">
+      <button
+        className={props.activeView === "reports" ? "active" : ""}
+        type="button"
+        onClick={() => props.onChange("reports")}
+      >
+        线索报告
+      </button>
+      <button
+        className={props.activeView === "opportunities" ? "active" : ""}
+        type="button"
+        onClick={() => props.onChange("opportunities")}
+      >
+        测算结果
+      </button>
+    </div>
   );
 }
 

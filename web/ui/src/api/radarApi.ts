@@ -42,6 +42,7 @@ import type {
   ScheduleItem,
   ScheduleTickItem,
   ThsConceptRefreshRequest,
+  ValuationMeasurementOpportunity,
 } from "../types";
 
 const apiBase = import.meta.env.VITE_RADAR_API_BASE ?? "";
@@ -586,6 +587,16 @@ export async function sendCatalystValuationReportBark(reportId: string): Promise
     throw new Error(await errorText(response));
   }
   return (await response.json()) as CatalystValuationReportNotifyResponse;
+}
+
+export async function fetchValuationMeasurementOpportunities(query: {
+  limit?: number;
+  history_limit?: number;
+} = {}): Promise<ValuationMeasurementOpportunity[]> {
+  const data = await getJson<{ items: ValuationMeasurementOpportunity[] }>(
+    `/api/valuation-measurements/opportunities?${params({ limit: 80, history_limit: 5, ...query })}`,
+  );
+  return data.items;
 }
 
 async function getJson<T>(path: string): Promise<T> {

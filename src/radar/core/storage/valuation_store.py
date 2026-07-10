@@ -65,6 +65,46 @@ class ValuationMeasurement(BaseModel):
     items: list[ValuationMeasurementItem] = Field(default_factory=list)
 
 
+class ValuationMeasurementOpportunitySnapshot(BaseModel):
+    measurement_id: str
+    report_id: str
+    chat_run_id: str
+    session_id: str
+    source_generated_at: datetime | None = None
+    measured_at: datetime
+    parse_status: ValuationParseStatus
+    published_url: str | None = None
+    notification_status: ValuationNotificationStatus | None = None
+    notified_at: datetime | None = None
+    item_id: str
+    row_order: int
+    rank: int | None = None
+    ts_code: str | None = None
+    name: str
+    current_mv_text: str | None = None
+    target_mv_text: str | None = None
+    upside_text: str | None = None
+    valuation_status: str | None = None
+    confidence: str | None = None
+    anchor_type: str | None = None
+    evidence_level: str | None = None
+    gap_reason: str | None = None
+    notification_level: str | None = None
+    key_validation: str | None = None
+    risk_flags: str | None = None
+    data_gaps: str | None = None
+    is_positive: bool = False
+    created_at: datetime
+
+
+class ValuationMeasurementOpportunity(BaseModel):
+    stock_key: str
+    ts_code: str | None = None
+    name: str
+    latest: ValuationMeasurementOpportunitySnapshot
+    history: list[ValuationMeasurementOpportunitySnapshot] = Field(default_factory=list)
+
+
 def save_valuation_measurement(
     database: Path,
     *,
@@ -192,6 +232,91 @@ def get_valuation_measurement_by_run(database: Path, chat_run_id: str) -> Valuat
             (chat_run_id,),
         ).fetchone()
     return get_valuation_measurement(database, str(row["measurement_id"])) if row is not None else None
+
+
+def list_valuation_measurement_opportunities(
+    database: Path,
+    *,
+    limit: int = 80,
+    history_limit: int = 5,
+) -> list[ValuationMeasurementOpportunity]:
+    if limit < 1 or limit > 200:
+        raise ValueError("limit 必须在 1 到 200 之间")
+    if history_limit < 1 or history_limit > 20:
+        raise ValueError("history_limit 必须在 1 到 20 之间")
+    if not database.exists():
+        return []
+
+    with _connect_readonly(database) as conn:
+        rows = conn.execute(
+            """
+            WITH joined AS (
+                SELECT
+                    COALESCE(NULLIF(i.ts_code, ''), i.name) AS stock_key,
+                    m.measurement_id,
+                    m.report_id,
+                    m.chat_run_id,
+                    m.session_id,
+                    m.source_generated_at,
+                    m.measured_at,
+                    m.parse_status,
+                    m.published_url,
+                    m.notification_status,
+                    m.notified_at,
+                    i.item_id,
+                    i.row_order,
+                    i.rank,
+                    i.ts_code,
+                    i.name,
+                    i.current_mv_text,
+                    i.target_mv_text,
+                    i.upside_text,
+                    i.valuation_status,
+                    i.confidence,
+                    i.anchor_type,
+                    i.evidence_level,
+                    i.gap_reason,
+                    i.notification_level,
+                    i.key_validation,
+                    i.risk_flags,
+                    i.data_gaps,
+                    i.is_positive,
+                    i.created_at,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY COALESCE(NULLIF(i.ts_code, ''), i.name)
+                        ORDER BY m.measured_at DESC, i.row_order ASC
+                    ) AS history_rank
+                FROM valuation_measurement_items i
+                JOIN valuation_measurements m ON m.measurement_id = i.measurement_id
+                WHERE m.parse_status = 'ready'
+            )
+            SELECT *
+            FROM joined
+            WHERE history_rank <= ?
+            ORDER BY measured_at DESC, row_order ASC
+            """,
+            (history_limit,),
+        ).fetchall()
+
+    opportunities: dict[str, ValuationMeasurementOpportunity] = {}
+    for row in rows:
+        stock_key = str(row["stock_key"])
+        if stock_key not in opportunities:
+            latest = _row_to_opportunity_snapshot(row)
+            opportunities[stock_key] = ValuationMeasurementOpportunity(
+                stock_key=stock_key,
+                ts_code=latest.ts_code,
+                name=latest.name,
+                latest=latest,
+                history=[latest],
+            )
+            continue
+        opportunities[stock_key].history.append(_row_to_opportunity_snapshot(row))
+
+    return sorted(
+        opportunities.values(),
+        key=lambda item: (_opportunity_sort_rank(item.latest), -item.latest.measured_at.timestamp()),
+    )[:limit]
 
 
 def record_valuation_notification(
@@ -323,6 +448,50 @@ def _row_to_item(row: sqlite3.Row) -> ValuationMeasurementItem:
         raw_row=json.loads(row["raw_row_json"]),
         created_at=datetime.fromisoformat(row["created_at"]),
     )
+
+
+def _row_to_opportunity_snapshot(row: sqlite3.Row) -> ValuationMeasurementOpportunitySnapshot:
+    return ValuationMeasurementOpportunitySnapshot(
+        measurement_id=row["measurement_id"],
+        report_id=row["report_id"],
+        chat_run_id=row["chat_run_id"],
+        session_id=row["session_id"],
+        source_generated_at=_parse_datetime(row["source_generated_at"]),
+        measured_at=datetime.fromisoformat(row["measured_at"]),
+        parse_status=row["parse_status"],
+        published_url=row["published_url"],
+        notification_status=row["notification_status"],
+        notified_at=_parse_datetime(row["notified_at"]),
+        item_id=row["item_id"],
+        row_order=row["row_order"],
+        rank=row["rank"],
+        ts_code=row["ts_code"],
+        name=row["name"],
+        current_mv_text=row["current_mv_text"],
+        target_mv_text=row["target_mv_text"],
+        upside_text=row["upside_text"],
+        valuation_status=row["valuation_status"],
+        confidence=row["confidence"],
+        anchor_type=_row_value(row, "anchor_type"),
+        evidence_level=_row_value(row, "evidence_level"),
+        gap_reason=_row_value(row, "gap_reason"),
+        notification_level=_row_value(row, "notification_level"),
+        key_validation=row["key_validation"],
+        risk_flags=row["risk_flags"],
+        data_gaps=row["data_gaps"],
+        is_positive=bool(row["is_positive"]),
+        created_at=datetime.fromisoformat(row["created_at"]),
+    )
+
+
+def _opportunity_sort_rank(snapshot: ValuationMeasurementOpportunitySnapshot) -> int:
+    if snapshot.notification_level == "可通知" or snapshot.is_positive:
+        return 0
+    if snapshot.notification_level == "条件触发":
+        return 1
+    if snapshot.notification_level == "仅入库不通知":
+        return 2
+    return 3
 
 
 def _json(data: dict[str, Any]) -> str:

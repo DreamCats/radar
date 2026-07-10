@@ -8,12 +8,12 @@ from radar.core.channel import BarkError
 from radar.core.chat import ChatRun, ChatRunStore
 from radar.core.config import RadarConfig
 from radar.core.storage.report_store import (
-    CatalystValuationReportArchiveDetail,
     CatalystValuationReportArchiveItem,
     get_catalyst_valuation_report,
     list_catalyst_valuation_reports,
     record_report_notification,
 )
+from radar.core.storage.valuation_store import list_valuation_measurement_opportunities
 from radar.core.usecases.catalyst_valuation_report.publish import notify_report
 from radar.web.server.catalyst_valuation_report_jobs import submit_catalyst_valuation_report_job
 from radar.web.server.deps import get_config
@@ -23,6 +23,7 @@ from radar.web.server.schemas import (
     CatalystValuationReportListResponse,
     CatalystValuationReportNotifyResponse,
     DerivedJobResponse,
+    ValuationMeasurementOpportunityListResponse,
 )
 
 router = APIRouter(prefix="/api", tags=["catalyst-valuation-report"])
@@ -98,6 +99,21 @@ def send_report_bark(
     return CatalystValuationReportNotifyResponse(
         item=_enrich_report_upside_runs(config, [updated])[0],
         notification=notification,
+    )
+
+
+@router.get("/valuation-measurements/opportunities", response_model=ValuationMeasurementOpportunityListResponse)
+def list_measurement_opportunities(
+    limit: int = Query(default=80, ge=1, le=200),
+    history_limit: int = Query(default=5, ge=1, le=20),
+    config: RadarConfig = Depends(get_config),
+) -> ValuationMeasurementOpportunityListResponse:
+    return ValuationMeasurementOpportunityListResponse(
+        items=list_valuation_measurement_opportunities(
+            config.valuation_database_path,
+            limit=limit,
+            history_limit=history_limit,
+        )
     )
 
 

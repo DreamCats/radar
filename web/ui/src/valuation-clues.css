@@ -53,7 +53,7 @@
 .valuation-list-panel {
   position: relative;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   height: calc(100vh - 154px);
   min-height: 0;
 }
@@ -77,6 +77,41 @@
   overflow: auto;
   overscroll-behavior: contain;
   padding: 10px;
+}
+.valuation-view-tabs {
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 0 12px;
+}
+.valuation-view-tabs button {
+  position: relative;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-tertiary);
+  padding: 0 2px;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.valuation-view-tabs button::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  content: "";
+}
+.valuation-view-tabs button:hover,
+.valuation-view-tabs button.active {
+  color: var(--color-ink);
+}
+.valuation-view-tabs button.active::after {
+  background: var(--color-market-up);
 }
 .valuation-report-row {
   display: grid;
@@ -500,6 +535,358 @@ button.valuation-upside-pill:hover {
   text-decoration-thickness: 1.5px;
   text-underline-offset: 3px;
 }
+.valuation-opportunities-view {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px;
+}
+.valuation-opportunities-view.is-refreshing::before {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 10px;
+  width: 28%;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-primary) 72%, white);
+  content: "";
+  animation: catalyst-progress-sweep 980ms var(--motion-ease) infinite;
+}
+.valuation-opportunity-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+.valuation-opportunity-metric {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: inherit;
+  padding: 10px 12px;
+  text-align: left;
+}
+button.valuation-opportunity-metric {
+  cursor: pointer;
+}
+button.valuation-opportunity-metric:hover,
+.valuation-opportunity-metric.active {
+  border-color: color-mix(in srgb, var(--color-market-up) 38%, var(--color-hairline-strong));
+  background: var(--color-surface-3);
+}
+.valuation-opportunity-metric strong {
+  color: var(--color-ink);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 18px;
+  line-height: 1;
+}
+.valuation-opportunity-metric em {
+  color: var(--color-ink-tertiary);
+  font-style: normal;
+  font-size: 12px;
+}
+.valuation-opportunity-metric.notify strong {
+  color: var(--color-market-up);
+}
+.valuation-opportunity-metric.conditional strong {
+  color: var(--color-signal-hot);
+}
+.valuation-opportunity-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.valuation-opportunity-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-1);
+  color: var(--color-ink-tertiary);
+  padding: 0 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.valuation-opportunity-filters button:hover,
+.valuation-opportunity-filters button.active {
+  border-color: color-mix(in srgb, var(--color-market-up) 38%, var(--color-hairline-strong));
+  color: var(--color-ink);
+}
+.valuation-opportunity-filters strong {
+  color: var(--color-ink);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+.valuation-opportunity-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.34fr);
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.valuation-opportunity-list {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.valuation-opportunity-head,
+.valuation-opportunity-row {
+  display: grid;
+  grid-template-columns:
+    minmax(100px, 1.1fr) minmax(70px, 0.72fr) minmax(76px, 0.78fr)
+    minmax(78px, 0.78fr) minmax(78px, 0.78fr) minmax(96px, 1fr)
+    minmax(72px, 0.72fr) minmax(72px, 0.72fr) minmax(126px, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 860px;
+  padding: 0 10px;
+}
+.valuation-opportunity-head {
+  min-height: 30px;
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+}
+.valuation-opportunity-row {
+  min-height: 74px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-ink-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.valuation-opportunity-row + .valuation-opportunity-row {
+  margin-top: 8px;
+}
+.valuation-opportunity-row:hover,
+.valuation-opportunity-row.active {
+  border-color: color-mix(in srgb, var(--color-market-up) 40%, var(--color-hairline-strong));
+  background: var(--color-surface-3);
+}
+.valuation-opportunity-row > span,
+.valuation-opportunity-row > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.valuation-opportunity-stock {
+  display: grid;
+  gap: 3px;
+}
+.valuation-opportunity-stock strong {
+  overflow: hidden;
+  color: var(--color-ink);
+  text-overflow: ellipsis;
+}
+.valuation-opportunity-stock em {
+  overflow: hidden;
+  color: var(--color-ink-tertiary);
+  font-style: normal;
+  text-overflow: ellipsis;
+}
+.valuation-opportunity-upside {
+  color: var(--color-ink-muted);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.valuation-opportunity-upside.positive {
+  color: var(--color-market-up);
+}
+.valuation-notification-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 24px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-1);
+  padding: 0 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.valuation-notification-badge.level-notify {
+  border-color: color-mix(in srgb, var(--color-market-up) 42%, var(--color-hairline));
+  color: var(--color-market-up);
+}
+.valuation-notification-badge.level-conditional {
+  border-color: color-mix(in srgb, var(--color-signal-hot) 46%, var(--color-hairline));
+  color: var(--color-signal-hot);
+}
+.valuation-notification-badge.level-storage {
+  color: var(--color-ink-tertiary);
+}
+.valuation-opportunity-actions {
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+}
+.valuation-opportunity-actions button,
+.valuation-opportunity-detail-actions button,
+.valuation-opportunity-detail-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-market-up);
+  padding: 0 8px;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.valuation-opportunity-actions button:hover,
+.valuation-opportunity-detail-actions button:hover,
+.valuation-opportunity-detail-actions a:hover {
+  background: var(--color-surface-3);
+  color: var(--color-ink);
+}
+.valuation-opportunity-detail {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  padding: 12px;
+}
+.valuation-opportunity-detail.empty {
+  place-items: center;
+  min-height: 220px;
+  color: var(--color-ink-tertiary);
+}
+.valuation-opportunity-detail > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.valuation-opportunity-detail-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+.valuation-opportunity-detail-close:hover {
+  background: var(--color-surface-3);
+  color: var(--color-ink);
+}
+.valuation-opportunity-detail h3 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 18px;
+  line-height: 1.2;
+}
+.valuation-opportunity-detail header span {
+  color: var(--color-ink-tertiary);
+  font-size: 12px;
+}
+.valuation-opportunity-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.valuation-opportunity-detail-item {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+  padding: 9px;
+}
+.valuation-opportunity-detail-item em,
+.valuation-opportunity-note span {
+  color: var(--color-ink-tertiary);
+  font-style: normal;
+  font-size: 11px;
+}
+.valuation-opportunity-detail-item strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.valuation-opportunity-detail-item.highlight strong {
+  color: var(--color-market-up);
+}
+.valuation-opportunity-note {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.valuation-opportunity-note p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.valuation-opportunity-history {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+.valuation-opportunity-history h4 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 13px;
+}
+.valuation-opportunity-history-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 0.8fr) minmax(60px, 0.7fr) minmax(78px, 0.8fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+  color: var(--color-ink-muted);
+  padding: 0 8px;
+  text-align: left;
+  cursor: pointer;
+}
+.valuation-opportunity-history-row strong {
+  color: var(--color-ink);
+}
+.valuation-opportunity-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.valuation-opportunity-detail-backdrop {
+  display: none;
+}
 .valuation-empty {
   display: grid;
   place-items: center;
@@ -511,6 +898,52 @@ button.valuation-upside-pill:hover {
   .valuation-list-panel {
     height: auto;
     min-height: 320px;
+  }
+  .valuation-opportunity-layout {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+  .valuation-opportunity-layout > .valuation-opportunity-detail {
+    display: none;
+  }
+  .valuation-opportunity-detail-backdrop {
+    position: fixed;
+    z-index: 74;
+    inset: 0;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    background: rgb(0 0 0 / 0.42);
+    padding: 0;
+    overscroll-behavior: contain;
+    animation: catalyst-backdrop-in 160ms var(--motion-ease) both;
+  }
+  .valuation-opportunity-detail-backdrop .valuation-opportunity-detail {
+    position: relative;
+    display: grid;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(86dvh, 760px);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    box-shadow: 0 -18px 60px rgb(0 0 0 / 0.36);
+    animation: catalyst-modal-in 180ms var(--motion-ease) both;
+  }
+  .valuation-opportunity-detail-backdrop .valuation-opportunity-detail::before {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    width: 38px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--color-ink-muted) 34%, transparent);
+    content: "";
+    transform: translateX(-50%);
+  }
+  .valuation-opportunity-detail-backdrop .valuation-opportunity-detail > header {
+    padding-top: 8px;
   }
   .valuation-report-row {
     grid-template-columns: minmax(0, 1fr);
@@ -552,6 +985,49 @@ button.valuation-upside-pill:hover {
   }
   .valuation-report-list {
     overflow: visible;
+  }
+  .valuation-opportunities-view {
+    overflow: visible;
+  }
+  .valuation-opportunity-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .valuation-opportunity-list {
+    overflow: auto;
+  }
+  .valuation-opportunity-head {
+    display: none;
+  }
+  .valuation-opportunity-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-width: 0;
+    gap: 7px 10px;
+    align-items: start;
+    padding: 10px;
+  }
+  .valuation-opportunity-row > span,
+  .valuation-opportunity-row > strong {
+    white-space: normal;
+  }
+  .valuation-opportunity-row > span:not(.valuation-opportunity-stock):not(.valuation-notification-badge):not(.valuation-opportunity-actions) {
+    display: none;
+  }
+  .valuation-opportunity-stock {
+    grid-column: 1;
+  }
+  .valuation-opportunity-upside {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    white-space: nowrap;
+  }
+  .valuation-opportunity-row .valuation-notification-badge {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .valuation-opportunity-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
   }
   .valuation-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -635,6 +1111,7 @@ button.valuation-upside-pill:hover {
 @media (prefers-reduced-motion: reduce) {
   .valuation-toolbar,
   .valuation-list-panel.is-refreshing::before,
+  .valuation-opportunities-view.is-refreshing::before,
   .valuation-drawer-backdrop,
   .valuation-drawer,
   .valuation-spin {

@@ -230,6 +230,46 @@ export type CatalystValuationReportNotifyResponse = {
   notification: ReportNotificationRecord;
 };
 
+export type ValuationMeasurementOpportunitySnapshot = {
+  measurement_id: string;
+  report_id: string;
+  chat_run_id: string;
+  session_id: string;
+  source_generated_at?: string | null;
+  measured_at: string;
+  parse_status: "ready" | "missing_message" | "missing_table" | "failed";
+  published_url?: string | null;
+  notification_status?: "succeeded" | "failed" | "skipped" | null;
+  notified_at?: string | null;
+  item_id: string;
+  row_order: number;
+  rank?: number | null;
+  ts_code?: string | null;
+  name: string;
+  current_mv_text?: string | null;
+  target_mv_text?: string | null;
+  upside_text?: string | null;
+  valuation_status?: string | null;
+  confidence?: string | null;
+  anchor_type?: string | null;
+  evidence_level?: string | null;
+  gap_reason?: string | null;
+  notification_level?: string | null;
+  key_validation?: string | null;
+  risk_flags?: string | null;
+  data_gaps?: string | null;
+  is_positive: boolean;
+  created_at: string;
+};
+
+export type ValuationMeasurementOpportunity = {
+  stock_key: string;
+  ts_code?: string | null;
+  name: string;
+  latest: ValuationMeasurementOpportunitySnapshot;
+  history: ValuationMeasurementOpportunitySnapshot[];
+};
+
 export type PremarketSignalQuery = {
   start_time: string;
   end_time: string;

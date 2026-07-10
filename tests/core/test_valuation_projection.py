@@ -7,7 +7,12 @@ from radar.core.chat import ChatMessage, ChatRunStore, ChatSessionStore
 from radar.core.chat.events import now_iso
 from radar.core.config import RadarConfig
 from radar.core.storage.report_store import save_catalyst_valuation_report
-from radar.core.storage.valuation_store import get_valuation_measurement_by_run
+from radar.core.storage.valuation_store import (
+    ValuationMeasurementItemInput,
+    get_valuation_measurement_by_run,
+    list_valuation_measurement_opportunities,
+    save_valuation_measurement,
+)
 from radar.core.usecases.catalyst_valuation_report.models import (
     CatalystValuationReport,
     CatalystValuationReportRunResult,
@@ -53,6 +58,75 @@ def test_parse_upside_measurement_table_uses_notification_level_when_present():
     assert items[0].is_positive is True
     assert items[1].notification_level == "条件触发"
     assert items[1].is_positive is False
+
+
+def test_list_valuation_measurement_opportunities_uses_latest_per_stock(tmp_path):
+    config = _config(tmp_path)
+    save_valuation_measurement(
+        config.valuation_database_path,
+        report_id="report-old",
+        chat_run_id="run-old",
+        session_id="session-old",
+        source_generated_at=datetime.fromisoformat("2026-07-09T21:00:00"),
+        measured_at=datetime.fromisoformat("2026-07-09T23:10:00"),
+        parse_status="ready",
+        parse_error=None,
+        items=[
+            ValuationMeasurementItemInput(
+                rank=1,
+                ts_code="300037.SZ",
+                name="新宙邦",
+                upside_text="+35%",
+                valuation_status="有空间但需验证",
+                notification_level="条件触发",
+                anchor_type="券商目标价",
+                evidence_level="中等证据",
+            )
+        ],
+    )
+    save_valuation_measurement(
+        config.valuation_database_path,
+        report_id="report-new",
+        chat_run_id="run-new",
+        session_id="session-new",
+        source_generated_at=datetime.fromisoformat("2026-07-10T01:00:00"),
+        measured_at=datetime.fromisoformat("2026-07-10T01:30:00"),
+        parse_status="ready",
+        parse_error=None,
+        items=[
+            ValuationMeasurementItemInput(
+                rank=1,
+                ts_code="300037.SZ",
+                name="新宙邦",
+                upside_text="+50%",
+                valuation_status="显著空间",
+                notification_level="可通知",
+                anchor_type="券商目标价",
+                evidence_level="中等证据",
+                gap_reason="需验证利润兑现",
+                is_positive=True,
+            ),
+            ValuationMeasurementItemInput(
+                rank=2,
+                ts_code="601138.SH",
+                name="工业富联",
+                upside_text="无可靠正向锚",
+                valuation_status="基本反映/高估值",
+                notification_level="仅入库不通知",
+                anchor_type="当前PE",
+                evidence_level="高估值",
+            ),
+        ],
+    )
+
+    opportunities = list_valuation_measurement_opportunities(config.valuation_database_path)
+
+    assert [item.stock_key for item in opportunities] == ["300037.SZ", "601138.SH"]
+    assert opportunities[0].latest.report_id == "report-new"
+    assert opportunities[0].latest.upside_text == "+50%"
+    assert opportunities[0].latest.notification_level == "可通知"
+    assert [item.report_id for item in opportunities[0].history] == ["report-new", "report-old"]
+    assert opportunities[1].latest.notification_level == "仅入库不通知"
 
 
 def test_project_completed_valuation_run_saves_items_and_sends_structured_bark(monkeypatch, tmp_path):

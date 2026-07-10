@@ -12,6 +12,7 @@ from radar.core.storage.report_store import (
     CatalystValuationReportArchiveItem,
     ReportNotificationRecord,
 )
+from radar.core.storage.valuation_store import ValuationMeasurementOpportunity
 from radar.core.storage import RunRecord
 from radar.core.usecases.analyst_mentions import (
     DEFAULT_BENCHMARK_TS_CODE,
@@ -256,6 +257,10 @@ class CatalystValuationReportDetailResponse(BaseModel):
 class CatalystValuationReportNotifyResponse(BaseModel):
     item: CatalystValuationReportArchiveDetail
     notification: ReportNotificationRecord
+
+
+class ValuationMeasurementOpportunityListResponse(BaseModel):
+    items: list[ValuationMeasurementOpportunity]
 
 
 class AnalystMentionSummaryResponse(AnalystMentionSummaryResult):
