@@ -13,9 +13,11 @@ TS_CODE_RE = re.compile(r"\b\d{6}\.(?:SH|SZ|BJ)\b", re.IGNORECASE)
 URL_RE = re.compile(r"https?://\S+")
 SPACE_RE = re.compile(r"\s+")
 
-# 这些名称本身是股票，但在消息里常作为行业词/券商来源出现，必须带股票语境才算命中。
+# “机器人”在消息里几乎总是行业词；只有明确股票代码时才按上市公司识别。
+CODE_REQUIRED_STOCK_NAMES = {"机器人"}
+
+# 这些券商名称常作为消息来源出现，必须带股票语境才算命中。
 CONTEXT_REQUIRED_STOCK_NAMES = {
-    "机器人",
     "国联民生",
     "国泰海通",
     "申万宏源",
@@ -98,6 +100,11 @@ def usable_stock_name(name: str) -> bool:
 
 
 def has_stock_context(text: str, stock: Stock) -> bool:
+    if stock.name in CODE_REQUIRED_STOCK_NAMES:
+        return (
+            stock.symbol in CODE_RE.findall(text)
+            or stock.ts_code.upper() in TS_CODE_RE.findall(text.upper())
+        )
     if len(stock.name) >= 3 and stock.name not in CONTEXT_REQUIRED_STOCK_NAMES:
         return True
     markers = (
