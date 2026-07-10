@@ -325,8 +325,8 @@ function OpportunityDetail(props: {
             type="button"
             onClick={() => props.onOpenSession(snapshot)}
           >
-            <span>{compactDateTime(snapshot.measured_at)}</span>
-            <strong>{snapshot.upside_text || "未给出"}</strong>
+            <span className="valuation-opportunity-history-time">{compactDateTime(snapshot.measured_at)}</span>
+            <strong className={snapshot.is_positive ? "positive" : undefined}>{snapshot.upside_text || "未给出"}</strong>
             <NotificationBadge snapshot={snapshot} />
           </button>
         ))}
