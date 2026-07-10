@@ -650,10 +650,10 @@ button.valuation-opportunity-metric:hover,
   grid-template-columns:
     minmax(100px, 1.1fr) minmax(70px, 0.72fr) minmax(76px, 0.78fr)
     minmax(78px, 0.78fr) minmax(78px, 0.78fr) minmax(96px, 1fr)
-    minmax(72px, 0.72fr) minmax(72px, 0.72fr) minmax(126px, 1fr);
+    minmax(72px, 0.72fr) minmax(72px, 0.72fr) minmax(160px, 1fr);
   gap: 8px;
   align-items: center;
-  min-width: 860px;
+  min-width: 900px;
   padding: 0 10px;
 }
 .valuation-opportunity-head {
