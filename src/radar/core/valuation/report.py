@@ -103,7 +103,7 @@ def render_valuation_measurement_html(
     .upside {{ color: var(--accent); font-weight: 750; }}
     .status {{ color: var(--warn); }}
     .table-wrap {{ overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }}
-    table {{ width: 100%; min-width: 760px; border-collapse: collapse; }}
+    table {{ width: 100%; min-width: 1080px; border-collapse: collapse; }}
     th, td {{ padding: 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; font-size: 13px; }}
     th {{ color: var(--muted); background: var(--panel-2); font-weight: 650; }}
     tr:last-child td {{ border-bottom: 0; }}
@@ -194,10 +194,14 @@ def render_valuation_measurement_html(
             <th>剩余空间</th>
             <th>状态</th>
             <th>确定性</th>
+            <th>锚类型</th>
+            <th>证据等级</th>
+            <th>缺口原因</th>
+            <th>通知等级</th>
             <th>关键验证</th>
           </tr>
         </thead>
-        <tbody>{rows or '<tr><td colspan="7" class="muted">暂无结构化条目。</td></tr>'}</tbody>
+        <tbody>{rows or '<tr><td colspan="11" class="muted">暂无结构化条目。</td></tr>'}</tbody>
       </table>
     </div>
   </section>
@@ -220,6 +224,10 @@ def _item_row(item: ValuationMeasurementItem) -> str:
   <td class="upside">{escape(item.upside_text or "-")}</td>
   <td>{escape(item.valuation_status or "-")}</td>
   <td>{escape(item.confidence or "-")}</td>
+  <td>{escape(item.anchor_type or "-")}</td>
+  <td>{escape(item.evidence_level or "-")}</td>
+  <td>{escape(item.gap_reason or "-")}</td>
+  <td>{escape(item.notification_level or "-")}</td>
   <td>{escape(item.key_validation or "-")}</td>
 </tr>"""
 
@@ -228,6 +236,7 @@ def _positive_card(item: ValuationMeasurementItem) -> str:
     return f"""<article class="card">
   <h3>{escape(_item_title(item))}</h3>
   <p class="card-line"><span class="upside">{escape(item.upside_text or "空间未列明")}</span> · <span class="status">{escape(item.valuation_status or "状态未列明")}</span> · 确定性 {escape(item.confidence or "-")}</p>
+  <p class="card-line">锚：{escape(item.anchor_type or "-")}；证据：{escape(item.evidence_level or "-")}</p>
   <p class="card-line">当前：{escape(item.current_mv_text or "-")}；目标：{escape(item.target_mv_text or "-")}</p>
   <p class="card-line">验证：{escape(item.key_validation or "-")}</p>
 </article>"""

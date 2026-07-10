@@ -48,6 +48,7 @@ def _row_to_item(headers: list[str], row: list[str]) -> ValuationMeasurementItem
     stock_text = _clean(_pick(raw, "标的"))
     name, ts_code = _split_stock(stock_text)
     status = _clean(_pick(raw, "状态"))
+    notification_level = _clean_optional(_pick(raw, "通知等级"))
     return ValuationMeasurementItemInput(
         rank=_parse_rank(_pick(raw, "排名")),
         ts_code=ts_code,
@@ -57,10 +58,14 @@ def _row_to_item(headers: list[str], row: list[str]) -> ValuationMeasurementItem
         upside_text=_clean_optional(_pick(raw, "剩余空间")),
         valuation_status=status or None,
         confidence=_clean_optional(_pick(raw, "确定性")),
+        anchor_type=_clean_optional(_pick(raw, "锚类型")),
+        evidence_level=_clean_optional(_pick(raw, "证据等级")),
+        gap_reason=_clean_optional(_pick(raw, "缺口原因")),
+        notification_level=notification_level,
         key_validation=_clean_optional(_pick(raw, "关键验证")),
         risk_flags=_clean_optional(_pick(raw, "风险")),
         data_gaps=_clean_optional(_pick(raw, "数据缺口")),
-        is_positive=any(value in status for value in POSITIVE_STATUSES),
+        is_positive=_is_positive(status, notification_level),
         raw_row=raw,
     )
 
@@ -79,6 +84,12 @@ def _pick(raw: dict[str, str], label: str) -> str:
         if label in _clean(key):
             return value
     return ""
+
+
+def _is_positive(status: str, notification_level: str | None) -> bool:
+    if notification_level:
+        return notification_level == "可通知"
+    return any(value in status for value in POSITIVE_STATUSES)
 
 
 def _split_stock(value: str) -> tuple[str, str | None]:

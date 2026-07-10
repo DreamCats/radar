@@ -25,6 +25,10 @@ class ValuationMeasurementItemInput(BaseModel):
     upside_text: str | None = None
     valuation_status: str | None = None
     confidence: str | None = None
+    anchor_type: str | None = None
+    evidence_level: str | None = None
+    gap_reason: str | None = None
+    notification_level: str | None = None
     key_validation: str | None = None
     risk_flags: str | None = None
     data_gaps: str | None = None
@@ -124,9 +128,9 @@ def save_valuation_measurement(
                 INSERT INTO valuation_measurement_items (
                     item_id, measurement_id, row_order, rank, ts_code, name,
                     current_mv_text, target_mv_text, upside_text, valuation_status,
-                    confidence, key_validation, risk_flags, data_gaps, is_positive,
-                    raw_row_json, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    confidence, anchor_type, evidence_level, gap_reason, notification_level,
+                    key_validation, risk_flags, data_gaps, is_positive, raw_row_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     f"vmi_{uuid4().hex}",
@@ -140,6 +144,10 @@ def save_valuation_measurement(
                     item.upside_text,
                     item.valuation_status,
                     item.confidence,
+                    item.anchor_type,
+                    item.evidence_level,
+                    item.gap_reason,
+                    item.notification_level,
                     item.key_validation,
                     item.risk_flags,
                     item.data_gaps,
@@ -304,6 +312,10 @@ def _row_to_item(row: sqlite3.Row) -> ValuationMeasurementItem:
         upside_text=row["upside_text"],
         valuation_status=row["valuation_status"],
         confidence=row["confidence"],
+        anchor_type=_row_value(row, "anchor_type"),
+        evidence_level=_row_value(row, "evidence_level"),
+        gap_reason=_row_value(row, "gap_reason"),
+        notification_level=_row_value(row, "notification_level"),
         key_validation=row["key_validation"],
         risk_flags=row["risk_flags"],
         data_gaps=row["data_gaps"],
@@ -315,6 +327,10 @@ def _row_to_item(row: sqlite3.Row) -> ValuationMeasurementItem:
 
 def _json(data: dict[str, Any]) -> str:
     return json.dumps(data, ensure_ascii=False, separators=(",", ":"), default=str)
+
+
+def _row_value(row: sqlite3.Row, key: str) -> str | None:
+    return row[key] if key in row.keys() else None
 
 
 def _now_text() -> str:

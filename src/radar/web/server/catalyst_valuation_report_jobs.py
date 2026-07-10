@@ -230,6 +230,8 @@ def _upside_prompt(report: CatalystValuationReport, *, report_id: str) -> str:
             "4. 计算剩余空间，并标记：显著空间 / 有空间但需验证 / 基本反映 / 已超目标 / 严重透支。",
             "5. 把已确认事实、基于假设的推断、仍需验证条件分开写。",
             "6. 输出机会排序、追高风险、关键数据缺口；不要输出买卖建议、仓位或确定性收益。",
+            "7. 空间测算总表必须包含：锚类型、证据等级、缺口原因、通知等级。",
+            "8. 通知等级只允许：可通知 / 条件触发 / 仅入库不通知；只有证据和空间都足够明确时才写可通知。",
             "",
             f"report_id：{report_id}",
             f"报告窗口：{_format_time(report.start_time)} ~ {_format_time(report.end_time)}",

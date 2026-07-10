@@ -158,6 +158,8 @@ def _positive_bark_body(measurement: ValuationMeasurement) -> str:
     if len(positives) == 1:
         item = positives[0]
         lines = [_item_label(item)]
+        if item.anchor_type or item.evidence_level:
+            lines.append(f"锚/证据：{_compact_text(_anchor_evidence_label(item), 72)}")
         if item.key_validation:
             lines.append(f"验证：{_compact_text(item.key_validation, 72)}")
         return "\n".join(lines)
@@ -166,6 +168,8 @@ def _positive_bark_body(measurement: ValuationMeasurement) -> str:
         parts = [_item_label(item)]
         if item.upside_text:
             parts.append(item.upside_text)
+        if item.anchor_type:
+            parts.append(item.anchor_type)
         if item.confidence:
             parts.append(f"确定性{item.confidence}")
         lines.append(f"{index}. {'｜'.join(parts)}")
@@ -203,6 +207,11 @@ def _positive_bark_subtitle(measurement: ValuationMeasurement) -> str:
 
 def _item_label(item) -> str:
     return f"{item.ts_code}｜{item.name}" if item.ts_code else item.name
+
+
+def _anchor_evidence_label(item) -> str:
+    parts = [part for part in (item.anchor_type, item.evidence_level) if part]
+    return "｜".join(parts) or "-"
 
 
 def _compact_text(value: str, limit: int) -> str:

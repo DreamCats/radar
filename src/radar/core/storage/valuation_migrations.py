@@ -68,4 +68,17 @@ VALUATION_MIGRATIONS: list[Migration] = [
             ADD COLUMN publish_error TEXT;
         """,
     ),
+    (
+        "003_valuation_item_evidence_fields",
+        """
+        ALTER TABLE valuation_measurement_items
+            ADD COLUMN anchor_type TEXT;
+        ALTER TABLE valuation_measurement_items
+            ADD COLUMN evidence_level TEXT;
+        ALTER TABLE valuation_measurement_items
+            ADD COLUMN gap_reason TEXT;
+        ALTER TABLE valuation_measurement_items
+            ADD COLUMN notification_level TEXT;
+        """,
+    ),
 ]

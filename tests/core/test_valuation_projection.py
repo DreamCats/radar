@@ -34,6 +34,27 @@ def test_parse_upside_measurement_table():
     assert items[1].is_positive is False
 
 
+def test_parse_upside_measurement_table_uses_notification_level_when_present():
+    items, error = parse_upside_measurement_items(
+        """
+## 空间测算总表
+| 排名 | 标的 | 当前市值 | 目标市值 | 剩余空间 | 状态 | 确定性 | 锚类型 | 证据等级 | 缺口原因 | 通知等级 | 关键验证 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 可通知股份 300001.SZ | 100亿 | 180亿 | 80% | 显著空间 | 高 | 券商利润PE | 券商预测+公告存在 | 无 | 可通知 | 利润兑现 |
+| 2 | 条件股份 300002.SZ | 100亿 | 100-165亿 | 0-65% | 基本反映/有空间但需验证 | 中 | 券商利润PE | 券商预测 | 空间下沿不足 | 条件触发 | 涨价落地 |
+"""
+    )
+
+    assert error is None
+    assert items[0].anchor_type == "券商利润PE"
+    assert items[0].evidence_level == "券商预测+公告存在"
+    assert items[0].gap_reason == "无"
+    assert items[0].notification_level == "可通知"
+    assert items[0].is_positive is True
+    assert items[1].notification_level == "条件触发"
+    assert items[1].is_positive is False
+
+
 def test_project_completed_valuation_run_saves_items_and_sends_structured_bark(monkeypatch, tmp_path):
     config = _config(tmp_path)
     saved_report = save_catalyst_valuation_report(
@@ -50,10 +71,11 @@ def test_project_completed_valuation_run_saves_items_and_sends_structured_bark(m
 结论：1 个标的有显著空间。
 
 ## 空间测算总表
-| 排名 | 标的 | 当前市值 | 目标市值 | 剩余空间 | 状态 | 确定性 | 关键验证 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 胜宏科技 300476.SZ | 500亿 | 900-1100亿 | 80%-120% | 显著空间 | 高 | 订单兑现 |
-| 2 | 已反映股份 600000.SH | 300亿 | 320亿 | 6% | 基本反映 | 中 | 业绩验证 |
+| 排名 | 标的 | 当前市值 | 目标市值 | 剩余空间 | 状态 | 确定性 | 锚类型 | 证据等级 | 缺口原因 | 通知等级 | 关键验证 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 胜宏科技 300476.SZ | 500亿 | 900-1100亿 | 80%-120% | 显著空间 | 高 | 券商利润PE | 券商预测+公告存在 | 无 | 可通知 | 订单兑现 |
+| 2 | 条件股份 300002.SZ | 100亿 | 100-165亿 | 0-65% | 基本反映/有空间但需验证 | 中 | 券商利润PE | 券商预测 | 空间下沿不足 | 条件触发 | 涨价落地 |
+| 3 | 已反映股份 600000.SH | 300亿 | 320亿 | 6% | 基本反映 | 中 | 反推测算 | 公告确认 | 缺目标PE | 仅入库不通知 | 业绩验证 |
 """,
     )
     captured = {}
@@ -64,6 +86,8 @@ def test_project_completed_valuation_run_saves_items_and_sends_structured_bark(m
         assert "完整 Session Markdown" in html
         assert "来源估值线索报告" in html
         assert "胜宏科技 300476.SZ" in html
+        assert "券商利润PE" in html
+        assert "通知等级" in html
         assert "<h3>空间测算总表</h3>" in html
         assert '<div class="markdown-table-wrap"><table>' in html
         assert "<th>排名</th>" in html
@@ -86,16 +110,21 @@ def test_project_completed_valuation_run_saves_items_and_sends_structured_bark(m
     assert measurement is not None
     assert measurement.report_id == saved_report.report_id
     assert measurement.parse_status == "ready"
-    assert measurement.total_items == 2
+    assert measurement.total_items == 3
     assert measurement.positive_count == 1
     assert measurement.published_url == "https://example.com/valuation-measurement.html"
     assert measurement.notification_status == "succeeded"
     assert measurement.items[0].name == "胜宏科技"
+    assert measurement.items[0].anchor_type == "券商利润PE"
+    assert measurement.items[0].evidence_level == "券商预测+公告存在"
+    assert measurement.items[1].notification_level == "条件触发"
+    assert measurement.items[1].is_positive is False
     assert measurement.items[0].is_positive is True
     assert captured["remote_path"].startswith("valuation-measurement/")
     assert captured["message"].title == "Radar 估值测算｜胜宏科技"
     assert captured["message"].subtitle == "80%-120% · 显著空间 · 确定性高"
     assert "300476.SZ｜胜宏科技" in captured["message"].body
+    assert "锚/证据：券商利润PE｜券商预测+公告存在" in captured["message"].body
     assert "验证：订单兑现" in captured["message"].body
     assert captured["message"].url == "https://example.com/valuation-measurement.html"
     assert captured["message"].group == "radar-valuation"
