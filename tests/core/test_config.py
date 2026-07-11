@@ -29,7 +29,7 @@ chat:
       - skills
     max_active: 2
   shell:
-    default_cwd: ~/Work/radar
+    default_cwd: ~/Work/invest/projects/radar
     timeout_seconds: 10
     max_output_chars: 2000
 llm:
@@ -93,7 +93,7 @@ cloud:
     assert config.filters.group_blacklist_patterns == ["小学", "寝室"]
     assert config.chat_skill_paths == [BUILTIN_CHAT_SKILLS_DIR, config_dir / "skills"]
     assert config.chat.skills.max_active == 2
-    assert str(config.chat.shell.default_cwd).endswith("Work/radar")
+    assert str(config.chat.shell.default_cwd).endswith("Work/invest/projects/radar")
     assert "~" not in str(config.chat.shell.default_cwd)
     assert config.chat.shell.timeout_seconds == 10
     assert config.chat.shell.max_output_chars == 2000

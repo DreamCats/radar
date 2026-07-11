@@ -122,7 +122,7 @@ chat:
     enabled: true
     shell_path: /bin/zsh
     # shell 工具会用 zsh -lic 执行命令，默认加载用户 .zshrc 环境。
-    default_cwd: ~/Work/radar
+    default_cwd: ~/Work/invest/projects/radar
     timeout_seconds: 30
     max_output_chars: 12000
 
