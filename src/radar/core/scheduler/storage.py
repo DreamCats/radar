@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import AbstractContextManager
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -14,7 +15,11 @@ from radar.core.scheduler.defaults import (
 )
 from radar.core.scheduler.models import ScheduleRecord, ScheduleTickRecord, TickStatus
 from radar.core.scheduler.planner import compute_next_tick_at, scheduler_now
-from radar.core.storage.db import configure_sqlite_connection, migrate_message_db
+from radar.core.storage.db import (
+    configure_sqlite_connection,
+    managed_sqlite_connection,
+    migrate_message_db,
+)
 
 _SQLITE_TIMEOUT_SECONDS = 15.0
 _SQLITE_BUSY_TIMEOUT_MS = 15_000
@@ -397,13 +402,13 @@ def _default_next_tick(default_schedule, now: datetime) -> datetime:
     return compute_next_tick_at(record, now)
 
 
-def _connect(database: Path) -> sqlite3.Connection:
+def _connect(database: Path) -> AbstractContextManager[sqlite3.Connection]:
     database.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(database, timeout=_SQLITE_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
     configure_sqlite_connection(conn, busy_timeout_ms=_SQLITE_BUSY_TIMEOUT_MS)
     migrate_message_db(conn)
-    return conn
+    return managed_sqlite_connection(conn)
 
 
 def _json(value: object) -> str:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import AbstractContextManager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -10,7 +11,11 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from radar.core.storage.db import configure_sqlite_connection, migrate_message_db
+from radar.core.storage.db import (
+    configure_sqlite_connection,
+    managed_sqlite_connection,
+    migrate_message_db,
+)
 
 RunStatus = Literal["running", "succeeded", "skipped", "partial_failed", "failed"]
 _SQLITE_TIMEOUT_SECONDS = 15.0
@@ -298,22 +303,22 @@ def _connect(
     *,
     timeout_seconds: float | None = None,
     busy_timeout_ms: int | None = None,
-) -> sqlite3.Connection:
+) -> AbstractContextManager[sqlite3.Connection]:
     database.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(database, timeout=timeout_seconds or _SQLITE_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
     configure_sqlite_connection(conn, busy_timeout_ms=busy_timeout_ms or _SQLITE_BUSY_TIMEOUT_MS)
     migrate_message_db(conn)
-    return conn
+    return managed_sqlite_connection(conn)
 
 
-def _connect_readonly(database: Path) -> sqlite3.Connection:
+def _connect_readonly(database: Path) -> AbstractContextManager[sqlite3.Connection]:
     uri_path = quote(database.resolve().as_posix(), safe="/")
     conn = sqlite3.connect(f"file:{uri_path}?mode=ro", uri=True, timeout=_SQLITE_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
     configure_sqlite_connection(conn, enable_wal=False)
     conn.execute("PRAGMA query_only = ON")
-    return conn
+    return managed_sqlite_connection(conn)
 
 
 def _is_database_locked(error: sqlite3.OperationalError) -> bool:

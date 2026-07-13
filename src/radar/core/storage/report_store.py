@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import AbstractContextManager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
@@ -10,7 +11,12 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from radar.core.storage.db import SQLITE_TIMEOUT_SECONDS, configure_sqlite_connection, migrate_report_db
+from radar.core.storage.db import (
+    SQLITE_TIMEOUT_SECONDS,
+    configure_sqlite_connection,
+    managed_sqlite_connection,
+    migrate_report_db,
+)
 from radar.core.usecases.catalyst_valuation_report.models import (
     CatalystValuationReport,
     CatalystValuationReportRunResult,
@@ -267,22 +273,22 @@ def record_report_notification(
     )
 
 
-def _connect(database: Path) -> sqlite3.Connection:
+def _connect(database: Path) -> AbstractContextManager[sqlite3.Connection]:
     database.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(database, timeout=SQLITE_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
     configure_sqlite_connection(conn)
     migrate_report_db(conn)
-    return conn
+    return managed_sqlite_connection(conn)
 
 
-def _connect_readonly(database: Path) -> sqlite3.Connection:
+def _connect_readonly(database: Path) -> AbstractContextManager[sqlite3.Connection]:
     uri_path = quote(database.resolve().as_posix(), safe="/")
     conn = sqlite3.connect(f"file:{uri_path}?mode=ro", uri=True, timeout=SQLITE_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
     configure_sqlite_connection(conn, enable_wal=False)
     conn.execute("PRAGMA query_only = ON")
-    return conn
+    return managed_sqlite_connection(conn)
 
 
 def _report_id_for_run(database: Path, run_id: str | None) -> str | None:

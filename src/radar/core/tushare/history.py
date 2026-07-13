@@ -3,10 +3,16 @@ from __future__ import annotations
 import datetime as dt
 import json
 import sqlite3
+from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Any
 
-from radar.core.storage.db import SQLITE_TIMEOUT_SECONDS, configure_sqlite_connection, migrate_market_db
+from radar.core.storage.db import (
+    SQLITE_TIMEOUT_SECONDS,
+    configure_sqlite_connection,
+    managed_sqlite_connection,
+    migrate_market_db,
+)
 from radar.core.tushare.models import HistorySpec
 
 
@@ -278,9 +284,9 @@ def _now_time() -> dt.time:
     return dt.datetime.now().time()
 
 
-def _connect(database: Path) -> sqlite3.Connection:
+def _connect(database: Path) -> AbstractContextManager[sqlite3.Connection]:
     database.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(database, timeout=SQLITE_TIMEOUT_SECONDS)
     configure_sqlite_connection(conn)
     migrate_market_db(conn)
-    return conn
+    return managed_sqlite_connection(conn)

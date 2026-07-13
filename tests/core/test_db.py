@@ -5,7 +5,37 @@ import sqlite3
 import pytest
 
 from radar.core.storage import connect, connect_readonly, init_db
-from radar.core.storage.db import SQLITE_BUSY_TIMEOUT_MS, applied_migrations, migrate_market_db, migrate_message_db
+from radar.core.storage.db import (
+    SQLITE_BUSY_TIMEOUT_MS,
+    applied_migrations,
+    managed_sqlite_connection,
+    migrate_market_db,
+    migrate_message_db,
+)
+
+
+def test_managed_sqlite_connection_commits_rolls_back_and_closes(tmp_path):
+    database = tmp_path / "managed.sqlite3"
+    committed = sqlite3.connect(database)
+    with managed_sqlite_connection(committed) as conn:
+        conn.execute("CREATE TABLE items (value INTEGER)")
+        conn.execute("INSERT INTO items VALUES (1)")
+    with pytest.raises(sqlite3.ProgrammingError):
+        committed.execute("SELECT 1")
+
+    rolled_back = sqlite3.connect(database)
+    with pytest.raises(RuntimeError):
+        with managed_sqlite_connection(rolled_back) as conn:
+            conn.execute("INSERT INTO items VALUES (2)")
+            raise RuntimeError("rollback")
+    with pytest.raises(sqlite3.ProgrammingError):
+        rolled_back.execute("SELECT 1")
+
+    verifier = sqlite3.connect(database)
+    try:
+        assert verifier.execute("SELECT value FROM items").fetchall() == [(1,)]
+    finally:
+        verifier.close()
 
 
 def test_message_db_migrations_create_expected_tables(tmp_path):

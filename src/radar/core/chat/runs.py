@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
+from contextlib import AbstractContextManager
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
@@ -11,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from radar.core.chat.events import new_id, now_iso
 from radar.core.config import RadarConfig
+from radar.core.storage.db import managed_sqlite_connection
 
 ChatRunStatus = Literal["running", "completed", "failed", "cancelled"]
 
@@ -354,12 +356,12 @@ class ChatRunStore:
             )
             return run
 
-    def _connect(self) -> sqlite3.Connection:
+    def _connect(self) -> AbstractContextManager[sqlite3.Connection]:
         self.root.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(self.database_path)
         conn.row_factory = sqlite3.Row
         _init_db(conn)
-        return conn
+        return managed_sqlite_connection(conn)
 
 
 def _init_db(conn: sqlite3.Connection) -> None:

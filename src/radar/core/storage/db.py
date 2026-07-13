@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import sqlite3
 import threading
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 
 from radar.core.storage.market_migrations import MARKET_MIGRATIONS
 from radar.core.storage.message_migrations import MESSAGE_MIGRATIONS
@@ -13,6 +14,17 @@ Migration = tuple[str, str]
 _MIGRATION_LOCK = threading.Lock()
 SQLITE_TIMEOUT_SECONDS = 30.0
 SQLITE_BUSY_TIMEOUT_MS = 30_000
+
+
+@contextmanager
+def managed_sqlite_connection(conn: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
+    """保留事务上下文语义，并在退出时确定关闭连接。"""
+
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
 
 
 def configure_sqlite_connection(
